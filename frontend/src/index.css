@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+@theme {
+  --color-lexis-50: #eff8ff;
+  --color-lexis-100: #dff1ff;
+  --color-lexis-200: #b9e3ff;
+  --color-lexis-300: #7dccff;
+  --color-lexis-400: #39b0ff;
+  --color-lexis-500: #0e91ec;
+  --color-lexis-600: #0273c7;
+  --color-lexis-700: #045ba1;
+  --color-lexis-800: #094d84;
+  --color-lexis-900: #0e406d;
+  --color-lexis-950: #092945;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+  background: #061c2e;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: #061c2e;
+  color: #eff8ff;
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #39b0ff;
+}

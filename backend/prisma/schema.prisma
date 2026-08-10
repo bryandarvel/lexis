@@ -1,0 +1,289 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "client"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum PapelUsuario {
+  PROFESSOR
+  ALUNO
+}
+
+enum StatusMatricula {
+  ATIVA
+  ENCERRADA
+}
+
+enum StatusRedacao {
+  RASCUNHO
+  ENVIADA
+  AVALIADA
+}
+
+enum OrigemTexto {
+  DIGITADO
+  OCR
+}
+
+enum StatusAnaliseIA {
+  PENDENTE
+  PROCESSANDO
+  CONCLUIDA
+  ERRO
+}
+
+enum StatusFeedbackVersao {
+  RASCUNHO
+  PUBLICADA
+  SUBSTITUIDA
+}
+
+enum TipoNotificacao {
+  FEEDBACK_PUBLICADO
+  FEEDBACK_CORRIGIDO
+}
+
+enum StatusEnvioEmail {
+  PENDENTE
+  ENVIANDO
+  ENVIADO
+  ERRO
+}
+
+model Usuario {
+  id           String       @id @default(uuid())
+  nome         String
+  email        String       @unique @db.VarChar(191)
+  senhaHash    String       @db.VarChar(255)
+  papel        PapelUsuario
+  ativo        Boolean      @default(true)
+  desativadoEm DateTime?
+  criadoEm     DateTime     @default(now())
+  atualizadoEm DateTime     @updatedAt
+
+  refreshTokens       RefreshToken[]
+  turmasLecionadas    Turma[]          @relation("ProfessorTurmas")
+  matriculas          Matricula[]
+  redacoesEnviadas    Redacao[]        @relation("AlunoRedacoes")
+  analisesSolicitadas AnaliseIA[]      @relation("ProfessorAnalises")
+  feedbacksEscritos   FeedbackVersao[] @relation("ProfessorFeedbackVersoes")
+  notificacoes        Notificacao[]
+
+  @@index([papel, ativo])
+  @@map("usuarios")
+}
+
+model RefreshToken {
+  id         String    @id @default(uuid())
+  tokenHash  String    @unique @db.VarChar(255)
+  familiaId  String
+  usuarioId  String
+  usuario    Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  expiraEm   DateTime
+  revogadoEm DateTime?
+  criadoEm   DateTime  @default(now())
+
+  @@index([usuarioId])
+  @@index([familiaId])
+  @@index([expiraEm])
+  @@map("refresh_tokens")
+}
+
+model Turma {
+  id                 String    @id @default(uuid())
+  nome               String
+  codigoAcesso       String    @unique @db.VarChar(64)
+  codigoAtualizadoEm DateTime  @default(now())
+  professorId        String
+  professor          Usuario   @relation("ProfessorTurmas", fields: [professorId], references: [id], onDelete: Restrict)
+  ativa              Boolean   @default(true)
+  arquivadaEm        DateTime?
+  criadoEm           DateTime  @default(now())
+  atualizadoEm       DateTime  @updatedAt
+
+  matriculas Matricula[]
+  temas      TemaRedacao[]
+
+  @@index([professorId, ativa])
+  @@map("turmas")
+}
+
+model Matricula {
+  id          String          @id @default(uuid())
+  alunoId     String
+  aluno       Usuario         @relation(fields: [alunoId], references: [id], onDelete: Restrict)
+  turmaId     String
+  turma       Turma           @relation(fields: [turmaId], references: [id], onDelete: Restrict)
+  status      StatusMatricula @default(ATIVA)
+  iniciadaEm  DateTime        @default(now())
+  encerradaEm DateTime?
+
+  @@index([alunoId, status])
+  @@index([turmaId, status])
+  @@index([alunoId, turmaId])
+  @@map("matriculas")
+}
+
+model TemaRedacao {
+  id                    String    @id @default(uuid())
+  turmaId               String
+  turma                 Turma     @relation(fields: [turmaId], references: [id], onDelete: Restrict)
+  enunciado             String
+  descricao             String    @db.Text
+  instrucoes            String?   @db.Text
+  prazoEntrega          DateTime
+  ativo                 Boolean   @default(true)
+  arquivadoEm           DateTime?
+  criteriosBloqueadosEm DateTime?
+  criadoEm              DateTime  @default(now())
+  atualizadoEm          DateTime  @updatedAt
+
+  criterios CriterioAvaliacao[]
+  redacoes  Redacao[]
+
+  @@index([turmaId, ativo])
+  @@index([prazoEntrega])
+  @@map("temas_redacao")
+}
+
+model CriterioAvaliacao {
+  id           String      @id @default(uuid())
+  temaId       String
+  tema         TemaRedacao @relation(fields: [temaId], references: [id], onDelete: Cascade)
+  nome         String
+  descricao    String      @db.Text
+  ordem        Int
+  criadoEm     DateTime    @default(now())
+  atualizadoEm DateTime    @updatedAt
+
+  feedbacksCriterios FeedbackCriterio[]
+
+  @@unique([temaId, nome])
+  @@unique([temaId, ordem])
+  @@map("criterios_avaliacao")
+}
+
+model Redacao {
+  id                 String        @id @default(uuid())
+  alunoId            String
+  aluno              Usuario       @relation("AlunoRedacoes", fields: [alunoId], references: [id], onDelete: Restrict)
+  temaId             String
+  tema               TemaRedacao   @relation(fields: [temaId], references: [id], onDelete: Restrict)
+  texto              String?       @db.LongText
+  origemTexto        OrigemTexto   @default(DIGITADO)
+  ocrRevisadoEm      DateTime?
+  status             StatusRedacao @default(RASCUNHO)
+  enviadaEm          DateTime?
+  prazoConsideradoEm DateTime?
+  enviadaComAtraso   Boolean?
+  criadoEm           DateTime      @default(now())
+  atualizadoEm       DateTime      @updatedAt
+
+  analises AnaliseIA[]
+  feedback Feedback?
+
+  @@unique([alunoId, temaId])
+  @@index([temaId, status])
+  @@index([alunoId, status])
+  @@map("redacoes")
+}
+
+model AnaliseIA {
+  id                   String          @id @default(uuid())
+  redacaoId            String
+  redacao              Redacao         @relation(fields: [redacaoId], references: [id], onDelete: Restrict)
+  solicitadaPorId      String
+  solicitadaPor        Usuario         @relation("ProfessorAnalises", fields: [solicitadaPorId], references: [id], onDelete: Restrict)
+  status               StatusAnaliseIA @default(PENDENTE)
+  modelo               String          @db.VarChar(100)
+  versaoPrompt         String          @db.VarChar(50)
+  criteriosSnapshot    Json
+  resultadoEstruturado Json?
+  duracaoMs            Int?
+  mensagemErro         String?         @db.Text
+  solicitadaEm         DateTime        @default(now())
+  iniciadaEm           DateTime?
+  concluidaEm          DateTime?
+
+  @@index([redacaoId, solicitadaEm])
+  @@index([solicitadaPorId])
+  @@index([status])
+  @@map("analises_ia")
+}
+
+model Feedback {
+  id           String   @id @default(uuid())
+  redacaoId    String   @unique
+  redacao      Redacao  @relation(fields: [redacaoId], references: [id], onDelete: Restrict)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  versoes FeedbackVersao[]
+
+  @@map("feedbacks")
+}
+
+model FeedbackVersao {
+  id              String               @id @default(uuid())
+  feedbackId      String
+  feedback        Feedback             @relation(fields: [feedbackId], references: [id], onDelete: Restrict)
+  numero          Int
+  professorId     String
+  professor       Usuario              @relation("ProfessorFeedbackVersoes", fields: [professorId], references: [id], onDelete: Restrict)
+  nota            Int?                 @db.UnsignedSmallInt
+  comentarioGeral String?              @db.Text
+  status          StatusFeedbackVersao @default(RASCUNHO)
+  publicadoEm     DateTime?
+  criadoEm        DateTime             @default(now())
+  atualizadoEm    DateTime             @updatedAt
+
+  criterios    FeedbackCriterio[]
+  notificacoes Notificacao[]
+
+  @@unique([feedbackId, numero])
+  @@index([feedbackId, status])
+  @@index([professorId])
+  @@map("feedback_versoes")
+}
+
+model FeedbackCriterio {
+  id               String            @id @default(uuid())
+  feedbackVersaoId String
+  feedbackVersao   FeedbackVersao    @relation(fields: [feedbackVersaoId], references: [id], onDelete: Cascade)
+  criterioId       String
+  criterio         CriterioAvaliacao @relation(fields: [criterioId], references: [id], onDelete: Restrict)
+  comentario       String            @db.Text
+  criadoEm         DateTime          @default(now())
+  atualizadoEm     DateTime          @updatedAt
+
+  @@unique([feedbackVersaoId, criterioId])
+  @@index([criterioId])
+  @@map("feedbacks_criterios")
+}
+
+model Notificacao {
+  id                 String           @id @default(uuid())
+  usuarioId          String
+  usuario            Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  feedbackVersaoId   String
+  feedbackVersao     FeedbackVersao   @relation(fields: [feedbackVersaoId], references: [id], onDelete: Restrict)
+  tipo               TipoNotificacao
+  titulo             String
+  mensagem           String           @db.Text
+  lidaEm             DateTime?
+  emailDestino       String           @db.VarChar(191)
+  statusEmail        StatusEnvioEmail @default(PENDENTE)
+  tentativasEmail    Int              @default(0)
+  emailEnviadoEm     DateTime?
+  proximaTentativaEm DateTime?
+  ultimoErroEmail    String?          @db.Text
+  criadaEm           DateTime         @default(now())
+
+  @@index([usuarioId, lidaEm])
+  @@index([statusEmail, proximaTentativaEm])
+  @@index([feedbackVersaoId])
+  @@map("notificacoes")
+}
