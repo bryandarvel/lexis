@@ -2,6 +2,8 @@
 
 Plataforma web acadêmica para produção, análise e correção de redações, desenvolvida como Trabalho de Conclusão de Curso.
 
+[![Integração contínua](https://github.com/bryandarvel/lexis/actions/workflows/ci.yml/badge.svg)](https://github.com/bryandarvel/lexis/actions/workflows/ci.yml)
+
 ## Arquitetura
 
 - **Frontend:** React, Vite, Tailwind CSS, Motion e GSAP.
@@ -78,7 +80,27 @@ Os testes de integração do backend utilizam o banco indicado por `TEST_DATABAS
 
 ## Colaboração
 
-O desenvolvimento ocorre em branches separadas, com integração por Pull Request. Consulte [CONTRIBUTING.md](CONTRIBUTING.md) antes de iniciar uma alteração.
+O desenvolvimento ocorre em branches separadas, com integração por Pull Request. Toda correção, melhoria ou nova funcionalidade deve começar por uma Issue. Como o repositório é privado, cada integrante precisa aceitar o convite de colaboração antes de cloná-lo.
+
+Clone inicial:
+
+```powershell
+cd 'C:\Users\NOME_DO_USUARIO\Documents'
+git clone https://github.com/bryandarvel/lexis.git
+cd lexis
+```
+
+Antes de iniciar uma tarefa, atualize a `main` e crie uma branch própria:
+
+```powershell
+git switch main
+git pull --ff-only origin main
+git switch -c feat/NUMERO-nome-curto-da-tarefa
+```
+
+O Pull Request deve mencionar a Issue com `Closes #NUMERO`, passar pela integração contínua e ser revisado pelo outro integrante antes do merge.
+
+Consulte [CONTRIBUTING.md](CONTRIBUTING.md) para conhecer a rotina completa de Issues, branches, commits, push, revisão e Pull Request. Agentes de IA também devem seguir as regras de [AGENTS.md](AGENTS.md).
 
 ## Segurança
 
