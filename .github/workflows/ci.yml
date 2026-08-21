@@ -43,7 +43,7 @@ jobs:
       NODE_ENV: test
       FRONTEND_URL: http://localhost:5173
       DATABASE_URL: mysql://root:lexis_ci_root@127.0.0.1:3306/lexis_test
-      SHADOW_DATABASE_URL: mysql://root:lexis_ci_root@127.0.0.1:3306/lexis_test
+      SHADOW_DATABASE_URL: mysql://root:lexis_ci_root@127.0.0.1:3306/lexis_shadow
       TEST_DATABASE_URL: mysql://root:lexis_ci_root@127.0.0.1:3306/lexis_test
       JWT_ACCESS_SECRET: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
       JWT_REFRESH_SECRET: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
