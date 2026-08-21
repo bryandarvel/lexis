@@ -12,6 +12,7 @@ backend/generated/prisma/
 
 # Arquivos temporários do projeto e do Codex
 tmp/
+output/
 .agents/
 .codex/
 
