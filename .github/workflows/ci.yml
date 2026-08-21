@@ -50,6 +50,7 @@ jobs:
       JWT_ACCESS_EXPIRES_IN: 15m
       JWT_REFRESH_EXPIRES_IN: 7d
       BCRYPT_ROUNDS: 10
+      OCR_SPACE_API_KEY: lexis_ci_test_key
       EMAIL_ENABLED: false
 
     steps:
