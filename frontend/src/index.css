@@ -21,6 +21,7 @@
 html {
   min-width: 320px;
   min-height: 100%;
+  scroll-padding-top: 4.5rem;
   background: #061c2e;
 }
 
@@ -45,6 +46,12 @@ body {
 
 #root {
   min-height: 100vh;
+}
+
+@media (max-width: 767px) {
+  html {
+    scroll-padding-bottom: 4.5rem;
+  }
 }
 
 button,

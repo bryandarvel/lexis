@@ -67,6 +67,23 @@ export default function AuthProvider({ children }) {
     return sessao.usuario
   }, [])
 
+  const cadastrar = useCallback(
+    async ({ nome, email, senha, papel }) => {
+      const resposta = await apiPublica.post(
+        '/api/auth/cadastro',
+        {
+          nome,
+          email,
+          senha,
+          papel,
+        },
+      )
+
+      return resposta.data.data.usuario
+    },
+    [],
+  )
+
   const sair = useCallback(async () => {
     try {
       await apiPublica.post('/api/auth/logout')
@@ -83,12 +100,14 @@ export default function AuthProvider({ children }) {
       autenticado: Boolean(usuario),
       carregando: status === 'carregando',
       entrar,
+      cadastrar,
       sair,
     }),
     [
       usuario,
       status,
       entrar,
+      cadastrar,
       sair,
     ],
   )
