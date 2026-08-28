@@ -20,12 +20,7 @@ export default function HeroBanner({
       <div
         data-hero-backdrop
         aria-hidden="true"
-        className="absolute inset-0 bg-gradient-to-br from-lexis-950 via-lexis-900 to-lexis-700"
-      />
-
-      <div
-        aria-hidden="true"
-        className="absolute -right-24 top-1/2 h-96 w-96 -translate-y-1/2 rounded-full bg-lexis-400/20 blur-3xl"
+        className="absolute inset-0 bg-gradient-to-br from-lexis-950 via-lexis-900 to-lexis-800"
       />
 
       <div
@@ -86,7 +81,7 @@ export default function HeroBanner({
                 href={primaryAction.href}
                 whileHover={{ scale: 1.035 }}
                 whileTap={{ scale: 0.98 }}
-                className="inline-flex min-h-12 items-center justify-center rounded-xl bg-lexis-400 px-6 font-bold text-lexis-950 shadow-lg shadow-lexis-500/20 transition-colors hover:bg-lexis-300"
+                className="inline-flex min-h-12 items-center justify-center rounded-[10px] bg-lexis-400 px-6 font-bold text-white transition-colors hover:bg-lexis-500"
               >
                 {primaryAction.label}
               </motion.a>
@@ -97,7 +92,7 @@ export default function HeroBanner({
                 href={secondaryAction.href}
                 whileHover={{ scale: 1.035 }}
                 whileTap={{ scale: 0.98 }}
-                className="inline-flex min-h-12 items-center justify-center rounded-xl border border-lexis-200/20 bg-lexis-950/50 px-6 font-semibold text-lexis-50 backdrop-blur transition-colors hover:bg-lexis-800/80"
+                className="inline-flex min-h-12 items-center justify-center rounded-[10px] border border-lexis-200/30 bg-lexis-900 px-6 font-semibold text-lexis-50 transition-colors hover:bg-lexis-800"
               >
                 {secondaryAction.label}
               </motion.a>

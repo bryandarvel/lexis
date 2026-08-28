@@ -6,6 +6,7 @@ import {
 } from 'react-router'
 
 import { useAuth } from '../../hooks/useAuth.js'
+import ThemeToggle from './ThemeToggle.jsx'
 
 function obterRotaInicial(papel) {
   return papel === 'PROFESSOR'
@@ -50,35 +51,37 @@ export default function AppHeader() {
   }
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-lexis-200/10 bg-lexis-950/90 backdrop-blur-xl">
+    <header className="surface-shell fixed inset-x-0 top-0 z-50 border-b backdrop-blur-[8px]">
       <nav
         aria-label="Navegação principal"
         className="mx-auto flex h-20 max-w-7xl items-center gap-6 px-6"
       >
         <Link
           to={rotaInicial}
-          className="text-2xl font-black tracking-tight text-lexis-50 transition-colors hover:text-lexis-300"
+          className="brand-wordmark text-2xl font-bold tracking-tight text-white transition-colors hover:text-lexis-300"
         >
           LÉXIS
         </Link>
 
         <Link
           to={rotaInicial}
-          className="hidden text-sm font-medium text-lexis-100 transition-colors hover:text-white md:inline-flex"
+          className="hidden text-sm font-medium text-white/85 transition-colors hover:text-white md:inline-flex"
         >
           Início
         </Link>
 
         <div className="ml-auto flex items-center gap-4">
           <div className="hidden text-right sm:block">
-            <p className="max-w-48 truncate text-sm font-semibold text-lexis-50">
+            <p className="max-w-48 truncate text-sm font-semibold text-white">
               {usuario?.nome ?? 'Usuário'}
             </p>
 
-            <p className="text-xs text-lexis-300">
+            <p className="text-xs text-white/70">
               {papelExibido}
             </p>
           </div>
+
+          <ThemeToggle compacto />
 
           <motion.button
             type="button"
@@ -86,7 +89,7 @@ export default function AppHeader() {
             onClick={handleSair}
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.96 }}
-            className="rounded-full border border-lexis-300/30 bg-lexis-900/80 px-4 py-2 text-sm font-semibold text-lexis-100 transition-colors hover:border-lexis-300/60 hover:bg-lexis-800 disabled:cursor-wait disabled:opacity-60"
+            className="rounded-full border border-white/25 bg-[var(--surface-shell-2)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:border-white/50 hover:bg-[var(--surface-shell-3)] disabled:cursor-wait disabled:opacity-60"
           >
             {saindo ? 'Saindo...' : 'Sair'}
           </motion.button>

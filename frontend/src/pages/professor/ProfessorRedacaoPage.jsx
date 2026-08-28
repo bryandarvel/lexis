@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useRef,
   useState,
 } from 'react'
 import { motion } from 'motion/react'
@@ -175,6 +176,70 @@ export default function ProfessorRedacaoPage() {
     useState(null)
   const [feedbackNotice, setFeedbackNotice] =
     useState(null)
+  const [painelAtivo, setPainelAtivo] =
+    useState('criterios')
+  const [sheetAberto, setSheetAberto] =
+    useState(false)
+  const sheetRef = useRef(null)
+  const sheetTriggerRef = useRef(null)
+
+  useEffect(() => {
+    if (!sheetAberto) {
+      return undefined
+    }
+
+    const overflowAnterior = document.body.style.overflow
+    const sheet = sheetRef.current
+
+    document.body.style.overflow = 'hidden'
+    sheet?.querySelector('[data-sheet-close]')?.focus()
+
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') {
+        setSheetAberto(false)
+        return
+      }
+
+      if (event.key !== 'Tab' || !sheet) {
+        return
+      }
+
+      const focaveis = Array.from(
+        sheet.querySelectorAll(
+          'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), a[href]',
+        ),
+      )
+
+      if (focaveis.length === 0) {
+        return
+      }
+
+      const primeiro = focaveis[0]
+      const ultimo = focaveis[focaveis.length - 1]
+
+      if (
+        event.shiftKey &&
+        document.activeElement === primeiro
+      ) {
+        event.preventDefault()
+        ultimo.focus()
+      } else if (
+        !event.shiftKey &&
+        document.activeElement === ultimo
+      ) {
+        event.preventDefault()
+        primeiro.focus()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.body.style.overflow = overflowAnterior
+      document.removeEventListener('keydown', handleKeyDown)
+      sheetTriggerRef.current?.focus()
+    }
+  }, [sheetAberto])
 
   useEffect(() => {
     let componentActive = true
@@ -487,12 +552,7 @@ export default function ProfessorRedacaoPage() {
           ease: [0.22, 1, 0.36, 1],
         }}
       >
-        <section className="relative isolate overflow-hidden border-b border-lexis-200/10 px-6 py-12 sm:px-10 lg:px-16">
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_80%_10%,rgba(57,176,255,0.2),transparent_36%),linear-gradient(135deg,rgba(8,56,91,0.42),rgba(3,19,33,0.96))]"
-          />
-
+        <section className="border-b border-lexis-200/15 bg-lexis-900 px-6 py-12 sm:px-10 lg:px-16">
           <div className="mx-auto max-w-7xl">
             <Link
               to={`/professor/temas/${redacao.tema.id}`}
@@ -536,121 +596,127 @@ export default function ProfessorRedacaoPage() {
           </div>
         </section>
 
-        <section className="px-6 py-12 sm:px-10 lg:px-16">
-          <div className="mx-auto grid max-w-7xl gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.55fr)]">
-            <article className="rounded-2xl border border-lexis-200/10 bg-lexis-900/70 p-6 shadow-2xl shadow-black/20 sm:p-8">
+        <section className="px-4 py-8 sm:px-6 lg:px-8">
+          <div className="correction-workspace mx-auto max-w-[100rem]">
+            <article className="correction-essay surface-card rounded-[14px] p-6 sm:p-8">
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-lexis-300">
                 Texto entregue
               </p>
 
-              <div className="mt-6 whitespace-pre-wrap text-base leading-8 text-lexis-50 sm:text-lg">
+              <div className="font-essay mt-6 whitespace-pre-wrap text-lexis-50">
                 {redacao.texto ??
                   'O texto desta redação não está disponível.'}
               </div>
+
+              <dl className="mt-8 grid gap-3 border-t border-lexis-200/20 pt-5 text-sm sm:grid-cols-2">
+                <div>
+                  <dt className="text-lexis-300">Enviada em</dt>
+                  <dd className="mt-1 font-semibold text-lexis-50">
+                    {formatarDataHora(redacao.enviadaEm)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-lexis-300">Prazo considerado</dt>
+                  <dd className="mt-1 font-semibold text-lexis-50">
+                    {formatarDataHora(redacao.prazoConsideradoEm)}
+                  </dd>
+                </div>
+              </dl>
             </article>
 
-            <aside className="space-y-6">
-              <section className="rounded-2xl border border-lexis-200/10 bg-lexis-900/70 p-6">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-lexis-300">
-                  Aluno
-                </p>
+            {sheetAberto && (
+              <button
+                type="button"
+                className="correction-sheet-backdrop"
+                aria-label="Fechar painel de correção"
+                onClick={() => setSheetAberto(false)}
+              />
+            )}
 
-                <h2 className="mt-3 text-xl font-bold text-white">
-                  {redacao.aluno.nome}
-                </h2>
+            <button
+              ref={sheetTriggerRef}
+              type="button"
+              className="correction-sheet-trigger"
+              onClick={() => setSheetAberto(true)}
+              aria-haspopup="dialog"
+              aria-expanded={sheetAberto}
+            >
+              Comentários e critérios
+            </button>
 
-                <p className="mt-2 text-sm text-lexis-200">
-                  {redacao.aluno.email}
-                </p>
-              </section>
+            <aside
+              ref={sheetRef}
+              className={`correction-tools ${sheetAberto ? 'is-open' : ''}`}
+              role={sheetAberto ? 'dialog' : undefined}
+              aria-modal={sheetAberto || undefined}
+              aria-label="Comentários e critérios da correção"
+            >
+              <div className="correction-sheet-heading">
+                <span aria-hidden="true" className="correction-sheet-handle" />
+                <strong>Correção</strong>
+                <button
+                  type="button"
+                  data-sheet-close
+                  onClick={() => setSheetAberto(false)}
+                >
+                  Fechar
+                </button>
+              </div>
 
-              <section className="rounded-2xl border border-lexis-200/10 bg-lexis-900/70 p-6">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-lexis-300">
-                  Entrega
-                </p>
+              <div className="correction-tabs" role="tablist" aria-label="Painéis da correção">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={painelAtivo === 'comentarios'}
+                  aria-controls="painel-comentarios"
+                  onClick={() => setPainelAtivo('comentarios')}
+                >
+                  Comentários
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={painelAtivo === 'criterios'}
+                  aria-controls="painel-criterios"
+                  onClick={() => setPainelAtivo('criterios')}
+                >
+                  Critérios
+                </button>
+              </div>
 
-                <dl className="mt-4 space-y-4">
-                  <div>
-                    <dt className="text-sm text-lexis-300">
-                      Enviada em
-                    </dt>
-                    <dd className="mt-1 font-semibold text-white">
-                      {formatarDataHora(
-                        redacao.enviadaEm,
-                      )}
-                    </dd>
-                  </div>
+              <div
+                id="painel-comentarios"
+                className={`correction-tool-panel correction-comments ${painelAtivo === 'comentarios' ? 'is-active' : ''}`}
+              >
+                <AnalysisPanel
+                  embedded
+                  analysis={analiseAtual}
+                  isRequesting={analysisBusy}
+                  notice={analysisNotice}
+                  onRequest={handleRequestAnalysis}
+                />
+              </div>
 
-                  <div>
-                    <dt className="text-sm text-lexis-300">
-                      Prazo considerado
-                    </dt>
-                    <dd className="mt-1 font-semibold text-white">
-                      {formatarDataHora(
-                        redacao.prazoConsideradoEm,
-                      )}
-                    </dd>
-                  </div>
-                </dl>
-              </section>
-
-              <section className="rounded-2xl border border-lexis-200/10 bg-lexis-900/70 p-6">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-lexis-300">
-                  Feedback humano
-                </p>
-
-                {feedbackAtual ? (
-                  <>
-                    <div className="mt-4 flex items-end justify-between gap-4">
-                      <div>
-                        <p className="text-sm text-lexis-300">
-                          Nota
-                        </p>
-                        <p className="mt-1 text-4xl font-black text-white">
-                          {feedbackAtual.nota ?? '—'}
-                        </p>
-                      </div>
-
-                      <span className="rounded-full bg-lexis-700/50 px-3 py-1 text-xs font-bold text-lexis-100">
-                        {formatarStatusFeedback(
-                          feedbackAtual.status,
-                        )}
-                      </span>
-                    </div>
-
-                    <p className="mt-5 whitespace-pre-wrap text-sm leading-7 text-lexis-100">
-                      {feedbackAtual.comentarioGeral ??
-                        'O comentário geral ainda não foi preenchido.'}
-                    </p>
-                  </>
-                ) : (
-                  <p className="mt-4 text-sm leading-7 text-lexis-200">
-                    A correção ainda não possui um rascunho de feedback.
-                  </p>
-                )}
-              </section>
+              <div
+                id="painel-criterios"
+                className={`correction-tool-panel correction-criteria ${painelAtivo === 'criterios' ? 'is-active' : ''}`}
+              >
+                <FeedbackEditor
+                  embedded
+                  action={feedbackAction}
+                  criteria={redacao.tema.criterios ?? []}
+                  currentFeedback={feedbackAtual}
+                  form={form}
+                  notice={feedbackNotice}
+                  onCriterionChange={handleCriterionChange}
+                  onFieldChange={handleFieldChange}
+                  onPublish={handlePublishFeedback}
+                  onSave={handleSaveFeedback}
+                />
+              </div>
             </aside>
           </div>
         </section>
-
-        <AnalysisPanel
-          analysis={analiseAtual}
-          isRequesting={analysisBusy}
-          notice={analysisNotice}
-          onRequest={handleRequestAnalysis}
-        />
-
-        <FeedbackEditor
-          action={feedbackAction}
-          criteria={redacao.tema.criterios ?? []}
-          currentFeedback={feedbackAtual}
-          form={form}
-          notice={feedbackNotice}
-          onCriterionChange={handleCriterionChange}
-          onFieldChange={handleFieldChange}
-          onPublish={handlePublishFeedback}
-          onSave={handleSaveFeedback}
-        />
       </motion.div>
     </DashboardLayout>
   )
