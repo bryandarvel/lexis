@@ -52,16 +52,6 @@ function formatarStatusRedacao(status) {
   return statuses[status] ?? status
 }
 
-function formatarStatusFeedback(status) {
-  const statuses = {
-    RASCUNHO: 'Rascunho',
-    PUBLICADA: 'Publicada',
-    SUBSTITUIDA: 'Substituída',
-  }
-
-  return statuses[status] ?? status
-}
-
 function obterMensagemErro(error, fallback) {
   return (
     error?.response?.data?.error?.message ??
@@ -190,6 +180,7 @@ export default function ProfessorRedacaoPage() {
 
     const overflowAnterior = document.body.style.overflow
     const sheet = sheetRef.current
+    const sheetTrigger = sheetTriggerRef.current
 
     document.body.style.overflow = 'hidden'
     sheet?.querySelector('[data-sheet-close]')?.focus()
@@ -237,7 +228,7 @@ export default function ProfessorRedacaoPage() {
     return () => {
       document.body.style.overflow = overflowAnterior
       document.removeEventListener('keydown', handleKeyDown)
-      sheetTriggerRef.current?.focus()
+      sheetTrigger?.focus()
     }
   }, [sheetAberto])
 
