@@ -5,6 +5,7 @@ import {
   useState,
 } from 'react'
 
+import ReauthenticationDialog from '../components/auth/ReauthenticationDialog.jsx'
 import {
   limparAccessToken,
   definirAccessToken,
@@ -13,12 +14,18 @@ import {
   apiPublica,
   renovarSessaoApi,
 } from '../services/api.js'
+import {
+  EVENTO_SESSAO_EXPIRADA,
+  notificarSessaoRestaurada,
+} from '../services/session-events.js'
 import { AuthContext } from './auth-context.js'
 import { limparRascunhosUsuario } from '../utils/draft-storage.js'
 
 export default function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null)
   const [status, setStatus] = useState('carregando')
+  const [reautenticacaoAberta, setReautenticacaoAberta] =
+    useState(false)
 
   useEffect(() => {
     let componenteAtivo = true
@@ -50,6 +57,24 @@ export default function AuthProvider({ children }) {
     }
   }, [])
 
+  useEffect(() => {
+    function solicitarReautenticacao() {
+      setReautenticacaoAberta(true)
+    }
+
+    globalThis.addEventListener(
+      EVENTO_SESSAO_EXPIRADA,
+      solicitarReautenticacao,
+    )
+
+    return () => {
+      globalThis.removeEventListener(
+        EVENTO_SESSAO_EXPIRADA,
+        solicitarReautenticacao,
+      )
+    }
+  }, [])
+
   const entrar = useCallback(async ({ email, senha }) => {
     const resposta = await apiPublica.post(
       '/api/auth/login',
@@ -62,8 +87,10 @@ export default function AuthProvider({ children }) {
     const sessao = resposta.data.data
 
     definirAccessToken(sessao.accessToken)
+    notificarSessaoRestaurada()
     setUsuario(sessao.usuario)
     setStatus('pronto')
+    setReautenticacaoAberta(false)
 
     return sessao.usuario
   }, [])
@@ -91,8 +118,10 @@ export default function AuthProvider({ children }) {
     } finally {
       limparRascunhosUsuario(usuario?.id)
       limparAccessToken()
+      notificarSessaoRestaurada()
       setUsuario(null)
       setStatus('pronto')
+      setReautenticacaoAberta(false)
     }
   }, [usuario?.id])
 
@@ -117,6 +146,12 @@ export default function AuthProvider({ children }) {
   return (
     <AuthContext.Provider value={valorContexto}>
       {children}
+      <ReauthenticationDialog
+        aberto={reautenticacaoAberta}
+        emailInicial={usuario?.email ?? ''}
+        onAuthenticate={entrar}
+        onLogout={sair}
+      />
     </AuthContext.Provider>
   )
 }

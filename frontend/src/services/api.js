@@ -5,6 +5,10 @@ import {
   limparAccessToken,
   obterAccessToken,
 } from './access-token.js'
+import {
+  notificarSessaoExpirada,
+  notificarSessaoRestaurada,
+} from './session-events.js'
 
 const baseURL = import.meta.env.VITE_API_URL
 
@@ -58,6 +62,7 @@ export async function renovarSessaoApi() {
         const sessao = resposta.data.data
 
         definirAccessToken(sessao.accessToken)
+        notificarSessaoRestaurada()
 
         return sessao
       })
@@ -102,6 +107,7 @@ api.interceptors.response.use(
       return api(requisicaoOriginal)
     } catch (refreshError) {
       limparAccessToken()
+      notificarSessaoExpirada()
 
       return Promise.reject(refreshError)
     }

@@ -10,6 +10,7 @@ import {
   removerRascunho,
   salvarRascunho,
 } from '../utils/draft-storage.js'
+import { EVENTO_SESSAO_EXPIRADA } from '../services/session-events.js'
 
 const INTERVALO_AUTOSAVE = 15_000
 
@@ -111,6 +112,10 @@ export function useRascunho({
       'pagehide',
       salvarAgora,
     )
+    globalThis.addEventListener(
+      EVENTO_SESSAO_EXPIRADA,
+      salvarAgora,
+    )
 
     return () => {
       document.removeEventListener(
@@ -119,6 +124,10 @@ export function useRascunho({
       )
       globalThis.removeEventListener(
         'pagehide',
+        salvarAgora,
+      )
+      globalThis.removeEventListener(
+        EVENTO_SESSAO_EXPIRADA,
         salvarAgora,
       )
     }
