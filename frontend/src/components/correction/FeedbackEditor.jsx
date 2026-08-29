@@ -12,6 +12,7 @@ export default function FeedbackEditor({
   action,
   criteria,
   currentFeedback,
+  embedded = false,
   form,
   notice,
   onCriterionChange,
@@ -27,8 +28,14 @@ export default function FeedbackEditor({
       : 'border-emerald-300/20 bg-emerald-950/20 text-emerald-100'
 
   return (
-    <section className="border-t border-lexis-200/10 px-6 py-12 sm:px-10 lg:px-16">
-      <div className="mx-auto max-w-7xl">
+    <section
+      className={
+        embedded
+          ? 'correction-tool-section'
+          : 'border-t border-lexis-200/10 px-6 py-12 sm:px-10 lg:px-16'
+      }
+    >
+      <div className={embedded ? '' : 'mx-auto max-w-7xl'}>
         <div className="flex flex-wrap items-end justify-between gap-5">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-lexis-300">
@@ -58,7 +65,7 @@ export default function FeedbackEditor({
           onSubmit={onSave}
           className="mt-8 space-y-6"
         >
-          <div className="grid gap-6 lg:grid-cols-[14rem_minmax(0,1fr)]">
+          <div className={embedded ? 'grid gap-4' : 'grid gap-6 lg:grid-cols-[14rem_minmax(0,1fr)]'}>
             <label className="block rounded-2xl border border-lexis-200/10 bg-lexis-900/70 p-6">
               <span className="text-sm font-bold text-white">
                 Nota total
@@ -121,7 +128,7 @@ export default function FeedbackEditor({
               alteram diretamente a nota total.
             </p>
 
-            <div className="mt-5 grid gap-4 lg:grid-cols-2">
+            <div className={embedded ? 'mt-5 grid gap-4' : 'mt-5 grid gap-4 lg:grid-cols-2'}>
               {criteria.map((criterion) => (
                 <label
                   key={criterion.id}

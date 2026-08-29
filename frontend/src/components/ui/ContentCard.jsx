@@ -46,7 +46,7 @@ export default function ContentCard({
             }
           : undefined
       }
-      className={`group relative min-h-[18rem] w-[18rem] overflow-hidden rounded-2xl border border-lexis-200/10 bg-lexis-900 shadow-xl shadow-black/20 sm:w-[22rem] ${interactiveClasses}`}
+      className={`surface-card group relative min-h-[18rem] w-[18rem] overflow-hidden rounded-[14px] sm:w-[22rem] ${interactiveClasses}`}
     >
       {to && (
         <Link
@@ -79,7 +79,7 @@ export default function ContentCard({
           </p>
 
           {status && (
-            <span className="rounded-full border border-lexis-300/20 bg-lexis-950/50 px-3 py-1 text-xs font-semibold text-lexis-200 backdrop-blur">
+            <span className="rounded-full border border-lexis-300/20 bg-lexis-950 px-3 py-1 text-xs font-semibold text-lexis-200">
               {status}
             </span>
           )}

@@ -166,7 +166,7 @@ export default function ProfessorTemaPage() {
       >
         <div
           aria-hidden="true"
-          className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_75%_15%,rgba(83,195,255,0.2),transparent_34%),linear-gradient(135deg,rgba(9,62,102,0.4),rgba(3,19,33,0.95))]"
+          className="absolute inset-0 -z-10 bg-lexis-900"
         />
 
         <div className="mx-auto max-w-7xl">

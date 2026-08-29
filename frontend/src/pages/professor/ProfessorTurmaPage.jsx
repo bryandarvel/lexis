@@ -145,7 +145,7 @@ export default function ProfessorTurmaPage() {
       >
         <div
           aria-hidden="true"
-          className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_80%_10%,rgba(57,176,255,0.22),transparent_35%),linear-gradient(135deg,rgba(15,75,120,0.32),rgba(3,19,33,0.92))]"
+          className="absolute inset-0 -z-10 bg-lexis-900"
         />
 
         <div className="mx-auto max-w-7xl">

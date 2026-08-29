@@ -11,6 +11,7 @@ function formatarStatusAnalise(status) {
 
 export default function AnalysisPanel({
   analysis,
+  embedded = false,
   isRequesting,
   notice,
   onRequest,
@@ -24,8 +25,14 @@ export default function AnalysisPanel({
   ].includes(analysis?.status)
 
   return (
-    <section className="border-t border-lexis-200/10 px-6 py-12 sm:px-10 lg:px-16">
-      <div className="mx-auto max-w-7xl">
+    <section
+      className={
+        embedded
+          ? 'correction-tool-section'
+          : 'border-t border-lexis-200/10 px-6 py-12 sm:px-10 lg:px-16'
+      }
+    >
+      <div className={embedded ? '' : 'mx-auto max-w-7xl'}>
         <div className="flex flex-wrap items-end justify-between gap-5">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-lexis-300">

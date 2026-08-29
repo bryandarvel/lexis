@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,600;6..72,700&display=swap");
 @import "tailwindcss";
 
 @theme {
@@ -14,6 +15,73 @@
   --color-lexis-950: #092945;
 }
 
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+  --color-lexis-50: #071b2f;
+  --color-lexis-100: #1d3347;
+  --color-lexis-200: #355068;
+  --color-lexis-300: #145c94;
+  --color-lexis-400: #1674bd;
+  --color-lexis-500: #286fbd;
+  --color-lexis-600: #7f91a4;
+  --color-lexis-700: #d5e0eb;
+  --color-lexis-800: #e7edf4;
+  --color-lexis-900: #ffffff;
+  --color-lexis-950: #f4f7fb;
+  --surface-shell-1: #002049;
+  --surface-shell-2: #062b58;
+  --surface-shell-3: #0d3567;
+  --surface-shell-4: #143f76;
+  --surface-border: #c8d4e0;
+  --surface-highlight: rgba(255, 255, 255, 0);
+  --page-background: #f4f7fb;
+  --focus-color: #1674bd;
+  --shadow-card: 0 10px 28px rgba(0, 32, 73, 0.1);
+  --radius-none: 0;
+  --radius-sm: 5px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-2xl: 18px;
+  --radius-full: 999px;
+  --font-display: Newsreader, Georgia, "Times New Roman", serif;
+  --font-interface: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-lexis-50: #f7fbff;
+  --color-lexis-100: #dce9f5;
+  --color-lexis-200: #a9bed1;
+  --color-lexis-300: #7dccff;
+  --color-lexis-400: #39a7f2;
+  --color-lexis-500: #1688d6;
+  --color-lexis-600: #166da8;
+  --color-lexis-700: #0d3567;
+  --color-lexis-800: #062b58;
+  --color-lexis-900: #111d2e;
+  --color-lexis-950: #06101f;
+  --surface-shell-1: #002049;
+  --surface-shell-2: #062b58;
+  --surface-shell-3: #0d3567;
+  --surface-shell-4: #143f76;
+  --surface-border: #2a3a4f;
+  --surface-highlight: rgba(255, 255, 255, 0.12);
+  --page-background: #06101f;
+  --focus-color: #7dccff;
+  --shadow-card: none;
+  --radius-none: 0;
+  --radius-sm: 5px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-2xl: 18px;
+  --radius-full: 999px;
+  --font-display: Newsreader, Georgia, "Times New Roman", serif;
+  --font-interface: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -22,26 +90,292 @@ html {
   min-width: 320px;
   min-height: 100%;
   scroll-padding-top: 4.5rem;
-  background: #061c2e;
+  background: var(--page-background);
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: #061c2e;
-  color: #eff8ff;
-  font-family:
-    Inter,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+  background: var(--page-background);
+  color: var(--color-lexis-50);
+  font-family: var(--font-interface);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-lexis-400) 30%, transparent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-color);
+  outline-offset: 3px;
+}
+
+.font-display,
+h1,
+h2,
+.brand-wordmark {
+  font-family: var(--font-display);
+}
+
+.font-essay {
+  max-width: 66ch;
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  line-height: 1.9;
+}
+
+.surface-card {
+  border: 1px solid var(--surface-border);
+  background: var(--color-lexis-900);
+  box-shadow:
+    inset 0 1px var(--surface-highlight),
+    var(--shadow-card);
+}
+
+.surface-shell {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: var(--surface-shell-1);
+  color: #f7fbff;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.theme-toggle {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--color-lexis-300) 40%, transparent);
+  border-radius: 999px;
+  background: var(--color-lexis-900);
+  padding: 0.625rem 0.875rem;
+  color: var(--color-lexis-50);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.theme-toggle:hover {
+  border-color: var(--color-lexis-300);
+  background: var(--color-lexis-800);
+}
+
+.correction-workspace {
+  display: grid;
+  grid-template-areas: "essay";
+  gap: 1rem;
+}
+
+.correction-essay {
+  grid-area: essay;
+  min-width: 0;
+}
+
+.correction-tools {
+  position: fixed;
+  z-index: 70;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  max-height: min(86vh, 48rem);
+  overflow-y: auto;
+  border: 1px solid var(--surface-border);
+  border-radius: 18px 18px 0 0;
+  background: var(--color-lexis-950);
+  box-shadow: 0 -18px 48px rgba(0, 32, 73, 0.24);
+  transform: translateY(105%);
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.correction-tools.is-open {
+  transform: translateY(0);
+}
+
+.correction-sheet-backdrop {
+  position: fixed;
+  z-index: 60;
+  inset: 0;
+  border: 0;
+  background: rgba(3, 12, 24, 0.68);
+}
+
+.correction-sheet-trigger {
+  position: fixed;
+  z-index: 50;
+  right: 1rem;
+  bottom: 1rem;
+  left: 1rem;
+  min-height: 3rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  background: var(--surface-shell-2);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.correction-sheet-heading {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 3.5rem;
+  border-bottom: 1px solid var(--surface-border);
+  background: var(--color-lexis-950);
+  padding: 0.75rem 1rem;
+}
+
+.correction-sheet-heading button {
+  border-radius: 8px;
+  padding: 0.5rem;
+  color: var(--color-lexis-300);
+  font-weight: 700;
+}
+
+.correction-sheet-handle {
+  position: absolute;
+  top: 0.375rem;
+  left: 50%;
+  width: 2.5rem;
+  height: 0.25rem;
+  border-radius: 999px;
+  background: var(--color-lexis-600);
+  transform: translateX(-50%);
+}
+
+.correction-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.25rem;
+  margin: 1rem;
+  border-radius: 10px;
+  background: var(--color-lexis-800);
+  padding: 0.25rem;
+}
+
+.correction-tabs button {
+  min-height: 2.75rem;
+  border-radius: 8px;
+  color: var(--color-lexis-200);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.correction-tabs button[aria-selected="true"] {
+  background: var(--color-lexis-900);
+  color: var(--color-lexis-50);
+}
+
+.correction-tool-panel {
+  display: none;
+  min-width: 0;
+}
+
+.correction-tool-panel.is-active {
+  display: block;
+}
+
+.correction-tool-section {
+  padding: 0 1rem 2rem;
+}
+
+@media (min-width: 768px) {
+  .correction-workspace {
+    grid-template-areas: "essay tools";
+    grid-template-columns: minmax(0, 1fr) minmax(19rem, 0.45fr);
+    align-items: start;
+    gap: 1.25rem;
+  }
+
+  .correction-tools {
+    position: static;
+    grid-area: tools;
+    max-height: calc(100vh - 7rem);
+    border-radius: 14px;
+    background: var(--color-lexis-900);
+    box-shadow: var(--shadow-card);
+    transform: none;
+  }
+
+  .correction-sheet-backdrop,
+  .correction-sheet-trigger,
+  .correction-sheet-heading {
+    display: none;
+  }
+
+  .correction-tool-section {
+    padding: 0 1rem 1.5rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .correction-workspace {
+    grid-template-areas: "comments essay criteria";
+    grid-template-columns:
+      minmax(17rem, 0.45fr)
+      minmax(36rem, 1fr)
+      minmax(20rem, 0.55fr);
+    gap: 1.25rem;
+  }
+
+  .correction-tools {
+    display: contents;
+  }
+
+  .correction-tabs {
+    display: none;
+  }
+
+  .correction-tool-panel {
+    display: block;
+    max-height: calc(100vh - 7rem);
+    overflow-y: auto;
+    border: 1px solid var(--surface-border);
+    border-radius: 14px;
+    background: var(--color-lexis-900);
+    box-shadow:
+      inset 0 1px var(--surface-highlight),
+      var(--shadow-card);
+  }
+
+  .correction-comments {
+    grid-area: comments;
+  }
+
+  .correction-criteria {
+    grid-area: criteria;
+  }
+
+  .correction-tool-section {
+    padding: 1.25rem;
+  }
+}
+
+[data-theme="dark"] .theme-toggle {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: var(--surface-shell-2);
+  color: #f7fbff;
+}
+
+[data-theme="light"] .text-white {
+  color: var(--color-lexis-50);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 
 #root {

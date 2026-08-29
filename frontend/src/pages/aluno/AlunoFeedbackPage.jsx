@@ -151,7 +151,7 @@ export default function AlunoFeedbackPage() {
         <section className="relative isolate overflow-hidden border-b border-lexis-200/10 px-6 py-12 sm:px-10 lg:px-16">
           <div
             aria-hidden="true"
-            className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_80%_10%,rgba(57,176,255,0.2),transparent_36%),linear-gradient(135deg,rgba(8,56,91,0.42),rgba(3,19,33,0.96))]"
+            className="absolute inset-0 -z-10 bg-lexis-900"
           />
 
           <div className="mx-auto max-w-7xl">
@@ -195,7 +195,7 @@ export default function AlunoFeedbackPage() {
         <section className="px-6 py-12 sm:px-10 lg:px-16">
           <div className="mx-auto grid max-w-7xl gap-6 xl:grid-cols-[minmax(0,0.65fr)_minmax(0,1.35fr)]">
             <aside className="space-y-6">
-              <section className="rounded-2xl border border-lexis-300/20 bg-lexis-900/80 p-8 text-center shadow-2xl shadow-black/20">
+              <section className="surface-card rounded-[14px] p-8 text-center">
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-lexis-300">
                   Nota total
                 </p>
