@@ -12,6 +12,8 @@ import {
 import AnalysisPanel from '../../components/correction/AnalysisPanel.jsx'
 import FeedbackEditor from '../../components/correction/FeedbackEditor.jsx'
 import DashboardLayout from '../../layouts/DashboardLayout.jsx'
+import { useAuth } from '../../hooks/useAuth.js'
+import { useRascunho } from '../../hooks/useRascunho.js'
 import {
   listarAnalisesIa,
   solicitarAnaliseIa,
@@ -24,6 +26,7 @@ import {
 import {
   obterRedacaoProfessor,
 } from '../../services/redacoes.js'
+import { criarChaveRascunho } from '../../utils/draft-storage.js'
 
 function formatarDataHora(value) {
   if (!value) {
@@ -153,6 +156,7 @@ function PaginaCarregando() {
 
 export default function ProfessorRedacaoPage() {
   const { redacaoId } = useParams()
+  const { usuario } = useAuth()
 
   const [pagina, setPagina] = useState({
     status: 'carregando',
@@ -167,6 +171,8 @@ export default function ProfessorRedacaoPage() {
     generalComment: '',
     criterionComments: {},
   })
+  const [formServidor, setFormServidor] =
+    useState(null)
 
   const [analysisBusy, setAnalysisBusy] =
     useState(false)
@@ -182,6 +188,27 @@ export default function ProfessorRedacaoPage() {
     useState(false)
   const sheetRef = useRef(null)
   const sheetTriggerRef = useRef(null)
+  const chaveRascunho = criarChaveRascunho(
+    usuario?.id,
+    redacaoId,
+  )
+  const {
+    recuperado: rascunhoRecuperado,
+    salvoEm: rascunhoSalvoEm,
+    descartar: descartarRascunho,
+    recuperar: recuperarRascunho,
+  } = useRascunho({
+    chave: chaveRascunho,
+    habilitado: pagina.status === 'pronto',
+    valorAtual: form,
+  })
+
+  const rascunhoDivergente = Boolean(
+    rascunhoRecuperado &&
+      formServidor &&
+      JSON.stringify(rascunhoRecuperado.valor) !==
+        JSON.stringify(formServidor),
+  )
 
   useEffect(() => {
     if (!sheetAberto) {
@@ -270,12 +297,14 @@ export default function ProfessorRedacaoPage() {
           mensagem: '',
         })
 
-        setForm(
+        const formularioServidor =
           criarFormularioFeedback(
             redacao,
             feedback,
-          ),
-        )
+          )
+
+        setForm(formularioServidor)
+        setFormServidor(formularioServidor)
       } catch (error) {
         if (!componentActive) {
           return
@@ -319,6 +348,14 @@ export default function ProfessorRedacaoPage() {
         [criterionId]: value,
       },
     }))
+  }
+
+  function handleRecoverDraft() {
+    const valorRecuperado = recuperarRascunho()
+
+    if (valorRecuperado) {
+      setForm(valorRecuperado)
+    }
   }
 
   async function handleRequestAnalysis() {
@@ -397,12 +434,15 @@ export default function ProfessorRedacaoPage() {
         feedback,
       }))
 
-      setForm(
+      const formularioServidor =
         criarFormularioFeedback(
           pagina.redacao,
           feedback,
-        ),
-      )
+        )
+
+      setForm(formularioServidor)
+      setFormServidor(formularioServidor)
+      descartarRascunho(formularioServidor)
 
       setFeedbackNotice({
         type: 'success',
@@ -476,12 +516,15 @@ export default function ProfessorRedacaoPage() {
         feedback,
       }))
 
-      setForm(
+      const formularioServidor =
         criarFormularioFeedback(
           redacao,
           feedback,
-        ),
-      )
+        )
+
+      setForm(formularioServidor)
+      setFormServidor(formularioServidor)
+      descartarRascunho(formularioServidor)
 
       setFeedbackNotice({
         type: 'success',
@@ -701,6 +744,47 @@ export default function ProfessorRedacaoPage() {
                 id="painel-criterios"
                 className={`correction-tool-panel correction-criteria ${painelAtivo === 'criterios' ? 'is-active' : ''}`}
               >
+                {rascunhoDivergente && (
+                  <div
+                    role="status"
+                    className="mx-4 mt-4 rounded-[10px] border border-amber-400/40 bg-amber-100/10 p-4 text-sm text-lexis-100"
+                  >
+                    <strong className="block text-lexis-50">
+                      Rascunho local encontrado
+                    </strong>
+                    <p className="mt-2 leading-6">
+                      Há alterações não enviadas salvas neste dispositivo.
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={handleRecoverDraft}
+                        className="rounded-[8px] bg-lexis-400 px-3 py-2 font-bold text-white"
+                      >
+                        Recuperar rascunho
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          descartarRascunho(
+                            formServidor ?? form,
+                          )
+                        }
+                        className="rounded-[8px] border border-lexis-300/35 px-3 py-2 font-bold text-lexis-100"
+                      >
+                        Descartar
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {!rascunhoDivergente && rascunhoSalvoEm && (
+                  <p className="mx-4 mt-4 text-xs text-lexis-300" role="status">
+                    Alterações locais protegidas em{' '}
+                    {formatarDataHora(rascunhoSalvoEm)}.
+                  </p>
+                )}
+
                 <FeedbackEditor
                   embedded
                   action={feedbackAction}

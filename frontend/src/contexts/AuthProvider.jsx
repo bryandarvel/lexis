@@ -14,6 +14,7 @@ import {
   renovarSessaoApi,
 } from '../services/api.js'
 import { AuthContext } from './auth-context.js'
+import { limparRascunhosUsuario } from '../utils/draft-storage.js'
 
 export default function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null)
@@ -88,11 +89,12 @@ export default function AuthProvider({ children }) {
     try {
       await apiPublica.post('/api/auth/logout')
     } finally {
+      limparRascunhosUsuario(usuario?.id)
       limparAccessToken()
       setUsuario(null)
       setStatus('pronto')
     }
-  }, [])
+  }, [usuario?.id])
 
   const valorContexto = useMemo(
     () => ({
