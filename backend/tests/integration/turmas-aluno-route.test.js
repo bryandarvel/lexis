@@ -166,7 +166,10 @@ after(async () => {
 describe('Rotas de matrícula do aluno', () => {
   it('deve entrar em uma turma pelo código', async () => {
     const codigoFormatado =
-      `  ${turmaPrincipal.codigoAcesso.toLowerCase()}  `
+      `  ${turmaPrincipal.codigoAcesso
+        .toLowerCase()
+        .split('')
+        .join(' ')}  `
 
     const resposta = await requisicaoEntrarTurma(
       codigoFormatado,

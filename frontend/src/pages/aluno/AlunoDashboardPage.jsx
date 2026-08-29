@@ -14,6 +14,23 @@ import {
 import {
   listarTemasDoAluno,
 } from '../../services/temas.js'
+import {
+  entrarEmTurma,
+} from '../../services/turmas.js'
+import { normalizarCodigoAcesso } from '../../utils/class-code.js'
+
+async function carregarDadosDashboard() {
+  const [themes, essays] = await Promise.all([
+    listarTemasDoAluno(),
+    listarMinhasRedacoes(),
+  ])
+
+  return {
+    status: 'pronto',
+    themes: Array.isArray(themes) ? themes : [],
+    essays: Array.isArray(essays) ? essays : [],
+  }
+}
 
 function formatarData(value) {
   if (!value) {
@@ -89,6 +106,14 @@ export default function AlunoDashboardPage() {
     themes: [],
     essays: [],
   })
+  const [codigoAcesso, setCodigoAcesso] =
+    useState('')
+  const [matriculaStatus, setMatriculaStatus] =
+    useState({
+      enviando: false,
+      tipo: null,
+      mensagem: '',
+    })
 
   const firstName =
     usuario?.nome?.split(' ')[0] ?? 'Aluno'
@@ -98,25 +123,13 @@ export default function AlunoDashboardPage() {
 
     async function carregarDashboard() {
       try {
-        const [themes, essays] =
-          await Promise.all([
-            listarTemasDoAluno(),
-            listarMinhasRedacoes(),
-          ])
+        const dados = await carregarDadosDashboard()
 
         if (!componentActive) {
           return
         }
 
-        setDashboard({
-          status: 'pronto',
-          themes: Array.isArray(themes)
-            ? themes
-            : [],
-          essays: Array.isArray(essays)
-            ? essays
-            : [],
-        })
+        setDashboard(dados)
       } catch {
         if (!componentActive) {
           return
@@ -136,6 +149,45 @@ export default function AlunoDashboardPage() {
       componentActive = false
     }
   }, [])
+
+  async function handleEntrarTurma(event) {
+    event.preventDefault()
+
+    if (
+      matriculaStatus.enviando ||
+      codigoAcesso.length !== 8
+    ) {
+      return
+    }
+
+    setMatriculaStatus({
+      enviando: true,
+      tipo: null,
+      mensagem: '',
+    })
+
+    try {
+      await entrarEmTurma(codigoAcesso)
+      const dados = await carregarDadosDashboard()
+
+      setDashboard(dados)
+      setCodigoAcesso('')
+      setMatriculaStatus({
+        enviando: false,
+        tipo: 'sucesso',
+        mensagem:
+          'Matrícula realizada. Os temas da turma já estão disponíveis.',
+      })
+    } catch (error) {
+      setMatriculaStatus({
+        enviando: false,
+        tipo: 'erro',
+        mensagem:
+          error?.response?.data?.error?.message ??
+          'Não foi possível entrar na turma.',
+      })
+    }
+  }
 
   const essaysByTheme = new Map(
     dashboard.essays.map((essay) => [
@@ -179,6 +231,82 @@ export default function AlunoDashboardPage() {
           href: '#redacoes',
         }}
       />
+
+      <section className="border-b border-lexis-200/15 px-6 py-8">
+        <form
+          onSubmit={handleEntrarTurma}
+          className="surface-card mx-auto flex max-w-7xl flex-col gap-4 rounded-[14px] p-5 md:flex-row md:items-end"
+          aria-busy={matriculaStatus.enviando}
+        >
+          <label className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold text-lexis-50">
+              Entrar em uma turma
+            </span>
+            <span className="mt-1 block text-xs leading-5 text-lexis-200">
+              Cole o código de oito caracteres enviado pelo professor.
+            </span>
+            <input
+              name="codigoAcesso"
+              value={codigoAcesso}
+              onChange={(event) => {
+                setCodigoAcesso(
+                  normalizarCodigoAcesso(
+                    event.target.value,
+                  ),
+                )
+                setMatriculaStatus((estadoAtual) => ({
+                  ...estadoAtual,
+                  tipo: null,
+                  mensagem: '',
+                }))
+              }}
+              autoCapitalize="characters"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder="LEX3A2K9"
+              aria-describedby="ajuda-codigo-turma"
+              aria-invalid={
+                codigoAcesso.length > 0 &&
+                codigoAcesso.length !== 8
+              }
+              className="mt-3 w-full rounded-[10px] border border-lexis-300/30 bg-lexis-950 px-4 py-3 font-mono text-lg font-bold uppercase tracking-[0.16em] text-lexis-50 outline-none focus:border-lexis-300"
+              required
+            />
+          </label>
+
+          <button
+            type="submit"
+            disabled={
+              matriculaStatus.enviando ||
+              codigoAcesso.length !== 8
+            }
+            className="min-h-12 rounded-[10px] bg-lexis-400 px-5 font-bold text-white disabled:cursor-not-allowed disabled:opacity-55"
+          >
+            {matriculaStatus.enviando
+              ? 'Entrando...'
+              : 'Entrar na turma'}
+          </button>
+
+          <p
+            id="ajuda-codigo-turma"
+            role={
+              matriculaStatus.tipo === 'erro'
+                ? 'alert'
+                : 'status'
+            }
+            className={`text-sm md:max-w-xs ${
+              matriculaStatus.tipo === 'erro'
+                ? 'text-red-600'
+                : matriculaStatus.tipo === 'sucesso'
+                  ? 'text-emerald-600'
+                  : 'sr-only'
+            }`}
+          >
+            {matriculaStatus.mensagem ||
+              'O código é normalizado automaticamente.'}
+          </p>
+        </form>
+      </section>
 
       <ContentRail
         id="temas"
