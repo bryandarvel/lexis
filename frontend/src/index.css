@@ -285,6 +285,23 @@ h2,
   padding: 0 1rem 2rem;
 }
 
+.reauth-backdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  background: rgba(3, 12, 24, 0.78);
+  padding: 1rem;
+}
+
+.reauth-dialog {
+  width: min(100%, 32rem);
+  border-radius: var(--radius-2xl);
+  padding: clamp(1.25rem, 4vw, 2rem);
+}
+
 @media (min-width: 768px) {
   .correction-workspace {
     grid-template-areas: "essay tools";
