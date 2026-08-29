@@ -1,4 +1,5 @@
 import api from './api.js'
+import { normalizarCodigoAcesso } from '../utils/class-code.js'
 
 function prepararId(id) {
   return encodeURIComponent(id)
@@ -87,7 +88,8 @@ export async function entrarEmTurma(codigoAcesso) {
   const resposta = await api.post(
     '/api/turmas/entrar',
     {
-      codigoAcesso,
+      codigoAcesso:
+        normalizarCodigoAcesso(codigoAcesso),
     },
   )
 

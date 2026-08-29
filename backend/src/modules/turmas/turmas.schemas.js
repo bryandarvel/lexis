@@ -15,15 +15,20 @@ const nomeTurmaSchema = z
 
 const codigoAcessoSchema = z
   .string()
-  .trim()
-  .toUpperCase()
-  .length(
-    8,
-    'O código de acesso deve possuir 8 caracteres.',
+  .transform((codigo) =>
+    codigo.replace(/\s+/g, '').toUpperCase(),
   )
-  .regex(
-    /^[A-HJ-NP-Z2-9]{8}$/,
-    'O código de acesso informado é inválido.',
+  .pipe(
+    z
+      .string()
+      .length(
+        8,
+        'O código de acesso deve possuir 8 caracteres.',
+      )
+      .regex(
+        /^[A-HJ-NP-Z2-9]{8}$/,
+        'O código de acesso informado é inválido.',
+      ),
   )
 
 export const criarTurmaSchema = z
