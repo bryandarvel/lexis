@@ -22,14 +22,13 @@ export default function ReauthenticationDialog({
   const [enviando, setEnviando] = useState(false)
   const dialogRef = useRef(null)
   const tituloRef = useRef(null)
-  const focoAnteriorRef = useRef(null)
 
   useEffect(() => {
     if (!aberto) {
       return undefined
     }
 
-    focoAnteriorRef.current = document.activeElement
+    const focoAnterior = document.activeElement
     setDados((estadoAtual) => ({
       email: estadoAtual.email || emailInicial,
       senha: '',
@@ -76,7 +75,7 @@ export default function ReauthenticationDialog({
 
     return () => {
       document.removeEventListener('keydown', manterFoco)
-      focoAnteriorRef.current?.focus?.()
+      focoAnterior?.focus?.()
     }
   }, [aberto, emailInicial])
 

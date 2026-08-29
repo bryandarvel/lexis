@@ -9,6 +9,19 @@ import {
 
 test('notifica uma única expiração até a sessão ser restaurada', () => {
   let notificacoes = 0
+  const alvo = new EventTarget()
+  const addEventListenerOriginal =
+    globalThis.addEventListener
+  const removeEventListenerOriginal =
+    globalThis.removeEventListener
+  const dispatchEventOriginal = globalThis.dispatchEvent
+
+  globalThis.addEventListener =
+    alvo.addEventListener.bind(alvo)
+  globalThis.removeEventListener =
+    alvo.removeEventListener.bind(alvo)
+  globalThis.dispatchEvent = alvo.dispatchEvent.bind(alvo)
+
   const listener = () => {
     notificacoes += 1
   }
@@ -35,5 +48,9 @@ test('notifica uma única expiração até a sessão ser restaurada', () => {
       EVENTO_SESSAO_EXPIRADA,
       listener,
     )
+    globalThis.addEventListener = addEventListenerOriginal
+    globalThis.removeEventListener =
+      removeEventListenerOriginal
+    globalThis.dispatchEvent = dispatchEventOriginal
   }
 })

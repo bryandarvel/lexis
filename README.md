@@ -16,6 +16,15 @@ Plataforma web acadêmica para produção, análise e correção de redações, 
 - **Documentação da API:** Swagger/OpenAPI.
 - **Qualidade:** Oxlint, Node Test Runner e Supertest.
 
+## Experiência e acessibilidade
+
+- O tema claro é usado no primeiro acesso; o usuário pode alternar manualmente para o tema escuro e a preferência fica salva no navegador.
+- O tema escuro segue superfícies navy em níveis de elevação, sem depender de sombras ou brilhos decorativos.
+- A tela de correção usa três colunas em telas largas, duas colunas com abas em tablets e um bottom sheet acessível em celulares.
+- Campos de autenticação mantêm colagem e preenchimento por gerenciadores de senha.
+- Nota e comentários ainda não enviados possuem autosave local. O texto da redação do aluno não é duplicado no armazenamento do navegador.
+- Quando a renovação silenciosa falha, a reautenticação acontece sobre a tela atual, preservando o rascunho e a rota.
+
 ## Pré-requisitos
 
 - Node.js compatível com o projeto.
@@ -73,6 +82,7 @@ Frontend:
 ```powershell
 cd frontend
 npm.cmd run lint
+npm.cmd test
 npm.cmd run build
 ```
 
@@ -113,3 +123,5 @@ Nunca envie ao GitHub:
 - pastas `node_modules`, `dist`, `coverage` ou `tmp`.
 
 Somente os arquivos `.env.example`, contendo valores demonstrativos, devem ser versionados.
+
+O access token permanece somente em memória e o refresh token é rotacionado em cookie HttpOnly. No logout, rascunhos privados do usuário são removidos, mas preferências não sensíveis, como o tema escolhido, são preservadas.
