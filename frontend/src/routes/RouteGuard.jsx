@@ -9,7 +9,7 @@ import RouteLoading from './RouteLoading.jsx'
 
 function obterRotaInicial(papel) {
   if (papel === 'PROFESSOR') {
-    return '/professor'
+    return '/professor/turmas'
   }
 
   if (papel === 'ALUNO') {

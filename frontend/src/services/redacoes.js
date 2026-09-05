@@ -1,4 +1,5 @@
 import api from './api.js'
+import { calcularProgressoUpload } from '../utils/essay-editor.js'
 
 function prepararId(id) {
   return encodeURIComponent(id)
@@ -79,4 +80,66 @@ export async function obterRedacaoProfessor(
   )
 
   return resposta.data.data.redacao
+}
+
+export async function transcreverImagemRedacao(
+  temaId,
+  imagem,
+  onProgress,
+) {
+  const formulario = new FormData()
+  formulario.append('imagem', imagem)
+
+  const resposta = await api.post(
+    `/api/aluno/temas/${prepararId(
+      temaId,
+    )}/redacao/ocr`,
+    formulario,
+    {
+      onUploadProgress(evento) {
+        const progresso = calcularProgressoUpload(
+          evento.loaded,
+          evento.total,
+        )
+
+        if (progresso === null || !onProgress) {
+          return
+        }
+
+        onProgress(progresso)
+      },
+    },
+  )
+
+  return resposta.data.data
+}
+
+export async function confirmarRevisaoOcr(
+  temaId,
+  texto,
+) {
+  const resposta = await api.put(
+    `/api/aluno/temas/${prepararId(
+      temaId,
+    )}/redacao/ocr/revisao`,
+    {
+      texto,
+    },
+  )
+
+  return resposta.data.data.redacao
+}
+
+export async function revisarLinguagemRedacao(
+  temaId,
+  texto,
+) {
+  const resposta = await api.post(
+    `/api/aluno/temas/${prepararId(
+      temaId,
+    )}/redacao/revisao-linguistica`,
+    { texto },
+  )
+
+  return resposta.data.data.revisao
 }

@@ -1,6 +1,9 @@
 import {
   extrairTextoComOcrSpace,
 } from '../../integrations/ocrSpace.client.js'
+import {
+  revisarTextoComLanguageTool,
+} from '../../integrations/languageTool.client.js'
 import { AppError } from '../../utils/app-error.js'
 
 import {
@@ -185,13 +188,59 @@ export async function transcreverImagemParaAluno({
     throw criarErroTextoOcrMuitoLongo()
   }
 
+  return resultadoOcr
+}
+
+export async function confirmarRevisaoOcrParaAluno({
+  temaId,
+  alunoId,
+  texto,
+}) {
   const resultado = await salvarRascunhoOcr({
     temaId,
     alunoId,
-    texto: resultadoOcr.texto,
+    texto,
+    revisadaEm: new Date(),
   })
 
   return tratarResultadoDaEscrita(resultado)
+}
+
+export async function revisarLinguagemParaAluno(
+  {
+    temaId,
+    alunoId,
+    texto,
+  },
+  {
+    revisar = revisarTextoComLanguageTool,
+    verificar =
+      verificarDisponibilidadeRascunhoOcr,
+  } = {},
+) {
+  const disponibilidade =
+    await verificar({
+      temaId,
+      alunoId,
+    })
+
+  tratarDisponibilidadeOcr(disponibilidade)
+
+  try {
+    return await revisar({ texto })
+  } catch (erro) {
+    return {
+      disponivel: false,
+      status: 'INDISPONIVEL',
+      motivo:
+        erro instanceof AppError
+          ? erro.code
+          : 'LANGUAGETOOL_UNEXPECTED_ERROR',
+      mensagem:
+        'A revisão linguística não respondeu. Seu texto foi preservado e pode ser salvo ou enviado normalmente.',
+      sugestoes: [],
+    }
+  }
 }
 
 export async function enviarRedacaoParaAluno({

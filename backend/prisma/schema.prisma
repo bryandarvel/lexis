@@ -234,6 +234,11 @@ model FeedbackVersao {
   professorId     String
   professor       Usuario              @relation("ProfessorFeedbackVersoes", fields: [professorId], references: [id], onDelete: Restrict)
   nota            Int?                 @db.UnsignedSmallInt
+  competencia1    Int?                 @db.UnsignedSmallInt
+  competencia2    Int?                 @db.UnsignedSmallInt
+  competencia3    Int?                 @db.UnsignedSmallInt
+  competencia4    Int?                 @db.UnsignedSmallInt
+  competencia5    Int?                 @db.UnsignedSmallInt
   comentarioGeral String?              @db.Text
   status          StatusFeedbackVersao @default(RASCUNHO)
   publicadoEm     DateTime?

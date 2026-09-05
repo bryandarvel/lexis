@@ -25,6 +25,21 @@ const criterios = [
   },
 ]
 
+const textoRedacao = [
+  'A referência foi articulada à tese.',
+  'Existe relação entre causa e consequência.',
+].join(' ')
+
+function criarEvidencia(trecho) {
+  const inicio = textoRedacao.indexOf(trecho)
+
+  return {
+    trecho,
+    inicio,
+    fim: inicio + trecho.length,
+  }
+}
+
 const resultadoValido = {
   resumoGeral: 'A redação apresenta uma tese clara.',
   pontosFortes: [
@@ -39,7 +54,9 @@ const resultadoValido = {
       criterio: 'Repertório sociocultural',
       diagnostico: 'O repertório é pertinente.',
       evidencias: [
-        'A referência foi articulada à tese.',
+        criarEvidencia(
+          'A referência foi articulada à tese.',
+        ),
       ],
       orientacaoAoProfessor:
         'Verificar a precisão da referência.',
@@ -49,7 +66,9 @@ const resultadoValido = {
       criterio: 'Argumentação',
       diagnostico: 'Os argumentos são coerentes.',
       evidencias: [
-        'Existe relação entre causa e consequência.',
+        criarEvidencia(
+          'Existe relação entre causa e consequência.',
+        ),
       ],
       orientacaoAoProfessor:
         'Avaliar se o desenvolvimento é suficiente.',
@@ -142,6 +161,15 @@ describe('Solicitação de análise por IA', () => {
       Object.hasOwn(schema.properties, 'nota'),
       false,
     )
+    assert.equal(
+      schema.properties.analisePorCriterio.properties,
+      undefined,
+    )
+    assert.equal(
+      schema.properties.analisePorCriterio.items.properties
+        .evidencias.items.type,
+      'object',
+    )
   })
 })
 
@@ -150,18 +178,29 @@ describe('Resultado estruturado da análise por IA', () => {
     const resultado = interpretarResultadoAnaliseIa({
       texto: JSON.stringify(resultadoValido),
       criterios,
+      textoRedacao,
     })
 
-    assert.deepEqual(resultado, resultadoValido)
+    assert.equal(
+      resultado.analisePorCriterio[0].evidencias[0]
+        .statusLocalizacao,
+      'LOCALIZADA',
+    )
+    assert.equal(
+      resultado.analisePorCriterio[0].evidencias[0]
+        .metodoLocalizacao,
+      'POSICAO_INFORMADA',
+    )
   })
 
   it('deve aceitar JSON envolvido por uma cerca Markdown', () => {
     const resultado = interpretarResultadoAnaliseIa({
       texto: `\`\`\`json\n${JSON.stringify(resultadoValido)}\n\`\`\``,
       criterios,
+      textoRedacao,
     })
 
-    assert.deepEqual(resultado, resultadoValido)
+    assert.equal(resultado.resumoGeral, resultadoValido.resumoGeral)
   })
 
   it('deve restaurar os nomes canônicos dos critérios', () => {
@@ -181,6 +220,7 @@ describe('Resultado estruturado da análise por IA', () => {
         resultadoComNomesAlterados,
       ),
       criterios,
+      textoRedacao,
     })
 
     assert.deepEqual(
@@ -200,6 +240,7 @@ describe('Resultado estruturado da análise por IA', () => {
         interpretarResultadoAnaliseIa({
           texto: '{json-invalido',
           criterios,
+          textoRedacao,
         }),
       (erro) => {
         assert.equal(erro.statusCode, 502)
@@ -229,6 +270,7 @@ describe('Resultado estruturado da análise por IA', () => {
         interpretarResultadoAnaliseIa({
           texto: JSON.stringify(resultadoIncompleto),
           criterios,
+          textoRedacao,
         }),
       (erro) => {
         assert.equal(
@@ -267,6 +309,7 @@ describe('Resultado estruturado da análise por IA', () => {
             resultadoForaDeOrdem,
           ),
           criterios,
+          textoRedacao,
         }),
       (erro) => {
         assert.equal(
@@ -290,6 +333,7 @@ describe('Resultado estruturado da análise por IA', () => {
         interpretarResultadoAnaliseIa({
           texto: JSON.stringify(resultadoComNota),
           criterios,
+          textoRedacao,
         }),
       (erro) => {
         assert.equal(
@@ -300,5 +344,116 @@ describe('Resultado estruturado da análise por IA', () => {
         return true
       },
     )
+  })
+
+  it('deve recuperar uma posição incorreta quando o trecho é único', () => {
+    const resultadoComPosicaoIncorreta = {
+      ...resultadoValido,
+      analisePorCriterio:
+        resultadoValido.analisePorCriterio.map(
+          (criterio, indice) => ({
+            ...criterio,
+            evidencias:
+              indice === 0
+                ? [
+                    {
+                      ...criterio.evidencias[0],
+                      inicio: 999,
+                      fim: 1000,
+                    },
+                  ]
+                : criterio.evidencias,
+          }),
+        ),
+    }
+
+    const resultado = interpretarResultadoAnaliseIa({
+      texto: JSON.stringify(resultadoComPosicaoIncorreta),
+      criterios,
+      textoRedacao,
+    })
+    const evidencia =
+      resultado.analisePorCriterio[0].evidencias[0]
+
+    assert.equal(evidencia.statusLocalizacao, 'LOCALIZADA')
+    assert.equal(evidencia.metodoLocalizacao, 'BUSCA_EXATA')
+    assert.equal(
+      textoRedacao.slice(evidencia.inicio, evidencia.fim),
+      evidencia.trecho,
+    )
+  })
+
+  it('deve sinalizar um trecho repetido quando a posição não o desambigua', () => {
+    const textoComRepeticao = 'repete e repete'
+    const resultadoComRepeticao = {
+      ...resultadoValido,
+      analisePorCriterio:
+        resultadoValido.analisePorCriterio.map(
+          (criterio, indice) => ({
+            ...criterio,
+            evidencias:
+              indice === 0
+                ? [
+                    {
+                      trecho: 'repete',
+                      inicio: 50,
+                      fim: 56,
+                    },
+                  ]
+                : [],
+          }),
+        ),
+    }
+
+    const resultado = interpretarResultadoAnaliseIa({
+      texto: JSON.stringify(resultadoComRepeticao),
+      criterios,
+      textoRedacao: textoComRepeticao,
+    })
+    const evidencia =
+      resultado.analisePorCriterio[0].evidencias[0]
+
+    assert.equal(evidencia.statusLocalizacao, 'AMBIGUA')
+    assert.equal(evidencia.quantidadeOcorrencias, 2)
+    assert.equal(evidencia.inicio, null)
+    assert.equal(evidencia.fim, null)
+  })
+
+  it('deve sinalizar uma evidência inexistente sem inventar posição', () => {
+    const resultadoComTrechoInexistente = {
+      ...resultadoValido,
+      analisePorCriterio:
+        resultadoValido.analisePorCriterio.map(
+          (criterio, indice) => ({
+            ...criterio,
+            evidencias:
+              indice === 0
+                ? [
+                    {
+                      trecho: 'Trecho inventado.',
+                      inicio: 0,
+                      fim: 18,
+                    },
+                  ]
+                : [],
+          }),
+        ),
+    }
+
+    const resultado = interpretarResultadoAnaliseIa({
+      texto: JSON.stringify(resultadoComTrechoInexistente),
+      criterios,
+      textoRedacao,
+    })
+    const evidencia =
+      resultado.analisePorCriterio[0].evidencias[0]
+
+    assert.equal(
+      evidencia.statusLocalizacao,
+      'NAO_LOCALIZADA',
+    )
+    assert.equal(evidencia.quantidadeOcorrencias, 0)
+    assert.equal(evidencia.inicio, null)
+    assert.equal(evidencia.fim, null)
   })
 })

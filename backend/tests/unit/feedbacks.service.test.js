@@ -8,6 +8,22 @@ import {
   salvarFeedbackRascunhoParaProfessor,
 } from '../../src/modules/feedbacks/feedbacks.service.js'
 
+const competenciasCompletas = {
+  competencia1: 160,
+  competencia2: 200,
+  competencia3: 160,
+  competencia4: 160,
+  competencia5: 160,
+}
+
+const competenciasVazias = {
+  competencia1: null,
+  competencia2: null,
+  competencia3: null,
+  competencia4: null,
+  competencia5: null,
+}
+
 describe('Serviço de rascunho de feedback', () => {
   it('deve retornar a versão salva', async () => {
     const feedbackVersao = {
@@ -21,7 +37,7 @@ describe('Serviço de rascunho de feedback', () => {
         {
           redacaoId: 'redacao-1',
           professorId: 'professor-1',
-          nota: 800,
+          ...competenciasCompletas,
           comentarioGeral: 'Comentário.',
           criterios: [],
         },
@@ -43,7 +59,7 @@ describe('Serviço de rascunho de feedback', () => {
           {
             redacaoId: 'redacao-inexistente',
             professorId: 'professor-1',
-            nota: null,
+            ...competenciasVazias,
             comentarioGeral: null,
             criterios: [],
           },
@@ -70,7 +86,7 @@ describe('Serviço de rascunho de feedback', () => {
           {
             redacaoId: 'redacao-1',
             professorId: 'professor-1',
-            nota: 700,
+            ...competenciasCompletas,
             comentarioGeral: null,
             criterios: [],
           },
@@ -254,7 +270,11 @@ describe('Serviço de publicação de feedback', () => {
             publicar: async () => ({
               status: 'RASCUNHO_INCOMPLETO',
               camposPendentes: [
-                'nota',
+                'competencia1',
+                'competencia2',
+                'competencia3',
+                'competencia4',
+                'competencia5',
                 'comentarioGeral',
               ],
               feedbackVersao: null,
@@ -266,7 +286,11 @@ describe('Serviço de publicação de feedback', () => {
         assert.equal(erro.statusCode, 422)
         assert.equal(erro.code, 'FEEDBACK_INCOMPLETE')
         assert.deepEqual(erro.details.camposPendentes, [
-          'nota',
+          'competencia1',
+          'competencia2',
+          'competencia3',
+          'competencia4',
+          'competencia5',
           'comentarioGeral',
         ])
         return true

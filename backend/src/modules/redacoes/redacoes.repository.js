@@ -271,6 +271,7 @@ export function salvarRascunhoOcr({
   temaId,
   alunoId,
   texto,
+  revisadaEm,
 }) {
   return prisma.$transaction(
     async (transaction) => {
@@ -311,7 +312,7 @@ export function salvarRascunhoOcr({
       const dadosOcr = {
         texto,
         origemTexto: 'OCR',
-        ocrRevisadoEm: null,
+        ocrRevisadoEm: revisadaEm,
         status: 'RASCUNHO',
       }
 

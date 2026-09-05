@@ -1,0 +1,125 @@
+{
+  "conjunto": "lexis-fixture-tecnica-v1",
+  "tipo": "SINTETICO",
+  "proposito": "Validar a infraestrutura do harness, o contrato estruturado e as métricas. Estes dados não medem a qualidade científica do modelo.",
+  "casos": [
+    {
+      "id": "fixture-evidencia-localizada",
+      "tema": {
+        "enunciado": "Desafios para a inclusão digital no Brasil",
+        "descricao": "Texto dissertativo-argumentativo.",
+        "instrucoes": null
+      },
+      "texto": "A Constituição Federal de 1988 assegura a educação como direito de todos. Esse repertório sustenta a tese sobre inclusão digital.",
+      "criterios": [
+        {
+          "id": "fixture-c2-1",
+          "nome": "Legitimação",
+          "descricao": "Verifica se o repertório é legitimado por fonte reconhecível.",
+          "ordem": 1
+        },
+        {
+          "id": "fixture-c2-2",
+          "nome": "Pertinência",
+          "descricao": "Verifica a relação do repertório com o tema.",
+          "ordem": 2
+        },
+        {
+          "id": "fixture-c2-3",
+          "nome": "Uso produtivo",
+          "descricao": "Verifica a articulação do repertório à argumentação.",
+          "ordem": 3
+        }
+      ],
+      "referenciaHumana": {
+        "responsavel": "FIXTURE_SINTETICA_NAO_HUMANA",
+        "evidencias": [
+          {
+            "criterioOrdem": 1,
+            "trecho": "A Constituição Federal de 1988",
+            "inicio": 0,
+            "fim": 30
+          }
+        ]
+      },
+      "respostaFixture": {
+        "resumoGeral": "A redação apresenta um repertório reconhecível.",
+        "pontosFortes": ["Há referência normativa explícita."],
+        "pontosDeAtencao": ["O desenvolvimento é muito breve."],
+        "analisePorCriterio": [
+          {
+            "ordem": 1,
+            "criterio": "Legitimação",
+            "diagnostico": "A Constituição é uma fonte reconhecível.",
+            "evidencias": [{"trecho": "A Constituição Federal de 1988", "inicio": 0, "fim": 30}],
+            "orientacaoAoProfessor": "Confirme a referência e seu contexto."
+          },
+          {
+            "ordem": 2,
+            "criterio": "Pertinência",
+            "diagnostico": "A referência se relaciona à educação.",
+            "evidencias": [],
+            "orientacaoAoProfessor": "Avalie a relação com inclusão digital."
+          },
+          {
+            "ordem": 3,
+            "criterio": "Uso produtivo",
+            "diagnostico": "A articulação é apenas indicada.",
+            "evidencias": [],
+            "orientacaoAoProfessor": "Verifique se a tese foi desenvolvida."
+          }
+        ],
+        "observacoesFinais": "Fixture técnica; revisão docente obrigatória."
+      }
+    },
+    {
+      "id": "fixture-evidencia-inventada",
+      "tema": {
+        "enunciado": "Desafios para a inclusão digital no Brasil",
+        "descricao": "Texto dissertativo-argumentativo.",
+        "instrucoes": null
+      },
+      "texto": "A exclusão digital limita o acesso de estudantes a oportunidades educacionais.",
+      "criterios": [
+        {"id": "fixture-c2-1", "nome": "Legitimação", "descricao": "Verifica a fonte do repertório.", "ordem": 1},
+        {"id": "fixture-c2-2", "nome": "Pertinência", "descricao": "Verifica a relação com o tema.", "ordem": 2},
+        {"id": "fixture-c2-3", "nome": "Uso produtivo", "descricao": "Verifica a articulação argumentativa.", "ordem": 3}
+      ],
+      "referenciaHumana": {
+        "responsavel": "FIXTURE_SINTETICA_NAO_HUMANA",
+        "evidencias": [
+          {"criterioOrdem": 2, "trecho": "A exclusão digital", "inicio": 0, "fim": 18}
+        ]
+      },
+      "respostaFixture": {
+        "resumoGeral": "O texto aborda o tema.",
+        "pontosFortes": ["O problema é apresentado."],
+        "pontosDeAtencao": ["Não há fonte explícita."],
+        "analisePorCriterio": [
+          {
+            "ordem": 1,
+            "criterio": "Legitimação",
+            "diagnostico": "A resposta externa inventou uma fonte.",
+            "evidencias": [{"trecho": "Segundo dados do IBGE", "inicio": 0, "fim": 22}],
+            "orientacaoAoProfessor": "Desconsidere evidências não localizadas."
+          },
+          {
+            "ordem": 2,
+            "criterio": "Pertinência",
+            "diagnostico": "O texto é pertinente ao tema.",
+            "evidencias": [],
+            "orientacaoAoProfessor": "Confirme a pertinência."
+          },
+          {
+            "ordem": 3,
+            "criterio": "Uso produtivo",
+            "diagnostico": "Não há desenvolvimento suficiente.",
+            "evidencias": [],
+            "orientacaoAoProfessor": "Solicite aprofundamento."
+          }
+        ],
+        "observacoesFinais": "Fixture técnica; revisão docente obrigatória."
+      }
+    }
+  ]
+}

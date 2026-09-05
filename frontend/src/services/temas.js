@@ -89,3 +89,11 @@ export async function obterTemaDoAluno(
 
   return resposta.data.data.tema
 }
+
+export async function obterModeloCompetenciaDois() {
+  const resposta = await api.get(
+    '/api/modelos-avaliacao/competencia-2',
+  )
+
+  return resposta.data.data.modelo
+}

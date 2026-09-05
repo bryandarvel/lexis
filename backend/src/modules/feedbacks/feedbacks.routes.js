@@ -138,7 +138,7 @@ export function criarFeedbacksRouter({
    * /api/redacoes/{redacaoId}/feedback:
    *   put:
    *     summary: Salva o rascunho da correção
-   *     description: Cria ou atualiza a versão de rascunho do feedback humano. Não publica a nota nem os comentários para o aluno.
+   *     description: Cria ou atualiza a versão de rascunho do feedback humano. A nota total é calculada pela soma das cinco competências e nada é publicado para o aluno nesta etapa.
    *     tags:
    *       - Feedbacks
    *     security:
@@ -158,14 +158,38 @@ export function criarFeedbacksRouter({
    *             type: object
    *             additionalProperties: false
    *             required:
-   *               - nota
+   *               - competencia1
+   *               - competencia2
+   *               - competencia3
+   *               - competencia4
+   *               - competencia5
    *               - comentarioGeral
    *               - criterios
    *             properties:
-   *               nota:
+   *               competencia1:
    *                 type: integer
    *                 minimum: 0
-   *                 maximum: 1000
+   *                 maximum: 200
+   *                 nullable: true
+   *               competencia2:
+   *                 type: integer
+   *                 minimum: 0
+   *                 maximum: 200
+   *                 nullable: true
+   *               competencia3:
+   *                 type: integer
+   *                 minimum: 0
+   *                 maximum: 200
+   *                 nullable: true
+   *               competencia4:
+   *                 type: integer
+   *                 minimum: 0
+   *                 maximum: 200
+   *                 nullable: true
+   *               competencia5:
+   *                 type: integer
+   *                 minimum: 0
+   *                 maximum: 200
    *                 nullable: true
    *               comentarioGeral:
    *                 type: string

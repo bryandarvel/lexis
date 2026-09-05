@@ -70,7 +70,7 @@ app.use('/api', feedbacksRouter)
 app.use('/api', notificacoesRouter)
 
 /**
- * eenapi
+ * @openapi
  * /health:
  *   get:
  *     summary: Verifica a disponibilidade da API

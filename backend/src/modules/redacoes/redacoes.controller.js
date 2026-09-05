@@ -1,9 +1,11 @@
 import {
+  confirmarRevisaoOcrParaAluno,
   enviarRedacaoParaAluno,
   listarRedacoesParaAluno,
   listarRedacoesParaProfessor,
   obterRedacaoParaAluno,
   obterRedacaoParaProfessor,
+  revisarLinguagemParaAluno,
   salvarRascunhoParaAluno,
   transcreverImagemParaAluno,
 } from './redacoes.service.js'
@@ -32,7 +34,7 @@ export async function transcreverImagemController(
   const arquivo = req.file
 
   try {
-    const redacao =
+    const resultadoOcr =
       await transcreverImagemParaAluno({
         temaId: req.params.temaId,
         alunoId: req.auth.usuarioId,
@@ -41,10 +43,11 @@ export async function transcreverImagemController(
 
     return res.status(200).json({
       data: {
-        redacao,
-        revisaoObrigatoria:
-          redacao.origemTexto === 'OCR' &&
-          !redacao.ocrRevisadoEm,
+        textoExtraido: resultadoOcr.texto,
+        codigoSaida: resultadoOcr.codigoSaida,
+        tempoProcessamentoMs:
+          resultadoOcr.tempoProcessamentoMs,
+        revisaoObrigatoria: true,
       },
     })
   } finally {
@@ -131,6 +134,41 @@ export async function obterRedacaoProfessorController(
   return res.status(200).json({
     data: {
       redacao,
+    },
+  })
+}
+
+export async function confirmarRevisaoOcrController(
+  req,
+  res,
+) {
+  const redacao =
+    await confirmarRevisaoOcrParaAluno({
+      temaId: req.params.temaId,
+      alunoId: req.auth.usuarioId,
+      texto: req.body.texto,
+    })
+
+  return res.status(200).json({
+    data: {
+      redacao,
+    },
+  })
+}
+
+export async function revisarLinguagemController(
+  req,
+  res,
+) {
+  const revisao = await revisarLinguagemParaAluno({
+    temaId: req.params.temaId,
+    alunoId: req.auth.usuarioId,
+    texto: req.body.texto,
+  })
+
+  return res.status(200).json({
+    data: {
+      revisao,
     },
   })
 }

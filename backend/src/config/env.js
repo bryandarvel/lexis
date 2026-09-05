@@ -112,6 +112,29 @@ const envSchema = z
       .max(180000)
       .default(120000),
 
+    LANGUAGETOOL_ENABLED: booleanoEnv,
+
+    LANGUAGETOOL_API_URL: z
+      .string()
+      .url()
+      .default(
+        'http://127.0.0.1:8010/v2/check',
+      ),
+
+    LANGUAGETOOL_LANGUAGE: z
+      .string()
+      .trim()
+      .min(2)
+      .max(20)
+      .default('pt-BR'),
+
+    LANGUAGETOOL_TIMEOUT_MS: z.coerce
+      .number()
+      .int()
+      .min(1000)
+      .max(30000)
+      .default(8000),
+
     EMAIL_ENABLED: booleanoEnv,
 
     RESEND_API_KEY: chaveOpcional,

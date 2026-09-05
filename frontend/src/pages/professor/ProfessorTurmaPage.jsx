@@ -150,11 +150,11 @@ export default function ProfessorTurmaPage() {
 
         <div className="mx-auto max-w-7xl">
           <Link
-            to="/professor"
+            to="/professor/turmas"
             className="inline-flex items-center gap-2 rounded-full border border-lexis-300/20 bg-lexis-950/40 px-4 py-2 text-sm font-semibold text-lexis-200 transition hover:border-lexis-300/50 hover:text-white"
           >
             <span aria-hidden="true">←</span>
-            Voltar ao painel
+            Voltar às turmas
           </Link>
 
           {pagina.status ===
@@ -232,6 +232,15 @@ export default function ProfessorTurmaPage() {
                   </dd>
                 </div>
               </dl>
+
+              {pagina.turma.ativa && (
+                <Link
+                  to={`/professor/turmas/${turmaId}/temas/novo`}
+                  className="mt-8 inline-flex min-h-12 items-center rounded-[10px] bg-lexis-400 px-5 font-bold text-white transition hover:bg-lexis-300 hover:text-lexis-950"
+                >
+                  Criar tema de redação
+                </Link>
+              )}
             </div>
           )}
         </div>

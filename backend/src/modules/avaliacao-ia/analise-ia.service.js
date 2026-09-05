@@ -139,6 +139,7 @@ export async function solicitarAnaliseIaParaProfessor(
     const resultadoEstruturado = interpretar({
       texto: resposta.texto,
       criterios: inicio.redacao.tema.criterios,
+      textoRedacao: inicio.redacao.texto,
     })
 
     return concluir({

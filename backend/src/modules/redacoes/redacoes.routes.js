@@ -11,6 +11,9 @@ import {
   limitarOcr,
 } from '../../middlewares/ocr-rate-limiter.js'
 import {
+  limitarRevisoesLinguisticas,
+} from '../../middlewares/language-tool-rate-limiter.js'
+import {
   receberImagemOcr,
 } from '../../middlewares/upload-ocr-image.js'
 
@@ -21,11 +24,13 @@ import {
 } from '../../middlewares/validate-request.js'
 
 import {
+  confirmarRevisaoOcrController,
   enviarRedacaoController,
   listarRedacoesAlunoController,
   listarRedacoesProfessorController,
   obterRedacaoAlunoController,
   obterRedacaoProfessorController,
+  revisarLinguagemController,
   salvarRascunhoController,
   transcreverImagemController,
 } from './redacoes.controller.js'
@@ -98,10 +103,66 @@ redacoesRouter.put(
 
 /**
  * @openapi
+ * /api/aluno/temas/{temaId}/redacao/revisao-linguistica:
+ *   post:
+ *     summary: Solicita uma revisão linguística opcional
+ *     description: Envia o texto informado ao LanguageTool configurado. Uma indisponibilidade retorna falha aberta e nunca impede o salvamento ou o envio da redação.
+ *     tags:
+ *       - Redações
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: temaId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             additionalProperties: false
+ *             required:
+ *               - texto
+ *             properties:
+ *               texto:
+ *                 type: string
+ *                 maxLength: 20000
+ *     responses:
+ *       '200':
+ *         description: Revisão concluída, desativada ou indisponível em modo fail-open
+ *       '401':
+ *         description: Autenticação necessária
+ *       '403':
+ *         description: Recurso exclusivo para alunos
+ *       '404':
+ *         description: Tema indisponível para o aluno
+ *       '409':
+ *         description: A redação já foi enviada
+ *       '422':
+ *         description: Texto inválido
+ *       '429':
+ *         description: Limite local de revisões atingido
+ */
+redacoesRouter.post(
+  '/aluno/temas/:temaId/redacao/revisao-linguistica',
+  autenticarAccessToken,
+  somenteAluno,
+  validarParams(temaRedacaoParamsSchema),
+  limitarRevisoesLinguisticas,
+  validarBody(salvarRascunhoSchema),
+  revisarLinguagemController,
+)
+
+/**
+ * @openapi
  * /api/aluno/temas/{temaId}/redacao/ocr:
  *   post:
  *     summary: Extrai o texto de uma redação manuscrita
- *     description: Recebe uma imagem JPEG ou PNG, extrai seu texto e salva um rascunho que deverá ser revisado pelo aluno.
+ *     description: Recebe uma imagem JPEG ou PNG e devolve o texto extraído para revisão, sem substituir o rascunho atual.
  *     tags:
  *       - Redações
  *     security:
@@ -128,7 +189,7 @@ redacoesRouter.put(
  *                 description: Imagem JPEG ou PNG com até 1 MB
  *     responses:
  *       '200':
- *         description: Texto extraído e salvo como rascunho
+ *         description: Texto extraído e aguardando revisão explícita
  *       '401':
  *         description: Autenticação necessária
  *       '403':
@@ -351,4 +412,57 @@ redacoesRouter.get(
   somenteProfessor,
   validarParams(redacaoParamsSchema),
   obterRedacaoProfessorController,
+)
+
+/**
+ * @openapi
+ * /api/aluno/temas/{temaId}/redacao/ocr/revisao:
+ *   put:
+ *     summary: Confirma o texto revisado de uma transcrição OCR
+ *     description: Salva como rascunho OCR somente o texto que o aluno revisou e aceitou explicitamente.
+ *     tags:
+ *       - Redações
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: temaId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             additionalProperties: false
+ *             required:
+ *               - texto
+ *             properties:
+ *               texto:
+ *                 type: string
+ *                 maxLength: 20000
+ *     responses:
+ *       '200':
+ *         description: Texto revisado salvo como rascunho OCR
+ *       '401':
+ *         description: Autenticação necessária
+ *       '403':
+ *         description: Recurso exclusivo para alunos
+ *       '404':
+ *         description: Tema indisponível para o aluno
+ *       '409':
+ *         description: A redação já foi enviada
+ *       '422':
+ *         description: Texto revisado inválido
+ */
+redacoesRouter.put(
+  '/aluno/temas/:temaId/redacao/ocr/revisao',
+  autenticarAccessToken,
+  somenteAluno,
+  validarParams(temaRedacaoParamsSchema),
+  validarBody(salvarRascunhoSchema),
+  confirmarRevisaoOcrController,
 )

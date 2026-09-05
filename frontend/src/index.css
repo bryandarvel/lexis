@@ -144,6 +144,17 @@ h2,
   box-shadow: inset 0 1px rgba(255, 255, 255, 0.12);
 }
 
+.app-header {
+  background: rgba(0, 32, 73, 0.9);
+  background: color-mix(in srgb, var(--surface-shell-1) 90%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+[data-theme="light"] .surface-shell .text-white {
+  color: #f7fbff;
+}
+
 .theme-toggle {
   display: inline-flex;
   min-height: 2.75rem;
@@ -382,6 +393,10 @@ h2,
 
 [data-theme="light"] .text-white {
   color: var(--color-lexis-50);
+}
+
+[data-theme="dark"] .bg-lexis-400.text-white {
+  color: var(--color-lexis-950);
 }
 
 @media (prefers-reduced-motion: reduce) {

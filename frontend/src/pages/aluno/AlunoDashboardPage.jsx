@@ -348,9 +348,17 @@ export default function AlunoDashboardPage() {
                     to={
                       essay?.status === 'AVALIADA'
                         ? `/aluno/redacoes/${essay.id}/feedback`
-                        : undefined
+                        : `/aluno/temas/${theme.id}/redacao`
                     }
-                    actionLabel="Abrir correção"
+                    actionLabel={
+                      essay?.status === 'AVALIADA'
+                        ? 'Abrir correção'
+                        : essay?.status === 'ENVIADA'
+                          ? 'Consultar entrega'
+                          : essay
+                            ? 'Continuar redação'
+                            : 'Começar redação'
+                    }
                   />
                 )
               },
@@ -402,9 +410,15 @@ export default function AlunoDashboardPage() {
                     to={
                       essay.status === 'AVALIADA'
                         ? `/aluno/redacoes/${essay.id}/feedback`
-                        : undefined
+                        : `/aluno/temas/${essay.temaId}/redacao`
                     }
-                    actionLabel="Abrir correção"
+                    actionLabel={
+                      essay.status === 'AVALIADA'
+                        ? 'Abrir correção'
+                        : essay.status === 'ENVIADA'
+                          ? 'Consultar entrega'
+                          : 'Continuar redação'
+                    }
                   />
                 ),
               )}
