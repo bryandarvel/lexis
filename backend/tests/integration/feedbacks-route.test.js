@@ -61,7 +61,11 @@ describe('PUT /api/redacoes/:redacaoId/feedback', () => {
     })
 
     const body = {
-      nota: 850,
+      competencia1: 160,
+      competencia2: 200,
+      competencia3: 160,
+      competencia4: 160,
+      competencia5: 160,
       comentarioGeral: 'Comentário geral.',
       criterios: [
         {
@@ -105,7 +109,11 @@ describe('PUT /api/redacoes/:redacaoId/feedback', () => {
         `Bearer ${criarToken('ALUNO')}`,
       )
       .send({
-        nota: null,
+        competencia1: null,
+        competencia2: null,
+        competencia3: null,
+        competencia4: null,
+        competencia5: null,
         comentarioGeral: null,
         criterios: [],
       })
@@ -114,7 +122,7 @@ describe('PUT /api/redacoes/:redacaoId/feedback', () => {
     assert.equal(resposta.body.error.code, 'FORBIDDEN')
   })
 
-  it('deve validar o intervalo da nota antes do serviço', async () => {
+  it('deve validar o intervalo da competência antes do serviço', async () => {
     const app = criarAplicacao(async () => {
       throw new Error('Não deveria ser chamado.')
     })
@@ -128,7 +136,11 @@ describe('PUT /api/redacoes/:redacaoId/feedback', () => {
         `Bearer ${criarToken('PROFESSOR')}`,
       )
       .send({
-        nota: -1,
+        competencia1: -1,
+        competencia2: 160,
+        competencia3: 160,
+        competencia4: 160,
+        competencia5: 160,
         comentarioGeral: null,
         criterios: [],
       })
@@ -287,6 +299,11 @@ describe('GET /api/aluno/redacoes/:redacaoId/feedback', () => {
       numero: 1,
       status: 'PUBLICADA',
       nota: 850,
+      competencia1: 160,
+      competencia2: 200,
+      competencia3: 160,
+      competencia4: 160,
+      competencia5: 170,
     }
 
     const app = criarAplicacao(

@@ -9,6 +9,7 @@ import {
 } from 'react-router'
 
 import DashboardLayout from '../../layouts/DashboardLayout.jsx'
+import { COMPETENCIAS_ENEM } from '../../constants/competencias-enem.js'
 import {
   obterFeedbackAluno,
 } from '../../services/feedbacks.js'
@@ -137,6 +138,11 @@ export default function AlunoFeedbackPage() {
   }
 
   const { essay, feedback } = page
+  const competenciasDisponiveis =
+    COMPETENCIAS_ENEM.filter(
+      ({ campo }) =>
+        Number.isInteger(feedback[campo]),
+    )
 
   return (
     <DashboardLayout>
@@ -208,6 +214,34 @@ export default function AlunoFeedbackPage() {
                   de 1000 pontos
                 </p>
               </section>
+
+              {competenciasDisponiveis.length > 0 && (
+                <section className="surface-card rounded-[14px] p-6">
+                  <h2 className="text-sm font-bold uppercase tracking-[0.16em] text-lexis-300">
+                    Notas por competência
+                  </h2>
+                  <dl className="mt-4 space-y-4">
+                    {competenciasDisponiveis.map(
+                      ({ campo, numero, titulo }) => (
+                        <div
+                          key={campo}
+                          className="border-b border-lexis-200/10 pb-4 last:border-0 last:pb-0"
+                        >
+                          <dt className="text-sm font-semibold text-white">
+                            Competência {numero}
+                          </dt>
+                          <dd className="mt-1 flex items-start justify-between gap-4 text-xs leading-5 text-lexis-200">
+                            <span>{titulo}</span>
+                            <strong className="shrink-0 text-base text-white">
+                              {feedback[campo]}/200
+                            </strong>
+                          </dd>
+                        </div>
+                      ),
+                    )}
+                  </dl>
+                </section>
+              )}
 
               <section className="rounded-2xl border border-lexis-200/10 bg-lexis-900/70 p-6">
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-lexis-300">

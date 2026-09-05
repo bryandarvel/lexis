@@ -16,7 +16,14 @@ import {
 } from '../../services/redacoes.js'
 import {
   obterTemaProfessor,
+  substituirCriterios,
 } from '../../services/temas.js'
+import {
+  criarCriterioVazio,
+  criarCriteriosDoModelo,
+  moverCriterio,
+  validarCriteriosTema,
+} from '../../utils/topic-form.js'
 
 function formatarDataHora(value) {
   if (!value) {
@@ -80,6 +87,14 @@ export default function ProfessorTemaPage() {
     redacoes: [],
     mensagem: '',
   })
+  const [editandoCriterios, setEditandoCriterios] =
+    useState(false)
+  const [criteriosEditados, setCriteriosEditados] =
+    useState([])
+  const [acaoCriterios, setAcaoCriterios] =
+    useState(null)
+  const [avisoCriterios, setAvisoCriterios] =
+    useState(null)
 
   useEffect(() => {
     let componentActive = true
@@ -119,6 +134,11 @@ export default function ProfessorTemaPage() {
             : [],
           mensagem: '',
         })
+        setCriteriosEditados(
+          criarCriteriosDoModelo({
+            criterios: tema.criterios,
+          }),
+        )
       } catch (error) {
         if (!componentActive) {
           return
@@ -147,6 +167,75 @@ export default function ProfessorTemaPage() {
     pagina.tema?.turma?.id ??
     pagina.tema?.turmaId
 
+  function atualizarCriterio(idLocal, campo, valor) {
+    setCriteriosEditados((criterios) =>
+      criterios.map((criterio) =>
+        criterio.idLocal === idLocal
+          ? { ...criterio, [campo]: valor }
+          : criterio,
+      ),
+    )
+    setAvisoCriterios(null)
+  }
+
+  function cancelarEdicaoCriterios() {
+    setCriteriosEditados(
+      criarCriteriosDoModelo({
+        criterios: pagina.tema.criterios,
+      }),
+    )
+    setEditandoCriterios(false)
+    setAvisoCriterios(null)
+  }
+
+  async function handleSalvarCriterios(evento) {
+    evento.preventDefault()
+    const erro = validarCriteriosTema(
+      criteriosEditados,
+    )
+
+    if (erro) {
+      setAvisoCriterios({ tipo: 'erro', mensagem: erro })
+      return
+    }
+
+    setAcaoCriterios('salvando')
+    setAvisoCriterios(null)
+
+    try {
+      const tema = await substituirCriterios(
+        temaId,
+        criteriosEditados.map(
+          ({ nome, descricao }) => ({
+            nome,
+            descricao,
+          }),
+        ),
+      )
+
+      setPagina((atual) => ({ ...atual, tema }))
+      setCriteriosEditados(
+        criarCriteriosDoModelo({
+          criterios: tema.criterios,
+        }),
+      )
+      setEditandoCriterios(false)
+      setAvisoCriterios({
+        tipo: 'sucesso',
+        mensagem: 'Critérios atualizados e reordenados.',
+      })
+    } catch (error) {
+      setAvisoCriterios({
+        tipo: 'erro',
+        mensagem:
+          error?.response?.data?.error?.message ??
+          'Não foi possível atualizar os critérios.',
+      })
+    } finally {
+      setAcaoCriterios(null)
+    }
+  }
+
   return (
     <DashboardLayout>
       <motion.section
@@ -174,12 +263,14 @@ export default function ProfessorTemaPage() {
             to={
               turmaId
                 ? `/professor/turmas/${turmaId}`
-                : '/professor'
+                : '/professor/turmas'
             }
             className="inline-flex items-center gap-2 rounded-full border border-lexis-300/20 bg-lexis-950/40 px-4 py-2 text-sm font-semibold text-lexis-200 transition hover:border-lexis-300/50 hover:text-white"
           >
             <span aria-hidden="true">←</span>
-            Voltar para a turma
+            {turmaId
+              ? 'Voltar para a turma'
+              : 'Voltar às turmas'}
           </Link>
 
           {pagina.status ===
@@ -296,6 +387,24 @@ export default function ProfessorTemaPage() {
               Critérios de correção
             </h2>
 
+            {pagina.tema.ativo &&
+              !pagina.tema.criteriosBloqueados &&
+              !editandoCriterios && (
+                <button
+                  type="button"
+                  onClick={() => setEditandoCriterios(true)}
+                  className="mt-5 min-h-11 rounded-[10px] border border-lexis-300/30 px-4 font-bold text-white"
+                >
+                  Editar critérios
+                </button>
+              )}
+
+            {pagina.tema.criteriosBloqueados && (
+              <p className="mt-5 max-w-3xl rounded-[10px] border border-amber-300/20 bg-amber-950/20 p-4 text-sm leading-6 text-amber-100">
+                Os critérios foram congelados no recebimento da primeira redação, preservando a versão usada na correção e no snapshot da IA.
+              </p>
+            )}
+
             <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {pagina.tema.criterios
                 ?.length > 0 ? (
@@ -340,6 +449,171 @@ export default function ProfessorTemaPage() {
                 </p>
               )}
             </div>
+
+            {editandoCriterios && (
+              <form
+                onSubmit={handleSalvarCriterios}
+                className="mt-8 rounded-[14px] border border-lexis-300/20 bg-lexis-950/45 p-5"
+              >
+                <h3 className="text-xl font-semibold text-white">
+                  Editar antes do bloqueio
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-lexis-200">
+                  Você mantém autonomia sobre nomes, descrições e ordem até a primeira entrega.
+                </p>
+                <ol className="mt-5 space-y-4">
+                  {criteriosEditados.map((criterio, indice) => (
+                    <li
+                      key={criterio.idLocal}
+                      className="rounded-[10px] border border-lexis-200/15 p-4"
+                    >
+                      <div className="flex flex-wrap justify-between gap-3">
+                        <strong className="text-white">
+                          Critério {indice + 1}
+                        </strong>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setCriteriosEditados((itens) =>
+                                moverCriterio(itens, indice, -1),
+                              )
+                            }
+                            disabled={indice === 0}
+                            aria-label={`Mover critério ${indice + 1} para cima`}
+                            className="rounded-lg border border-lexis-200/20 px-3 py-2 text-sm text-white disabled:opacity-40"
+                          >
+                            ↑
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setCriteriosEditados((itens) =>
+                                moverCriterio(itens, indice, 1),
+                              )
+                            }
+                            disabled={
+                              indice === criteriosEditados.length - 1
+                            }
+                            aria-label={`Mover critério ${indice + 1} para baixo`}
+                            className="rounded-lg border border-lexis-200/20 px-3 py-2 text-sm text-white disabled:opacity-40"
+                          >
+                            ↓
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setCriteriosEditados((itens) =>
+                                itens.filter(
+                                  (item) =>
+                                    item.idLocal !== criterio.idLocal,
+                                ),
+                              )
+                            }
+                            disabled={criteriosEditados.length === 1}
+                            className="rounded-lg border border-red-300/20 px-3 py-2 text-sm text-red-200 disabled:opacity-40"
+                          >
+                            Remover
+                          </button>
+                        </div>
+                      </div>
+                      <label className="mt-4 block text-sm font-semibold text-white">
+                        Nome
+                        <input
+                          value={criterio.nome}
+                          onChange={(evento) =>
+                            atualizarCriterio(
+                              criterio.idLocal,
+                              'nome',
+                              evento.target.value,
+                            )
+                          }
+                          minLength={2}
+                          maxLength={120}
+                          required
+                          className="mt-2 min-h-11 w-full rounded-[10px] border border-lexis-200/20 bg-lexis-950 px-4 text-white"
+                        />
+                      </label>
+                      <label className="mt-4 block text-sm font-semibold text-white">
+                        Descrição
+                        <textarea
+                          value={criterio.descricao}
+                          onChange={(evento) =>
+                            atualizarCriterio(
+                              criterio.idLocal,
+                              'descricao',
+                              evento.target.value,
+                            )
+                          }
+                          minLength={5}
+                          maxLength={2000}
+                          rows={3}
+                          required
+                          className="mt-2 w-full rounded-[10px] border border-lexis-200/20 bg-lexis-950 px-4 py-3 text-white"
+                        />
+                      </label>
+                    </li>
+                  ))}
+                </ol>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCriteriosEditados((itens) => [
+                      ...itens,
+                      criarCriterioVazio(),
+                    ])
+                  }
+                  disabled={criteriosEditados.length >= 10}
+                  className="mt-4 min-h-11 rounded-[10px] bg-lexis-800 px-4 font-bold text-white disabled:opacity-40"
+                >
+                  + Adicionar critério
+                </button>
+                {avisoCriterios && (
+                  <p
+                    role={
+                      avisoCriterios.tipo === 'erro'
+                        ? 'alert'
+                        : 'status'
+                    }
+                    className={`mt-4 rounded-[10px] border p-4 text-sm ${
+                      avisoCriterios.tipo === 'erro'
+                        ? 'border-red-300/20 text-red-100'
+                        : 'border-emerald-300/20 text-emerald-100'
+                    }`}
+                  >
+                    {avisoCriterios.mensagem}
+                  </p>
+                )}
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <button
+                    type="submit"
+                    disabled={acaoCriterios !== null}
+                    className="min-h-11 rounded-[10px] bg-lexis-400 px-4 font-bold text-white disabled:opacity-50"
+                  >
+                    {acaoCriterios === 'salvando'
+                      ? 'Salvando...'
+                      : 'Salvar critérios'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={cancelarEdicaoCriterios}
+                    disabled={acaoCriterios !== null}
+                    className="min-h-11 rounded-[10px] border border-lexis-200/20 px-4 font-bold text-lexis-100"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {!editandoCriterios && avisoCriterios && (
+              <p
+                role="status"
+                className="mt-5 rounded-[10px] border border-emerald-300/20 bg-emerald-950/20 p-4 text-sm text-emerald-100"
+              >
+                {avisoCriterios.mensagem}
+              </p>
+            )}
           </div>
         </section>
       )}

@@ -13,7 +13,7 @@ import { interpretarErroApi } from '../../utils/api-error.js'
 
 function obterRotaInicial(papel) {
   return papel === 'PROFESSOR'
-    ? '/professor'
+    ? '/professor/turmas'
     : '/aluno'
 }
 

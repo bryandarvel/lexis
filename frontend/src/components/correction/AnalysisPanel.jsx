@@ -1,3 +1,5 @@
+import { classificarEvidencia } from '../../utils/ai-evidence.js'
+
 function formatarStatusAnalise(status) {
   const statuses = {
     PENDENTE: 'Pendente',
@@ -203,14 +205,31 @@ export default function AnalysisPanel({
 
                         <ul className="mt-3 space-y-2 text-sm leading-6 text-lexis-100">
                           {criterion.evidencias.map(
-                            (evidence, index) => (
-                              <li
-                                key={`${evidence}-${index}`}
-                                className="rounded-lg bg-lexis-950/50 px-4 py-3"
-                              >
-                                {evidence}
-                              </li>
-                            ),
+                            (evidence, index) => {
+                              const dados =
+                                classificarEvidencia(
+                                  evidence,
+                                )
+
+                              return (
+                                <li
+                                  key={`${dados.trecho}-${index}`}
+                                  className="rounded-lg bg-lexis-950/50 px-4 py-3"
+                                >
+                                  <q>{dados.trecho}</q>
+                                  <span
+                                    className={`mt-2 block text-xs font-semibold ${
+                                      dados.status ===
+                                      'LOCALIZADA'
+                                        ? 'text-emerald-300'
+                                        : 'text-amber-300'
+                                    }`}
+                                  >
+                                    {dados.rotulo}
+                                  </span>
+                                </li>
+                              )
+                            },
                           )}
                         </ul>
                       </>

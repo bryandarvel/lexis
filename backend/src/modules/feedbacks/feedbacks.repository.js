@@ -1,11 +1,22 @@
 import { prisma } from '../../config/prisma.js'
 
+import {
+  calcularNotaTotalCompetencias,
+  CAMPOS_COMPETENCIAS,
+  extrairCompetencias,
+} from './feedbacks.competencias.js'
+
 const feedbackVersaoSelect = {
   id: true,
   feedbackId: true,
   numero: true,
   professorId: true,
   nota: true,
+  competencia1: true,
+  competencia2: true,
+  competencia3: true,
+  competencia4: true,
+  competencia5: true,
   comentarioGeral: true,
   status: true,
   publicadoEm: true,
@@ -126,13 +137,17 @@ function criarDadosCriterios(criterios) {
   }))
 }
 
-export function salvarFeedbackRascunho({
-  redacaoId,
-  professorId,
-  nota,
-  comentarioGeral,
-  criterios,
-}) {
+export function salvarFeedbackRascunho(dados) {
+  const {
+    redacaoId,
+    professorId,
+    comentarioGeral,
+    criterios,
+  } = dados
+  const competencias = extrairCompetencias(dados)
+  const nota =
+    calcularNotaTotalCompetencias(competencias)
+
   return prisma.$transaction(
     async (transaction) => {
       await bloquearRedacao(transaction, redacaoId)
@@ -197,6 +212,7 @@ export function salvarFeedbackRascunho({
             },
             data: {
               nota,
+              ...competencias,
               comentarioGeral,
               criterios: {
                 deleteMany: {},
@@ -232,6 +248,7 @@ export function salvarFeedbackRascunho({
             numero: (ultimaVersao?.numero ?? 0) + 1,
             professorId,
             nota,
+            ...competencias,
             comentarioGeral,
             status: 'RASCUNHO',
             criterios: {
@@ -346,6 +363,11 @@ export function publicarFeedback({
             select: {
               id: true,
               nota: true,
+              competencia1: true,
+              competencia2: true,
+              competencia3: true,
+              competencia4: true,
+              competencia5: true,
               comentarioGeral: true,
             },
           },
@@ -364,9 +386,11 @@ export function publicarFeedback({
 
       const camposPendentes = []
 
-      if (rascunho.nota === null) {
-        camposPendentes.push('nota')
-      }
+      CAMPOS_COMPETENCIAS.forEach((campo) => {
+        if (rascunho[campo] === null) {
+          camposPendentes.push(campo)
+        }
+      })
 
       if (!rascunho.comentarioGeral?.trim()) {
         camposPendentes.push('comentarioGeral')

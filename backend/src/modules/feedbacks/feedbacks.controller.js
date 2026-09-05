@@ -86,7 +86,11 @@ export function criarSalvarFeedbackRascunhoController({
     const feedback = await salvarFeedback({
       redacaoId: req.params.redacaoId,
       professorId: req.auth.usuarioId,
-      nota: req.body.nota,
+      competencia1: req.body.competencia1,
+      competencia2: req.body.competencia2,
+      competencia3: req.body.competencia3,
+      competencia4: req.body.competencia4,
+      competencia5: req.body.competencia5,
       comentarioGeral: req.body.comentarioGeral,
       criterios: req.body.criterios,
     })

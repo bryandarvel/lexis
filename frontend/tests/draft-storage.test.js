@@ -42,7 +42,11 @@ test('salva somente o valor recebido no rascunho escopado', () => {
     'redacao-1',
   )
   const valor = {
-    score: '850',
+    competencia1: '160',
+    competencia2: '200',
+    competencia3: '160',
+    competencia4: '160',
+    competencia5: '160',
     generalComment: 'Bom desenvolvimento.',
     criterionComments: {
       criterio1: 'Revisar a conclusão.',
@@ -68,8 +72,8 @@ test('logout remove somente rascunhos do usuário atual', () => {
     'redacao-2',
   )
 
-  salvarRascunho(chaveAtual, { score: '900' })
-  salvarRascunho(chaveOutro, { score: '700' })
+  salvarRascunho(chaveAtual, { competencia1: '200' })
+  salvarRascunho(chaveOutro, { competencia1: '160' })
   globalThis.localStorage.setItem(
     'lexis:preferencia:tema',
     'dark',

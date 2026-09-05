@@ -17,6 +17,7 @@ import {
   criarTemaController,
   listarTemasAlunoController,
   listarTemasController,
+  obterModeloCompetenciaDoisController,
   obterTemaAlunoController,
   obterTemaController,
   substituirCriteriosController,
@@ -34,6 +35,31 @@ export const temasRouter = Router()
 
 const somenteProfessor = autorizarPapeis('PROFESSOR')
 const somenteAluno = autorizarPapeis('ALUNO')
+
+/**
+ * @openapi
+ * /api/modelos-avaliacao/competencia-2:
+ *   get:
+ *     summary: Consulta o modelo editável da Competência II
+ *     description: Retorna os três critérios sugeridos para repertório sociocultural. O professor pode editar ou substituir todos antes de criar o tema.
+ *     tags:
+ *       - Temas de redação
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: Modelo e versão atuais
+ *       '401':
+ *         description: Autenticação necessária
+ *       '403':
+ *         description: Recurso exclusivo para professores
+ */
+temasRouter.get(
+  '/modelos-avaliacao/competencia-2',
+  autenticarAccessToken,
+  somenteProfessor,
+  obterModeloCompetenciaDoisController,
+)
 
 /**
  * @openapi

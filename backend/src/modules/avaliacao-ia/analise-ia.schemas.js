@@ -9,6 +9,21 @@ const textoObrigatorio = z
 
 const itemTextual = textoObrigatorio.max(1000)
 
+const evidenciaSchema = z
+  .object({
+    trecho: z
+      .string()
+      .min(1)
+      .max(1000)
+      .refine(
+        (valor) => valor.trim().length > 0,
+        'O trecho da evidência é obrigatório.',
+      ),
+    inicio: z.number().int().min(0),
+    fim: z.number().int().min(1),
+  })
+  .strict()
+
 export const analiseIaParamsSchema = z
   .object({
     redacaoId: z.uuid(
@@ -23,7 +38,7 @@ const analiseCriterioSchema = z
     criterio: textoObrigatorio.max(200),
     diagnostico: textoObrigatorio.max(3000),
     evidencias: z
-      .array(itemTextual)
+      .array(evidenciaSchema)
       .max(8),
     orientacaoAoProfessor:
       textoObrigatorio.max(2000),
@@ -92,7 +107,26 @@ export const formatoRespostaAnaliseIa = {
               type: 'array',
               maxItems: 8,
               items: {
-                type: 'string',
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                  trecho: {
+                    type: 'string',
+                  },
+                  inicio: {
+                    type: 'integer',
+                    minimum: 0,
+                  },
+                  fim: {
+                    type: 'integer',
+                    minimum: 1,
+                  },
+                },
+                required: [
+                  'trecho',
+                  'inicio',
+                  'fim',
+                ],
               },
             },
             orientacaoAoProfessor: {
@@ -176,9 +210,78 @@ function extrairObjetoJson(texto) {
   }
 }
 
+function localizarOcorrencias(texto, trecho) {
+  const ocorrencias = []
+  let cursor = 0
+
+  while (cursor <= texto.length - trecho.length) {
+    const indice = texto.indexOf(trecho, cursor)
+
+    if (indice === -1) {
+      break
+    }
+
+    ocorrencias.push(indice)
+    cursor = indice + 1
+  }
+
+  return ocorrencias
+}
+
+function normalizarEvidencia(
+  evidencia,
+  textoRedacao,
+) {
+  const posicaoValida =
+    evidencia.fim > evidencia.inicio &&
+    evidencia.fim <= textoRedacao.length &&
+    textoRedacao.slice(
+      evidencia.inicio,
+      evidencia.fim,
+    ) === evidencia.trecho
+
+  if (posicaoValida) {
+    return {
+      ...evidencia,
+      statusLocalizacao: 'LOCALIZADA',
+      metodoLocalizacao: 'POSICAO_INFORMADA',
+    }
+  }
+
+  const ocorrencias = localizarOcorrencias(
+    textoRedacao,
+    evidencia.trecho,
+  )
+
+  if (ocorrencias.length === 1) {
+    const inicio = ocorrencias[0]
+
+    return {
+      ...evidencia,
+      inicio,
+      fim: inicio + evidencia.trecho.length,
+      statusLocalizacao: 'LOCALIZADA',
+      metodoLocalizacao: 'BUSCA_EXATA',
+    }
+  }
+
+  return {
+    trecho: evidencia.trecho,
+    inicio: null,
+    fim: null,
+    statusLocalizacao:
+      ocorrencias.length === 0
+        ? 'NAO_LOCALIZADA'
+        : 'AMBIGUA',
+    metodoLocalizacao: null,
+    quantidadeOcorrencias: ocorrencias.length,
+  }
+}
+
 export function interpretarResultadoAnaliseIa({
   texto,
   criterios,
+  textoRedacao,
 }) {
   const valor = extrairObjetoJson(texto)
 
@@ -223,6 +326,12 @@ export function interpretarResultadoAnaliseIa({
     )
   }
 
+  if (typeof textoRedacao !== 'string') {
+    throw criarErroRespostaInvalida(
+      'TEXTO_REDACAO_AUSENTE',
+    )
+  }
+
   return {
     ...resultado.data,
     analisePorCriterio:
@@ -230,6 +339,14 @@ export function interpretarResultadoAnaliseIa({
         (criterioRecebido, indice) => ({
           ...criterioRecebido,
           criterio: criteriosEsperados[indice].nome,
+          evidencias:
+            criterioRecebido.evidencias.map(
+              (evidencia) =>
+                normalizarEvidencia(
+                  evidencia,
+                  textoRedacao,
+                ),
+            ),
         }),
       ),
   }

@@ -10,7 +10,11 @@ describe('Schema do rascunho de feedback', () => {
   it('deve aceitar uma correção completa', () => {
     const resultado =
       salvarFeedbackRascunhoSchema.parse({
-        nota: 840,
+        competencia1: 160,
+        competencia2: 200,
+        competencia3: 160,
+        competencia4: 160,
+        competencia5: 160,
         comentarioGeral:
           'A redação desenvolve bem o tema.',
         criterios: [
@@ -22,27 +26,35 @@ describe('Schema do rascunho de feedback', () => {
         ],
       })
 
-    assert.equal(resultado.nota, 840)
+    assert.equal(resultado.competencia2, 200)
     assert.equal(resultado.criterios.length, 1)
   })
 
-  it('deve permitir um rascunho ainda sem nota e comentários', () => {
+  it('deve permitir um rascunho ainda sem notas e comentários', () => {
     const resultado =
       salvarFeedbackRascunhoSchema.parse({
-        nota: null,
+        competencia1: null,
+        competencia2: null,
+        competencia3: null,
+        competencia4: null,
+        competencia5: null,
         comentarioGeral: '',
         criterios: [],
       })
 
-    assert.equal(resultado.nota, null)
+    assert.equal(resultado.competencia1, null)
     assert.equal(resultado.comentarioGeral, null)
     assert.deepEqual(resultado.criterios, [])
   })
 
-  it('deve rejeitar uma nota superior a 1000', () => {
+  it('deve rejeitar uma competência superior a 200', () => {
     const resultado =
       salvarFeedbackRascunhoSchema.safeParse({
-        nota: 1001,
+        competencia1: 201,
+        competencia2: 160,
+        competencia3: 160,
+        competencia4: 160,
+        competencia5: 160,
         comentarioGeral: null,
         criterios: [],
       })
@@ -54,7 +66,11 @@ describe('Schema do rascunho de feedback', () => {
     const criterioId = randomUUID()
     const resultado =
       salvarFeedbackRascunhoSchema.safeParse({
-        nota: 700,
+        competencia1: 120,
+        competencia2: 160,
+        competencia3: 120,
+        competencia4: 160,
+        competencia5: 120,
         comentarioGeral: null,
         criterios: [
           {

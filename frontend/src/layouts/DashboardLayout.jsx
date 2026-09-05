@@ -7,7 +7,7 @@ export default function DashboardLayout({
     <div className="relative min-h-screen overflow-x-hidden bg-lexis-950 text-lexis-50">
       <AppHeader />
 
-      <main className="relative z-10 pt-20">
+      <main className="relative z-10 pt-14">
         {children}
       </main>
     </div>

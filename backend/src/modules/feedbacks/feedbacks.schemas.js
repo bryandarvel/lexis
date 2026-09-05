@@ -34,6 +34,13 @@ const comentarioCriterioSchema = z
   })
   .strict()
 
+const notaCompetenciaSchema = z
+  .number()
+  .int('A nota da competência deve ser um número inteiro.')
+  .min(0, 'A nota mínima da competência é 0.')
+  .max(200, 'A nota máxima da competência é 200.')
+  .nullable()
+
 export const feedbackParamsSchema = z
   .object({
     redacaoId: z.uuid(
@@ -44,12 +51,11 @@ export const feedbackParamsSchema = z
 
 export const salvarFeedbackRascunhoSchema = z
   .object({
-    nota: z
-      .number()
-      .int('A nota deve ser um número inteiro.')
-      .min(0, 'A nota mínima é 0.')
-      .max(1000, 'A nota máxima é 1000.')
-      .nullable(),
+    competencia1: notaCompetenciaSchema,
+    competencia2: notaCompetenciaSchema,
+    competencia3: notaCompetenciaSchema,
+    competencia4: notaCompetenciaSchema,
+    competencia5: notaCompetenciaSchema,
     comentarioGeral: comentarioOpcional,
     criterios: z
       .array(comentarioCriterioSchema)

@@ -17,6 +17,12 @@ const AlunoDashboardPage = lazy(() =>
 const AlunoFeedbackPage = lazy(() =>
   import('../pages/aluno/AlunoFeedbackPage.jsx'),
 )
+const AlunoRedacaoPage = lazy(() =>
+  import('../pages/aluno/AlunoRedacaoPage.jsx'),
+)
+const AlunoNotificacoesPage = lazy(() =>
+  import('../pages/aluno/AlunoNotificacoesPage.jsx'),
+)
 const CadastroPage = lazy(() =>
   import('../pages/auth/CadastroPage.jsx'),
 )
@@ -28,6 +34,9 @@ const ProfessorDashboardPage = lazy(() =>
 )
 const ProfessorRedacaoPage = lazy(() =>
   import('../pages/professor/ProfessorRedacaoPage.jsx'),
+)
+const ProfessorNovoTemaPage = lazy(() =>
+  import('../pages/professor/ProfessorNovoTemaPage.jsx'),
 )
 const ProfessorTemaPage = lazy(() =>
   import('../pages/professor/ProfessorTemaPage.jsx'),
@@ -65,6 +74,15 @@ export default function AppRoutes() {
           <Route
             path="/professor"
             element={
+              <Navigate
+                to="/professor/turmas"
+                replace
+              />
+            }
+          />
+          <Route
+            path="/professor/turmas"
+            element={
               <ProfessorDashboardPage />
             }
           />
@@ -73,6 +91,10 @@ export default function AppRoutes() {
             element={
               <ProfessorTurmaPage />
             }
+          />
+          <Route
+            path="/professor/turmas/:turmaId/temas/novo"
+            element={<ProfessorNovoTemaPage />}
           />
 
           <Route
@@ -100,6 +122,14 @@ export default function AppRoutes() {
           <Route
             path="/aluno/redacoes/:redacaoId/feedback"
             element={<AlunoFeedbackPage />}
+          />
+          <Route
+            path="/aluno/notificacoes"
+            element={<AlunoNotificacoesPage />}
+          />
+          <Route
+            path="/aluno/temas/:temaId/redacao"
+            element={<AlunoRedacaoPage />}
           />
         </Route>
 

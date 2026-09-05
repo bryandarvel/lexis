@@ -1,3 +1,8 @@
+import {
+  calcularNotaTotalCompetencias,
+  COMPETENCIAS_ENEM,
+} from '../../constants/competencias-enem.js'
+
 function formatarStatusFeedback(status) {
   const statuses = {
     RASCUNHO: 'Rascunho',
@@ -21,6 +26,18 @@ export default function FeedbackEditor({
   onSave,
 }) {
   const isBusy = Boolean(action)
+  const dadosNumericos = Object.fromEntries(
+    COMPETENCIAS_ENEM.map(({ campo }) => {
+      const texto = String(form[campo] ?? '').trim()
+
+      return [
+        campo,
+        texto === '' ? null : Number(texto),
+      ]
+    }),
+  )
+  const notaTotal =
+    calcularNotaTotalCompetencias(dadosNumericos)
 
   const noticeClasses =
     notice?.type === 'error'
@@ -65,33 +82,61 @@ export default function FeedbackEditor({
           onSubmit={onSave}
           className="mt-8 space-y-6"
         >
-          <div className={embedded ? 'grid gap-4' : 'grid gap-6 lg:grid-cols-[14rem_minmax(0,1fr)]'}>
-            <label className="block rounded-2xl border border-lexis-200/10 bg-lexis-900/70 p-6">
-              <span className="text-sm font-bold text-white">
-                Nota total
-              </span>
+          <div className={embedded ? 'grid gap-4' : 'grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]'}>
+            <fieldset className="rounded-2xl border border-lexis-200/10 bg-lexis-900/70 p-6">
+              <legend className="px-2 text-sm font-bold text-white">
+                Pontuação por competência
+              </legend>
 
-              <input
-                type="number"
-                min="0"
-                max="1000"
-                step="1"
-                value={form.score}
-                onChange={(event) =>
-                  onFieldChange(
-                    'score',
-                    event.target.value,
-                  )
-                }
-                placeholder="0 a 1000"
-                className="mt-4 w-full rounded-xl border border-lexis-200/15 bg-lexis-950 px-4 py-3 text-2xl font-bold text-white outline-none transition focus:border-lexis-300"
-              />
+              <div className="mt-2 grid gap-4 sm:grid-cols-2">
+                {COMPETENCIAS_ENEM.map(
+                  ({ campo, numero, titulo }) => (
+                    <label
+                      key={campo}
+                      className="block"
+                    >
+                      <span className="text-xs font-bold uppercase tracking-[0.12em] text-lexis-300">
+                        Competência {numero}
+                      </span>
+                      <span className="mt-1 block text-xs leading-5 text-lexis-200">
+                        {titulo}
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="200"
+                        step="1"
+                        inputMode="numeric"
+                        value={form[campo] ?? ''}
+                        onChange={(event) =>
+                          onFieldChange(
+                            campo,
+                            event.target.value,
+                          )
+                        }
+                        placeholder="0 a 200"
+                        className="mt-2 w-full rounded-xl border border-lexis-200/15 bg-lexis-950 px-4 py-3 text-xl font-bold text-white outline-none transition focus:border-lexis-300"
+                      />
+                    </label>
+                  ),
+                )}
+              </div>
 
-              <span className="mt-3 block text-xs leading-5 text-lexis-300">
-                Utilize a escala convencional do
-                ENEM, entre 0 e 1000.
-              </span>
-            </label>
+              <output className="mt-5 block rounded-xl border border-lexis-200/10 bg-lexis-950/60 px-4 py-3 text-sm font-semibold text-lexis-100">
+                Nota total:{' '}
+                <strong className="text-lg text-white">
+                  {notaTotal ?? '—'}
+                </strong>{' '}
+                / 1000
+              </output>
+
+              {form.legacyScore && (
+                <p className="mt-3 text-xs leading-5 text-amber-200">
+                  Nota total da versão anterior: {form.legacyScore}.
+                  Preencha C1–C5 para publicar uma nova versão.
+                </p>
+              )}
+            </fieldset>
 
             <label className="block rounded-2xl border border-lexis-200/10 bg-lexis-900/70 p-6">
               <span className="text-sm font-bold text-white">
@@ -125,7 +170,7 @@ export default function FeedbackEditor({
 
             <p className="mt-2 text-sm leading-6 text-lexis-200">
               Estes comentários são opcionais e não
-              alteram diretamente a nota total.
+              alteram diretamente as notas das competências.
             </p>
 
             <div className={embedded ? 'mt-5 grid gap-4' : 'mt-5 grid gap-4 lg:grid-cols-2'}>

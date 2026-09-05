@@ -10,7 +10,9 @@ import {
 } from 'react-router'
 
 import AnalysisPanel from '../../components/correction/AnalysisPanel.jsx'
+import EssayEvidenceText from '../../components/correction/EssayEvidenceText.jsx'
 import FeedbackEditor from '../../components/correction/FeedbackEditor.jsx'
+import { COMPETENCIAS_ENEM } from '../../constants/competencias-enem.js'
 import DashboardLayout from '../../layouts/DashboardLayout.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
 import { useRascunho } from '../../hooks/useRascunho.js'
@@ -87,11 +89,29 @@ function criarFormularioFeedback(
     ),
   )
 
+  const pontuacoesCompetencias =
+    Object.fromEntries(
+      COMPETENCIAS_ENEM.map(({ campo }) => [
+        campo,
+        currentFeedback?.[campo] == null
+          ? ''
+          : String(currentFeedback[campo]),
+      ]),
+    )
+
+  const possuiPontuacaoPorCompetencia =
+    COMPETENCIAS_ENEM.some(
+      ({ campo }) =>
+        currentFeedback?.[campo] != null,
+    )
+
   return {
-    score:
-      currentFeedback?.nota == null
-        ? ''
-        : String(currentFeedback.nota),
+    ...pontuacoesCompetencias,
+    legacyScore:
+      !possuiPontuacaoPorCompetencia &&
+      currentFeedback?.nota != null
+        ? String(currentFeedback.nota)
+        : '',
     generalComment:
       currentFeedback?.comentarioGeral ?? '',
     criterionComments,
@@ -99,15 +119,22 @@ function criarFormularioFeedback(
 }
 
 function montarDadosFeedback(form) {
-  const scoreText = String(form.score).trim()
   const generalComment =
     form.generalComment.trim()
 
   return {
-    nota:
-      scoreText === ''
-        ? null
-        : Number(scoreText),
+    ...Object.fromEntries(
+      COMPETENCIAS_ENEM.map(({ campo }) => {
+        const texto = String(
+          form[campo] ?? '',
+        ).trim()
+
+        return [
+          campo,
+          texto === '' ? null : Number(texto),
+        ]
+      }),
+    ),
     comentarioGeral:
       generalComment === ''
         ? null
@@ -157,7 +184,12 @@ export default function ProfessorRedacaoPage() {
   })
 
   const [form, setForm] = useState({
-    score: '',
+    competencia1: '',
+    competencia2: '',
+    competencia3: '',
+    competencia4: '',
+    competencia5: '',
+    legacyScore: '',
     generalComment: '',
     criterionComments: {},
   })
@@ -345,7 +377,20 @@ export default function ProfessorRedacaoPage() {
     const valorRecuperado = recuperarRascunho()
 
     if (valorRecuperado) {
-      setForm(valorRecuperado)
+      setForm((formAtual) => ({
+        ...formAtual,
+        ...valorRecuperado,
+        ...Object.fromEntries(
+          COMPETENCIAS_ENEM.map(({ campo }) => [
+            campo,
+            valorRecuperado[campo] ?? '',
+          ]),
+        ),
+        legacyScore:
+          valorRecuperado.legacyScore ??
+          valorRecuperado.score ??
+          '',
+      }))
     }
   }
 
@@ -385,12 +430,13 @@ export default function ProfessorRedacaoPage() {
     }
   }
 
-  function validarNota(dados) {
-    return (
-      dados.nota == null ||
-      (Number.isInteger(dados.nota) &&
-        dados.nota >= 0 &&
-        dados.nota <= 1000)
+  function validarCompetencias(dados) {
+    return COMPETENCIAS_ENEM.every(
+      ({ campo }) =>
+        dados[campo] == null ||
+        (Number.isInteger(dados[campo]) &&
+          dados[campo] >= 0 &&
+          dados[campo] <= 200),
     )
   }
 
@@ -399,11 +445,11 @@ export default function ProfessorRedacaoPage() {
 
     const dados = montarDadosFeedback(form)
 
-    if (!validarNota(dados)) {
+    if (!validarCompetencias(dados)) {
       setFeedbackNotice({
         type: 'error',
         message:
-          'A nota precisa ser um número inteiro entre 0 e 1000.',
+          'Cada competência precisa ter uma nota inteira entre 0 e 200.',
       })
       return
     }
@@ -456,23 +502,25 @@ export default function ProfessorRedacaoPage() {
   async function handlePublishFeedback() {
     const dados = montarDadosFeedback(form)
 
-    if (!validarNota(dados)) {
+    if (!validarCompetencias(dados)) {
       setFeedbackNotice({
         type: 'error',
         message:
-          'A nota precisa ser um número inteiro entre 0 e 1000.',
+          'Cada competência precisa ter uma nota inteira entre 0 e 200.',
       })
       return
     }
 
     if (
-      dados.nota == null ||
+      COMPETENCIAS_ENEM.some(
+        ({ campo }) => dados[campo] == null,
+      ) ||
       dados.comentarioGeral == null
     ) {
       setFeedbackNotice({
         type: 'error',
         message:
-          'Preencha a nota e o comentário geral antes de publicar.',
+          'Preencha as cinco competências e o comentário geral antes de publicar.',
       })
       return
     }
@@ -545,10 +593,10 @@ export default function ProfessorRedacaoPage() {
         <section className="px-6 py-16 sm:px-10 lg:px-16">
           <div className="mx-auto max-w-7xl">
             <Link
-              to="/professor"
+              to="/professor/turmas"
               className="text-sm font-semibold text-lexis-300 hover:text-white"
             >
-              ← Voltar ao painel
+              ← Voltar às turmas
             </Link>
 
             <div className="mt-8 max-w-2xl rounded-2xl border border-red-300/20 bg-red-950/20 p-6">
@@ -637,9 +685,11 @@ export default function ProfessorRedacaoPage() {
                 Texto entregue
               </p>
 
-              <div className="font-essay mt-6 whitespace-pre-wrap text-lexis-50">
-                {redacao.texto ??
-                  'O texto desta redação não está disponível.'}
+              <div className="mt-6">
+                <EssayEvidenceText
+                  texto={redacao.texto}
+                  analise={analiseAtual}
+                />
               </div>
 
               <dl className="mt-8 grid gap-3 border-t border-lexis-200/20 pt-5 text-sm sm:grid-cols-2">

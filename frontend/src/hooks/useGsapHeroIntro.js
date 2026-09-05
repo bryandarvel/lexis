@@ -4,47 +4,45 @@ import { gsap, useGSAP } from '../animations/gsap.js'
 
 export default function useGsapHeroIntro() {
 	const containerRef = useRef(null)
-	
+
 	useGSAP(
 		() => {
-			const prefersReducedMotion = window.matchMedia(
-			'(prefers-reduced-motion: reduce',
-			).matches
-			
-			if(prefersReducedMotion) {
-				return
-			}
-			
-			const timeline = gsap.timeline({
-				defaults: {
-					duration: 0.65,
-					ease: 'power3.out',
+			const media = gsap.matchMedia()
+
+			media.add(
+				'(prefers-reduced-motion: no-preference)',
+				() => {
+					const timeline = gsap.timeline({
+						defaults: {
+							duration: 0.65,
+							ease: 'power3.out',
+						},
+					})
+
+					timeline
+						.from('[data-hero-backdrop]', {
+							opacity: 0,
+							scale: 1.03,
+							duration: 0.8,
+						})
+						.from(
+							'[data-hero-reveal]',
+							{
+								opacity: 0,
+								y: 28,
+								stagger: 0.09,
+							},
+							'-=0.45',
+						)
 				},
-			})
-			
-			timeline
-			.from('[data-hero-backdrop]', {
-			opacity: 0,
-			scale: 1.03,
-			duration: 0.8,
-		})
-		.from(
-		'[data-hero-reveal]',
-		{
-			opacity: 0,
-			y: 28,
-			stagger: 0.09,
+			)
+
+			return () => media.revert()
 		},
-		'-=0.45',
-		)
-	},
-	{
-		scope: containerRef,
-	},
+		{
+			scope: containerRef,
+		},
 	)
-	
+
 	return containerRef
 }
-	
-	
-		

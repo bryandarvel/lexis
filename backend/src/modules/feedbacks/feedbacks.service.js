@@ -39,7 +39,7 @@ function criarErroRascunhoAusente() {
 
 function criarErroRascunhoIncompleto(camposPendentes) {
   return new AppError(
-    'Preencha a nota e o comentário geral antes de publicar a correção.',
+    'Preencha as cinco competências e o comentário geral antes de publicar a correção.',
     {
       statusCode: 422,
       code: 'FEEDBACK_INCOMPLETE',

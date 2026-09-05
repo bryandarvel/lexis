@@ -117,6 +117,20 @@ function salvarTextoRevisado(texto) {
     })
 }
 
+function confirmarTextoOcr(texto) {
+  return request(app)
+    .put(
+      `/api/aluno/temas/${tema.id}/redacao/ocr/revisao`,
+    )
+    .set(
+      'Authorization',
+      `Bearer ${alunoPrincipal.accessToken}`,
+    )
+    .send({
+      texto,
+    })
+}
+
 function enviarRedacao() {
   return request(app)
     .post(
@@ -259,33 +273,37 @@ after(async () => {
 })
 
 describe('POST /api/aluno/temas/:temaId/redacao/ocr', () => {
-  it('deve extrair e salvar um rascunho de origem OCR', async () => {
+  it('deve extrair o texto sem substituir o rascunho atual', async () => {
+    await salvarTextoRevisado(
+      'Texto digitado que deve permanecer salvo.',
+    ).expect(200)
+
     const resposta = await enviarImagemOcr()
       .expect('Content-Type', /json/)
       .expect(200)
 
-    const redacao = resposta.body.data.redacao
-
     assert.equal(
-      redacao.texto,
+      resposta.body.data.textoExtraido,
       'Texto manuscrito extraído pelo OCR.',
     )
-    assert.equal(redacao.origemTexto, 'OCR')
-    assert.equal(redacao.status, 'RASCUNHO')
-    assert.equal(redacao.ocrRevisadoEm, null)
     assert.equal(
       resposta.body.data.revisaoObrigatoria,
       true,
     )
 
     const redacaoSalva =
-      await prisma.redacao.findUnique({
+      await prisma.redacao.findFirst({
         where: {
-          id: redacao.id,
+          temaId: tema.id,
+          alunoId: alunoPrincipal.usuario.id,
         },
       })
 
-    assert.equal(redacaoSalva.origemTexto, 'OCR')
+    assert.equal(
+      redacaoSalva.texto,
+      'Texto digitado que deve permanecer salvo.',
+    )
+    assert.equal(redacaoSalva.origemTexto, 'DIGITADO')
     assert.equal(redacaoSalva.ocrRevisadoEm, null)
   })
 
@@ -293,15 +311,15 @@ describe('POST /api/aluno/temas/:temaId/redacao/ocr', () => {
     await enviarImagemOcr().expect(200)
 
     const respostaSemRevisao =
-      await enviarRedacao().expect(409)
+      await enviarRedacao().expect(404)
 
     assert.equal(
       respostaSemRevisao.body.error.code,
-      'ESSAY_OCR_REVIEW_REQUIRED',
+      'ESSAY_DRAFT_NOT_FOUND',
     )
 
     const respostaRevisao =
-      await salvarTextoRevisado(
+      await confirmarTextoOcr(
         'Texto extraído, revisado e confirmado pelo aluno.',
       ).expect(200)
 

@@ -8,6 +8,20 @@ import {
   obterTemaParaProfessor,
   substituirCriteriosParaProfessor,
 } from './temas.service.js'
+import {
+  obterModeloCompetenciaDois,
+} from './temas.competencia-dois.js'
+
+export function obterModeloCompetenciaDoisController(
+  _req,
+  res,
+) {
+  return res.status(200).json({
+    data: {
+      modelo: obterModeloCompetenciaDois(),
+    },
+  })
+}
 
 export async function criarTemaController(req, res) {
   const tema = await criarTemaParaProfessor({
