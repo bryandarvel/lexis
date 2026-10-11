@@ -32,6 +32,9 @@ const LoginPage = lazy(() =>
 const ProfessorDashboardPage = lazy(() =>
   import('../pages/professor/ProfessorDashboardPage.jsx'),
 )
+const ProfessorTurmasPage = lazy(() =>
+  import('../pages/professor/ProfessorTurmasPage.jsx'),
+)
 const ProfessorRedacaoPage = lazy(() =>
   import('../pages/professor/ProfessorRedacaoPage.jsx'),
 )
@@ -73,17 +76,12 @@ export default function AppRoutes() {
         >
           <Route
             path="/professor"
-            element={
-              <Navigate
-                to="/professor/turmas"
-                replace
-              />
-            }
+            element={<ProfessorDashboardPage />}
           />
           <Route
             path="/professor/turmas"
             element={
-              <ProfessorDashboardPage />
+              <ProfessorTurmasPage />
             }
           />
           <Route

@@ -20,7 +20,7 @@ import ThemeToggle from './ThemeToggle.jsx'
 
 function obterRotaInicial(papel) {
   return papel === 'PROFESSOR'
-    ? '/professor/turmas'
+    ? '/professor'
     : '/aluno'
 }
 
