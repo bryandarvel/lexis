@@ -1,0 +1,51 @@
+/*
+ * Tokens semânticos do shell do aluno, extraídos das variáveis do protótipo
+ * no Figma (nó 16:2). Ficam locais a este layout enquanto o index.css não
+ * receber tokens de status equivalentes.
+ */
+.aluno-shell {
+  --aluno-shell-texto: #ffffff;
+  --aluno-shell-texto-suave: #93c4f7;
+  --aluno-shell-icone: #3d72b0;
+  --aluno-avatar: #6b7a90;
+  --aluno-erro-solido: #c42626;
+  --aluno-sucesso: #15803d;
+  --aluno-sucesso-fundo: #dcfce7;
+  --aluno-atencao: #a65a08;
+  --aluno-atencao-fundo: #fef3c7;
+  --aluno-erro: #b42318;
+  --aluno-neutro-fundo: #f6f8fb;
+  --aluno-acao-suave: #eff6ff;
+  --aluno-acao-suave-texto: #175795;
+  --aluno-borda-campo: #8895ab;
+  --aluno-trilho: #edf1f7;
+  --aluno-elevacao-1: 0 1px 2px rgba(0, 32, 73, 0.06);
+}
+
+:root[data-theme="dark"] .aluno-shell {
+  --aluno-sucesso: #4ade80;
+  --aluno-sucesso-fundo: rgba(74, 222, 128, 0.14);
+  --aluno-atencao: #fbbf24;
+  --aluno-atencao-fundo: rgba(251, 191, 36, 0.14);
+  --aluno-erro: #f87171;
+  --aluno-neutro-fundo: #1a2638;
+  --aluno-acao-suave: rgba(125, 204, 255, 0.12);
+  --aluno-acao-suave-texto: #7dccff;
+  --aluno-borda-campo: #4f6079;
+  --aluno-trilho: #1d2b40;
+  --aluno-elevacao-1: none;
+}
+
+/* h2 recebe Newsreader no index.css; títulos de interface usam Inter. */
+.aluno-titulo-interface {
+  font-family: var(--font-interface);
+}
+
+.aluno-elevacao-1 {
+  box-shadow: var(--aluno-elevacao-1);
+}
+
+/* O foco global usa uma cor escura demais sobre o shell navy. */
+.aluno-foco-shell:focus-visible {
+  outline-color: var(--aluno-shell-texto-suave);
+}
