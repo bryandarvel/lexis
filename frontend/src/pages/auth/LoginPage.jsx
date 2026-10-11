@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { motion } from 'motion/react'
 import {
   Link,
   useLocation,
@@ -7,13 +8,16 @@ import {
 
 import AuthField from '../../components/auth/AuthField.jsx'
 import AuthNotice from '../../components/auth/AuthNotice.jsx'
-import AuthShell from '../../components/auth/AuthShell.jsx'
+import PasswordRecoveryDialog from '../../components/auth/PasswordRecoveryDialog.jsx'
+import ThemeToggle from '../../components/layout/ThemeToggle.jsx'
+import logo from '../../assets/lexis-logo-login.svg'
+import './login.css'
 import { useAuth } from '../../hooks/useAuth.js'
 import { interpretarErroApi } from '../../utils/api-error.js'
 
 function obterRotaInicial(papel) {
   return papel === 'PROFESSOR'
-    ? '/professor/turmas'
+    ? '/professor'
     : '/aluno'
 }
 
@@ -28,6 +32,8 @@ export default function LoginPage() {
   })
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState('')
+  const [papel, setPapel] = useState('PROFESSOR')
+  const [recuperacaoAberta, setRecuperacaoAberta] = useState(false)
 
   const cadastroConcluido = Boolean(
     location.state?.cadastroConcluido,
@@ -72,27 +78,49 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthShell
-      eyebrow="Acesso à plataforma"
-      title="Bem-vindo de volta"
-      description="Entre para acompanhar turmas, redações e feedbacks."
-      footer={
-        <p>
-          Ainda não possui uma conta?{' '}
-          <Link
-            to="/cadastro"
-            className="font-bold text-lexis-200 underline decoration-lexis-400/60 underline-offset-4 transition hover:text-lexis-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lexis-300"
-          >
-            Criar conta
-          </Link>
-        </p>
-      }
-    >
+    <main className="login-page">
+      <section className="login-brand" aria-label="LÉXIS">
+        <img src={logo} alt="LÉXIS" className="login-logo" />
+      </section>
+      <section className="login-access" aria-label="Acesso à plataforma">
+        <div className="login-theme"><ThemeToggle compacto /></div>
+        <motion.div
+          className="login-card"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, ease: 'easeOut' }}
+        >
+          <h1>Bem-vindo(a) ao LÉXIS</h1>
+          <p className="login-description">Acesse sua conta para continuar</p>
+          <nav className="login-tabs" aria-label="Acesso à conta">
+            <span aria-current="page">Entrar</span>
+            <Link to="/cadastro" state={{ papel }}>Criar conta</Link>
+          </nav>
       <form
         onSubmit={enviarFormulario}
-        className="space-y-5"
+        className="login-form"
         aria-busy={enviando}
       >
+        <fieldset className="login-roles" disabled={enviando}>
+          <legend>Você acessa como</legend>
+          <div>
+            {[
+              ['PROFESSOR', 'Professor'],
+              ['ALUNO', 'Aluno'],
+            ].map(([valor, rotulo]) => (
+              <label key={valor} className={papel === valor ? 'is-selected' : ''}>
+                <input
+                  type="radio"
+                  name="perfil"
+                  value={valor}
+                  checked={papel === valor}
+                  onChange={() => setPapel(valor)}
+                />
+                <span>{rotulo}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
         <AuthNotice
           tipo="sucesso"
           mensagem={
@@ -106,18 +134,27 @@ export default function LoginPage() {
         <AuthField
           id="email"
           name="email"
-          label="E-mail"
+          label="E-mail institucional"
           type="email"
           value={dados.email}
           onChange={atualizarCampo}
           autoComplete="username"
           autoCapitalize="none"
           spellCheck={false}
-          placeholder="voce@exemplo.com"
+          placeholder="ana.lima@escola.edu.br"
           required
           maxLength={191}
         />
 
+        <div className="login-password">
+          <button
+            type="button"
+            className="login-forgot"
+            onClick={() => setRecuperacaoAberta(true)}
+            disabled={enviando}
+          >
+            Esqueci minha senha
+          </button>
         <AuthField
           id="senha"
           name="senha"
@@ -130,11 +167,12 @@ export default function LoginPage() {
           required
           maxLength={72}
         />
+        </div>
 
         <button
           type="submit"
           disabled={enviando}
-          className="flex w-full items-center justify-center gap-3 rounded-[10px] bg-lexis-400 px-5 py-3.5 font-bold text-white transition hover:bg-lexis-500 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-lexis-300/35 disabled:cursor-not-allowed disabled:opacity-65"
+          className="login-submit"
         >
           {enviando && (
             <span
@@ -145,6 +183,13 @@ export default function LoginPage() {
           {enviando ? 'Entrando...' : 'Entrar'}
         </button>
       </form>
-    </AuthShell>
+        </motion.div>
+      </section>
+      <PasswordRecoveryDialog
+        aberto={recuperacaoAberta}
+        emailInicial={dados.email}
+        onClose={() => setRecuperacaoAberta(false)}
+      />
+    </main>
   )
 }
