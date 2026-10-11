@@ -268,7 +268,7 @@ redacoesRouter.post(
  * /api/aluno/redacoes:
  *   get:
  *     summary: Lista as redações do aluno
- *     description: Retorna os rascunhos e envios pertencentes ao aluno autenticado.
+ *     description: Retorna os rascunhos e envios pertencentes ao aluno autenticado. Cada redação inclui notaPublicada e publicadoEm, obtidos da versão publicada mais recente da correção, ou null quando ainda não há correção publicada.
  *     tags:
  *       - Redações
  *     security:
