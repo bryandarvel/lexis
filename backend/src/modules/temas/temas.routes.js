@@ -40,7 +40,7 @@ const somenteAluno = autorizarPapeis('ALUNO')
  * @openapi
  * /api/modelos-avaliacao/competencia-2:
  *   get:
- *     summary: Consulta o modelo editável da Competência II
+ *     summary: Consulta os três critérios fixos da Competência II
  *     description: Retorna os três critérios sugeridos para repertório sociocultural. O professor pode editar ou substituir todos antes de criar o tema.
  *     tags:
  *       - Temas de redação
@@ -171,8 +171,9 @@ temasRouter.get(
  *                 example: 2026-12-01T23:59:00-03:00
  *               criterios:
  *                 type: array
- *                 minItems: 1
- *                 maxItems: 10
+ *                 description: Três critérios fixos na ordem do modelo C2, preservando nome e descrição, seguidos de até dois personalizados sem nomes duplicados. Consulte /api/modelos-avaliacao/competencia-2.
+ *                 minItems: 3
+ *                 maxItems: 5
  *                 items:
  *                   type: object
  *                   required:
@@ -357,8 +358,9 @@ temasRouter.patch(
  *             properties:
  *               criterios:
  *                 type: array
- *                 minItems: 1
- *                 maxItems: 10
+ *                 description: Mesma base fixa da criação e até dois personalizados. Propostas legadas incompatíveis exigem revisão explícita e retornam 409; critérios congelados não podem ser substituídos.
+ *                 minItems: 3
+ *                 maxItems: 5
  *                 items:
  *                   type: object
  *                   required:

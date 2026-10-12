@@ -90,6 +90,23 @@ export function validarCriteriosTema(criterios) {
   return null
 }
 
+export function validarCriteriosNovaProposta(criterios, modelo) {
+  const base = modelo?.criterios ?? []
+  if (base.length !== 3 || criterios.length < 3 || criterios.length > 5) {
+    return 'Mantenha os três critérios fixos e adicione no máximo dois personalizados.'
+  }
+
+  const baseAlterada = base.some((referencia, indice) =>
+    criterios[indice]?.nome !== referencia.nome ||
+    criterios[indice]?.descricao !== referencia.descricao,
+  )
+  if (baseAlterada) {
+    return 'Os critérios fixos da Competência II não podem ser alterados.'
+  }
+
+  return validarCriteriosTema(criterios)
+}
+
 export function validarFormularioTema(formulario) {
   if (formulario.enunciado.trim().length < 5) {
     return 'O enunciado deve possuir pelo menos 5 caracteres.'

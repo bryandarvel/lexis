@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { MODELO_COMPETENCIA_DOIS } from './temas.competencia-dois.js'
 
 const textoCurto = (campo, minimo, maximo) =>
   z
@@ -68,22 +69,34 @@ const criterioSchema = z
   })
   .strict()
 
-const criteriosSchema = z
+export const criteriosSchema = z
   .array(criterioSchema)
   .min(
-    1,
-    'Informe pelo menos um critério de avaliação.',
+    3,
+    'Informe os três critérios obrigatórios.',
   )
   .max(
-    10,
-    'Um tema pode possuir no máximo 10 critérios.',
+    5,
+    'Uma proposta aceita três critérios fixos e até dois personalizados.',
   )
   .superRefine((criterios, contexto) => {
     const nomesEncontrados = new Set()
 
+    MODELO_COMPETENCIA_DOIS.criterios.forEach((fixo, indice) => {
+      for (const campo of ['nome', 'descricao']) {
+        if (criterios[indice]?.[campo] !== fixo[campo]) {
+          contexto.addIssue({
+            code: 'custom',
+            path: [indice, campo],
+            message: `O critério fixo ${fixo.nome} deve ser preservado na posição ${indice + 1}.`,
+          })
+        }
+      }
+    })
+
     criterios.forEach((criterio, indice) => {
       const nomeNormalizado =
-        criterio.nome.toLocaleLowerCase('pt-BR')
+        criterio.nome.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('pt-BR')
 
       if (nomesEncontrados.has(nomeNormalizado)) {
         contexto.addIssue({

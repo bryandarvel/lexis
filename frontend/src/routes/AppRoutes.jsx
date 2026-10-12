@@ -29,8 +29,12 @@ const CadastroPage = lazy(() =>
 const LoginPage = lazy(() =>
   import('../pages/auth/LoginPage.jsx'),
 )
+const RedefinirSenhaPage = lazy(() => import('../pages/auth/RedefinirSenhaPage.jsx'))
 const ProfessorDashboardPage = lazy(() =>
   import('../pages/professor/ProfessorDashboardPage.jsx'),
+)
+const ProfessorTurmasPage = lazy(() =>
+  import('../pages/professor/ProfessorTurmasPage.jsx'),
 )
 const ProfessorRedacaoPage = lazy(() =>
   import('../pages/professor/ProfessorRedacaoPage.jsx'),
@@ -49,6 +53,7 @@ export default function AppRoutes() {
   return (
     <Suspense fallback={<RouteLoading />}>
       <Routes>
+        <Route path="/redefinir-senha" element={<RedefinirSenhaPage />} />
         <Route
           element={
             <RouteGuard apenasVisitantes />
@@ -73,17 +78,12 @@ export default function AppRoutes() {
         >
           <Route
             path="/professor"
-            element={
-              <Navigate
-                to="/professor/turmas"
-                replace
-              />
-            }
+            element={<ProfessorDashboardPage />}
           />
           <Route
             path="/professor/turmas"
             element={
-              <ProfessorDashboardPage />
+              <ProfessorTurmasPage />
             }
           />
           <Route

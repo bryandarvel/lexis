@@ -72,3 +72,15 @@ export const limitarRefresh = criarLimitador({
     'Muitas tentativas de renovação de sessão. Faça login novamente mais tarde.',
   skipSuccessfulRequests: true,
 })
+
+export const limitarRecuperacao = criarLimitador({
+  windowMs: QUINZE_MINUTOS_MS,
+  limite: 10,
+  mensagem: 'Muitas solicitações de recuperação. Aguarde alguns minutos.',
+})
+
+export const limitarRedefinicao = criarLimitador({
+  windowMs: QUINZE_MINUTOS_MS,
+  limite: 20,
+  mensagem: 'Muitas tentativas de redefinição. Aguarde alguns minutos.',
+})

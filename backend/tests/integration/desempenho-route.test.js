@@ -6,6 +6,7 @@ import express from 'express'
 import request from 'supertest'
 
 import { errorHandler } from '../../src/middlewares/error-handler.js'
+import { autenticarTeste } from '../helpers/auth.js'
 import {
   criarAccessToken,
 } from '../../src/modules/auth/auth-token.service.js'
@@ -29,6 +30,7 @@ function criarAplicacao({
   app.use(
     '/api',
     criarDesempenhoRouter({
+      autenticar: autenticarTeste,
       obterDesempenho,
     }),
   )

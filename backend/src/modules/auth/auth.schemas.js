@@ -64,3 +64,9 @@ export const loginSchema = z
     senha: senhaLoginSchema,
   })
   .strict()
+
+export const solicitarRecuperacaoSchema = z.object({ email: emailSchema }).strict()
+export const redefinirSenhaSchema = z.object({
+  token: z.string().regex(/^[a-f0-9]{64}$/, 'Link inválido. Solicite uma nova recuperação.'),
+  senha: senhaCadastroSchema,
+}).strict()

@@ -1,848 +1,265 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-} from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
-import {
-  Link,
-  useParams,
-} from 'react-router'
-
+import { Link, useNavigate, useParams } from 'react-router'
 import AnalysisPanel from '../../components/correction/AnalysisPanel.jsx'
 import EssayEvidenceText from '../../components/correction/EssayEvidenceText.jsx'
 import FeedbackEditor from '../../components/correction/FeedbackEditor.jsx'
-import { COMPETENCIAS_ENEM } from '../../constants/competencias-enem.js'
-import DashboardLayout from '../../layouts/DashboardLayout.jsx'
+import CriterionComments from '../../components/correction/CriterionComments.jsx'
+import ProfessorWorkspaceLayout from '../../layouts/ProfessorWorkspaceLayout.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
 import { useRascunho } from '../../hooks/useRascunho.js'
-import {
-  listarAnalisesIa,
-  solicitarAnaliseIa,
-} from '../../services/analises-ia.js'
-import {
-  obterFeedbackProfessor,
-  publicarFeedback,
-  salvarRascunhoFeedback,
-} from '../../services/feedbacks.js'
-import {
-  obterRedacaoProfessor,
-} from '../../services/redacoes.js'
+import { listarAnalisesIa, solicitarAnaliseIa } from '../../services/analises-ia.js'
+import { obterFeedbackProfessor, publicarFeedback, salvarRascunhoFeedback } from '../../services/feedbacks.js'
+import { listarRedacoesDaTurma, obterRedacaoProfessor } from '../../services/redacoes.js'
 import { criarChaveRascunho } from '../../utils/draft-storage.js'
+import { obterIniciais } from '../../utils/professor-dashboard.js'
+import { avisoEstadoAnalise } from '../../utils/external-request.js'
+import { criarFormularioFeedback, montarDadosFeedback, validarFeedback, criterioFixo, tomCriterio, evidenciasVerificadas, organizarFila, atualizarComentario } from '../../utils/professor-correction.js'
+import fixedIcon from '../../assets/criterion-fixed.svg'
+import './professor-correction.css'
 
-function formatarDataHora(value) {
-  if (!value) {
-    return 'Data indisponível'
-  }
-
-  const date = new Date(value)
-
-  if (Number.isNaN(date.getTime())) {
-    return 'Data indisponível'
-  }
-
-  return new Intl.DateTimeFormat('pt-BR', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(date)
-}
-
-function formatarStatusRedacao(status) {
-  const statuses = {
-    RASCUNHO: 'Rascunho',
-    ENVIADA: 'Aguardando correção',
-    AVALIADA: 'Corrigida',
-  }
-
-  return statuses[status] ?? status
-}
-
-function obterMensagemErro(error, fallback) {
-  return (
-    error?.response?.data?.error?.message ??
-    fallback
-  )
-}
-
-function criarFormularioFeedback(
-  redacao,
-  feedback,
-) {
-  const currentFeedback =
-    feedback?.versaoAtual ?? null
-
-  const savedComments = new Map(
-    (currentFeedback?.criterios ?? []).map(
-      (item) => [
-        item.criterioId,
-        item.comentario,
-      ],
-    ),
-  )
-
-  const criterionComments = Object.fromEntries(
-    (redacao.tema.criterios ?? []).map(
-      (criterion) => [
-        criterion.id,
-        savedComments.get(criterion.id) ?? '',
-      ],
-    ),
-  )
-
-  const pontuacoesCompetencias =
-    Object.fromEntries(
-      COMPETENCIAS_ENEM.map(({ campo }) => [
-        campo,
-        currentFeedback?.[campo] == null
-          ? ''
-          : String(currentFeedback[campo]),
-      ]),
-    )
-
-  const possuiPontuacaoPorCompetencia =
-    COMPETENCIAS_ENEM.some(
-      ({ campo }) =>
-        currentFeedback?.[campo] != null,
-    )
-
-  return {
-    ...pontuacoesCompetencias,
-    legacyScore:
-      !possuiPontuacaoPorCompetencia &&
-      currentFeedback?.nota != null
-        ? String(currentFeedback.nota)
-        : '',
-    generalComment:
-      currentFeedback?.comentarioGeral ?? '',
-    criterionComments,
-  }
-}
-
-function montarDadosFeedback(form) {
-  const generalComment =
-    form.generalComment.trim()
-
-  return {
-    ...Object.fromEntries(
-      COMPETENCIAS_ENEM.map(({ campo }) => {
-        const texto = String(
-          form[campo] ?? '',
-        ).trim()
-
-        return [
-          campo,
-          texto === '' ? null : Number(texto),
-        ]
-      }),
-    ),
-    comentarioGeral:
-      generalComment === ''
-        ? null
-        : generalComment,
-    criterios: Object.entries(
-      form.criterionComments,
-    )
-      .filter(
-        ([, comment]) =>
-          comment.trim().length > 0,
-      )
-      .map(([criterioId, comment]) => ({
-        criterioId,
-        comentario: comment.trim(),
-      })),
-  }
-}
-
-function PaginaCarregando() {
-  return (
-    <DashboardLayout>
-      <section className="px-6 py-16 sm:px-10 lg:px-16">
-        <div className="mx-auto max-w-7xl animate-pulse">
-          <div className="h-5 w-40 rounded bg-lexis-300/20" />
-          <div className="mt-6 h-14 max-w-3xl rounded bg-lexis-200/15" />
-
-          <div className="mt-10 grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(20rem,0.6fr)]">
-            <div className="h-[34rem] rounded-2xl bg-lexis-900/70" />
-            <div className="h-[24rem] rounded-2xl bg-lexis-900/70" />
-          </div>
-        </div>
-      </section>
-    </DashboardLayout>
-  )
-}
+const erroApi = (error, fallback) => error?.response?.data?.error?.message ?? fallback
+const formVazio = { competencia1: '', competencia2: '', competencia3: '', competencia4: '', competencia5: '', legacyScore: '', generalComment: '', criterionComments: {}, criterionReviewed: {} }
+const formatarData = (valor) => valor && !Number.isNaN(new Date(valor).getTime()) ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(valor)) : 'Não informada'
 
 export default function ProfessorRedacaoPage() {
   const { redacaoId } = useParams()
   const { usuario } = useAuth()
+  // Ao trocar de redação, nenhum estado ou resposta tardia pode atravessar para outro aluno.
+  return <Correcao key={`${usuario?.id}:${redacaoId}`} redacaoId={redacaoId} usuarioId={usuario?.id} />
+}
 
-  const [pagina, setPagina] = useState({
-    status: 'carregando',
-    redacao: null,
-    analises: [],
-    feedback: null,
-    mensagem: '',
-  })
-
-  const [form, setForm] = useState({
-    competencia1: '',
-    competencia2: '',
-    competencia3: '',
-    competencia4: '',
-    competencia5: '',
-    legacyScore: '',
-    generalComment: '',
-    criterionComments: {},
-  })
-  const [formServidor, setFormServidor] =
-    useState(null)
-
-  const [analysisBusy, setAnalysisBusy] =
-    useState(false)
-  const [feedbackAction, setFeedbackAction] =
-    useState(null)
-  const [analysisNotice, setAnalysisNotice] =
-    useState(null)
-  const [feedbackNotice, setFeedbackNotice] =
-    useState(null)
-  const [painelAtivo, setPainelAtivo] =
-    useState('criterios')
-  const [sheetAberto, setSheetAberto] =
-    useState(false)
+function Correcao({ redacaoId, usuarioId }) {
+  const navigate = useNavigate()
+  const [pagina, setPagina] = useState({ status: 'carregando', analises: [], fila: null })
+  const [tentativa, setTentativa] = useState(0)
+  const [form, setForm] = useState(formVazio)
+  const [formServidor, setFormServidor] = useState(null)
+  const [analysisBusy, setAnalysisBusy] = useState(false)
+  const [feedbackAction, setFeedbackAction] = useState(null)
+  const [analysisNotice, setAnalysisNotice] = useState(null)
+  const [feedbackNotice, setFeedbackNotice] = useState(null)
+  const [painelAtivo, setPainelAtivo] = useState('criterios')
+  const [mobile, setMobile] = useState(() => globalThis.matchMedia('(max-width: 767px)').matches)
+  const [sheetAberto, setSheetAberto] = useState(false)
   const sheetRef = useRef(null)
-  const sheetTriggerRef = useRef(null)
-  const chaveRascunho = criarChaveRascunho(
-    usuario?.id,
-    redacaoId,
-  )
-  const {
-    recuperado: rascunhoRecuperado,
-    salvoEm: rascunhoSalvoEm,
-    descartar: descartarRascunho,
-    recuperar: recuperarRascunho,
-  } = useRascunho({
-    chave: chaveRascunho,
+  const focoCriterio = useRef(null)
+  const ativo = useRef(true)
+  const operacao = useRef(false)
+  const analiseEmCurso = useRef(false)
+  const rascunho = useRascunho({
+    chave: criarChaveRascunho(usuarioId, redacaoId),
     habilitado: pagina.status === 'pronto',
     valorAtual: form,
   })
-
-  const rascunhoDivergente = Boolean(
-    rascunhoRecuperado &&
-      formServidor &&
-      JSON.stringify(rascunhoRecuperado.valor) !==
-        JSON.stringify(formServidor),
-  )
+  const rascunhoDivergente = Boolean(rascunho.recuperado && formServidor && JSON.stringify(rascunho.recuperado.valor) !== JSON.stringify(formServidor))
 
   useEffect(() => {
-    if (!sheetAberto) {
-      return undefined
-    }
+    ativo.current = true
+    return () => { ativo.current = false }
+  }, [])
+  useEffect(() => {
+    const consulta = globalThis.matchMedia('(max-width: 767px)')
+    const atualizar = () => { setMobile(consulta.matches); if (!consulta.matches) setSheetAberto(false) }
+    consulta.addEventListener('change', atualizar)
+    return () => consulta.removeEventListener('change', atualizar)
+  }, [])
+  useEffect(() => {
+    let valido = true
+    setPagina({ status: 'carregando', analises: [], fila: null })
+    Promise.all([obterRedacaoProfessor(redacaoId), listarAnalisesIa(redacaoId), obterFeedbackProfessor(redacaoId)])
+      .then(([redacao, analises, feedback]) => {
+        if (!valido) return
+        const formulario = criarFormularioFeedback(redacao, feedback)
+        setForm(formulario); setFormServidor(formulario)
+        setPagina({ status: 'pronto', redacao, analises, feedback, fila: null })
+        listarRedacoesDaTurma(redacao.tema.turma.id, { temaId: redacao.tema.id })
+          .then((lista) => { if (valido) setPagina((p) => ({ ...p, fila: organizarFila(lista, redacaoId) })) })
+          .catch(() => { if (valido) setPagina((p) => ({ ...p, erroFila: true })) })
+      }).catch((error) => {
+        if (valido) setPagina({ status: 'erro', mensagem: erroApi(error, 'Não foi possível abrir esta redação.') })
+      })
+    return () => { valido = false }
+  }, [redacaoId, tentativa])
 
-    const overflowAnterior = document.body.style.overflow
-    const sheet = sheetRef.current
-    const sheetTrigger = sheetTriggerRef.current
-
+  useEffect(() => {
+    if (!mobile || !sheetAberto) return undefined
+    const dialog = sheetRef.current
+    const anterior = document.activeElement
+    const overflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    sheet?.querySelector('[data-sheet-close]')?.focus()
-
-    function handleKeyDown(event) {
-      if (event.key === 'Escape') {
-        setSheetAberto(false)
-        return
-      }
-
-      if (event.key !== 'Tab' || !sheet) {
-        return
-      }
-
-      const focaveis = Array.from(
-        sheet.querySelectorAll(
-          'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), a[href]',
-        ),
-      )
-
-      if (focaveis.length === 0) {
-        return
-      }
-
-      const primeiro = focaveis[0]
-      const ultimo = focaveis[focaveis.length - 1]
-
-      if (
-        event.shiftKey &&
-        document.activeElement === primeiro
-      ) {
-        event.preventDefault()
-        ultimo.focus()
-      } else if (
-        !event.shiftKey &&
-        document.activeElement === ultimo
-      ) {
-        event.preventDefault()
-        primeiro.focus()
-      }
-    }
-
-    document.addEventListener('keydown', handleKeyDown)
-
-    return () => {
-      document.body.style.overflow = overflowAnterior
-      document.removeEventListener('keydown', handleKeyDown)
-      sheetTrigger?.focus()
-    }
-  }, [sheetAberto])
+    dialog.showModal()
+    return () => { dialog.close(); document.body.style.overflow = overflow; if (anterior?.isConnected) anterior.focus() }
+  }, [mobile, sheetAberto])
 
   useEffect(() => {
-    let componentActive = true
+    const ordem = focoCriterio.current
+    if (ordem == null || painelAtivo !== 'comentarios' || (mobile && !sheetAberto)) return
+    const elemento = document.getElementById(`review-criterion-${ordem}`)
+    elemento?.scrollIntoView({ block: 'nearest' })
+    elemento?.focus()
+    focoCriterio.current = null
+  }, [painelAtivo, sheetAberto, mobile])
 
-    async function carregarRedacao() {
-      try {
-        const [
-          redacao,
-          analises,
-          feedback,
-        ] = await Promise.all([
-          obterRedacaoProfessor(redacaoId),
-          listarAnalisesIa(redacaoId),
-          obterFeedbackProfessor(redacaoId),
-        ])
-
-        if (!componentActive) {
-          return
-        }
-
-        setPagina({
-          status: 'pronto',
-          redacao,
-          analises: Array.isArray(analises)
-            ? analises
-            : [],
-          feedback,
-          mensagem: '',
-        })
-
-        const formularioServidor =
-          criarFormularioFeedback(
-            redacao,
-            feedback,
-          )
-
-        setForm(formularioServidor)
-        setFormServidor(formularioServidor)
-      } catch (error) {
-        if (!componentActive) {
-          return
-        }
-
-        setPagina({
-          status: 'erro',
-          redacao: null,
-          analises: [],
-          feedback: null,
-          mensagem:
-            error?.response?.data?.error
-              ?.message ??
-            'Não foi possível carregar esta redação.',
-        })
-      }
-    }
-
-    carregarRedacao()
-
-    return () => {
-      componentActive = false
-    }
-  }, [redacaoId])
-
-  function handleFieldChange(field, value) {
-    setForm((currentForm) => ({
-      ...currentForm,
-      [field]: value,
+  function mudarCampo(campo, valor) {
+    if (!operacao.current) setForm((f) => ({ ...f, [campo]: valor }))
+  }
+  function mudarCriterio(id, valor) {
+    if (!operacao.current) setForm((f) => atualizarComentario(f, id, valor))
+  }
+  function recuperarRascunho() {
+    const recuperado = rascunho.recuperar()
+    if (!recuperado) return
+    // Mantém somente campos e critérios da redação atual, sem importar texto da redação.
+    setForm((f) => ({ ...f,
+      ...Object.fromEntries(Object.keys(formVazio).filter((c) => !['criterionComments', 'criterionReviewed'].includes(c)).map((c) => [c, String(recuperado[c] ?? f[c])])),
+      criterionComments: Object.fromEntries(Object.keys(f.criterionComments).map((id) => [id, String(recuperado.criterionComments?.[id] ?? f.criterionComments[id])])),
+      criterionReviewed: Object.fromEntries(Object.keys(f.criterionComments).filter((id) => recuperado.criterionReviewed?.[id] === true).map((id) => [id, true])),
     }))
   }
-
-  function handleCriterionChange(
-    criterionId,
-    value,
-  ) {
-    setForm((currentForm) => ({
-      ...currentForm,
-      criterionComments: {
-        ...currentForm.criterionComments,
-        [criterionId]: value,
-      },
-    }))
-  }
-
-  function handleRecoverDraft() {
-    const valorRecuperado = recuperarRascunho()
-
-    if (valorRecuperado) {
-      setForm((formAtual) => ({
-        ...formAtual,
-        ...valorRecuperado,
-        ...Object.fromEntries(
-          COMPETENCIAS_ENEM.map(({ campo }) => [
-            campo,
-            valorRecuperado[campo] ?? '',
-          ]),
-        ),
-        legacyScore:
-          valorRecuperado.legacyScore ??
-          valorRecuperado.score ??
-          '',
-      }))
-    }
-  }
-
-  async function handleRequestAnalysis() {
-    setAnalysisBusy(true)
-    setAnalysisNotice(null)
-
+  async function analisar(atualizar = false) {
+    if (analiseEmCurso.current || operacao.current) return
+    analiseEmCurso.current = true; setAnalysisBusy(true); setAnalysisNotice(null)
     try {
-      const analysis =
-        await solicitarAnaliseIa(redacaoId)
-
-      setPagina((currentPage) => ({
-        ...currentPage,
-        analises: [
-          analysis,
-          ...currentPage.analises.filter(
-            (item) => item.id !== analysis.id,
-          ),
-        ],
-      }))
-
-      setAnalysisNotice({
-        type: 'success',
-        message:
-          'A análise foi concluída e armazenada.',
-      })
+      const analises = atualizar ? await listarAnalisesIa(redacaoId) : [await solicitarAnaliseIa(redacaoId)]
+      if (!ativo.current) return
+      setPagina((p) => ({ ...p, analises: atualizar ? analises : [...analises, ...p.analises.filter((a) => a.id !== analises[0].id)] }))
+      setAnalysisNotice(avisoEstadoAnalise(analises[0]))
     } catch (error) {
-      setAnalysisNotice({
-        type: 'error',
-        message: obterMensagemErro(
-          error,
-          'Não foi possível realizar a análise.',
-        ),
-      })
+      if (ativo.current) setAnalysisNotice({ type: 'error', message: erroApi(error, 'A resposta da análise foi interrompida. Consulte o resultado antes de solicitar outra análise. Seus comentários foram preservados.') })
     } finally {
-      setAnalysisBusy(false)
+      analiseEmCurso.current = false
+      if (ativo.current) setAnalysisBusy(false)
     }
   }
-
-  function validarCompetencias(dados) {
-    return COMPETENCIAS_ENEM.every(
-      ({ campo }) =>
-        dados[campo] == null ||
-        (Number.isInteger(dados[campo]) &&
-          dados[campo] >= 0 &&
-          dados[campo] <= 200),
-    )
-  }
-
-  async function handleSaveFeedback(event) {
-    event.preventDefault()
-
+  async function salvar(publicar = false) {
+    if (operacao.current) return
     const dados = montarDadosFeedback(form)
-
-    if (!validarCompetencias(dados)) {
-      setFeedbackNotice({
-        type: 'error',
-        message:
-          'Cada competência precisa ter uma nota inteira entre 0 e 200.',
-      })
-      return
-    }
-
-    setFeedbackAction('saving')
-    setFeedbackNotice(null)
-
+    const erro = validarFeedback(dados, publicar)
+    if (erro) { setFeedbackNotice({ type: 'error', message: erro }); return }
+    if (publicar && !globalThis.confirm('Publicar esta correção para o aluno?')) return
+    operacao.current = true; setFeedbackAction(publicar ? 'publishing' : 'saving'); setFeedbackNotice(null)
+    let rascunhoEnviado = false
+    let publicado = false
     try {
-      await salvarRascunhoFeedback(
-        redacaoId,
-        dados,
-      )
-
-      const feedback =
-        await obterFeedbackProfessor(redacaoId)
-
-      setPagina((currentPage) => ({
-        ...currentPage,
-        feedback,
-      }))
-
-      const formularioServidor =
-        criarFormularioFeedback(
-          pagina.redacao,
-          feedback,
-        )
-
-      setForm(formularioServidor)
-      setFormServidor(formularioServidor)
-      descartarRascunho(formularioServidor)
-
-      setFeedbackNotice({
-        type: 'success',
-        message:
-          'Rascunho salvo. O aluno ainda não pode visualizar esta correção.',
-      })
+      await salvarRascunhoFeedback(redacaoId, dados)
+      rascunhoEnviado = true
+      if (publicar) { await publicarFeedback(redacaoId); publicado = true }
+      const [feedback, redacao] = await Promise.all([obterFeedbackProfessor(redacaoId), obterRedacaoProfessor(redacaoId)])
+      if (!ativo.current) return
+      const formulario = { ...criarFormularioFeedback(redacao, feedback), criterionReviewed: form.criterionReviewed }
+      setPagina((p) => ({ ...p, feedback, redacao }))
+      setForm(formulario); setFormServidor(formulario); rascunho.descartar(formulario)
+      setFeedbackNotice({ type: 'success', message: publicar ? 'Correção publicada. O aluno foi notificado no sistema.' : 'Rascunho salvo. O aluno ainda não pode visualizar estas alterações.' })
     } catch (error) {
-      setFeedbackNotice({
-        type: 'error',
-        message: obterMensagemErro(
-          error,
-          'Não foi possível salvar o rascunho.',
-        ),
-      })
+      if (ativo.current) setFeedbackNotice({ type: 'error', message: publicado
+        ? 'A publicação foi concluída, mas não foi possível atualizar a tela. Recarregue antes de publicar novamente.'
+        : erroApi(error, rascunhoEnviado ? 'Rascunho salvo, mas a etapa seguinte não foi concluída. Seus comentários foram preservados.' : 'Não foi possível salvar. Seus comentários foram preservados.') })
     } finally {
-      setFeedbackAction(null)
+      operacao.current = false
+      if (ativo.current) setFeedbackAction(null)
+    }
+  }
+  function pular() {
+    if (operacao.current || analiseEmCurso.current || !pagina.fila?.proxima) return
+    const alterado = JSON.stringify(form) !== JSON.stringify(formServidor)
+    if (alterado) {
+      rascunho.salvarAgora()
+      if (!globalThis.confirm('Há alterações não enviadas ao servidor. Deseja ir para a próxima redação mesmo assim?')) return
+    }
+    navigate(`/professor/redacoes/${pagina.fila.proxima.id}`)
+  }
+  function abrirComentarios(ordens) {
+    const ordem = ordens[0]
+    focoCriterio.current = ordem
+    setPainelAtivo('comentarios')
+    if (mobile) setSheetAberto(true)
+    else {
+      requestAnimationFrame(() => { const alvo = document.getElementById(`review-criterion-${ordem}`); alvo?.scrollIntoView({ block: 'nearest' }); alvo?.focus() })
     }
   }
 
-  async function handlePublishFeedback() {
-    const dados = montarDadosFeedback(form)
+  const pronto = pagina.status === 'pronto'
+  const redacao = pagina.redacao
+  const analise = pagina.analises?.[0] ?? null
+  const criterios = redacao?.tema.criterios ?? []
+  const { trechos } = evidenciasVerificadas(redacao?.texto ?? '', analise)
+  const base = criterios.filter(criterioFixo)
+  const extras = criterios.filter((c) => !criterioFixo(c))
+  const comentarios = <CriterionComments criterios={criterios} analise={analise} form={form} disabled={Boolean(feedbackAction)} onChange={mudarCriterio} />
+  const controles = <>
+    <section className="review-card review-criteria" aria-labelledby="review-criteria-title">
+      <h2 id="review-criteria-title">Critérios da avaliação</h2>
+      <h3>Base · sempre avaliados</h3>
+      {base.map((c) => <div className={`review-criterion-row review-tone-${tomCriterio(c)}`} key={c.id}>
+        <img src={fixedIcon} alt="Fixo" /><span className="review-color" aria-hidden="true" /><span>{c.nome}</span>
+      </div>)}
+      {!base.length && <p className="review-caption">Esta proposta utiliza critérios anteriores à base atual.</p>}
+      <div className="review-criteria-subheading"><h3>Personalizados</h3><span className="review-badge">{extras.length} {extras.length === 1 ? 'cadastrado' : 'cadastrados'}</span></div>
+      {extras.map((c) => <label className={`review-criterion-row review-tone-${tomCriterio(c, criterios.indexOf(c))}`} key={c.id}>
+        <input type="checkbox" checked disabled aria-label={`Critério definido na proposta: ${c.nome}`} /><span className="review-color" aria-hidden="true" /><span>{c.nome}</span>
+      </label>)}
+      {!extras.length && <p className="review-caption">Nenhum critério personalizado nesta proposta.</p>}
+      <p className="review-caption">Critérios definidos na proposta. A seleção individual por redação ainda não está disponível.</p>
+      <Link className="review-text-link" to={pronto ? `/professor/temas/${redacao.tema.id}` : '/professor/turmas'}>Consultar proposta e critérios</Link>
+    </section>
+    <AnalysisPanel analysis={analise} isRequesting={analysisBusy} notice={analysisNotice} disabled={Boolean(feedbackAction)} onRequest={() => analisar()} onRefresh={() => analisar(true)} />
+    <section className="review-card review-evidence-list" aria-labelledby="review-evidence-title">
+      <h2 id="review-evidence-title">Trechos identificados</h2>
+      {trechos.length ? <ol>{trechos.map((e, i) => {
+        const c = criterios.find((item) => item.ordem === e.ordens[0])
+        return <li key={`${e.inicio}-${e.fim}`}><button type="button" className={`review-tone-${tomCriterio(c ?? {}, Math.max(0, criterios.indexOf(c)))}`} onClick={() => abrirComentarios(e.ordens)}>
+          <span className="review-color" aria-hidden="true" /><span>{e.trecho}</span><small>{String(i + 1).padStart(2, '0')}</small>
+        </button></li>
+      })}</ol> : <p className="review-caption">Nenhum trecho com localização confirmada nesta redação.</p>}
+    </section>
+  </>
+  const tabs = <div className="review-tabs" role="tablist" aria-label="Painéis da correção">
+    {['comentarios', 'criterios'].map((tab, i) => <button key={tab} type="button" id={`review-tab-${tab}`} role="tab" aria-selected={painelAtivo === tab}
+      aria-controls={`review-panel-${tab}`} tabIndex={painelAtivo === tab ? 0 : -1} onClick={() => setPainelAtivo(tab)}
+      onKeyDown={(event) => {
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
+        event.preventDefault()
+        const outro = event.key === 'Home' ? 'comentarios' : event.key === 'End' ? 'criterios' : i === 0 ? 'criterios' : 'comentarios'
+        setPainelAtivo(outro); document.getElementById(`review-tab-${outro}`)?.focus()
+      }}>{tab === 'comentarios' ? 'Comentários' : 'Critérios e IA'}</button>)}
+  </div>
+  const ferramentas = <>{tabs}
+    <div id="review-panel-comentarios" role="tabpanel" aria-labelledby="review-tab-comentarios" className={`review-comments-panel ${painelAtivo === 'comentarios' ? 'is-active' : ''}`}>{comentarios}</div>
+    <div id="review-panel-criterios" role="tabpanel" aria-labelledby="review-tab-criterios" className={`review-criteria-panel ${painelAtivo === 'criterios' ? 'is-active' : ''}`}>{controles}</div>
+  </>
 
-    if (!validarCompetencias(dados)) {
-      setFeedbackNotice({
-        type: 'error',
-        message:
-          'Cada competência precisa ter uma nota inteira entre 0 e 200.',
-      })
-      return
-    }
-
-    if (
-      COMPETENCIAS_ENEM.some(
-        ({ campo }) => dados[campo] == null,
-      ) ||
-      dados.comentarioGeral == null
-    ) {
-      setFeedbackNotice({
-        type: 'error',
-        message:
-          'Preencha as cinco competências e o comentário geral antes de publicar.',
-      })
-      return
-    }
-
-    const confirmed = globalThis.confirm(
-      'Publicar esta correção para o aluno?',
-    )
-
-    if (!confirmed) {
-      return
-    }
-
-    setFeedbackAction('publishing')
-    setFeedbackNotice(null)
-
-    try {
-      await salvarRascunhoFeedback(
-        redacaoId,
-        dados,
-      )
-      await publicarFeedback(redacaoId)
-
-      const [feedback, redacao] =
-        await Promise.all([
-          obterFeedbackProfessor(redacaoId),
-          obterRedacaoProfessor(redacaoId),
-        ])
-
-      setPagina((currentPage) => ({
-        ...currentPage,
-        redacao,
-        feedback,
-      }))
-
-      const formularioServidor =
-        criarFormularioFeedback(
-          redacao,
-          feedback,
-        )
-
-      setForm(formularioServidor)
-      setFormServidor(formularioServidor)
-      descartarRascunho(formularioServidor)
-
-      setFeedbackNotice({
-        type: 'success',
-        message:
-          'Correção publicada. O aluno foi notificado.',
-      })
-    } catch (error) {
-      setFeedbackNotice({
-        type: 'error',
-        message: obterMensagemErro(
-          error,
-          'Não foi possível publicar a correção.',
-        ),
-      })
-    } finally {
-      setFeedbackAction(null)
-    }
-  }
-
-  if (pagina.status === 'carregando') {
-    return <PaginaCarregando />
-  }
-
-  if (pagina.status === 'erro') {
-    return (
-      <DashboardLayout>
-        <section className="px-6 py-16 sm:px-10 lg:px-16">
-          <div className="mx-auto max-w-7xl">
-            <Link
-              to="/professor/turmas"
-              className="text-sm font-semibold text-lexis-300 hover:text-white"
-            >
-              ← Voltar às turmas
-            </Link>
-
-            <div className="mt-8 max-w-2xl rounded-2xl border border-red-300/20 bg-red-950/20 p-6">
-              <h1 className="text-xl font-bold text-red-100">
-                Não foi possível abrir a redação
-              </h1>
-
-              <p className="mt-3 leading-7 text-red-100">
-                {pagina.mensagem}
-              </p>
-            </div>
-          </div>
-        </section>
-      </DashboardLayout>
-    )
-  }
-
-  const {
-    redacao,
-    analises,
-    feedback,
-  } = pagina
-
-  const analiseAtual = analises[0] ?? null
-  const feedbackAtual =
-    feedback?.versaoAtual ?? null
-
-  return (
-    <DashboardLayout>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{
-          duration: 0.45,
-          ease: [0.22, 1, 0.36, 1],
-        }}
-      >
-        <section className="border-b border-lexis-200/15 bg-lexis-900 px-6 py-12 sm:px-10 lg:px-16">
-          <div className="mx-auto max-w-7xl">
-            <Link
-              to={`/professor/temas/${redacao.tema.id}`}
-              className="inline-flex items-center gap-2 rounded-full border border-lexis-300/20 bg-lexis-950/40 px-4 py-2 text-sm font-semibold text-lexis-200 transition hover:border-lexis-300/50 hover:text-white"
-            >
-              <span aria-hidden="true">←</span>
-              Voltar para o tema
-            </Link>
-
-            <p className="mt-10 text-sm font-bold uppercase tracking-[0.2em] text-lexis-300">
-              Correção de redação
-            </p>
-
-            <h1 className="mt-4 max-w-4xl text-4xl font-black tracking-tight text-white sm:text-5xl">
-              {redacao.aluno.nome}
-            </h1>
-
-            <p className="mt-4 max-w-3xl text-lg leading-8 text-lexis-100">
-              {redacao.tema.enunciado}
-            </p>
-
-            <div className="mt-7 flex flex-wrap gap-3">
-              <span className="rounded-full border border-lexis-200/10 bg-lexis-950/45 px-4 py-2 text-sm font-semibold text-lexis-100">
-                {formatarStatusRedacao(
-                  redacao.status,
-                )}
-              </span>
-
-              <span className="rounded-full border border-lexis-200/10 bg-lexis-950/45 px-4 py-2 text-sm font-semibold text-lexis-100">
-                {redacao.origemTexto === 'OCR'
-                  ? 'Imagem digitalizada'
-                  : 'Texto digitado'}
-              </span>
-
-              <span className="rounded-full border border-lexis-200/10 bg-lexis-950/45 px-4 py-2 text-sm font-semibold text-lexis-100">
-                {redacao.enviadaComAtraso
-                  ? 'Enviada com atraso'
-                  : 'Enviada no prazo'}
-              </span>
-            </div>
-          </div>
-        </section>
-
-        <section className="px-4 py-8 sm:px-6 lg:px-8">
-          <div className="correction-workspace mx-auto max-w-[100rem]">
-            <article className="correction-essay surface-card rounded-[14px] p-6 sm:p-8">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-lexis-300">
-                Texto entregue
-              </p>
-
-              <div className="mt-6">
-                <EssayEvidenceText
-                  texto={redacao.texto}
-                  analise={analiseAtual}
-                />
-              </div>
-
-              <dl className="mt-8 grid gap-3 border-t border-lexis-200/20 pt-5 text-sm sm:grid-cols-2">
-                <div>
-                  <dt className="text-lexis-300">Enviada em</dt>
-                  <dd className="mt-1 font-semibold text-lexis-50">
-                    {formatarDataHora(redacao.enviadaEm)}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-lexis-300">Prazo considerado</dt>
-                  <dd className="mt-1 font-semibold text-lexis-50">
-                    {formatarDataHora(redacao.prazoConsideradoEm)}
-                  </dd>
-                </div>
-              </dl>
-            </article>
-
-            {sheetAberto && (
-              <button
-                type="button"
-                className="correction-sheet-backdrop"
-                aria-label="Fechar painel de correção"
-                onClick={() => setSheetAberto(false)}
-              />
-            )}
-
-            <button
-              ref={sheetTriggerRef}
-              type="button"
-              className="correction-sheet-trigger"
-              onClick={() => setSheetAberto(true)}
-              aria-haspopup="dialog"
-              aria-expanded={sheetAberto}
-            >
-              Comentários e critérios
-            </button>
-
-            <aside
-              ref={sheetRef}
-              className={`correction-tools ${sheetAberto ? 'is-open' : ''}`}
-              role={sheetAberto ? 'dialog' : undefined}
-              aria-modal={sheetAberto || undefined}
-              aria-label="Comentários e critérios da correção"
-            >
-              <div className="correction-sheet-heading">
-                <span aria-hidden="true" className="correction-sheet-handle" />
-                <strong>Correção</strong>
-                <button
-                  type="button"
-                  data-sheet-close
-                  onClick={() => setSheetAberto(false)}
-                >
-                  Fechar
-                </button>
-              </div>
-
-              <div className="correction-tabs" role="tablist" aria-label="Painéis da correção">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={painelAtivo === 'comentarios'}
-                  aria-controls="painel-comentarios"
-                  onClick={() => setPainelAtivo('comentarios')}
-                >
-                  Comentários
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={painelAtivo === 'criterios'}
-                  aria-controls="painel-criterios"
-                  onClick={() => setPainelAtivo('criterios')}
-                >
-                  Critérios
-                </button>
-              </div>
-
-              <div
-                id="painel-comentarios"
-                className={`correction-tool-panel correction-comments ${painelAtivo === 'comentarios' ? 'is-active' : ''}`}
-              >
-                <AnalysisPanel
-                  embedded
-                  analysis={analiseAtual}
-                  isRequesting={analysisBusy}
-                  notice={analysisNotice}
-                  onRequest={handleRequestAnalysis}
-                />
-              </div>
-
-              <div
-                id="painel-criterios"
-                className={`correction-tool-panel correction-criteria ${painelAtivo === 'criterios' ? 'is-active' : ''}`}
-              >
-                {rascunhoDivergente && (
-                  <div
-                    role="status"
-                    className="mx-4 mt-4 rounded-[10px] border border-amber-400/40 bg-amber-100/10 p-4 text-sm text-lexis-100"
-                  >
-                    <strong className="block text-lexis-50">
-                      Rascunho local encontrado
-                    </strong>
-                    <p className="mt-2 leading-6">
-                      Há alterações não enviadas salvas neste dispositivo.
-                    </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={handleRecoverDraft}
-                        className="rounded-[8px] bg-lexis-400 px-3 py-2 font-bold text-white"
-                      >
-                        Recuperar rascunho
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          descartarRascunho(
-                            formServidor ?? form,
-                          )
-                        }
-                        className="rounded-[8px] border border-lexis-300/35 px-3 py-2 font-bold text-lexis-100"
-                      >
-                        Descartar
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {!rascunhoDivergente && rascunhoSalvoEm && (
-                  <p className="mx-4 mt-4 text-xs text-lexis-300" role="status">
-                    Alterações locais protegidas em{' '}
-                    {formatarDataHora(rascunhoSalvoEm)}.
-                  </p>
-                )}
-
-                <FeedbackEditor
-                  embedded
-                  action={feedbackAction}
-                  criteria={redacao.tema.criterios ?? []}
-                  currentFeedback={feedbackAtual}
-                  form={form}
-                  notice={feedbackNotice}
-                  onCriterionChange={handleCriterionChange}
-                  onFieldChange={handleFieldChange}
-                  onPublish={handlePublishFeedback}
-                  onSave={handleSaveFeedback}
-                />
-              </div>
-            </aside>
-          </div>
-        </section>
-      </motion.div>
-    </DashboardLayout>
-  )
+  return <ProfessorWorkspaceLayout secao="Correção" imersivo pronto={pronto} turmas={pronto ? [redacao.tema.turma] : []}
+    indicador={pagina.fila?.posicao ? <span className="review-position">Redação {pagina.fila.posicao} de {pagina.fila.total}</span> : null}
+    cabecalho={<nav className="review-breadcrumb" aria-label="Caminho da correção"><Link to="/professor/turmas">Turmas</Link>{pronto && <><span aria-hidden="true">›</span><Link to={`/professor/turmas/${redacao.tema.turma.id}`}>{redacao.tema.turma.nome}</Link></>}<span aria-hidden="true">›</span><span>Correção</span></nav>}>
+    <motion.main id="panel-main" className="review-main" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .2 }}>
+      {pagina.status === 'carregando' && <div className="review-loading"><h1>Correção do professor</h1><p role="status">Carregando redação e avaliação…</p><div aria-hidden="true" className="review-loading-grid"><div className="skeleton-block" /><div className="skeleton-block" /><div className="skeleton-block" /></div></div>}
+      {pagina.status === 'erro' && <section className="review-card review-load-error" role="alert"><h1>Não foi possível abrir a redação</h1><p>{pagina.mensagem}</p><button className="panel-primary-button" onClick={() => setTentativa((v) => v + 1)}>Tentar novamente</button></section>}
+      {pronto && <div className="review-grid">
+        <div className="review-center">
+          <section className="review-card review-student">
+            <span className="review-student-avatar" aria-hidden="true">{obterIniciais(redacao.aluno.nome)}</span>
+            <div className="review-student-info"><h1>{redacao.aluno.nome}</h1><p>{redacao.tema.turma.nome} · {redacao.tema.enunciado}</p></div>
+            <div className="review-student-actions"><button type="button" className="review-outline-button" disabled={!pagina.fila?.proxima || analysisBusy || Boolean(feedbackAction)} onClick={pular}>Pular</button>
+              <button type="button" className="panel-primary-button" disabled={Boolean(feedbackAction)} onClick={() => salvar()}>{feedbackAction === 'saving' ? 'Salvando…' : 'Salvar'}</button></div>
+          </section>
+          {pagina.erroFila && <p className="review-caption">A fila de redações está indisponível. A correção atual permanece acessível.</p>}
+          {rascunhoDivergente && <section className="review-notice" role="status"><strong>Rascunho local encontrado</strong><p>Há alterações não enviadas salvas neste dispositivo.</p><button type="button" className="panel-soft-button" disabled={Boolean(feedbackAction)} onClick={recuperarRascunho}>Recuperar rascunho</button> <button type="button" className="panel-soft-button" disabled={Boolean(feedbackAction)} onClick={() => rascunho.descartar(formServidor)}>Descartar rascunho local</button></section>}
+          {!rascunhoDivergente && rascunho.salvoEm && <p className="review-caption" role="status">Alterações locais protegidas em {formatarData(rascunho.salvoEm)}.</p>}
+          <article className="review-card review-essay">
+            <div className="review-essay-heading"><h2>Redação do aluno</h2><span className="review-badge">{trechos.length} {trechos.length === 1 ? 'trecho localizado' : 'trechos localizados'} da IA</span><span className="review-caption">{redacao.texto?.trim() ? redacao.texto.trim().split(/\s+/u).length : 0} palavras</span></div>
+            <EssayEvidenceText texto={redacao.texto} analise={analise} criterios={criterios} onEvidence={abrirComentarios} />
+            <details className="review-submission"><summary>Informações da entrega</summary><p>{redacao.origemTexto === 'OCR' ? 'Texto digitalizado por OCR' : 'Texto digitado'} · {redacao.enviadaComAtraso ? 'Enviada com atraso' : 'Enviada no prazo'}</p><p>Enviada em {formatarData(redacao.enviadaEm)}. Prazo: {formatarData(redacao.prazoConsideradoEm)}.</p></details>
+          </article>
+          <FeedbackEditor action={feedbackAction} currentFeedback={pagina.feedback?.versaoAtual} form={form} notice={feedbackNotice} onFieldChange={mudarCampo} onPublish={() => salvar(true)} />
+        </div>
+        {mobile ? <>
+          <button className="review-sheet-trigger" type="button" aria-haspopup="dialog" aria-expanded={sheetAberto} onClick={() => setSheetAberto(true)}>Comentários e critérios</button>
+          {sheetAberto && <dialog ref={sheetRef} className="review-sheet" aria-labelledby="review-sheet-title" onCancel={(e) => { e.preventDefault(); setSheetAberto(false) }}>
+            <div className="review-sheet-heading"><h2 id="review-sheet-title">Correção</h2><button className="panel-soft-button" type="button" onClick={() => setSheetAberto(false)}>Fechar</button></div>{ferramentas}
+          </dialog>}
+        </> : <aside className="review-tools" aria-label="Ferramentas de correção">{ferramentas}</aside>}
+      </div>}
+    </motion.main>
+  </ProfessorWorkspaceLayout>
 }

@@ -25,6 +25,7 @@ import {
 const somenteAluno = autorizarPapeis('ALUNO')
 
 export function criarNotificacoesRouter({
+  autenticar = autenticarAccessToken,
   listarNotificacoes = listarNotificacoesParaAluno,
   marcarNotificacaoLida =
     marcarNotificacaoLidaParaAluno,
@@ -59,7 +60,7 @@ export function criarNotificacoesRouter({
    */
   router.get(
     '/aluno/notificacoes',
-    autenticarAccessToken,
+    autenticar,
     somenteAluno,
     listarController,
   )
@@ -95,7 +96,7 @@ export function criarNotificacoesRouter({
    */
   router.patch(
     '/aluno/notificacoes/:notificacaoId/lida',
-    autenticarAccessToken,
+    autenticar,
     somenteAluno,
     validarParams(notificacaoParamsSchema),
     marcarLidaController,

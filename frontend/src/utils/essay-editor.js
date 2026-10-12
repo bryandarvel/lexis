@@ -1,4 +1,12 @@
 export const LIMITE_CARACTERES_REDACAO = 20_000
+
+export function mensagemRevisaoLinguistica(revisao) {
+  if (revisao.status === 'DESATIVADO') return 'A revisão linguística está desativada neste ambiente. Seu texto pode ser salvo e enviado normalmente.'
+  if (!revisao.disponivel) return revisao.mensagem ?? 'A revisão linguística está indisponível. Seu texto foi preservado e pode ser salvo ou enviado.'
+  return revisao.sugestoes?.length > 0
+    ? `${revisao.sugestoes.length} sugestão(ões) encontrada(s).`
+    : 'Nenhuma sugestão foi encontrada.'
+}
 export const LIMITE_IMAGEM_REDACAO_BYTES = 1_048_576
 
 const TIPOS_IMAGEM_ACEITOS = new Set([

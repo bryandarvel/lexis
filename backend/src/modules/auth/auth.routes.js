@@ -1,4 +1,7 @@
 import { Router } from 'express'
+import { solicitarRecuperacaoController, redefinirSenhaController } from './password-recovery.controller.js'
+import { solicitarRecuperacaoSchema, redefinirSenhaSchema } from './auth.schemas.js'
+import { limitarRecuperacao, limitarRedefinicao } from '../../middlewares/auth-rate-limiters.js'
 
 import { validarBody } from '../../middlewares/validate-request.js'
 import {
@@ -25,6 +28,52 @@ import {
 } from '../../middlewares/auth-rate-limiters.js'
 
 export const authRouter = Router()
+
+/**
+ * @openapi
+ * /api/auth/recuperar-senha:
+ *   post:
+ *     summary: Solicita instruções de recuperação de senha
+ *     description: Resposta idêntica para conta existente, inexistente ou inativa. Enfileira o envio quando habilitado; não confirma entrega.
+ *     tags: [Autenticação]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             additionalProperties: false
+ *             required: [email]
+ *             properties:
+ *               email: { type: string, format: email, maxLength: 191 }
+ *     responses:
+ *       '202': { description: Solicitação recebida sem divulgar existência de conta }
+ *       '422': { description: E-mail inválido }
+ *       '429': { description: Limite de solicitações atingido }
+ *       '503': { description: Recuperação indisponível para todos os usuários }
+ * /api/auth/redefinir-senha:
+ *   post:
+ *     summary: Redefine a senha com token de uso único
+ *     description: Consome o token atomicamente e revoga sessões anteriores. A senha segue as regras do cadastro e o token é enviado somente no corpo.
+ *     tags: [Autenticação]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             additionalProperties: false
+ *             required: [token, senha]
+ *             properties:
+ *               token: { type: string, pattern: '^[a-f0-9]{64}$' }
+ *               senha: { type: string, format: password, minLength: 10, maxLength: 72 }
+ *     responses:
+ *       '204': { description: Senha redefinida; faça login novamente }
+ *       '422': { description: Token inválido/expirado/usado ou senha fora das regras }
+ *       '429': { description: Limite de tentativas atingido }
+ */
+authRouter.post('/recuperar-senha', limitarRecuperacao, validarBody(solicitarRecuperacaoSchema), solicitarRecuperacaoController)
+authRouter.post('/redefinir-senha', limitarRedefinicao, validarBody(redefinirSenhaSchema), redefinirSenhaController)
 
 /**
  * @openapi

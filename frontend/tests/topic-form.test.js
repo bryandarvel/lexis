@@ -6,6 +6,7 @@ import {
   moverCriterio,
   prepararTemaParaEnvio,
   validarCriteriosTema,
+  validarCriteriosNovaProposta,
   validarFormularioTema,
 } from '../src/utils/topic-form.js'
 
@@ -72,4 +73,17 @@ test('impede critérios repetidos antes do envio', () => {
     validarCriteriosTema(formulario.criterios),
     'Os critérios não podem possuir nomes repetidos.',
   )
+})
+
+test('nova proposta exige a base fixa e aceita no máximo dois personalizados', () => {
+  const base = criarCriteriosDoModelo(modelo)
+  assert.equal(validarCriteriosNovaProposta(base, modelo), null)
+  assert.match(validarCriteriosNovaProposta(base.slice(1), modelo), /três critérios fixos/)
+  assert.match(validarCriteriosNovaProposta([{ ...base[0], descricao: 'Alterada' }, ...base.slice(1)], modelo), /não podem ser alterados/)
+  const extras = [
+    { nome: 'Atualidade', descricao: 'Verifica a atualidade das fontes.' },
+    { nome: 'Diversidade', descricao: 'Verifica a variedade das referências.' },
+  ]
+  assert.equal(validarCriteriosNovaProposta([...base, ...extras], modelo), null)
+  assert.match(validarCriteriosNovaProposta([...base, ...extras, { nome: 'Clareza', descricao: 'Descrição válida.' }], modelo), /no máximo dois/)
 })

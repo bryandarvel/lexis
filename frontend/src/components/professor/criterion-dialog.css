@@ -1,0 +1,23 @@
+.criterion-dialog { width: min(432px, calc(100% - 32px)); max-height: calc(100svh - 32px); margin: auto; padding: 26px 28px 24px; border: 1px solid var(--panel-border); border-radius: 20px; background: var(--panel-surface); color: var(--panel-text); box-shadow: 0 8px 24px rgb(0 32 73 / 10%); overflow-y: auto; overscroll-behavior: contain; }
+.criterion-dialog::backdrop { background: rgb(0 32 73 / 55%); }
+.criterion-dialog[open] { animation: criterion-appear 160ms ease-out; }
+.criterion-dialog h2 { margin: 0; font-family: var(--font-interface); font-size: 20px; line-height: 26px; font-weight: 600; letter-spacing: -.16px; }
+.criterion-dialog-context { margin: 2px 0 24px; font-size: 12px; line-height: 17px; font-weight: 500; color: var(--panel-muted); overflow-wrap: anywhere; }
+.criterion-dialog label { display: block; margin: 16px 0 4px; font-size: 13px; line-height: 18px; font-weight: 600; }
+.criterion-dialog input, .criterion-dialog textarea { display: block; width: 100%; padding: 10px 12px; border: 1px solid #8895ab; border-radius: 10px; background: var(--panel-surface); color: var(--panel-text); font-size: 14px; line-height: 22px; }
+.criterion-dialog textarea { min-height: 64px; resize: vertical; }
+.criterion-dialog-note { margin: 0; font-size: 12px; line-height: 17px; color: var(--panel-muted); }
+.criterion-dialog-note { margin-top: 12px; }
+.criterion-dialog-actions { display: flex; justify-content: space-between; gap: 12px; margin-top: 20px; }
+.criterion-dialog-actions button { min-width: 110px; }
+.criterion-dialog-actions button[type="submit"] { min-width: 138px; }
+.criterion-dialog .criterion-cancel { border: 1px solid #8895ab; background: var(--panel-surface); color: var(--panel-text); }
+.criterion-dialog-error { margin: 16px 0 0; color: var(--panel-error); font-size: 13px; line-height: 20px; }
+.criterion-dialog button:disabled { opacity: .55; cursor: not-allowed; }
+[data-theme="dark"] .criterion-dialog { box-shadow: inset 0 1px rgb(255 255 255 / 12%); }
+@keyframes criterion-appear { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .criterion-dialog[open] { animation: none; } }
+@media (max-width: 380px) {
+  .criterion-dialog { padding: 22px 20px; }
+  .criterion-dialog-actions button, .criterion-dialog-actions button[type="submit"] { min-width: 0; flex: 1; }
+}

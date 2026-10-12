@@ -89,7 +89,7 @@
 }
 
 html {
-  min-width: 320px;
+  min-width: 0;
   min-height: 100%;
   scroll-padding-top: 4.5rem;
   background: var(--page-background);
@@ -97,7 +97,7 @@ html {
 
 body {
   margin: 0;
-  min-width: 320px;
+  min-width: 0;
   min-height: 100vh;
   background: var(--page-background);
   color: var(--color-lexis-50);
@@ -130,6 +130,20 @@ h2,
   font-family: var(--font-display);
   font-size: 1.0625rem;
   line-height: 1.9;
+}
+
+.auth-notice-erro { color: #991b1b; background: #fef2f2; border-color: #dc2626; }
+.auth-notice-sucesso { color: #166534; background: #f0fdf4; border-color: #15803d; }
+[data-theme="dark"] .auth-notice-erro { color: #fecaca; background: #451a1a; border-color: #f87171; }
+[data-theme="dark"] .auth-notice-sucesso { color: #bbf7d0; background: #052e16; border-color: #4ade80; }
+
+.brand-wordmark,
+.panel-wordmark {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-optical-sizing: auto;
+  letter-spacing: .14em;
+  white-space: nowrap;
 }
 
 .surface-card {

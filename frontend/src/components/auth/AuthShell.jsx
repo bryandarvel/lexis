@@ -32,7 +32,7 @@ export default function AuthShell({
           <div className="relative">
             <Link
               to="/login"
-              className="brand-wordmark inline-flex rounded-lg text-3xl font-bold tracking-[-0.04em] text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--surface-shell-1)]"
+              className="brand-wordmark inline-flex rounded-lg text-3xl text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--surface-shell-1)]"
               aria-label="LÉXIS — página de login"
             >
               LÉXIS

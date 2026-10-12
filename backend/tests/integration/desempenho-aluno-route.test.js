@@ -26,6 +26,7 @@ import {
 import {
   criarTemaParaProfessor,
 } from '../../src/modules/temas/temas.service.js'
+import { MODELO_COMPETENCIA_DOIS } from '../../src/modules/temas/temas.competencia-dois.js'
 import {
   criarTurmaParaProfessor,
 } from '../../src/modules/turmas/turmas.service.js'
@@ -94,13 +95,7 @@ function criarTema(turmaId, enunciado) {
       'Produza uma redação dissertativo-argumentativa sobre o tema.',
     instrucoes: null,
     prazoEntrega: criarPrazoFuturo(30),
-    criterios: [
-      {
-        nome: 'Pertinência do repertório',
-        descricao:
-          'Avalia a relação entre o repertório e a argumentação.',
-      },
-    ],
+    criterios: MODELO_COMPETENCIA_DOIS.criterios.map((criterio) => ({ ...criterio })),
   })
 }
 

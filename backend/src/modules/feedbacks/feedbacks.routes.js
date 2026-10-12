@@ -32,6 +32,7 @@ const somenteProfessor = autorizarPapeis('PROFESSOR')
 const somenteAluno = autorizarPapeis('ALUNO')
 
 export function criarFeedbacksRouter({
+  autenticar = autenticarAccessToken,
   consultarFeedbackAluno =
     consultarFeedbackPublicadoParaAluno,
   consultarFeedback =
@@ -90,7 +91,7 @@ export function criarFeedbacksRouter({
    */
   router.get(
     '/aluno/redacoes/:redacaoId/feedback',
-    autenticarAccessToken,
+    autenticar,
     somenteAluno,
     validarParams(feedbackParamsSchema),
     consultarAlunoController,
@@ -127,7 +128,7 @@ export function criarFeedbacksRouter({
    */
   router.get(
     '/redacoes/:redacaoId/feedback',
-    autenticarAccessToken,
+    autenticar,
     somenteProfessor,
     validarParams(feedbackParamsSchema),
     consultarController,
@@ -221,7 +222,7 @@ export function criarFeedbacksRouter({
    */
   router.put(
     '/redacoes/:redacaoId/feedback',
-    autenticarAccessToken,
+    autenticar,
     somenteProfessor,
     validarParams(feedbackParamsSchema),
     validarBody(salvarFeedbackRascunhoSchema),
@@ -261,7 +262,7 @@ export function criarFeedbacksRouter({
    */
   router.post(
     '/redacoes/:redacaoId/feedback/publicar',
-    autenticarAccessToken,
+    autenticar,
     somenteProfessor,
     validarParams(feedbackParamsSchema),
     publicarController,

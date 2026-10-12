@@ -18,8 +18,8 @@ import { interpretarErroApi } from '../../utils/api-error.js'
 import {
   criarCriterioVazio,
   criarCriteriosDoModelo,
-  moverCriterio,
   prepararTemaParaEnvio,
+  validarCriteriosNovaProposta,
   validarFormularioTema,
 } from '../../utils/topic-form.js'
 
@@ -108,54 +108,21 @@ export default function ProfessorNovoTemaPage() {
     setAviso(null)
   }
 
-  function reordenarCriterio(indice, deslocamento) {
-    setFormulario((atual) => ({
-      ...atual,
-      criterios: moverCriterio(
-        atual.criterios,
-        indice,
-        deslocamento,
-      ),
-    }))
-  }
-
   function removerCriterio(idLocal) {
     setFormulario((atual) => ({
       ...atual,
-      criterios: atual.criterios.filter(
-        (criterio) => criterio.idLocal !== idLocal,
-      ),
+      criterios: [
+        ...atual.criterios.slice(0, 3),
+        ...atual.criterios.slice(3).filter((criterio) => criterio.idLocal !== idLocal),
+      ],
     }))
-  }
-
-  function restaurarModelo() {
-    setFormulario((atual) => ({
-      ...atual,
-      criterios: criarCriteriosDoModelo(modelo),
-    }))
-    setAviso({
-      tipo: 'sucesso',
-      mensagem:
-        'O modelo da Competência II foi restaurado. Você ainda pode editar todos os campos.',
-    })
-  }
-
-  function iniciarCriterioPersonalizado() {
-    setFormulario((atual) => ({
-      ...atual,
-      criterios: [criarCriterioVazio()],
-    }))
-    setAviso({
-      tipo: 'sucesso',
-      mensagem:
-        'Modelo removido deste formulário. Defina seus próprios critérios.',
-    })
   }
 
   async function handleSubmit(evento) {
     evento.preventDefault()
     const erroValidacao =
-      validarFormularioTema(formulario)
+      validarFormularioTema(formulario) ??
+      validarCriteriosNovaProposta(formulario.criterios, modelo)
 
     if (erroValidacao) {
       setAviso({
@@ -259,7 +226,7 @@ export default function ProfessorNovoTemaPage() {
             Criar tema de redação
           </h1>
           <p className="mt-4 max-w-3xl leading-7 text-lexis-200">
-            O modelo abaixo observa repertório na Competência II. Ele não representa as cinco competências completas e nenhum critério é obrigatório: edite, reordene, remova ou substitua antes de criar o tema.
+            A análise do repertório usa três critérios fixos: Legitimação, Pertinência e Uso produtivo. Você pode adicionar até dois critérios personalizados. Eles orientam a IA e não têm peso na nota.
           </p>
         </div>
       </header>
@@ -347,27 +314,9 @@ export default function ProfessorNovoTemaPage() {
           <legend className="px-2 text-xl font-semibold text-white">
             Critérios de avaliação
           </legend>
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <p className="max-w-2xl text-sm leading-6 text-lexis-200">
-              Modelo {modelo.id}, versão {modelo.versao}. A ordem salva será a ordem apresentada à IA e ao professor.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={restaurarModelo}
-                className="min-h-11 rounded-[10px] border border-lexis-300/30 px-4 text-sm font-bold text-white"
-              >
-                Restaurar modelo C2
-              </button>
-              <button
-                type="button"
-                onClick={iniciarCriterioPersonalizado}
-                className="min-h-11 rounded-[10px] border border-lexis-200/20 px-4 text-sm font-bold text-lexis-100"
-              >
-                Usar critérios próprios
-              </button>
-            </div>
-          </div>
+          <p className="max-w-2xl text-sm leading-6 text-lexis-200">
+            Base fixa da Competência II. Os critérios personalizados aparecem depois da base na análise e na correção do professor.
+          </p>
 
           <ol className="mt-6 space-y-5">
             {formulario.criterios.map((criterio, indice) => (
@@ -377,45 +326,21 @@ export default function ProfessorNovoTemaPage() {
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <h3 className="font-semibold text-white">
-                    Critério {indice + 1}
+                    {indice < 3 ? `${criterio.nome} · fixo` : `Critério personalizado ${indice - 2}`}
                   </h3>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => reordenarCriterio(indice, -1)}
-                      disabled={indice === 0}
-                      aria-label={`Mover critério ${indice + 1} para cima`}
-                      className="min-h-10 rounded-lg border border-lexis-200/20 px-3 text-sm text-white disabled:opacity-40"
-                    >
-                      ↑ Subir
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => reordenarCriterio(indice, 1)}
-                      disabled={
-                        indice ===
-                        formulario.criterios.length - 1
-                      }
-                      aria-label={`Mover critério ${indice + 1} para baixo`}
-                      className="min-h-10 rounded-lg border border-lexis-200/20 px-3 text-sm text-white disabled:opacity-40"
-                    >
-                      ↓ Descer
-                    </button>
-                    <button
+                  {indice >= 3 && <button
                       type="button"
                       onClick={() =>
                         removerCriterio(criterio.idLocal)
                       }
-                      disabled={formulario.criterios.length === 1}
                       aria-label={`Remover critério ${indice + 1}`}
                       className="min-h-10 rounded-lg border border-red-300/25 px-3 text-sm text-red-200 disabled:opacity-40"
                     >
                       Remover
-                    </button>
-                  </div>
+                    </button>}
                 </div>
 
-                <div className="mt-4 grid gap-4">
+                {indice < 3 ? <p className="mt-4 text-sm leading-6 text-lexis-200">{criterio.descricao}</p> : <div className="mt-4 grid gap-4">
                   <label className="text-sm font-semibold text-white">
                     Nome
                     <input
@@ -451,7 +376,7 @@ export default function ProfessorNovoTemaPage() {
                       className="mt-2 w-full rounded-[10px] border border-lexis-200/20 bg-lexis-950/70 px-4 py-3 text-white outline-none focus:border-lexis-300 focus:ring-4 focus:ring-lexis-300/15"
                     />
                   </label>
-                </div>
+                </div>}
               </li>
             ))}
           </ol>
@@ -467,11 +392,12 @@ export default function ProfessorNovoTemaPage() {
                 ],
               }))
             }
-            disabled={formulario.criterios.length >= 10}
+            disabled={formulario.criterios.length >= 5}
             className="mt-5 min-h-11 rounded-[10px] bg-lexis-800 px-4 font-bold text-white disabled:opacity-45"
           >
-            + Adicionar critério
+            + Adicionar critério personalizado
           </button>
+          <p className="mt-3 text-sm text-lexis-200">Até dois personalizados. Aprovação administrativa prevista para uma etapa futura.</p>
         </fieldset>
 
         {aviso && (

@@ -1,4 +1,6 @@
 import { prisma } from '../../config/prisma.js'
+import { AppError } from '../../utils/app-error.js'
+import { criteriosSchema } from './temas.schemas.js'
 
 const criterioSelect = {
   id: true,
@@ -76,7 +78,14 @@ const temaAlunoSelect = {
 }
 
 function prepararCriterios(criterios) {
-  return criterios.map((criterio, indice) => ({
+  const resultado = criteriosSchema.safeParse(criterios)
+  if (!resultado.success) {
+    throw new AppError('Os critérios devem preservar a base fixa e conter até dois personalizados.', {
+      statusCode: 422,
+      code: 'VALIDATION_ERROR',
+    })
+  }
+  return resultado.data.map((criterio, indice) => ({
     nome: criterio.nome,
     descricao: criterio.descricao,
     ordem: indice + 1,
@@ -192,6 +201,7 @@ export function substituirCriteriosDoTema({
   professorId,
   criterios,
 }) {
+  const criteriosPreparados = prepararCriterios(criterios)
   return prisma.$transaction(async (transaction) => {
     await transaction.$queryRaw`
       SELECT id
@@ -212,6 +222,10 @@ export function substituirCriteriosDoTema({
           id: true,
           ativo: true,
           criteriosBloqueadosEm: true,
+          criterios: {
+            select: { nome: true, descricao: true },
+            orderBy: { ordem: 'asc' },
+          },
         },
       })
 
@@ -236,6 +250,13 @@ export function substituirCriteriosDoTema({
       }
     }
 
+    if (!criteriosSchema.safeParse(tema.criterios).success) {
+      throw new AppError('Esta proposta usa critérios anteriores à regra atual. Seus dados foram preservados; crie uma nova proposta com a base fixa.', {
+        statusCode: 409,
+        code: 'LEGACY_CRITERIA_REVIEW_REQUIRED',
+      })
+    }
+
     await transaction.criterioAvaliacao.deleteMany({
       where: {
         temaId,
@@ -243,7 +264,7 @@ export function substituirCriteriosDoTema({
     })
 
     await transaction.criterioAvaliacao.createMany({
-      data: prepararCriterios(criterios).map(
+      data: criteriosPreparados.map(
         (criterio) => ({
           ...criterio,
           temaId,

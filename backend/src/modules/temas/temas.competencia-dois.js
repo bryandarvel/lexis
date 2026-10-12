@@ -3,7 +3,7 @@ export const MODELO_COMPETENCIA_DOIS = Object.freeze({
   versao: 1,
   titulo: 'Competência II — repertório sociocultural',
   descricao:
-    'Modelo inicial editável para observar legitimação, pertinência e uso produtivo do repertório. Não substitui as cinco competências do ENEM nem impede critérios personalizados.',
+    'Base obrigatória e fixa de repertório sociocultural, com até dois critérios personalizados adicionais. Não substitui as cinco competências do ENEM.',
   criterios: Object.freeze([
     Object.freeze({
       nome: 'Legitimação',

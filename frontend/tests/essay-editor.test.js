@@ -6,9 +6,17 @@ import {
   calcularProgressoUpload,
   encontrarRedacaoPorTema,
   LIMITE_IMAGEM_REDACAO_BYTES,
+  mensagemRevisaoLinguistica,
   precisaConfirmarSubstituicaoOcr,
   validarImagemRedacao,
 } from '../src/utils/essay-editor.js'
+
+test('não apresenta serviço desativado ou indisponível como revisão concluída', () => {
+  assert.match(mensagemRevisaoLinguistica({ status: 'DESATIVADO', disponivel: false, sugestoes: [] }), /desativada/)
+  assert.match(mensagemRevisaoLinguistica({ status: 'INDISPONIVEL', disponivel: false, sugestoes: [] }), /indisponível/)
+  assert.equal(mensagemRevisaoLinguistica({ status: 'CONCLUIDO', disponivel: true, sugestoes: [] }), 'Nenhuma sugestão foi encontrada.')
+  assert.match(mensagemRevisaoLinguistica({ status: 'CONCLUIDO', disponivel: true, sugestoes: [{}] }), /1 sugestão/)
+})
 
 test('encontra a redação do tema sem alterar a coleção', () => {
   const redacoes = [

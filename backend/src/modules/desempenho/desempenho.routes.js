@@ -17,6 +17,7 @@ import {
 const somenteAluno = autorizarPapeis('ALUNO')
 
 export function criarDesempenhoRouter({
+  autenticar = autenticarAccessToken,
   obterDesempenho = obterDesempenhoParaAluno,
 } = {}) {
   const router = Router()
@@ -74,7 +75,7 @@ export function criarDesempenhoRouter({
    */
   router.get(
     '/aluno/desempenho',
-    autenticarAccessToken,
+    autenticar,
     somenteAluno,
     obterController,
   )

@@ -58,16 +58,8 @@ export function criarConteudoEmailNotificacao(
 }
 
 function obterMensagemSegura(erro) {
-  const codigo =
-    typeof erro?.code === 'string'
-      ? erro.code
-      : 'EMAIL_SEND_FAILED'
-  const mensagem =
-    typeof erro?.message === 'string'
-      ? erro.message
-      : 'Falha desconhecida no envio.'
-
-  return `${codigo}: ${mensagem}`.slice(0, 1000)
+  const permitidos = new Set(['EMAIL_NOT_CONFIGURED', 'EMAIL_SERVICE_LIMIT_REACHED', 'EMAIL_AUTHENTICATION_FAILED', 'EMAIL_DELIVERY_FORBIDDEN', 'EMAIL_SEND_FAILED'])
+  return permitidos.has(erro?.code) ? erro.code : 'EMAIL_SEND_FAILED'
 }
 
 function obterDestinatario(

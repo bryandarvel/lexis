@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { obterModeloCompetenciaDois } from '../../src/modules/temas/temas.competencia-dois.js'
 import { randomUUID } from 'node:crypto'
 import {
   after,
@@ -83,18 +84,7 @@ function criarDadosTema({
     instrucoes:
       'Utilize repertórios socioculturais pertinentes.',
     prazoEntrega,
-    criterios: [
-      {
-        nome: 'Pertinência do repertório',
-        descricao:
-          'Avalia a relação entre repertório e argumentação.',
-      },
-      {
-        nome: 'Desenvolvimento argumentativo',
-        descricao:
-          'Avalia o desenvolvimento dos argumentos.',
-      },
-    ],
+    criterios: obterModeloCompetenciaDois().criterios,
   }
 }
 
@@ -636,7 +626,7 @@ describe('Rotas de redações do professor', () => {
     )
     assert.equal(
       redacaoConsultada.tema.criterios.length,
-      2,
+      3,
     )
     assert.equal(
       redacaoConsultada.tema.criterios[0].ordem,

@@ -2,6 +2,7 @@ import { PrismaMariaDb } from '@prisma/adapter-mariadb'
 import { PrismaClient } from '@prisma/client'
 
 import { env } from './env.js'
+import { registrarEvento } from '../utils/operational-log.js'
 
 const connectionUrl =
   env.NODE_ENV === 'test'
@@ -29,8 +30,9 @@ const adapter = new PrismaMariaDb({
 
 export const prisma = new PrismaClient({
   adapter,
-  log:
-    env.NODE_ENV === 'development'
-      ? ['warn', 'error']
-      : ['error'],
+  log: [{ emit: 'event', level: 'error' }, { emit: 'event', level: 'warn' }],
 })
+
+// Mensagens brutas do ORM podem conter parâmetros e conteúdo de registros.
+prisma.$on('error', () => registrarEvento('database_error'))
+prisma.$on('warn', () => registrarEvento('database_warning'))
