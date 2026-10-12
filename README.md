@@ -41,8 +41,8 @@ Plataforma web acadêmica para produção, análise e correção de redações, 
 ### Professor
 
 1. cria turmas e temas;
-2. pode iniciar um tema com o modelo editável da Competência II — Legitimação, Pertinência e Uso produtivo — ou usar critérios próprios;
-3. edita e ordena critérios até a primeira redação do tema; depois disso, o conjunto fica congelado;
+2. cria propostas com os três critérios fixos da Competência II — Legitimação, Pertinência e Uso produtivo — e até dois personalizados, sem pesos;
+3. edita os critérios personalizados até a primeira entrega do tema; depois disso, o conjunto fica congelado. Propostas legadas permanecem consultáveis sem conversão automática;
 4. consulta redações enviadas e solicita uma análise consultiva do Gemini;
 5. revisa somente evidências posicionais verificadas no texto;
 6. salva rascunhos de correção e publica o feedback final, que cria a notificação do aluno.
@@ -67,7 +67,7 @@ No PowerShell, a partir da raiz do projeto:
 ```powershell
 cd backend
 Copy-Item .env.example .env
-npm.cmd install
+npm.cmd ci
 docker compose up -d
 npx.cmd prisma generate
 npx.cmd prisma migrate deploy
@@ -94,7 +94,7 @@ Em outro terminal, a partir da raiz do projeto:
 ```powershell
 cd frontend
 Copy-Item .env.example .env
-npm.cmd install
+npm.cmd ci
 npm.cmd run dev
 ```
 
@@ -184,3 +184,11 @@ Nunca envie ao GitHub:
 Somente os arquivos `.env.example`, contendo valores demonstrativos, devem ser versionados.
 
 O access token permanece somente em memória e o refresh token é rotacionado em cookie HttpOnly. No logout, rascunhos privados do usuário são removidos, mas preferências não sensíveis, como o tema escolhido, são preservadas.
+
+## Recuperação de senha e operação da demonstração
+
+O botão “Esqueci minha senha” solicita instruções sem revelar se a conta existe. Com e-mail habilitado, a solicitação entra na fila; o processador envia um link temporário de uso único. Após a redefinição, as sessões anteriores da conta são invalidadas e o usuário deve entrar novamente. O banco persiste somente o hash do token.
+
+Configure as variáveis localmente e consulte [docs/operacao-email.md](docs/operacao-email.md) antes de processar a fila com `npm.cmd run email:process`, dentro de `backend/`. Com `EMAIL_ENABLED=false`, a recuperação informa indisponibilidade. Nenhum agendamento de produção é instalado automaticamente.
+
+As evidências e pendências desta entrega estão em [docs/entrega-funcional.md](docs/entrega-funcional.md). A proposta acadêmica para avaliar a IA, dependente de corpus autorizado e avaliadores, está em [docs/protocolo-academico-ia.md](docs/protocolo-academico-ia.md).
