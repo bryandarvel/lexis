@@ -256,8 +256,30 @@ export async function enviarRedacaoParaAluno({
   return tratarResultadoDaEscrita(resultado)
 }
 
-export function listarRedacoesParaAluno(alunoId) {
-  return listarRedacoesDoAluno(alunoId)
+function anexarUltimaPublicacao({
+  feedback,
+  ...redacao
+}) {
+  const versaoPublicada =
+    feedback?.versoes?.[0] ?? null
+
+  return {
+    ...redacao,
+    notaPublicada: versaoPublicada?.nota ?? null,
+    publicadoEm:
+      versaoPublicada?.publicadoEm ?? null,
+  }
+}
+
+export async function listarRedacoesParaAluno(
+  alunoId,
+  {
+    listar = listarRedacoesDoAluno,
+  } = {},
+) {
+  const redacoes = await listar(alunoId)
+
+  return redacoes.map(anexarUltimaPublicacao)
 }
 
 export async function obterRedacaoParaAluno({

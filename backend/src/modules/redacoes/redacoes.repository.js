@@ -41,6 +41,27 @@ const redacaoAlunoSelect = {
   },
 }
 
+const redacaoAlunoListaSelect = {
+  ...redacaoAlunoSelect,
+  feedback: {
+    select: {
+      versoes: {
+        where: {
+          status: 'PUBLICADA',
+        },
+        orderBy: {
+          numero: 'desc',
+        },
+        take: 1,
+        select: {
+          nota: true,
+          publicadoEm: true,
+        },
+      },
+    },
+  },
+}
+
 const redacaoProfessorResumoSelect = {
   id: true,
   temaId: true,
@@ -445,7 +466,7 @@ export function listarRedacoesDoAluno(alunoId) {
     where: {
       alunoId,
     },
-    select: redacaoAlunoSelect,
+    select: redacaoAlunoListaSelect,
     orderBy: {
       atualizadoEm: 'desc',
     },
