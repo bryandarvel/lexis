@@ -104,3 +104,7 @@ Inventário local em 12/10/2026, originalmente na branch `feat/bryan-frontend`. 
 5. Documentação: configuração, operação de e-mail, protocolo acadêmico e relatório de evidências.
 
 Como alguns arquivos cruzam grupos e contêm mudanças preexistentes, revise o diff por trecho antes de preparar commits. Use somente caminhos explícitos, confira `git diff --staged` e vincule a Issue #20. A separação de commits não modifica o escopo dos arquivos inventariados.
+
+## Ajustes adicionais ao combinar com a dev
+
+Na integração posterior, foram ajustados `backend/src/modules/desempenho/desempenho.routes.js`, `backend/tests/integration/desempenho-route.test.js` e `backend/tests/integration/desempenho-aluno-route.test.js` para compatibilidade com a autenticação e os critérios da entrega. Foram atualizados `CONTRIBUTING.md`, `README.md` e este relatório/inventário; foi criado `docs/atualizacao-dev.md`. Os demais arquivos do painel do Lucas chegaram pela integração da dev e foram preservados, não recriados.

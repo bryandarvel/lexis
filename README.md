@@ -157,15 +157,18 @@ git clone https://github.com/bryandarvel/lexis.git
 cd lexis
 ```
 
-Antes de iniciar uma tarefa, atualize a `main` e crie uma branch própria:
+Antes de iniciar uma tarefa, com o trabalho local salvo, atualize a `dev` e crie uma branch própria:
 
 ```powershell
-git switch main
-git pull --ff-only origin main
+git status
+git switch dev
+git pull --ff-only origin dev
 git switch -c feat/NUMERO-nome-curto-da-tarefa
 ```
 
 O Pull Request deve mencionar a Issue com `Closes #NUMERO`, passar pela integração contínua e ser revisado pelo outro integrante antes do merge.
+
+O destino das tarefas é `dev`, com merge commit. A `main` só receberá uma promoção posterior por PR, depois dos testes e aprovação explícita; nunca recebe commits diretos. Para atualizar uma máquina já configurada após a integração, consulte [docs/atualizacao-dev.md](docs/atualizacao-dev.md).
 
 Consulte [CONTRIBUTING.md](CONTRIBUTING.md) para conhecer a rotina completa de Issues, branches, commits, push, revisão e Pull Request. Agentes de IA também devem seguir as regras de [AGENTS.md](AGENTS.md).
 

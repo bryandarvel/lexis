@@ -188,3 +188,13 @@ O total de solicitações de recuperação continuou em uma, com zero pendentes:
 O núcleo técnico e os testes autorizados foram entregues. Permanecem limitações explicitamente registradas: disponibilidade/cota do Gemini (segunda tentativa limitada), instância real de LanguageTool, corpus e avaliadores, seis alertas transitivos, auditoria de acessibilidade ampliada e controles de gestão ainda sem aprovação. Não foi declarado que esses itens externos ou futuros estão implementados/validados. A demonstração mantém `EMAIL_ENABLED=false`; a equipe deve habilitar e supervisionar a fila quando decidir usá-la, conforme `operacao-email.md`.
 
 Na etapa técnica anterior, nenhum commit, push, pull request, merge ou deploy foi realizado. Nenhuma proposta histórica nem vínculo de aluno foi removido. A autorização posterior de Issue, commits e push está registrada no início deste documento; a integração por PR/merge continua separada.
+
+## Integração com a dev — Issue #20
+
+Após autorização posterior, a dev incorporou os PRs #22 (CI), #17 (fundação visual) e #19 (painel do aluno), sempre por merge commit, com CI verde e sem alterar main. A entrega desta Issue foi combinada localmente com essa dev antes de abrir seu PR.
+
+A combinação não gerou conflitos de Git. Os testes de desempenho, porém, precisaram adotar a base canônica de três critérios e a injeção do autenticador de teste usada pelos demais testes isolados. O router mantém o autenticador real como padrão; os testes com banco continuam verificando sessões reais e isolamento entre alunos. Nenhum teste ou proteção foi removido.
+
+Verificação local da combinação: sete testes focados aprovados; backend lint e suíte completa de 265 testes/59 suítes, zero falhas/cancelamentos; frontend lint, 64 testes e build aprovados. Essas contagens substituem as anteriores somente para a versão combinada. O CI remoto do PR final ainda deve ser confirmado antes do merge.
+
+CONTRIBUTING e README passaram a orientar tarefas e atualizações pela dev. O procedimento para Bryan e Lucas está em [atualizacao-dev.md](atualizacao-dev.md), incluindo dependências e migration local, sem apagar dados ou sobrescrever `.env`.

@@ -11,6 +11,7 @@ import { redacoesRouter } from './modules/redacoes/redacoes.routes.js'
 import { analisesIaRouter } from './modules/avaliacao-ia/analise-ia.routes.js'
 import { feedbacksRouter } from './modules/feedbacks/feedbacks.routes.js'
 import { notificacoesRouter } from './modules/notificacoes/notificacoes.routes.js'
+import { desempenhoRouter } from './modules/desempenho/desempenho.routes.js'
 
 import { errorHandler } from './middlewares/error-handler.js'
 import { notFoundHandler } from './middlewares/not-found-handler.js'
@@ -66,6 +67,7 @@ app.use('/api', redacoesRouter)
 app.use('/api', analisesIaRouter)
 app.use('/api', feedbacksRouter)
 app.use('/api', notificacoesRouter)
+app.use('/api', desempenhoRouter)
 
 /**
  * @openapi
