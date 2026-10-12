@@ -41,11 +41,12 @@ function verificarToken({
   }
 }
 
-export function criarAccessToken({ usuarioId, papel }) {
+export function criarAccessToken({ usuarioId, papel, sessaoVersao = 0 }) {
   return jwt.sign(
     {
       tipo: 'access',
       papel,
+      sessaoVersao,
     },
     env.JWT_ACCESS_SECRET,
     {

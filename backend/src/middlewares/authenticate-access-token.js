@@ -1,4 +1,5 @@
 import { AppError } from '../utils/app-error.js'
+import { buscarEstadoSessao } from '../modules/auth/auth.repository.js'
 import {
   verificarAccessToken,
 } from '../modules/auth/auth-token.service.js'
@@ -13,7 +14,8 @@ function criarErroAutenticacaoNecessaria() {
   )
 }
 
-export function autenticarAccessToken(req, _res, next) {
+export function criarAutenticadorAccessToken({ buscarUsuario = buscarEstadoSessao } = {}) {
+return async function autenticar(req, _res, next) {
   const cabecalhoAutorizacao =
     req.headers.authorization
 
@@ -40,9 +42,14 @@ export function autenticarAccessToken(req, _res, next) {
   try {
     const payload = verificarAccessToken(token)
 
+    const usuario = await buscarUsuario(payload.sub, payload)
+    if (!usuario?.ativo || usuario.sessaoVersao !== (payload.sessaoVersao ?? 0)) {
+      return next(criarErroAutenticacaoNecessaria())
+    }
+
     req.auth = {
       usuarioId: payload.sub,
-      papel: payload.papel,
+      papel: usuario.papel,
     }
 
     return next()
@@ -50,3 +57,6 @@ export function autenticarAccessToken(req, _res, next) {
     return next(error)
   }
 }
+}
+
+export const autenticarAccessToken = criarAutenticadorAccessToken()

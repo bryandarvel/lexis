@@ -2,15 +2,19 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
 import {
-  autenticarAccessToken,
+  criarAutenticadorAccessToken,
 } from '../../src/middlewares/authenticate-access-token.js'
 import {
   criarAccessToken,
   criarRefreshToken,
 } from '../../src/modules/auth/auth-token.service.js'
 
+const autenticarAccessToken = criarAutenticadorAccessToken({
+  buscarUsuario: async () => ({ ativo: true, sessaoVersao: 0, papel: 'PROFESSOR' }),
+})
+
 describe('Middleware de autenticação', () => {
-  it('deve autenticar um access token válido', () => {
+  it('deve autenticar um access token válido', async () => {
     const token = criarAccessToken({
       usuarioId: 'usuario-de-teste',
       papel: 'PROFESSOR',
@@ -25,7 +29,7 @@ describe('Middleware de autenticação', () => {
     let erroRecebido
     let quantidadeChamadas = 0
 
-    autenticarAccessToken(
+    await autenticarAccessToken(
       req,
       {},
       (error) => {

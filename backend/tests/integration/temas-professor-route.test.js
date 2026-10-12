@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict'
+import { obterModeloCompetenciaDois } from '../../src/modules/temas/temas.competencia-dois.js'
+import { criarTemaComCriterios } from '../../src/modules/temas/temas.repository.js'
 import { randomUUID } from 'node:crypto'
 import {
   after,
@@ -47,18 +49,7 @@ function criarDadosTema(sobrescritas = {}) {
     instrucoes:
       'Utilize repertórios socioculturais pertinentes.',
     prazoEntrega: criarPrazoFuturo(),
-    criterios: [
-      {
-        nome: 'Pertinência do repertório',
-        descricao:
-          'Avalia a relação do repertório com o argumento.',
-      },
-      {
-        nome: 'Desenvolvimento argumentativo',
-        descricao:
-          'Avalia como o repertório contribui para a argumentação.',
-      },
-    ],
+    criterios: obterModeloCompetenciaDois().criterios,
     ...sobrescritas,
   }
 }
@@ -249,6 +240,42 @@ after(async () => {
   await prisma.$disconnect()
 })
 
+describe('Contrato fixo dos critérios', () => {
+  it('impede contornar criação e edição pela API sem alterar a proposta', async () => {
+    const tema = await criarTemaPelaApi({ accessToken: professorPrincipal.accessToken, turmaId: turmaPrincipal.id })
+    const base = obterModeloCompetenciaDois().criterios
+    const alterados = structuredClone(base)
+    alterados[0].descricao = 'Uma descrição diferente da base obrigatória.'
+    const invalidos = [base.slice(1), alterados, [...base].reverse(), [...base, ...['Extra A', 'Extra B', 'Extra C'].map(nome => ({ nome, descricao: 'Descrição personalizada.' }))], [...base, { nome: 'legitimacao', descricao: 'Duplicação da base.' }]]
+    for (const criterios of invalidos) {
+      await request(app).post(`/api/turmas/${turmaPrincipal.id}/temas`)
+        .set('Authorization', `Bearer ${professorPrincipal.accessToken}`)
+        .send(criarDadosTema({ criterios })).expect(422)
+      await request(app).put(`/api/temas/${tema.id}/criterios`)
+        .set('Authorization', `Bearer ${professorPrincipal.accessToken}`)
+        .send({ criterios }).expect(422)
+    }
+    const depois = await prisma.criterioAvaliacao.findMany({ where: { temaId: tema.id }, orderBy: { ordem: 'asc' } })
+    assert.deepEqual(depois.map(c => c.id), tema.criterios.map(c => c.id))
+    assert.equal(await prisma.temaRedacao.count({ where: { turmaId: turmaPrincipal.id } }), 1)
+    await assert.rejects(async () => criarTemaComCriterios({ turmaId: turmaPrincipal.id, ...criarDadosTema({ criterios: [] }) }), { code: 'VALIDATION_ERROR' })
+  })
+
+  it('preserva proposta legada sem conversão implícita e mantém sua consulta', async () => {
+    const tema = await criarTemaPelaApi({ accessToken: professorPrincipal.accessToken, turmaId: turmaPrincipal.id })
+    await prisma.criterioAvaliacao.update({ where: { id: tema.criterios[0].id }, data: { descricao: 'Descrição histórica anterior à base fixa.' } })
+    const antes = await prisma.criterioAvaliacao.findMany({ where: { temaId: tema.id }, orderBy: { ordem: 'asc' } })
+    const resposta = await request(app).put(`/api/temas/${tema.id}/criterios`)
+      .set('Authorization', `Bearer ${professorPrincipal.accessToken}`)
+      .send({ criterios: obterModeloCompetenciaDois().criterios }).expect(409)
+    assert.equal(resposta.body.error.code, 'LEGACY_CRITERIA_REVIEW_REQUIRED')
+    const consulta = await request(app).get(`/api/temas/${tema.id}`)
+      .set('Authorization', `Bearer ${professorPrincipal.accessToken}`).expect(200)
+    assert.equal(consulta.body.data.tema.criterios[0].descricao, antes[0].descricao)
+    assert.deepEqual(await prisma.criterioAvaliacao.findMany({ where: { temaId: tema.id }, orderBy: { ordem: 'asc' } }), antes)
+  })
+})
+
 describe('Rotas de temas do professor', () => {
   it('deve criar um tema com critérios ordenados', async () => {
     const tema = await criarTemaPelaApi({
@@ -270,7 +297,7 @@ describe('Rotas de temas do professor', () => {
     assert.equal(tema.ativo, true)
     assert.equal(tema.quantidadeRedacoes, 0)
     assert.equal(tema.criteriosBloqueados, false)
-    assert.equal(tema.criterios.length, 2)
+    assert.equal(tema.criterios.length, 3)
     assert.equal(tema.criterios[0].ordem, 1)
     assert.equal(tema.criterios[1].ordem, 2)
     assert.equal(
@@ -314,6 +341,7 @@ describe('Rotas de temas do professor', () => {
       .send(
         criarDadosTema({
           criterios: [
+            ...obterModeloCompetenciaDois().criterios,
             {
               nome: 'Repertório',
               descricao:
@@ -473,7 +501,7 @@ describe('Rotas de temas do professor', () => {
     )
   })
 
-  it('deve substituir e reordenar os critérios', async () => {
+  it('deve acrescentar personalizados preservando a base fixa', async () => {
     const tema = await criarTemaPelaApi({
       accessToken:
         professorPrincipal.accessToken,
@@ -488,6 +516,7 @@ describe('Rotas de temas do professor', () => {
       )
       .send({
         criterios: [
+          ...obterModeloCompetenciaDois().criterios,
           {
             nome: 'Critério A',
             descricao:
@@ -498,11 +527,6 @@ describe('Rotas de temas do professor', () => {
             descricao:
               'Descrição completa do critério B.',
           },
-          {
-            nome: 'Critério C',
-            descricao:
-              'Descrição completa do critério C.',
-          },
         ],
       })
       .expect(200)
@@ -510,11 +534,11 @@ describe('Rotas de temas do professor', () => {
     const criterios =
       resposta.body.data.tema.criterios
 
-    assert.equal(criterios.length, 3)
-    assert.equal(criterios[0].nome, 'Critério A')
+    assert.equal(criterios.length, 5)
+    assert.equal(criterios[0].nome, 'Legitimação')
     assert.equal(criterios[0].ordem, 1)
-    assert.equal(criterios[2].nome, 'Critério C')
-    assert.equal(criterios[2].ordem, 3)
+    assert.equal(criterios[4].nome, 'Critério B')
+    assert.equal(criterios[4].ordem, 5)
   })
 
   it('deve bloquear conteúdo e critérios, mas permitir o prazo', async () => {
@@ -558,6 +582,7 @@ describe('Rotas de temas do professor', () => {
       )
       .send({
         criterios: [
+          ...obterModeloCompetenciaDois().criterios,
           {
             nome: 'Novo critério',
             descricao:

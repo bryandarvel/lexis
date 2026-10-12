@@ -28,6 +28,7 @@ import {
 const somenteProfessor = autorizarPapeis('PROFESSOR')
 
 export function criarAnalisesIaRouter({
+  autenticar = autenticarAccessToken,
   solicitarAnalise =
     solicitarAnaliseIaParaProfessor,
   listarAnalises =
@@ -75,7 +76,7 @@ export function criarAnalisesIaRouter({
    */
   router.get(
     '/redacoes/:redacaoId/analises-ia',
-    autenticarAccessToken,
+    autenticar,
     somenteProfessor,
     validarParams(analiseIaParamsSchema),
     listarController,
@@ -122,7 +123,7 @@ export function criarAnalisesIaRouter({
    */
   router.post(
     '/redacoes/:redacaoId/analises-ia',
-    autenticarAccessToken,
+    autenticar,
     somenteProfessor,
     validarParams(analiseIaParamsSchema),
     limitador,

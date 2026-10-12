@@ -58,6 +58,7 @@ model Usuario {
   nome         String
   email        String       @unique @db.VarChar(191)
   senhaHash    String       @db.VarChar(255)
+  sessaoVersao Int          @default(0)
   papel        PapelUsuario
   ativo        Boolean      @default(true)
   desativadoEm DateTime?
@@ -65,6 +66,7 @@ model Usuario {
   atualizadoEm DateTime     @updatedAt
 
   refreshTokens       RefreshToken[]
+  recuperacoesSenha   RecuperacaoSenha[]
   turmasLecionadas    Turma[]          @relation("ProfessorTurmas")
   matriculas          Matricula[]
   redacoesEnviadas    Redacao[]        @relation("AlunoRedacoes")
@@ -74,6 +76,23 @@ model Usuario {
 
   @@index([papel, ativo])
   @@map("usuarios")
+}
+
+model RecuperacaoSenha {
+  id           String           @id @default(uuid())
+  usuarioId    String
+  usuario      Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  tokenHash    String?          @unique @db.VarChar(64)
+  expiraEm     DateTime
+  consumidoEm  DateTime?
+  statusEmail  StatusEnvioEmail @default(PENDENTE)
+  erroCodigo   String?          @db.VarChar(64)
+  criadoEm     DateTime         @default(now())
+  enviadoEm    DateTime?
+
+  @@index([usuarioId, criadoEm])
+  @@index([statusEmail, expiraEm])
+  @@map("recuperacoes_senha")
 }
 
 model RefreshToken {

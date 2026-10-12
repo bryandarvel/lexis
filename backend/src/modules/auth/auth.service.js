@@ -120,6 +120,7 @@ export async function autenticarUsuario({ email, senha }) {
   const accessToken = criarAccessToken({
     usuarioId: usuario.id,
     papel: usuario.papel,
+    sessaoVersao: usuario.sessaoVersao,
   })
 
   const refreshToken = criarRefreshToken({
@@ -130,12 +131,15 @@ export async function autenticarUsuario({ email, senha }) {
   const refreshTokenExpiraEm =
     obterExpiracaoToken(refreshToken)
 
-  await salvarRefreshToken({
+  const registro = await salvarRefreshToken({
     tokenHash: criarHashToken(refreshToken),
     familiaId,
     usuarioId: usuario.id,
     expiraEm: refreshTokenExpiraEm,
+    sessaoVersao: usuario.sessaoVersao,
+    senhaHashEsperada: usuario.senhaHash,
   })
+  if (!registro) throw criarErroCredenciaisInvalidas()
 
   return {
     usuario: criarUsuarioPublico(usuario),
@@ -177,6 +181,7 @@ export async function renovarSessao(refreshTokenAtual) {
   const novoAccessToken = criarAccessToken({
     usuarioId: tokenRegistrado.usuario.id,
     papel: tokenRegistrado.usuario.papel,
+    sessaoVersao: tokenRegistrado.usuario.sessaoVersao,
   })
 
   const novoRefreshToken = criarRefreshToken({
@@ -193,6 +198,7 @@ export async function renovarSessao(refreshTokenAtual) {
     familiaId: tokenRegistrado.familiaId,
     usuarioId: tokenRegistrado.usuario.id,
     expiraEm: novoRefreshTokenExpiraEm,
+    sessaoVersao: tokenRegistrado.usuario.sessaoVersao,
   })
 
   if (!rotacaoRealizada) {

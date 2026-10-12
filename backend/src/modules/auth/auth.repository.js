@@ -27,6 +27,10 @@ export function buscarUsuarioPublicoPorId(id) {
   })
 }
 
+export function buscarEstadoSessao(id) {
+  return prisma.usuario.findUnique({ where: { id }, select: { ativo: true, papel: true, sessaoVersao: true } })
+}
+
 export function criarUsuario({
   nome,
   email,
@@ -49,14 +53,14 @@ export function salvarRefreshToken({
   familiaId,
   usuarioId,
   expiraEm,
+  sessaoVersao = 0,
+  senhaHashEsperada,
 }) {
-  return prisma.refreshToken.create({
-    data: {
-      tokenHash,
-      familiaId,
-      usuarioId,
-      expiraEm,
-    },
+  return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM usuarios WHERE id = ${usuarioId} FOR UPDATE`
+    const usuario = await tx.usuario.findUnique({ where: { id: usuarioId } })
+    if (!usuario?.ativo || usuario.sessaoVersao !== sessaoVersao || (senhaHashEsperada && usuario.senhaHash !== senhaHashEsperada)) return null
+    return tx.refreshToken.create({ data: { tokenHash, familiaId, usuarioId, expiraEm } })
   })
 }
 
@@ -89,8 +93,12 @@ export function rotacionarRefreshToken({
   familiaId,
   usuarioId,
   expiraEm,
+  sessaoVersao = 0,
 }) {
   return prisma.$transaction(async (transaction) => {
+    await transaction.$queryRaw`SELECT id FROM usuarios WHERE id = ${usuarioId} FOR UPDATE`
+    const usuario = await transaction.usuario.findUnique({ where: { id: usuarioId }, select: { ativo: true, sessaoVersao: true } })
+    if (!usuario?.ativo || usuario.sessaoVersao !== sessaoVersao) return false
     const resultado = await transaction.refreshToken.updateMany({
       where: {
         id: tokenAtualId,

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { autenticarTeste } from '../helpers/auth.js'
 import { randomUUID } from 'node:crypto'
 import { describe, it } from 'node:test'
 
@@ -25,6 +26,7 @@ function criarAplicacao(
   app.use(
     '/api',
     criarFeedbacksRouter({
+      autenticar: autenticarTeste,
       consultarFeedbackAluno,
       consultarFeedback,
       publicarFeedback,

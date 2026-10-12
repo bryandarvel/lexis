@@ -1,7 +1,13 @@
 import { env } from '../config/env.js'
 import { AppError } from '../utils/app-error.js'
+import { registrarEvento } from '../utils/operational-log.js'
 
-export function errorHandler(error, _req, res, _next) {
+export function errorHandler(error, req, res, _next) {
+  if (env.NODE_ENV !== 'test') registrarEvento('request_error', {
+    requestId: req.requestId,
+    status: error instanceof AppError ? error.statusCode : 500,
+    codigo: error instanceof AppError ? error.code : 'INTERNAL_ERROR',
+  })
   if (error instanceof AppError) {
     return res.status(error.statusCode).json({
       error: {
@@ -14,15 +20,10 @@ export function errorHandler(error, _req, res, _next) {
     })
   }
 
-  console.error(error)
-
   return res.status(500).json({
     error: {
       code: 'INTERNAL_ERROR',
       message: 'Erro interno do servidor.',
-      ...(env.NODE_ENV === 'development' && {
-        details: error.message,
-      }),
     },
   })
 }
