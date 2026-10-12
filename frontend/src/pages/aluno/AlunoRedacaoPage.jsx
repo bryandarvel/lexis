@@ -24,6 +24,7 @@ import {
   aplicarSugestaoLinguistica,
   encontrarRedacaoPorTema,
   LIMITE_CARACTERES_REDACAO,
+  mensagemRevisaoLinguistica,
   precisaConfirmarSubstituicaoOcr,
   validarImagemRedacao,
 } from '../../utils/essay-editor.js'
@@ -456,14 +457,10 @@ export default function AlunoRedacaoPage() {
       )
 
       setRevisaoLinguistica({
-        status: 'pronto',
+        status: revisao.disponivel ? 'pronto' : 'indisponivel',
         disponivel: revisao.disponivel,
         sugestoes: revisao.sugestoes ?? [],
-        mensagem:
-          revisao.mensagem ??
-          (revisao.sugestoes?.length > 0
-            ? `${revisao.sugestoes.length} sugestão(ões) encontrada(s).`
-            : 'Nenhuma sugestão foi encontrada.'),
+        mensagem: mensagemRevisaoLinguistica(revisao),
       })
     } catch (error) {
       setRevisaoLinguistica({

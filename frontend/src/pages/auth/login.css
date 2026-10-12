@@ -38,6 +38,7 @@
   align-items: center;
   justify-content: center;
   padding: 76px 32px;
+  background: var(--login-surface);
 }
 .login-theme { position: absolute; right: 24px; top: 20px; }
 .login-card {
@@ -51,6 +52,12 @@
   box-shadow: 0 8px 24px rgb(0 32 73 / 10%);
 }
 [data-theme="dark"] .login-card { box-shadow: inset 0 1px rgb(255 255 255 / 12%); }
+.login-access > .login-card {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
 .login-card h1, .login-card h2 {
   margin: 0;
   font-family: var(--font-interface);
@@ -107,9 +114,6 @@
 .login-recovery::backdrop { background: rgb(0 16 35 / 65%); }
 .login-recovery-pending { margin: 0; color: var(--login-muted); font-size: 14px; line-height: 22px; }
 .login-back { color: var(--login-action); min-height: 44px; cursor: pointer; font-size: 13px; font-weight: 600; }
-@media (min-width: 1280px) {
-  .login-access { padding-right: 152px; }
-}
 @media (max-width: 767px) {
   .login-page { grid-template-columns: 1fr; grid-template-rows: 140px 1fr; }
   .login-logo { width: 80px; height: 100px; }

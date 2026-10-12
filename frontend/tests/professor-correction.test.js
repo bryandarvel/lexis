@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { criarFormularioFeedback, montarDadosFeedback, validarFeedback, sugestaoDoCriterio, criterioFixo, tomCriterio, evidenciasVerificadas, organizarFila } from '../src/utils/professor-correction.js'
+import { criarFormularioFeedback, montarDadosFeedback, validarFeedback, sugestaoDoCriterio, criterioFixo, tomCriterio, evidenciasVerificadas, organizarFila, comentarioEditavel, atualizarComentario } from '../src/utils/professor-correction.js'
 
 const criterio = { id: 'c1', nome: 'Legitimação', ordem: 1 }
 const redacao = { tema: { criterios: [criterio] } }
@@ -55,6 +55,35 @@ test('os três fixos mantêm cores estáveis sem depender da ordem', () => {
   assert.equal(tomCriterio({ nome: 'Uso produtivo' }, 0), 2)
   assert.equal(tomCriterio({ nome: 'Diversidade' }, 3), 3)
   assert.equal(tomCriterio({ nome: 'Atualidade' }, 4), 4)
+})
+
+test('exibe sugestão editável sem incorporá-la automaticamente ao feedback humano', () => {
+  const form = criarFormularioFeedback(redacao, null)
+  const analise = { status: 'CONCLUIDA', resultadoEstruturado: { analisePorCriterio: [{ ordem: 1, criterio: 'Legitimação', diagnostico: 'Sugestão consultiva.' }] } }
+  assert.deepEqual(comentarioEditavel(form, analise, criterio), { texto: 'Sugestão consultiva.', sugerido: true })
+  assert.deepEqual(montarDadosFeedback(form).criterios, [])
+  const editado = atualizarComentario(form, 'c1', 'Texto reescrito pelo professor.')
+  assert.deepEqual(comentarioEditavel(editado, analise, criterio), { texto: 'Texto reescrito pelo professor.', sugerido: false })
+  assert.deepEqual(montarDadosFeedback(editado).criterios, [{ criterioId: 'c1', comentario: 'Texto reescrito pelo professor.' }])
+  assert.equal('criterionReviewed' in montarDadosFeedback(editado), false)
+  assert.equal(form.criterionComments.c1, '')
+})
+
+test('apagar ou descartar uma sugestão mantém o campo vazio inclusive no rascunho recuperado', () => {
+  const analise = { status: 'CONCLUIDA', resultadoEstruturado: { analisePorCriterio: [{ ordem: 1, criterio: 'Legitimação', diagnostico: 'Sugestão consultiva.' }] } }
+  const vazio = atualizarComentario(criarFormularioFeedback(redacao, null), 'c1', '')
+  assert.deepEqual(comentarioEditavel(vazio, analise, criterio), { texto: '', sugerido: false })
+  const recuperado = JSON.parse(JSON.stringify(vazio))
+  assert.deepEqual(comentarioEditavel(recuperado, analise, criterio), { texto: '', sugerido: false })
+  assert.deepEqual(montarDadosFeedback(recuperado).criterios, [])
+})
+
+test('aceitar uma sugestão ou receber outra análise não sobrescreve a decisão humana', () => {
+  const analise = { status: 'CONCLUIDA', resultadoEstruturado: { analisePorCriterio: [{ ordem: 1, criterio: 'Legitimação', diagnostico: 'Outra sugestão.' }] } }
+  const aceito = atualizarComentario(criarFormularioFeedback(redacao, null), 'c1', 'Sugestão revisada.')
+  assert.deepEqual(comentarioEditavel(aceito, analise, criterio), { texto: 'Sugestão revisada.', sugerido: false })
+  const apagado = atualizarComentario(aceito, 'c1', '')
+  assert.deepEqual(comentarioEditavel(apagado, analise, criterio), { texto: '', sugerido: false })
 })
 
 test('marcações e lista usam somente trechos reais e não duplicam evidências sobrepostas', () => {

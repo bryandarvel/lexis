@@ -29,11 +29,7 @@ export default function CriterionDialog({ inicial, proposta, salvando, erro, onS
         <label htmlFor="criterion-description">O que a IA deve procurar</label>
         <textarea id="criterion-description" name="descricao" required minLength={5} maxLength={2000} rows={2}
           value={descricao} disabled={salvando} onChange={(event) => setDescricao(event.target.value)} />
-        <label htmlFor="criterion-weight">Peso na Competência II</label>
-        <div className="criterion-weight-row">
-          <input id="criterion-weight" value="—" disabled aria-describedby="criterion-weight-hint" />
-          <p id="criterion-weight-hint">Indisponível nesta versão. O sistema ainda não aplica pesos aos critérios.</p>
-        </div>
+        <p className="criterion-dialog-note">Este critério orienta a análise do repertório pela IA. Não possui peso e não calcula a nota.</p>
         <p className="criterion-dialog-note">Critério personalizado · aprovação administrativa prevista para uma etapa futura.</p>
         {erro && <p ref={erroRef} tabIndex={-1} role="alert" className="criterion-dialog-error">{erro}</p>}
         <div className="criterion-dialog-actions">

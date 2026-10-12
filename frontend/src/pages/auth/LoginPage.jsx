@@ -9,6 +9,7 @@ import {
 import AuthField from '../../components/auth/AuthField.jsx'
 import AuthNotice from '../../components/auth/AuthNotice.jsx'
 import PasswordRecoveryDialog from '../../components/auth/PasswordRecoveryDialog.jsx'
+import { solicitarRecuperacaoSenha } from '../../services/password-recovery.js'
 import ThemeToggle from '../../components/layout/ThemeToggle.jsx'
 import logo from '../../assets/lexis-logo-login.svg'
 import './login.css'
@@ -186,6 +187,7 @@ export default function LoginPage() {
         </motion.div>
       </section>
       <PasswordRecoveryDialog
+        onRequestRecovery={solicitarRecuperacaoSenha}
         aberto={recuperacaoAberta}
         emailInicial={dados.email}
         onClose={() => setRecuperacaoAberta(false)}

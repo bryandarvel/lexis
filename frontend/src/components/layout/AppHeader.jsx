@@ -97,7 +97,7 @@ export default function AppHeader() {
       >
         <Link
           to={rotaInicial}
-          className="brand-wordmark text-2xl font-bold tracking-tight text-white transition-colors hover:text-lexis-300"
+          className="brand-wordmark text-2xl text-white transition-colors hover:text-lexis-300"
         >
           LÉXIS
         </Link>

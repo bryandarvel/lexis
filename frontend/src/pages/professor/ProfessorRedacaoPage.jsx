@@ -13,12 +13,13 @@ import { obterFeedbackProfessor, publicarFeedback, salvarRascunhoFeedback } from
 import { listarRedacoesDaTurma, obterRedacaoProfessor } from '../../services/redacoes.js'
 import { criarChaveRascunho } from '../../utils/draft-storage.js'
 import { obterIniciais } from '../../utils/professor-dashboard.js'
-import { criarFormularioFeedback, montarDadosFeedback, validarFeedback, criterioFixo, tomCriterio, evidenciasVerificadas, organizarFila } from '../../utils/professor-correction.js'
+import { avisoEstadoAnalise } from '../../utils/external-request.js'
+import { criarFormularioFeedback, montarDadosFeedback, validarFeedback, criterioFixo, tomCriterio, evidenciasVerificadas, organizarFila, atualizarComentario } from '../../utils/professor-correction.js'
 import fixedIcon from '../../assets/criterion-fixed.svg'
 import './professor-correction.css'
 
 const erroApi = (error, fallback) => error?.response?.data?.error?.message ?? fallback
-const formVazio = { competencia1: '', competencia2: '', competencia3: '', competencia4: '', competencia5: '', legacyScore: '', generalComment: '', criterionComments: {} }
+const formVazio = { competencia1: '', competencia2: '', competencia3: '', competencia4: '', competencia5: '', legacyScore: '', generalComment: '', criterionComments: {}, criterionReviewed: {} }
 const formatarData = (valor) => valor && !Number.isNaN(new Date(valor).getTime()) ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(valor)) : 'Não informada'
 
 export default function ProfessorRedacaoPage() {
@@ -104,15 +105,16 @@ function Correcao({ redacaoId, usuarioId }) {
     if (!operacao.current) setForm((f) => ({ ...f, [campo]: valor }))
   }
   function mudarCriterio(id, valor) {
-    if (!operacao.current) setForm((f) => ({ ...f, criterionComments: { ...f.criterionComments, [id]: valor } }))
+    if (!operacao.current) setForm((f) => atualizarComentario(f, id, valor))
   }
   function recuperarRascunho() {
     const recuperado = rascunho.recuperar()
     if (!recuperado) return
     // Mantém somente campos e critérios da redação atual, sem importar texto da redação.
     setForm((f) => ({ ...f,
-      ...Object.fromEntries(Object.keys(formVazio).filter((c) => c !== 'criterionComments').map((c) => [c, String(recuperado[c] ?? f[c])])),
+      ...Object.fromEntries(Object.keys(formVazio).filter((c) => !['criterionComments', 'criterionReviewed'].includes(c)).map((c) => [c, String(recuperado[c] ?? f[c])])),
       criterionComments: Object.fromEntries(Object.keys(f.criterionComments).map((id) => [id, String(recuperado.criterionComments?.[id] ?? f.criterionComments[id])])),
+      criterionReviewed: Object.fromEntries(Object.keys(f.criterionComments).filter((id) => recuperado.criterionReviewed?.[id] === true).map((id) => [id, true])),
     }))
   }
   async function analisar(atualizar = false) {
@@ -122,9 +124,9 @@ function Correcao({ redacaoId, usuarioId }) {
       const analises = atualizar ? await listarAnalisesIa(redacaoId) : [await solicitarAnaliseIa(redacaoId)]
       if (!ativo.current) return
       setPagina((p) => ({ ...p, analises: atualizar ? analises : [...analises, ...p.analises.filter((a) => a.id !== analises[0].id)] }))
-      setAnalysisNotice({ type: 'success', message: analises[0]?.status === 'CONCLUIDA' ? 'Análise disponível para revisão. Nenhuma nota foi atribuída pela IA.' : 'Estado da análise atualizado.' })
+      setAnalysisNotice(avisoEstadoAnalise(analises[0]))
     } catch (error) {
-      if (ativo.current) setAnalysisNotice({ type: 'error', message: erroApi(error, 'Não foi possível realizar a análise. Seus comentários foram preservados.') })
+      if (ativo.current) setAnalysisNotice({ type: 'error', message: erroApi(error, 'A resposta da análise foi interrompida. Consulte o resultado antes de solicitar outra análise. Seus comentários foram preservados.') })
     } finally {
       analiseEmCurso.current = false
       if (ativo.current) setAnalysisBusy(false)
@@ -145,7 +147,7 @@ function Correcao({ redacaoId, usuarioId }) {
       if (publicar) { await publicarFeedback(redacaoId); publicado = true }
       const [feedback, redacao] = await Promise.all([obterFeedbackProfessor(redacaoId), obterRedacaoProfessor(redacaoId)])
       if (!ativo.current) return
-      const formulario = criarFormularioFeedback(redacao, feedback)
+      const formulario = { ...criarFormularioFeedback(redacao, feedback), criterionReviewed: form.criterionReviewed }
       setPagina((p) => ({ ...p, feedback, redacao }))
       setForm(formulario); setFormServidor(formulario); rascunho.descartar(formulario)
       setFeedbackNotice({ type: 'success', message: publicar ? 'Correção publicada. O aluno foi notificado no sistema.' : 'Rascunho salvo. O aluno ainda não pode visualizar estas alterações.' })

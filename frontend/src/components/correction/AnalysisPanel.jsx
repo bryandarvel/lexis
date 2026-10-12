@@ -10,8 +10,9 @@ export default function AnalysisPanel({ analysis, isRequesting, notice, onReques
     <p className="review-caption">A IA não atribui nota. Revise cada sugestão antes de usá-la no feedback.</p>
     {(isRequesting || pendente) && <div role="status" className="review-notice"><progress aria-label="Análise por IA em andamento" /><p>Análise em andamento. A conclusão depende do serviço de IA.</p>{!isRequesting && <button type="button" className="panel-soft-button" onClick={onRefresh}>Atualizar análise</button>}</div>}
     {!analysis && !isRequesting && <p className="review-caption">Nenhuma análise solicitada para esta redação.</p>}
-    {analysis?.status === 'ERRO' && <p role="alert" className="review-notice error">{analysis.mensagemErro ?? 'A análise não pôde ser concluída. Você pode tentar novamente.'}</p>}
+    {analysis?.status === 'ERRO' && !isRequesting && <p role="alert" className="review-notice error">{analysis.mensagemErro ?? 'A análise não pôde ser concluída. Você pode tentar novamente.'}</p>}
     {notice && <p role={notice.type === 'error' ? 'alert' : 'status'} className={`review-notice ${notice.type}`}>{notice.message}</p>}
+    {!isRequesting && !pendente && notice?.type === 'error' && <button type="button" className="panel-soft-button" disabled={disabled} onClick={onRefresh}>Consultar resultado existente</button>}
     {result && <details className="review-card review-analysis-details"><summary>Detalhes da análise</summary>
       <h3>Resumo geral</h3><p>{result.resumoGeral}</p>
       <h3>Pontos fortes</h3><ul>{result.pontosFortes?.map((t, i) => <li key={i}>{t}</li>)}</ul>

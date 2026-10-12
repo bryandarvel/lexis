@@ -55,7 +55,7 @@
 .review-general textarea { margin-top: 12px; background: var(--panel-bg); }
 .review-general textarea::placeholder, .review-comment textarea::placeholder { color: var(--panel-muted); }
 .review-counter { display: block; margin-top: 8px; text-align: right; font-size: 12px; line-height: 17px; color: var(--panel-muted); }
-.review-suggestion { min-height: 132px; max-height: 280px; overflow-y: auto; padding: 10px 12px; border: 1px dashed #1c6eba; border-radius: 10px; background: var(--panel-bg); color: var(--panel-text); font-size: 12px; line-height: 19px; white-space: pre-wrap; }
+.review-comment textarea.review-suggestion { border: 1px dashed #1c6eba; background: var(--panel-bg); }
 .review-suggestion-actions { display: flex; gap: 12px; margin: 8px 0; }
 .review-suggestion-actions button { min-height: 32px; font-size: 13px; font-weight: 600; color: var(--panel-action); cursor: pointer; }
 .review-suggestion-actions button + button { color: var(--panel-muted); }

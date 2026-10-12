@@ -27,7 +27,7 @@
   --panel-error: #fca5a5;
 }
 .panel-header { position: fixed; z-index: 50; inset: 0 0 auto; height: 56px; display: flex; align-items: center; gap: 18px; padding: 0 20px; background: var(--surface-shell-1); color: white; }
-.panel-wordmark { color: white; font-size: 18px; line-height: 24px; font-weight: 600; text-decoration: none; }
+.panel-wordmark { color: white; font-size: 24px; line-height: 28px; text-decoration: none; }
 .panel-header-divider { width: 1px; height: 22px; background: #1e4a80; }
 .panel-header-label { font-size: 14px; color: #93c4f7; }
 .panel-header-tools { margin-left: auto; display: flex; align-items: center; gap: 16px; }

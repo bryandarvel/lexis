@@ -29,6 +29,7 @@ const CadastroPage = lazy(() =>
 const LoginPage = lazy(() =>
   import('../pages/auth/LoginPage.jsx'),
 )
+const RedefinirSenhaPage = lazy(() => import('../pages/auth/RedefinirSenhaPage.jsx'))
 const ProfessorDashboardPage = lazy(() =>
   import('../pages/professor/ProfessorDashboardPage.jsx'),
 )
@@ -52,6 +53,7 @@ export default function AppRoutes() {
   return (
     <Suspense fallback={<RouteLoading />}>
       <Routes>
+        <Route path="/redefinir-senha" element={<RedefinirSenhaPage />} />
         <Route
           element={
             <RouteGuard apenasVisitantes />

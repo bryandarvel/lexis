@@ -19,6 +19,7 @@ export function criarFormularioFeedback(redacao, feedback) {
     legacyScore: !COMPETENCIAS_ENEM.some(({ campo }) => atual?.[campo] != null) && atual?.nota != null ? String(atual.nota) : '',
     generalComment: atual?.comentarioGeral ?? '',
     criterionComments: Object.fromEntries((redacao.tema.criterios ?? []).map((c) => [c.id, comentarios.get(c.id) ?? ''])),
+    criterionReviewed: {},
   }
 }
 
@@ -46,6 +47,18 @@ export function sugestaoDoCriterio(analise, criterio) {
   if (analise?.status !== 'CONCLUIDA') return null
   // Não associa uma sugestão apenas pela posição: análises antigas podem ter outro conjunto de critérios.
   return analise.resultadoEstruturado?.analisePorCriterio?.find((c) => c.ordem === criterio.ordem && normalizar(c.criterio) === normalizar(criterio.nome)) ?? null
+}
+
+export function comentarioEditavel(form, analise, criterio) {
+  const comentario = form.criterionComments[criterio.id] ?? ''
+  const sugestao = sugestaoDoCriterio(analise, criterio)
+  const sugerido = Boolean(sugestao && !comentario && !form.criterionReviewed?.[criterio.id])
+  return { texto: sugerido ? sugestao.diagnostico : comentario, sugerido }
+}
+
+export function atualizarComentario(form, id, texto) {
+  return { ...form, criterionComments: { ...form.criterionComments, [id]: texto },
+    criterionReviewed: { ...form.criterionReviewed, [id]: true } }
 }
 
 export function evidenciasVerificadas(texto, analise) {

@@ -1,5 +1,5 @@
 import api from './api.js'
-import { calcularProgressoUpload } from '../utils/essay-editor.js'
+import { configurarUploadOcr } from '../utils/ocr-upload.js'
 
 function prepararId(id) {
   return encodeURIComponent(id)
@@ -95,20 +95,7 @@ export async function transcreverImagemRedacao(
       temaId,
     )}/redacao/ocr`,
     formulario,
-    {
-      onUploadProgress(evento) {
-        const progresso = calcularProgressoUpload(
-          evento.loaded,
-          evento.total,
-        )
-
-        if (progresso === null || !onProgress) {
-          return
-        }
-
-        onProgress(progresso)
-      },
-    },
+    configurarUploadOcr(onProgress),
   )
 
   return resposta.data.data
