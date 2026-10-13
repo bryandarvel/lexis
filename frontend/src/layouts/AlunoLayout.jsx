@@ -232,8 +232,49 @@ function MenuUsuario({
   )
 }
 
+function TrilhaNavegacao({ itens }) {
+  const ultimo = itens.length - 1
+
+  return (
+    <>
+      <span
+        aria-hidden="true"
+        className="hidden h-[22px] w-px shrink-0 bg-[var(--aluno-shell-borda)] md:block"
+      />
+      <nav
+        aria-label="Trilha de navegação"
+        className="hidden min-w-0 md:block"
+      >
+        <ol className="flex min-w-0 items-center gap-2 text-sm leading-[22px] text-[var(--aluno-shell-texto-suave)]">
+          {itens.map((item, indice) => (
+            <li
+              key={`${indice}-${item}`}
+              className="flex min-w-0 items-center gap-2"
+            >
+              {indice > 0 && (
+                <span aria-hidden="true">›</span>
+              )}
+              <span
+                aria-current={
+                  indice === ultimo
+                    ? 'page'
+                    : undefined
+                }
+                className="max-w-[40vw] truncate"
+              >
+                {item}
+              </span>
+            </li>
+          ))}
+        </ol>
+      </nav>
+    </>
+  )
+}
+
 export default function AlunoLayout({
   rotaEnviarRedacao = null,
+  trilha = [],
   children,
 }) {
   const {
@@ -333,6 +374,10 @@ export default function AlunoLayout({
           >
             LÉXIS
           </Link>
+
+          {trilha.length > 0 && (
+            <TrilhaNavegacao itens={trilha} />
+          )}
 
           <div className="ml-auto flex items-center gap-5 sm:gap-[34px]">
             <Link

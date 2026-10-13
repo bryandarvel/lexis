@@ -7,6 +7,7 @@
   --aluno-shell-texto: #ffffff;
   --aluno-shell-texto-suave: #93c4f7;
   --aluno-shell-icone: #3d72b0;
+  --aluno-shell-borda: #1e4a80;
   --aluno-avatar: #6b7a90;
   --aluno-erro-solido: #c42626;
   --aluno-sucesso: #15803d;
@@ -34,6 +35,17 @@
   --aluno-borda-campo: #4f6079;
   --aluno-trilho: #1d2b40;
   --aluno-elevacao-1: none;
+}
+
+/*
+ * O reset de button, input e select no index.css fica fora de camada e vence
+ * os utilitários de fonte do Tailwind. Dentro do shell do aluno, revert-layer
+ * devolve a tipografia às camadas (preflight + utilitários) sem alterar as
+ * demais telas. O :where mantém a especificidade igual à do reset, para que
+ * classes próprias, como .theme-toggle, continuem valendo.
+ */
+:where(.aluno-shell) :is(button, input, select) {
+  font: revert-layer;
 }
 
 /* h2 recebe Newsreader no index.css; títulos de interface usam Inter. */

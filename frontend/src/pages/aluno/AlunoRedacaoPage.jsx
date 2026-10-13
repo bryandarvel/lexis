@@ -4,12 +4,13 @@ import {
   useRef,
   useState,
 } from 'react'
-import {
-  Link,
-  useParams,
-} from 'react-router'
+import { Link, useParams } from 'react-router'
 
-import DashboardLayout from '../../layouts/DashboardLayout.jsx'
+import ConferenciaEnvioCard from '../../components/aluno/ConferenciaEnvioCard.jsx'
+import ConfirmarEnvioDialogo from '../../components/aluno/ConfirmarEnvioDialogo.jsx'
+import EnvioFotoPainel from '../../components/aluno/EnvioFotoPainel.jsx'
+import RevisaoLinguisticaCard from '../../components/aluno/RevisaoLinguisticaCard.jsx'
+import AlunoLayout from '../../layouts/AlunoLayout.jsx'
 import {
   confirmarRevisaoOcr,
   enviarRedacao,
@@ -19,10 +20,15 @@ import {
   transcreverImagemRedacao,
 } from '../../services/redacoes.js'
 import { obterTemaDoAluno } from '../../services/temas.js'
+import { formatarDiaMes } from '../../utils/aluno-painel.js'
 import { interpretarErroApi } from '../../utils/api-error.js'
 import {
   aplicarSugestaoLinguistica,
+  descreverExtensao,
   encontrarRedacaoPorTema,
+  formatarHorario,
+  formatarPrazoCurto,
+  ITENS_CONFERENCIA_ENVIO,
   LIMITE_CARACTERES_REDACAO,
   mensagemRevisaoLinguistica,
   precisaConfirmarSubstituicaoOcr,
@@ -30,38 +36,333 @@ import {
 } from '../../utils/essay-editor.js'
 
 const INTERVALO_AUTOSAVE_MS = 1_500
+const LIMIAR_AVISO_CARACTERES = 18_000
 
-function formatarData(valor) {
-  const data = new Date(valor)
+const ABAS = [
+  {
+    id: 'digitar',
+    rotulo: 'Digitar redação',
+  },
+  {
+    id: 'foto',
+    rotulo: 'Enviar foto (OCR)',
+  },
+]
 
-  if (Number.isNaN(data.getTime())) {
-    return 'Data indisponível'
-  }
-
-  return new Intl.DateTimeFormat('pt-BR', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(data)
+const REVISAO_LINGUISTICA_INICIAL = {
+  status: 'inicial',
+  disponivel: null,
+  sugestoes: [],
+  mensagem: '',
 }
 
-function mensagemSalvamento(status, salvoEm) {
-  if (status === 'salvando') {
-    return 'Salvando rascunho...'
+const classeCartao =
+  'aluno-elevacao-1 rounded-xl border border-[var(--surface-border)] bg-lexis-900'
+
+function descreverEntrega(redacao) {
+  const dia = formatarDiaMes(redacao?.enviadaEm)
+  const horario = formatarHorario(redacao?.enviadaEm)
+
+  return dia && horario
+    ? `Enviada em ${dia} às ${horario}`
+    : 'Redação enviada'
+}
+
+function AbasModoEnvio({
+  abaAtiva,
+  onSelecionar,
+}) {
+  const abasRef = useRef({})
+
+  function handleKeyDown(evento, indice) {
+    const destinos = {
+      ArrowRight: (indice + 1) % ABAS.length,
+      ArrowLeft: (indice - 1 + ABAS.length) % ABAS.length,
+      Home: 0,
+      End: ABAS.length - 1,
+    }
+    const proximo = destinos[evento.key]
+
+    if (proximo === undefined) return
+
+    evento.preventDefault()
+    onSelecionar(ABAS[proximo].id)
+    abasRef.current[ABAS[proximo].id]?.focus()
   }
 
-  if (status === 'alterado') {
-    return 'Alterações aguardando salvamento.'
-  }
+  return (
+    <div
+      role="tablist"
+      aria-label="Forma de envio da redação"
+      className="flex w-full rounded-lg bg-[var(--aluno-trilho)] p-1 sm:w-auto"
+    >
+      {ABAS.map((aba, indice) => {
+        const ativa = aba.id === abaAtiva
 
-  if (status === 'erro') {
-    return 'Não foi possível salvar. Seu texto permanece no editor; tente novamente.'
-  }
+        return (
+          <button
+            key={aba.id}
+            ref={(elemento) => {
+              abasRef.current[aba.id] = elemento
+            }}
+            type="button"
+            role="tab"
+            id={`aba-${aba.id}`}
+            aria-selected={ativa}
+            aria-controls={`painel-${aba.id}`}
+            tabIndex={ativa ? 0 : -1}
+            onClick={() => onSelecionar(aba.id)}
+            onKeyDown={(evento) =>
+              handleKeyDown(evento, indice)
+            }
+            className={`h-9 flex-1 rounded-md px-3 text-[13px] font-semibold leading-[18px] transition-colors sm:w-[164px] sm:flex-none ${
+              ativa
+                ? 'bg-lexis-900 text-[var(--aluno-acao-suave-texto)] shadow-[0_1px_2px_rgba(0,32,73,0.08)]'
+                : 'text-lexis-200 hover:text-lexis-50'
+            }`}
+          >
+            {aba.rotulo}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
 
-  if (salvoEm) {
-    return `Rascunho salvo em ${formatarData(salvoEm)}.`
+function IndicadorSalvamento({
+  salvamento,
+  podeSalvar,
+  onSalvarAgora,
+}) {
+  const horario = formatarHorario(salvamento.salvoEm)
+  const estados = {
+    salvando: {
+      texto: 'Salvando...',
+      classe:
+        'bg-[var(--aluno-neutro-fundo)] text-lexis-200',
+    },
+    alterado: {
+      texto: 'Alterações ainda não salvas',
+      classe:
+        'bg-[var(--aluno-neutro-fundo)] text-lexis-200',
+    },
+    erro: {
+      texto: 'Não foi possível salvar',
+      classe:
+        'bg-[var(--aluno-neutro-fundo)] text-[var(--aluno-erro)]',
+    },
   }
+  const estado =
+    estados[salvamento.status] ??
+    (horario
+      ? {
+          texto: `Salvo no servidor às ${horario}`,
+          classe:
+            'bg-[var(--aluno-sucesso-fundo)] text-[var(--aluno-sucesso)]',
+        }
+      : {
+          texto: 'Salvamento automático ativo',
+          classe:
+            'bg-[var(--aluno-neutro-fundo)] text-lexis-200',
+        })
 
-  return 'O rascunho será salvo automaticamente enquanto você escreve.'
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+      <p
+        id="status-salvamento"
+        role={
+          salvamento.status === 'erro'
+            ? 'alert'
+            : 'status'
+        }
+        className={`inline-flex h-6 items-center rounded-full px-3 text-xs font-medium leading-[17px] ${estado.classe}`}
+      >
+        {estado.texto}
+      </p>
+      <button
+        type="button"
+        onClick={onSalvarAgora}
+        disabled={!podeSalvar}
+        className="text-xs font-semibold leading-[17px] text-[var(--aluno-acao-suave-texto)] underline-offset-4 hover:underline disabled:cursor-not-allowed disabled:opacity-0"
+      >
+        {salvamento.status === 'erro'
+          ? 'Tentar de novo'
+          : 'Salvar agora'}
+      </button>
+    </div>
+  )
+}
+
+function EditorCard({
+  texto,
+  textareaRef,
+  somenteLeitura,
+  onAlterarTexto,
+  revisaoOcrPendente,
+  rodape,
+  blocoRevisaoOcr,
+}) {
+  const extensao = descreverExtensao(texto)
+  const proximoDoLimite =
+    texto.length >= LIMIAR_AVISO_CARACTERES
+
+  return (
+    <section
+      aria-labelledby="titulo-editor"
+      className={`${classeCartao} flex min-h-[500px] flex-col px-6 pb-[14px] pt-4`}
+    >
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-[var(--surface-border)] pb-2">
+        <h2
+          id="titulo-editor"
+          className="aluno-titulo-interface text-lg font-semibold leading-6 tracking-[-0.09px] text-lexis-50"
+        >
+          Sua redação
+        </h2>
+        <p
+          id="contagem-redacao"
+          className="text-xs font-medium leading-[17px] text-lexis-200"
+        >
+          {extensao}
+          {proximoDoLimite &&
+            ` · ${texto.length.toLocaleString('pt-BR')}/${LIMITE_CARACTERES_REDACAO.toLocaleString('pt-BR')} caracteres`}
+        </p>
+      </div>
+
+      <label
+        htmlFor="texto-redacao"
+        className="sr-only"
+      >
+        Texto da redação
+      </label>
+      <textarea
+        ref={textareaRef}
+        id="texto-redacao"
+        value={texto}
+        onChange={(evento) =>
+          onAlterarTexto(evento.target.value)
+        }
+        maxLength={LIMITE_CARACTERES_REDACAO}
+        readOnly={somenteLeitura}
+        aria-describedby="contagem-redacao status-salvamento"
+        placeholder="Comece a desenvolver sua redação..."
+        className="font-editorial mt-[17px] min-h-[348px] w-full flex-1 resize-none bg-transparent text-[17px] leading-8 text-lexis-100 outline-none placeholder:text-lexis-200 read-only:cursor-default"
+      />
+
+      {revisaoOcrPendente && blocoRevisaoOcr}
+
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--surface-border)] pt-[9px]">
+        {rodape}
+      </div>
+    </section>
+  )
+}
+
+function BlocoRevisaoOcr({
+  ocupado,
+  confirmando,
+  onConfirmar,
+  onRestaurar,
+}) {
+  return (
+    <div className="relative mt-4 overflow-hidden rounded-lg bg-[var(--aluno-atencao-fundo)] py-3 pl-4 pr-4">
+      <span
+        aria-hidden="true"
+        className="absolute inset-y-0 left-0 w-[3px] bg-[var(--aluno-atencao)]"
+      />
+      <h3 className="text-[13px] font-semibold leading-[18px] text-[var(--aluno-atencao)]">
+        Revise o texto transcrito
+      </h3>
+      <p className="mt-1 text-xs font-medium leading-[17px] text-lexis-100">
+        A transcrição automática pode conter erros. Confira e corrija o texto acima; ele só substitui o rascunho do servidor depois da sua confirmação.
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={onConfirmar}
+          disabled={ocupado}
+          className="h-9 rounded-lg bg-[var(--color-brand-accent)] px-4 text-[13px] font-semibold leading-[18px] text-[#ffffff] disabled:opacity-55"
+        >
+          {confirmando
+            ? 'Confirmando...'
+            : 'Confirmar texto revisado'}
+        </button>
+        <button
+          type="button"
+          onClick={onRestaurar}
+          disabled={ocupado}
+          className="h-9 rounded-lg border border-[var(--aluno-borda-campo)] bg-lexis-900 px-4 text-[13px] font-semibold leading-[18px] text-lexis-100 disabled:opacity-55"
+        >
+          Restaurar texto anterior
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function CartaoEntrega({ redacao }) {
+  const avaliada = redacao.status === 'AVALIADA'
+
+  return (
+    <section
+      aria-labelledby="titulo-entrega"
+      className={`${classeCartao} px-5 pb-5 pt-4`}
+    >
+      <h2
+        id="titulo-entrega"
+        className="aluno-titulo-interface text-lg font-semibold leading-6 tracking-[-0.09px] text-lexis-50"
+      >
+        Entrega
+      </h2>
+      <dl className="mt-3 space-y-3 text-sm leading-[22px]">
+        <div>
+          <dt className="text-xs font-medium leading-[17px] text-lexis-200">
+            Situação
+          </dt>
+          <dd className="text-lexis-100">
+            {avaliada
+              ? 'Corrigida pelo professor'
+              : 'Em correção'}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs font-medium leading-[17px] text-lexis-200">
+            Formato
+          </dt>
+          <dd className="text-lexis-100">
+            {redacao.origemTexto === 'OCR'
+              ? 'Foto transcrita e revisada'
+              : 'Texto digitado'}
+          </dd>
+        </div>
+      </dl>
+      <p className="mt-4 text-xs font-medium leading-[17px] text-lexis-200">
+        O texto entregue não pode mais ser editado.
+      </p>
+    </section>
+  )
+}
+
+function EsqueletoEditor() {
+  return (
+    <div
+      role="status"
+      className="animate-pulse"
+    >
+      <span className="sr-only">
+        Carregando o tema e o rascunho...
+      </span>
+      <div className="h-[41px] w-72 max-w-full rounded bg-lexis-800" />
+      <div className="mt-[19px] h-16 rounded-lg bg-lexis-800" />
+      <div className="mt-5 h-11 w-[340px] max-w-full rounded-lg bg-lexis-800" />
+      <div className="mt-4 grid gap-6 xl:grid-cols-[minmax(0,1fr)_404px]">
+        <div className="h-[500px] rounded-xl bg-lexis-800" />
+        <div className="flex flex-col gap-4">
+          <div className="h-[232px] rounded-xl bg-lexis-800" />
+          <div className="h-[252px] rounded-xl bg-lexis-800" />
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default function AlunoRedacaoPage() {
@@ -78,6 +379,7 @@ export default function AlunoRedacaoPage() {
   })
   const [aviso, setAviso] = useState(null)
   const [acao, setAcao] = useState(null)
+  const [abaAtiva, setAbaAtiva] = useState('digitar')
   const [imagem, setImagem] = useState(null)
   const [progressoOcr, setProgressoOcr] =
     useState(0)
@@ -86,17 +388,18 @@ export default function AlunoRedacaoPage() {
     textoAnterior: '',
   })
   const [revisaoLinguistica, setRevisaoLinguistica] =
-    useState({
-      status: 'inicial',
-      disponivel: null,
-      sugestoes: [],
-      mensagem: '',
-    })
+    useState(REVISAO_LINGUISTICA_INICIAL)
+  const [conferencia, setConferencia] = useState({})
+  const [propostaAberta, setPropostaAberta] =
+    useState(false)
+  const [dialogoEnvioAberto, setDialogoEnvioAberto] =
+    useState(false)
 
   const textoAtualRef = useRef('')
   const ultimoTextoSalvoRef = useRef('')
   const textareaRef = useRef(null)
   const statusRef = useRef(null)
+  const botaoEnviarRef = useRef(null)
 
   textoAtualRef.current = texto
 
@@ -281,8 +584,17 @@ export default function AlunoRedacaoPage() {
       )
   }, [redacaoImutavel, texto])
 
-  async function handleSalvar(evento) {
-    evento.preventDefault()
+  function handleAlterarTexto(novoTexto) {
+    setTexto(novoTexto)
+    setAviso(null)
+    setRevisaoLinguistica(REVISAO_LINGUISTICA_INICIAL)
+    setSalvamento((estado) => ({
+      ...estado,
+      status: 'alterado',
+    }))
+  }
+
+  async function handleSalvar() {
     setAviso(null)
 
     if (!texto.trim()) {
@@ -345,12 +657,9 @@ export default function AlunoRedacaoPage() {
         )
 
       setTexto(resultado.textoExtraido)
-      setRevisaoLinguistica({
-        status: 'inicial',
-        disponivel: null,
-        sugestoes: [],
-        mensagem: '',
-      })
+      setRevisaoLinguistica(
+        REVISAO_LINGUISTICA_INICIAL,
+      )
       setRevisaoOcr({
         pendente: true,
         textoAnterior,
@@ -359,6 +668,7 @@ export default function AlunoRedacaoPage() {
         ...estado,
         status: 'alterado',
       }))
+      setAbaAtiva('digitar')
       setAviso({
         tipo: 'sucesso',
         mensagem:
@@ -410,6 +720,7 @@ export default function AlunoRedacaoPage() {
         pendente: false,
         textoAnterior: '',
       })
+      setImagem(null)
       setSalvamento({
         status: 'pronto',
         salvoEm: redacao.atualizadoEm,
@@ -501,12 +812,7 @@ export default function AlunoRedacaoPage() {
       ...estado,
       status: 'alterado',
     }))
-    setRevisaoLinguistica({
-      status: 'inicial',
-      disponivel: null,
-      sugestoes: [],
-      mensagem: '',
-    })
+    setRevisaoLinguistica(REVISAO_LINGUISTICA_INICIAL)
     setAviso({
       tipo: 'sucesso',
       mensagem:
@@ -521,12 +827,7 @@ export default function AlunoRedacaoPage() {
   function handleRestaurarTexto() {
     const textoRestaurado = revisaoOcr.textoAnterior
     setTexto(textoRestaurado)
-    setRevisaoLinguistica({
-      status: 'inicial',
-      disponivel: null,
-      sugestoes: [],
-      mensagem: '',
-    })
+    setRevisaoLinguistica(REVISAO_LINGUISTICA_INICIAL)
     setRevisaoOcr({
       pendente: false,
       textoAnterior: '',
@@ -550,7 +851,7 @@ export default function AlunoRedacaoPage() {
     )
   }
 
-  async function handleEnviar() {
+  function handleRevisarEEnviar() {
     if (revisaoOcr.pendente) {
       setAviso({
         tipo: 'erro',
@@ -569,14 +870,19 @@ export default function AlunoRedacaoPage() {
       return
     }
 
-    if (
-      !globalThis.confirm(
-        'Enviar a redação definitivamente? Depois do envio, o texto não poderá ser alterado.',
-      )
-    ) {
-      return
-    }
+    setDialogoEnvioAberto(true)
+  }
 
+  function handleCancelarEnvio() {
+    setDialogoEnvioAberto(false)
+    globalThis.setTimeout(
+      () => botaoEnviarRef.current?.focus(),
+      0,
+    )
+  }
+
+  async function handleConfirmarEnvio() {
+    setDialogoEnvioAberto(false)
     setAcao('enviar')
     setAviso(null)
 
@@ -611,444 +917,315 @@ export default function AlunoRedacaoPage() {
     }
   }
 
+  const rotaEditor = `/aluno/temas/${encodeURIComponent(temaId)}/redacao`
+
   if (pagina.status === 'carregando') {
     return (
-      <DashboardLayout>
-        <div
-          className="mx-auto max-w-5xl px-6 py-16"
-          role="status"
-        >
-          <div className="h-8 w-56 animate-pulse rounded-lg bg-lexis-300/15" />
-          <div className="mt-6 h-96 animate-pulse rounded-[14px] bg-lexis-300/10" />
-          <span className="sr-only">
-            Carregando tema e rascunho...
-          </span>
-        </div>
-      </DashboardLayout>
+      <AlunoLayout
+        rotaEnviarRedacao={rotaEditor}
+        trilha={['Enviar redação']}
+      >
+        <EsqueletoEditor />
+      </AlunoLayout>
     )
   }
 
   if (pagina.status === 'erro') {
     return (
-      <DashboardLayout>
-        <section className="mx-auto max-w-3xl px-6 py-16">
+      <AlunoLayout
+        rotaEnviarRedacao={rotaEditor}
+        trilha={['Enviar redação']}
+      >
+        <h1 className="text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-lexis-50">
+          Escrever redação
+        </h1>
+        <div
+          role="alert"
+          className={`${classeCartao} mt-[19px] max-w-[700px] p-6`}
+        >
+          <h2 className="aluno-titulo-interface text-lg font-semibold leading-6 text-lexis-50">
+            Não foi possível abrir o editor
+          </h2>
+          <p className="mt-2 text-sm leading-[22px] text-lexis-200">
+            {aviso?.mensagem}
+          </p>
           <Link
             to="/aluno"
-            className="text-sm font-semibold text-lexis-300 hover:text-white"
+            className="mt-4 inline-flex h-10 items-center rounded-lg border border-[var(--aluno-borda-campo)] px-4 text-[13px] font-semibold text-lexis-100"
           >
-            ← Voltar ao painel
+            Voltar ao início
           </Link>
-          <div
-            role="alert"
-            className="mt-8 rounded-[14px] border border-red-400/30 bg-red-950/30 p-6 text-red-100"
-          >
-            {aviso?.mensagem}
-          </div>
-        </section>
-      </DashboardLayout>
+        </div>
+      </AlunoLayout>
     )
   }
 
   const { tema, redacao } = pagina
+  const ocupado = acao !== null
+  const pendentesConferencia =
+    ITENS_CONFERENCIA_ENVIO.filter(
+      (item) => !conferencia[item.id],
+    )
+
+  const rodapeEditor = redacaoImutavel ? (
+    <>
+      <p
+        id="status-salvamento"
+        className="inline-flex h-6 items-center rounded-full bg-[var(--aluno-neutro-fundo)] px-3 text-xs font-medium leading-[17px] text-lexis-200"
+      >
+        {descreverEntrega(redacao)}
+      </p>
+      {redacao.status === 'AVALIADA' ? (
+        <Link
+          to={`/aluno/redacoes/${encodeURIComponent(redacao.id)}/feedback`}
+          className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-[var(--color-brand-accent)] px-5 text-[13px] font-semibold leading-[18px] text-[#ffffff] transition hover:brightness-110 sm:w-[160px]"
+        >
+          Ver feedback
+        </Link>
+      ) : (
+        <p className="text-xs font-medium leading-[17px] text-lexis-200">
+          Aguardando a correção do professor.
+        </p>
+      )}
+    </>
+  ) : (
+    <>
+      <IndicadorSalvamento
+        salvamento={salvamento}
+        podeSalvar={
+          !ocupado &&
+          !revisaoOcr.pendente &&
+          Boolean(texto.trim()) &&
+          texto !== ultimoTextoSalvoRef.current
+        }
+        onSalvarAgora={handleSalvar}
+      />
+      <button
+        ref={botaoEnviarRef}
+        type="button"
+        onClick={handleRevisarEEnviar}
+        disabled={
+          ocupado ||
+          revisaoOcr.pendente ||
+          !texto.trim()
+        }
+        className="h-11 w-full rounded-lg bg-[var(--color-brand-accent)] px-5 text-[13px] font-semibold leading-[18px] text-[#ffffff] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-55 sm:w-[160px]"
+      >
+        {acao === 'enviar'
+          ? 'Enviando...'
+          : 'Revisar e enviar'}
+      </button>
+    </>
+  )
+
+  const editor = (
+    <EditorCard
+      texto={texto}
+      textareaRef={textareaRef}
+      somenteLeitura={Boolean(redacaoImutavel)}
+      onAlterarTexto={handleAlterarTexto}
+      revisaoOcrPendente={revisaoOcr.pendente}
+      blocoRevisaoOcr={
+        <BlocoRevisaoOcr
+          ocupado={ocupado}
+          confirmando={acao === 'revisao-ocr'}
+          onConfirmar={handleConfirmarOcr}
+          onRestaurar={handleRestaurarTexto}
+        />
+      }
+      rodape={rodapeEditor}
+    />
+  )
 
   return (
-    <DashboardLayout>
-      <section className="border-b border-lexis-200/10 px-6 py-10 sm:px-10">
-        <div className="mx-auto max-w-6xl">
-          <Link
-            to="/aluno"
-            className="text-sm font-semibold text-lexis-300 hover:text-white"
-          >
-            ← Voltar ao painel
-          </Link>
-          <p className="mt-8 text-xs font-bold uppercase tracking-[0.2em] text-lexis-300">
-            Produção de redação
-          </p>
-          <h1 className="mt-3 max-w-4xl font-editorial text-3xl font-semibold text-white sm:text-5xl">
-            {tema.enunciado}
-          </h1>
-          <p className="mt-4 max-w-3xl leading-7 text-lexis-200">
-            {tema.descricao}
-          </p>
-          <dl className="mt-6 flex flex-wrap gap-3 text-sm text-lexis-100">
-            <div className="rounded-full border border-lexis-200/15 px-4 py-2">
-              <dt className="sr-only">Turma</dt>
-              <dd>{tema.turma?.nome}</dd>
-            </div>
-            <div className="rounded-full border border-lexis-200/15 px-4 py-2">
-              <dt className="sr-only">Prazo</dt>
-              <dd>Prazo: {formatarData(tema.prazoEntrega)}</dd>
-            </div>
-          </dl>
-        </div>
-      </section>
+    <AlunoLayout
+      rotaEnviarRedacao={rotaEditor}
+      trilha={['Enviar redação', tema.enunciado]}
+    >
+      <h1 className="text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-lexis-50">
+        {redacaoImutavel
+          ? 'Redação entregue'
+          : 'Escrever redação'}
+      </h1>
 
-      <section className="px-6 py-10 sm:px-10">
-        <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-          <form
-            onSubmit={handleSalvar}
-            className="surface-card rounded-[14px] p-5 sm:p-7"
-            aria-busy={acao !== null}
-          >
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-semibold text-white">
-                  Sua redação
-                </h2>
-                <p className="mt-1 text-sm text-lexis-200">
-                  O rascunho é salvo no servidor e não é duplicado no armazenamento do navegador.
-                </p>
-              </div>
-              <span className="rounded-full border border-lexis-200/15 px-3 py-1 text-xs font-semibold text-lexis-200">
-                {redacao?.status === 'AVALIADA'
-                  ? 'Corrigida'
-                  : redacao?.status === 'ENVIADA'
-                    ? 'Enviada'
-                    : 'Rascunho'}
-              </span>
-            </div>
-
-            <label
-              htmlFor="texto-redacao"
-              className="mt-7 block text-sm font-semibold text-white"
+      <section
+        aria-labelledby="rotulo-tema"
+        className="mt-[19px] rounded-lg border border-[var(--color-brand-accent)] bg-[var(--aluno-acao-suave)] px-[19px] pb-2 pt-2.5"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1">
+          <div className="min-w-0">
+            <p
+              id="rotulo-tema"
+              className="text-[11px] font-bold uppercase leading-[14px] tracking-[1.32px] text-[var(--aluno-acao-suave-texto)]"
             >
-              Texto da redação
-            </label>
-            <textarea
-              ref={textareaRef}
-              id="texto-redacao"
-              value={texto}
-              onChange={(evento) => {
-                setTexto(evento.target.value)
-                setAviso(null)
-                setRevisaoLinguistica({
-                  status: 'inicial',
-                  disponivel: null,
-                  sugestoes: [],
-                  mensagem: '',
-                })
-                setSalvamento((estado) => ({
-                  ...estado,
-                  status: 'alterado',
-                }))
-              }}
-              maxLength={LIMITE_CARACTERES_REDACAO}
-              rows={20}
-              readOnly={redacaoImutavel}
-              aria-describedby="contador-redacao status-salvamento"
-              className="mt-3 min-h-[28rem] w-full resize-y rounded-[10px] border border-lexis-200/20 bg-lexis-950/70 px-5 py-4 font-editorial text-[1.0625rem] leading-8 text-white outline-none transition focus:border-lexis-300 focus:ring-4 focus:ring-lexis-300/15 read-only:cursor-not-allowed read-only:opacity-80"
-              placeholder="Comece a desenvolver sua redação..."
-            />
-
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs">
-              <p
-                id="status-salvamento"
-                role={
-                  salvamento.status === 'erro'
-                    ? 'alert'
-                    : 'status'
-                }
-                className={
-                  salvamento.status === 'erro'
-                    ? 'text-red-300'
-                    : 'text-lexis-200'
-                }
-              >
-                {mensagemSalvamento(
-                  salvamento.status,
-                  salvamento.salvoEm,
-                )}
-              </p>
-              <output
-                id="contador-redacao"
-                htmlFor="texto-redacao"
-                className="font-semibold text-lexis-200"
-              >
-                {texto.length.toLocaleString('pt-BR')} /{' '}
-                {LIMITE_CARACTERES_REDACAO.toLocaleString('pt-BR')} caracteres
-              </output>
-            </div>
-
-            {revisaoOcr.pendente && (
-              <div className="mt-6 rounded-[10px] border border-amber-300/30 bg-amber-950/25 p-5">
-                <h3 className="font-semibold text-amber-100">
-                  Revisão do OCR obrigatória
-                </h3>
-                <p className="mt-2 text-sm leading-6 text-amber-100/85">
-                  Confira e corrija o texto acima. Ele só substituirá o rascunho do servidor depois da confirmação.
-                </p>
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    onClick={handleConfirmarOcr}
-                    disabled={acao !== null}
-                    className="min-h-11 rounded-[10px] bg-amber-300 px-4 font-bold text-amber-950 disabled:opacity-55"
-                  >
-                    {acao === 'revisao-ocr'
-                      ? 'Confirmando...'
-                      : 'Confirmar texto revisado'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleRestaurarTexto}
-                    disabled={acao !== null}
-                    className="min-h-11 rounded-[10px] border border-amber-200/40 px-4 font-semibold text-amber-100 disabled:opacity-55"
-                  >
-                    Restaurar texto anterior
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {aviso && (
-              <div
-                ref={statusRef}
-                tabIndex={-1}
-                role={
-                  aviso.tipo === 'erro'
-                    ? 'alert'
-                    : 'status'
-                }
-                className={`mt-6 rounded-[10px] border p-4 text-sm leading-6 outline-none focus:ring-4 focus:ring-lexis-300/20 ${
-                  aviso.tipo === 'erro'
-                    ? 'border-red-400/30 bg-red-950/30 text-red-100'
-                    : 'border-emerald-400/30 bg-emerald-950/30 text-emerald-100'
-                }`}
-              >
-                {aviso.mensagem}
-              </div>
-            )}
-
-            <div className="mt-7 flex flex-wrap gap-3">
-              {!redacaoImutavel && (
-                <>
-                  <button
-                    type="submit"
-                    disabled={
-                      acao !== null ||
-                      revisaoOcr.pendente
-                    }
-                    className="min-h-12 rounded-[10px] border border-lexis-300/35 px-5 font-bold text-white disabled:opacity-55"
-                  >
-                    {acao === 'salvar'
-                      ? 'Salvando...'
-                      : 'Salvar agora'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleEnviar}
-                    disabled={
-                      acao !== null ||
-                      revisaoOcr.pendente ||
-                      !texto.trim()
-                    }
-                    className="min-h-12 rounded-[10px] bg-lexis-400 px-5 font-bold text-white disabled:opacity-55"
-                  >
-                    {acao === 'enviar'
-                      ? 'Enviando...'
-                      : 'Enviar definitivamente'}
-                  </button>
-                </>
-              )}
-
-              {redacao?.status === 'AVALIADA' && (
-                <Link
-                  to={`/aluno/redacoes/${redacao.id}/feedback`}
-                  className="inline-flex min-h-12 items-center rounded-[10px] bg-lexis-400 px-5 font-bold text-white"
-                >
-                  Abrir correção
-                </Link>
-              )}
-            </div>
-          </form>
-
-          <aside className="space-y-6">
-            {!redacaoImutavel && (
-              <section className="surface-card rounded-[14px] p-5">
-                <h2 className="text-lg font-semibold text-white">
-                  Digitalizar redação
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-lexis-200">
-                  Envie uma foto JPEG ou PNG de até 1 MB. O texto extraído ficará pendente até sua revisão explícita.
-                </p>
-                <label className="mt-5 block text-sm font-semibold text-white">
-                  Imagem da redação
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png"
-                    onChange={(evento) => {
-                      setImagem(
-                        evento.target.files?.[0] ?? null,
-                      )
-                      setAviso(null)
-                    }}
-                    disabled={acao !== null}
-                    className="mt-3 block w-full text-sm text-lexis-200 file:mr-3 file:rounded-lg file:border-0 file:bg-lexis-300/15 file:px-3 file:py-2 file:font-semibold file:text-white"
-                  />
-                </label>
-                <button
-                  type="button"
-                  onClick={handleOcr}
-                  disabled={
-                    acao !== null ||
-                    !imagem ||
-                    revisaoOcr.pendente
-                  }
-                  className="mt-4 min-h-11 w-full rounded-[10px] bg-lexis-800 px-4 font-bold text-white disabled:opacity-55"
-                >
-                  {acao === 'ocr'
-                    ? 'Processando imagem...'
-                    : 'Extrair texto com OCR'}
-                </button>
-
-                {acao === 'ocr' && (
-                  <div
-                    className="mt-4"
-                    role="status"
-                    aria-live="polite"
-                  >
-                    <label
-                      htmlFor="progresso-ocr"
-                      className="text-xs font-semibold text-lexis-200"
-                    >
-                      Upload: {progressoOcr}%
-                    </label>
-                    <progress
-                      id="progresso-ocr"
-                      max="100"
-                      value={progressoOcr}
-                      className="mt-2 h-2 w-full accent-lexis-400"
-                    />
-                    <p className="mt-2 text-xs leading-5 text-lexis-200">
-                      Após o upload, o OCR pode levar alguns segundos para analisar a imagem.
-                    </p>
-                  </div>
-                )}
-              </section>
-            )}
-
-            {!redacaoImutavel && (
-              <section className="surface-card rounded-[14px] p-5">
-                <h2 className="text-lg font-semibold text-white">
-                  Revisão linguística opcional
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-lexis-200">
-                  A solicitação envia o texto atual ao LanguageTool configurado. O resultado é apenas uma sugestão e nunca bloqueia o salvamento ou o envio.
-                </p>
-                <button
-                  type="button"
-                  onClick={handleRevisarLinguagem}
-                  disabled={
-                    acao !== null ||
-                    !texto.trim() ||
-                    revisaoOcr.pendente
-                  }
-                  className="mt-4 min-h-11 w-full rounded-[10px] bg-lexis-800 px-4 font-bold text-white disabled:opacity-55"
-                >
-                  {acao === 'linguagem'
-                    ? 'Revisando texto...'
-                    : 'Solicitar revisão linguística'}
-                </button>
-
-                {revisaoLinguistica.status !== 'inicial' && (
-                  <div
-                    className="mt-4"
-                    role={
-                      revisaoLinguistica.status === 'erro'
-                        ? 'alert'
-                        : 'status'
-                    }
-                  >
-                    <p className="text-sm leading-6 text-lexis-100">
-                      {revisaoLinguistica.status === 'carregando'
-                        ? 'Consultando o serviço configurado...'
-                        : revisaoLinguistica.mensagem}
-                    </p>
-                    {revisaoLinguistica.sugestoes.length > 0 && (
-                      <ol className="mt-4 space-y-3">
-                        {revisaoLinguistica.sugestoes.map(
-                          (sugestao) => (
-                            <li
-                              key={sugestao.id}
-                              className="rounded-[10px] border border-lexis-200/15 bg-lexis-950/50 p-4"
-                            >
-                              <p className="text-sm font-semibold text-white">
-                                <q>{sugestao.trecho}</q>
-                              </p>
-                              <p className="mt-2 text-xs leading-5 text-lexis-200">
-                                {sugestao.mensagem}
-                              </p>
-                              {sugestao.substituicoes.length > 0 && (
-                                <div className="mt-3 flex flex-wrap gap-2">
-                                  {sugestao.substituicoes.map(
-                                    (substituicao) => (
-                                      <button
-                                        key={substituicao}
-                                        type="button"
-                                        onClick={() =>
-                                          handleAplicarSugestao(
-                                            sugestao,
-                                            substituicao,
-                                          )
-                                        }
-                                        className="min-h-10 rounded-lg border border-lexis-300/30 px-3 text-xs font-bold text-white"
-                                      >
-                                        Aplicar “{substituicao}”
-                                      </button>
-                                    ),
-                                  )}
-                                </div>
-                              )}
-                            </li>
-                          ),
-                        )}
-                      </ol>
-                    )}
-                  </div>
-                )}
-
-                <a
-                  href="https://languagetool.org"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-4 inline-flex text-xs font-semibold text-lexis-300 underline underline-offset-4"
-                >
-                  Conheça o LanguageTool
-                  <span className="sr-only">
-                    {' '}(abre em nova aba)
-                  </span>
-                </a>
-              </section>
-            )}
-
-            <section className="surface-card rounded-[14px] p-5">
-              <h2 className="text-lg font-semibold text-white">
-                Critérios aplicáveis
-              </h2>
-              {tema.instrucoes && (
-                <p className="mt-3 text-sm leading-6 text-lexis-200">
-                  {tema.instrucoes}
-                </p>
-              )}
-              <ol className="mt-5 space-y-4">
-                {tema.criterios.map((criterio) => (
-                  <li
-                    key={criterio.id}
-                    className="border-t border-lexis-200/10 pt-4 first:border-0 first:pt-0"
-                  >
-                    <p className="text-sm font-semibold text-white">
-                      {criterio.ordem}. {criterio.nome}
-                    </p>
-                    <p className="mt-1 text-xs leading-5 text-lexis-200">
-                      {criterio.descricao}
-                    </p>
-                  </li>
-                ))}
-              </ol>
-            </section>
-          </aside>
+              Tema da proposta
+            </p>
+            <p className="mt-1.5 text-lg font-semibold leading-6 tracking-[-0.09px] text-lexis-50">
+              {tema.enunciado}
+            </p>
+          </div>
+          <div className="flex flex-col items-start gap-1 sm:items-end">
+            <p className="text-[13px] font-semibold leading-[18px] text-lexis-100">
+              Entrega até {formatarPrazoCurto(tema.prazoEntrega)}
+            </p>
+            <button
+              type="button"
+              aria-expanded={propostaAberta}
+              aria-controls="proposta-completa"
+              onClick={() =>
+                setPropostaAberta((atual) => !atual)
+              }
+              className="text-xs font-semibold leading-[17px] text-[var(--aluno-acao-suave-texto)] underline-offset-4 hover:underline"
+            >
+              {propostaAberta
+                ? 'Ocultar proposta completa'
+                : 'Ver proposta completa'}
+            </button>
+          </div>
         </div>
+
+        {propostaAberta && (
+          <div
+            id="proposta-completa"
+            className="mt-2 space-y-3 border-t border-[var(--color-brand-accent)]/30 pb-2 pt-3 text-sm leading-[22px] text-lexis-100"
+          >
+            <p>{tema.descricao}</p>
+            {tema.instrucoes && (
+              <p className="text-lexis-200">
+                {tema.instrucoes}
+              </p>
+            )}
+            {tema.criterios?.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold leading-[17px] text-lexis-50">
+                  Critérios da Competência II
+                </p>
+                <ol className="mt-1 list-decimal space-y-1 pl-5 text-xs leading-[17px] text-lexis-200">
+                  {tema.criterios.map((criterio) => (
+                    <li key={criterio.id}>
+                      <span className="font-semibold text-lexis-100">
+                        {criterio.nome}:
+                      </span>{' '}
+                      {criterio.descricao}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+          </div>
+        )}
       </section>
-    </DashboardLayout>
+
+      {!redacaoImutavel && (
+        <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2">
+          <AbasModoEnvio
+            abaAtiva={abaAtiva}
+            onSelecionar={setAbaAtiva}
+          />
+          <p className="text-xs font-medium leading-[17px] text-lexis-200">
+            Fotografou a redação no papel? Use a segunda aba — o LÉXIS transcreve.
+          </p>
+        </div>
+      )}
+
+      {aviso && (
+        <div
+          ref={statusRef}
+          tabIndex={-1}
+          role={
+            aviso.tipo === 'erro'
+              ? 'alert'
+              : 'status'
+          }
+          className={`mt-4 rounded-lg px-4 py-3 text-sm font-medium leading-[22px] outline-none ${
+            aviso.tipo === 'erro'
+              ? 'bg-[var(--aluno-neutro-fundo)] text-[var(--aluno-erro)]'
+              : 'bg-[var(--aluno-sucesso-fundo)] text-[var(--aluno-sucesso)]'
+          }`}
+        >
+          {aviso.mensagem}
+        </div>
+      )}
+
+      <div className="mt-4 grid gap-6 xl:grid-cols-[minmax(0,1fr)_404px]">
+        {redacaoImutavel ? (
+          editor
+        ) : (
+          <div>
+            <div
+              role="tabpanel"
+              id="painel-digitar"
+              aria-labelledby="aba-digitar"
+              hidden={abaAtiva !== 'digitar'}
+            >
+              {editor}
+            </div>
+            <div
+              role="tabpanel"
+              id="painel-foto"
+              aria-labelledby="aba-foto"
+              hidden={abaAtiva !== 'foto'}
+            >
+              <EnvioFotoPainel
+                imagem={imagem}
+                enviando={acao === 'ocr'}
+                progresso={progressoOcr}
+                desabilitado={
+                  ocupado || revisaoOcr.pendente
+                }
+                motivoBloqueio={
+                  revisaoOcr.pendente
+                    ? 'Há uma transcrição aguardando revisão na aba “Digitar redação”. Confirme ou restaure o texto antes de enviar outra foto.'
+                    : null
+                }
+                onSelecionar={(arquivo) => {
+                  setImagem(arquivo)
+                  setAviso(null)
+                }}
+                onExtrair={handleOcr}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-col gap-4">
+          {redacaoImutavel ? (
+            <CartaoEntrega redacao={redacao} />
+          ) : (
+            <>
+              <RevisaoLinguisticaCard
+                estado={revisaoLinguistica}
+                desabilitado={
+                  ocupado ||
+                  revisaoOcr.pendente ||
+                  !texto.trim()
+                }
+                onRevisar={handleRevisarLinguagem}
+                onAplicar={handleAplicarSugestao}
+              />
+              <ConferenciaEnvioCard
+                marcados={conferencia}
+                onAlternar={(id) =>
+                  setConferencia((atual) => ({
+                    ...atual,
+                    [id]: !atual[id],
+                  }))
+                }
+              />
+            </>
+          )}
+        </div>
+      </div>
+
+      {!redacaoImutavel && (
+        <ConfirmarEnvioDialogo
+          aberto={dialogoEnvioAberto}
+          extensao={descreverExtensao(texto)}
+          pendentes={pendentesConferencia}
+          onCancelar={handleCancelarEnvio}
+          onConfirmar={handleConfirmarEnvio}
+        />
+      )}
+    </AlunoLayout>
   )
 }

@@ -4,7 +4,13 @@ import test from 'node:test'
 import {
   aplicarSugestaoLinguistica,
   calcularProgressoUpload,
+  contarLinhas,
+  contarPalavras,
+  descreverExtensao,
+  descreverSugestao,
   encontrarRedacaoPorTema,
+  formatarHorario,
+  formatarPrazoCurto,
   LIMITE_IMAGEM_REDACAO_BYTES,
   mensagemRevisaoLinguistica,
   precisaConfirmarSubstituicaoOcr,
@@ -99,5 +105,102 @@ test('aplica sugestão somente quando os offsets ainda correspondem ao texto', (
       'vir',
     ),
     null,
+  )
+})
+
+test('conta palavras e linhas não vazias do texto', () => {
+  const texto =
+    'Primeiro parágrafo da redação.\n\n  Segundo   parágrafo.\n'
+
+  assert.equal(contarPalavras(texto), 6)
+  assert.equal(contarLinhas(texto), 2)
+  assert.equal(contarPalavras('   '), 0)
+  assert.equal(contarLinhas(''), 0)
+  assert.equal(
+    descreverExtensao(texto),
+    '6 palavras · 2 linhas',
+  )
+  assert.equal(
+    descreverExtensao('Uma'),
+    '1 palavra · 1 linha',
+  )
+})
+
+test('formata o horário do salvamento e o prazo curto', () => {
+  const data = new Date(2026, 7, 10, 9, 5).toISOString()
+
+  assert.equal(formatarHorario(data), '09:05')
+  assert.equal(formatarHorario(null), null)
+  assert.equal(
+    formatarPrazoCurto(
+      new Date(2026, 7, 10, 23, 59).toISOString(),
+    ),
+    '10/08, 23h59',
+  )
+  assert.equal(
+    formatarPrazoCurto('inválido'),
+    'Prazo indisponível',
+  )
+})
+
+test('descreve a sugestão com o trecho, a categoria e o tom', () => {
+  assert.deepEqual(
+    descreverSugestao({
+      trecho: 'exerçe',
+      substituicoes: ['exerce', 'exerceu'],
+      mensagem: 'Possível erro de ortografia.',
+      regra: {
+        id: 'MORFOLOGIK_RULE_PT_BR',
+        categoria: 'Erros ortográficos',
+      },
+    }),
+    {
+      texto: '“exerçe” → exerce',
+      categoria: 'Erros ortográficos',
+      tom: 'erro',
+    },
+  )
+  assert.deepEqual(
+    descreverSugestao({
+      trecho: 'que',
+      substituicoes: [],
+      mensagemCurta: 'Vírgula antes de “que” explicativo',
+      mensagem: 'Mensagem longa.',
+      regra: {
+        id: 'VIRGULA_QUE',
+        categoria: 'Pontuação',
+      },
+    }),
+    {
+      texto: 'Vírgula antes de “que” explicativo',
+      categoria: 'Pontuação',
+      tom: 'atencao',
+    },
+  )
+  assert.equal(
+    descreverSugestao({
+      trecho: 'nao',
+      substituicoes: ['não'],
+      regra: {
+        id: 'PT_ACENTUACAO',
+        categoria: 'Erro de Escrita',
+      },
+    }).tom,
+    'erro',
+  )
+  assert.equal(
+    descreverSugestao({
+      trecho: 'acesso a',
+      substituicoes: ['acesso à'],
+      regra: {
+        id: 'CRASE',
+        categoria: 'Gramática Geral',
+      },
+    }).tom,
+    'atencao',
+  )
+  assert.equal(
+    descreverSugestao({}).categoria,
+    'Revisão linguística',
   )
 })
