@@ -113,6 +113,53 @@ export function encontrarRascunhoDoTema(
   )
 }
 
+// A API retorna apenas propostas ativas da turma acessível ao aluno.
+// O prazo vencido não bloqueia envio: o servidor registra o atraso.
+export function listarPropostasDoAluno(temas, redacoes, agora = new Date()) {
+  const redacoesPorTema = new Map(
+    (Array.isArray(redacoes) ? redacoes : [])
+      .map((redacao) => [redacao.temaId, redacao]),
+  )
+
+  return (Array.isArray(temas) ? temas : [])
+    .filter((tema) => tema.ativo !== false)
+    .map((proposta) => {
+      const redacao = redacoesPorTema.get(proposta.id) ?? null
+      const prazo = converterData(proposta.prazoEntrega)
+      const prazoVencido = Boolean(prazo && prazo.getTime() < agora.getTime())
+      const podeEnviar = !redacao || redacao.status === 'RASCUNHO'
+      const destinoEditor = `/aluno/temas/${encodeURIComponent(proposta.id)}/redacao`
+      const descricao = redacao ? descreverRedacao(redacao) : null
+
+      return {
+        proposta,
+        redacao,
+        prazoVencido,
+        podeEnviar,
+        situacao: podeEnviar
+          ? redacao ? 'Rascunho' : 'Não iniciada'
+          : redacao.status === 'AVALIADA' ? 'Correção publicada' : 'Em correção',
+        orientacao: podeEnviar
+          ? prazoVencido
+            ? 'Você ainda pode enviar. A entrega será registrada com atraso.'
+            : 'Você pode salvar um rascunho e enviar até o prazo. Após o prazo, a entrega será registrada com atraso.'
+          : 'Redação já enviada. O texto não pode mais ser alterado.',
+        acao: descricao?.acao ?? {
+          rotulo: 'Escrever redação',
+          destino: destinoEditor,
+          variante: 'contorno',
+        },
+      }
+    })
+    .sort((a, b) => {
+      const grupo = (item) => item.podeEnviar ? Number(item.prazoVencido) : 2
+      return grupo(a) - grupo(b) ||
+        (converterData(a.proposta.prazoEntrega)?.getTime() ?? Infinity) -
+        (converterData(b.proposta.prazoEntrega)?.getTime() ?? Infinity) ||
+        String(a.proposta.enunciado).localeCompare(String(b.proposta.enunciado), 'pt-BR')
+    })
+}
+
 export function formatarPrazoEntrega(valor) {
   const data = converterData(valor)
 

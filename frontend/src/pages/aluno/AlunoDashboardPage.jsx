@@ -27,7 +27,7 @@ import {
   encontrarRascunhoDoTema,
   formatarIndicador,
   formatarPrazoEntrega,
-  selecionarPropostaAberta,
+  listarPropostasDoAluno,
 } from '../../utils/aluno-painel.js'
 import { normalizarCodigoAcesso } from '../../utils/class-code.js'
 
@@ -171,10 +171,11 @@ function CartaoProposta({
   proposta,
   rascunho,
   agora,
+  descricao,
 }) {
   if (status === 'carregando') {
     return (
-      <EsqueletoCartao rotulo="Carregando a proposta aberta..." />
+      <EsqueletoCartao rotulo="Carregando a próxima proposta..." />
     )
   }
 
@@ -210,10 +211,10 @@ function CartaoProposta({
           id="titulo-proposta"
           className="aluno-titulo-interface text-lg font-semibold leading-6"
         >
-          Nenhuma proposta aberta
+          Nenhuma proposta pendente
         </h2>
         <p className="mt-2 max-w-[520px] text-sm leading-[22px] text-lexis-200">
-          Quando o professor publicar um tema com prazo em aberto, ele aparecerá aqui.
+          Quando houver uma proposta para escrever, ela aparecerá aqui. Consulte abaixo as propostas da sua turma e acompanhe as redações já enviadas.
         </p>
       </section>
     )
@@ -231,7 +232,7 @@ function CartaoProposta({
     >
       <div className="flex flex-wrap gap-3">
         <span className="inline-flex h-6 min-w-[150px] items-center justify-center rounded-full bg-[var(--aluno-sucesso-fundo)] px-4 text-xs font-medium uppercase leading-[17px] text-[var(--aluno-sucesso)]">
-          Proposta aberta
+          {descricao.prazoVencido ? 'Prazo vencido' : 'Proposta aberta'}
         </span>
         {turma && (
           <span className="inline-block h-6 max-w-full truncate rounded-full bg-[var(--aluno-acao-suave)] px-[22px] text-xs font-medium leading-6 text-[var(--aluno-acao-suave-texto)]">
@@ -250,18 +251,69 @@ function CartaoProposta({
       <p className="mt-3 text-sm leading-[22px] text-lexis-200">
         Entrega até {formatarPrazoEntrega(proposta.prazoEntrega)}
       </p>
+      <p className="mt-2 text-sm leading-[22px] text-lexis-200">
+        {descricao.orientacao}
+      </p>
 
       <Link
         to={`/aluno/temas/${encodeURIComponent(proposta.id)}/redacao`}
         className="mt-6 inline-flex h-11 w-full items-center justify-center rounded-lg bg-[var(--color-brand-accent)] text-[13px] font-semibold leading-[18px] text-[#ffffff] transition hover:brightness-110 sm:w-[220px]"
       >
-        Escrever redação
+        {rascunho ? 'Continuar rascunho' : 'Escrever redação'}
       </Link>
 
       {tempoRascunho && (
         <p className="mt-3 text-xs font-medium leading-[17px] text-lexis-200">
           Rascunho salvo no servidor {tempoRascunho}.
         </p>
+      )}
+    </section>
+  )
+}
+
+function ListaPropostas({ status, propostas }) {
+  return (
+    <section aria-labelledby="titulo-propostas-turma" className="mt-8">
+      <h2 id="titulo-propostas-turma" className="aluno-titulo-interface text-xl font-semibold leading-[26px] text-lexis-50">
+        Propostas da turma
+      </h2>
+      <p className="mt-2 text-sm leading-[22px] text-lexis-200">
+        Escolha a proposta que deseja abrir. Propostas com prazo vencido também permitem entrega, registrada com atraso.
+      </p>
+      {status === 'carregando' && (
+        <div role="status" className={`${classeCartao} mt-4 h-32 animate-pulse`}>
+          <span className="sr-only">Carregando as propostas da turma...</span>
+        </div>
+      )}
+      {status === 'erro' && (
+        <p role="alert" className={`${classeCartao} mt-4 p-6 text-sm text-lexis-200`}>
+          Não foi possível carregar a lista e a situação das propostas. Recarregue a página para tentar novamente.
+        </p>
+      )}
+      {status === 'pronto' && propostas.length === 0 && (
+        <p className={`${classeCartao} mt-4 p-6 text-sm text-lexis-200`}>
+          Sua turma ainda não tem propostas disponíveis.
+        </p>
+      )}
+      {status === 'pronto' && propostas.length > 0 && (
+        <ul className="mt-4 space-y-3">
+          {propostas.map(({ proposta, prazoVencido, situacao, orientacao, acao }) => (
+            <li key={proposta.id} className={`${classeCartao} flex min-w-0 flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between`}>
+              <div className="min-w-0">
+                <h3 className="break-words text-lg font-semibold leading-6 text-lexis-50">{proposta.enunciado}</h3>
+                <p className="mt-2 text-sm font-semibold text-lexis-200">{situacao}</p>
+                <p className="mt-1 text-sm leading-[22px] text-lexis-200">
+                  {prazoVencido ? 'Prazo vencido em ' : 'Entrega até '}{formatarPrazoEntrega(proposta.prazoEntrega)}
+                </p>
+                <p className="mt-1 text-sm leading-[22px] text-lexis-200">{orientacao}</p>
+              </div>
+              <Link to={acao.destino} className={`inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg px-5 text-[13px] font-semibold transition ${CLASSES_ACAO[acao.variante]}`}>
+                {acao.rotulo}
+                <span className="sr-only">{' '}— {proposta.enunciado}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
       )}
     </section>
   )
@@ -756,14 +808,16 @@ export default function AlunoDashboardPage() {
     painel.temas,
     painel.redacoes,
   )
-  const proposta =
+  const propostas =
     statusProposta === 'pronto'
-      ? selecionarPropostaAberta(
+      ? listarPropostasDoAluno(
           painel.temas.dados,
           painel.redacoes.dados,
           agora,
         )
-      : null
+      : []
+  const descricaoProposta = propostas.find((item) => item.podeEnviar) ?? null
+  const proposta = descricaoProposta?.proposta ?? null
   const rascunhoProposta = proposta
     ? encontrarRascunhoDoTema(
         painel.redacoes.dados,
@@ -828,11 +882,14 @@ export default function AlunoDashboardPage() {
               proposta={proposta}
               rascunho={rascunhoProposta}
               agora={agora}
+              descricao={descricaoProposta}
             />
             <CartaoDesempenho
               bloco={painel.desempenho}
             />
           </div>
+
+          <ListaPropostas status={statusProposta} propostas={propostas} />
 
           <ListaRedacoes
             bloco={painel.redacoes}

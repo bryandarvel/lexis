@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt'
+import { CODIGO_TURMA_DEMO, TURMA_DEMO_ID } from './demo-turma.js'
 
 import { env } from '../src/config/env.js'
 import { prisma } from '../src/config/prisma.js'
@@ -17,7 +18,7 @@ const ids = {
         indice + 11,
       ).padStart(12, '0')}`,
   ),
-  turma: '20000000-0000-4000-8000-000000000001',
+  turma: TURMA_DEMO_ID,
   tema: '30000000-0000-4000-8000-000000000001',
   criterios: Array.from(
     { length: 3 },
@@ -163,7 +164,7 @@ async function main() {
   }
 
   const turma = await prisma.turma.upsert({
-    where: { codigoAcesso: 'LEX-DEMO' },
+    where: { id: ids.turma },
     update: {
       nome: '3º A — Demonstração LÉXIS',
       professorId: professor.id,
@@ -173,7 +174,7 @@ async function main() {
     create: {
       id: ids.turma,
       nome: '3º A — Demonstração LÉXIS',
-      codigoAcesso: 'LEX-DEMO',
+      codigoAcesso: CODIGO_TURMA_DEMO,
       professorId: professor.id,
     },
   })
