@@ -434,9 +434,13 @@ h2,
   }
 }
 
+/*
+ * Regra fora de camada: vence os utilitários do Tailwind. O textarea fica de
+ * fora porque o preflight do Tailwind já aplica font: inherit a ele na camada
+ * base, e assim as classes de fonte do campo da redação passam a valer.
+ */
 button,
 input,
-textarea,
 select {
   font: inherit;
 }
