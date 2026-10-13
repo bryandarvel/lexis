@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 
 import { prisma } from '../src/config/prisma.js'
+import { TURMA_DEMO_ID, PROFESSOR_DEMO_ID, PROFESSOR_DEMO_EMAIL } from '../prisma/demo-turma.js'
 
 const TEMA_DEMO_ID =
   '30000000-0000-4000-8000-000000000001'
@@ -23,8 +24,9 @@ async function main() {
         },
       },
     }),
-    prisma.turma.count({
-      where: { codigoAcesso: 'LEX-DEMO' },
+    prisma.turma.findUnique({
+      where: { id: TURMA_DEMO_ID },
+      select: { codigoAcesso: true, professorId: true, professor: { select: { email: true, papel: true } } },
     }),
     prisma.temaRedacao.count({
       where: { id: TEMA_DEMO_ID },
@@ -72,7 +74,11 @@ async function main() {
   )
 
   assert.equal(usuarios, 6)
-  assert.equal(turmas, 1)
+  assert.ok(turmas, 'Turma fictícia não encontrada')
+  assert.equal(turmas.professorId, PROFESSOR_DEMO_ID)
+  assert.equal(turmas.professor.email, PROFESSOR_DEMO_EMAIL)
+  assert.equal(turmas.professor.papel, 'PROFESSOR')
+  assert.match(turmas.codigoAcesso, /^[A-HJ-NP-Z2-9]{8}$/, 'Código fictício inválido; use db:demo:code para conferir a correção específica, sem repetir o seed.')
   assert.equal(temas, 1)
   assert.equal(totalRedacoes, 5)
   assert.equal(analises, 2)
@@ -87,7 +93,7 @@ async function main() {
     JSON.stringify(
       {
         usuarios,
-        turmas,
+        turmas: 1,
         temas,
         criterios: criterios.length,
         redacoes: Object.fromEntries(

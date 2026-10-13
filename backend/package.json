@@ -14,6 +14,7 @@
     "email:process": "node scripts/process-email-notifications.js",
     "db:seed": "prisma db seed",
     "db:seed:verify": "node scripts/verify-demo-seed.js",
+    "db:demo:code": "node scripts/fix-demo-class-code.js",
     "ai:evaluate": "node scripts/evaluate-ai.js"
   },
   "keywords": [],

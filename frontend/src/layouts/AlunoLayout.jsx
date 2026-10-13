@@ -460,7 +460,7 @@ export default function AlunoLayout({
                 </span>
                 Enviar redação
                 <span className="sr-only">
-                  {' '}(indisponível: nenhuma proposta aberta)
+                  {' '}(indisponível: nenhuma proposta pendente)
                 </span>
               </span>
             )}

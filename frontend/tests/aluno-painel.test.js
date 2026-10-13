@@ -11,6 +11,7 @@ import {
   formatarIndicador,
   formatarPrazoEntrega,
   obterIniciais,
+  listarPropostasDoAluno,
   selecionarPropostaAberta,
 } from '../src/utils/aluno-painel.js'
 
@@ -118,6 +119,56 @@ test('encontra somente o rascunho do tema informado', () => {
     'r2',
   )
   assert.equal(encontrarRascunhoDoTema(redacoes, 't1'), null)
+})
+
+test('lista todas as propostas acessíveis, inclusive vencidas sem rascunho, sem mutar os dados', () => {
+  const temas = [
+    criarTema('vencida', new Date(2026, 7, 1)),
+    criarTema('futura-distante', new Date(2026, 7, 20)),
+    criarTema('futura-proxima', new Date(2026, 7, 10)),
+    { ...criarTema('arquivada', new Date(2026, 7, 5)), ativo: false },
+  ]
+  const copia = structuredClone(temas)
+  const propostas = listarPropostasDoAluno(temas, [], agora)
+
+  assert.deepEqual(propostas.map((item) => item.proposta.id), ['futura-proxima', 'futura-distante', 'vencida'])
+  assert.ok(propostas.every((item) => item.podeEnviar))
+  const vencida = propostas.at(-1)
+  assert.equal(vencida.situacao, 'Não iniciada')
+  assert.equal(vencida.prazoVencido, true)
+  assert.match(vencida.orientacao, /ainda pode enviar.*atraso/)
+  assert.equal(vencida.acao.destino, '/aluno/temas/vencida/redacao')
+  assert.deepEqual(temas, copia)
+})
+
+test('mantém acesso à proposta vencida com rascunho e não oferece reenvio de redações entregues', () => {
+  const temas = ['rascunho', 'enviada', 'avaliada'].map((id) => criarTema(id, new Date(2026, 7, 1)))
+  const redacoes = [
+    { id: 'r1', temaId: 'rascunho', status: 'RASCUNHO' },
+    { id: 'r2', temaId: 'enviada', status: 'ENVIADA' },
+    { id: 'r3', temaId: 'avaliada', status: 'AVALIADA' },
+  ]
+  const propostas = listarPropostasDoAluno(temas, redacoes, agora)
+  const porId = Object.fromEntries(propostas.map((item) => [item.proposta.id, item]))
+
+  assert.equal(porId.rascunho.podeEnviar, true)
+  assert.equal(porId.rascunho.situacao, 'Rascunho')
+  assert.equal(porId.rascunho.acao.rotulo, 'Continuar')
+  assert.equal(porId.enviada.podeEnviar, false)
+  assert.equal(porId.enviada.situacao, 'Em correção')
+  assert.equal(porId.enviada.acao.rotulo, 'Acompanhar')
+  assert.match(porId.enviada.orientacao, /não pode mais ser alterado/)
+  assert.equal(porId.avaliada.podeEnviar, false)
+  assert.equal(porId.avaliada.acao.destino, '/aluno/redacoes/r3/feedback')
+  assert.ok(propostas.every((item) => item.prazoVencido))
+})
+
+test('não encerra a proposta exatamente no prazo e mantém estados vazios previsíveis', () => {
+  assert.equal(listarPropostasDoAluno([criarTema('exata', agora)], [], agora)[0].prazoVencido, false)
+  assert.deepEqual(listarPropostasDoAluno(undefined, undefined, agora), [])
+  const desconhecida = listarPropostasDoAluno([{ id: 't/1', enunciado: 'Tema', prazoEntrega: 'inválido' }], [], agora)[0]
+  assert.equal(desconhecida.prazoVencido, false)
+  assert.equal(desconhecida.acao.destino, '/aluno/temas/t%2F1/redacao')
 })
 
 test('formata o prazo e as datas curtas no padrão do protótipo', () => {

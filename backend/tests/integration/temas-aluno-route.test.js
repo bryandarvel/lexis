@@ -321,6 +321,25 @@ after(async () => {
 })
 
 describe('Rotas de temas do aluno', () => {
+  it('deve manter proposta vencida na lista e permitir sua consulta sem rascunho', async () => {
+    const prazoVencido = new Date(Date.now() - 86_400_000)
+    await prisma.temaRedacao.update({ where: { id: temaMaisProximo.id }, data: { prazoEntrega: prazoVencido } })
+
+    const lista = await request(app)
+      .get('/api/aluno/temas')
+      .set('Authorization', `Bearer ${alunoMatriculado.accessToken}`)
+      .expect(200)
+    assert.equal(lista.body.data.temas.length, 2)
+    assert.ok(lista.body.data.temas.some((tema) => tema.id === temaMaisProximo.id))
+
+    const detalhe = await request(app)
+      .get(`/api/aluno/temas/${temaMaisProximo.id}`)
+      .set('Authorization', `Bearer ${alunoMatriculado.accessToken}`)
+      .expect(200)
+    assert.equal(new Date(detalhe.body.data.tema.prazoEntrega).getTime(), prazoVencido.getTime())
+    assert.equal(await prisma.redacao.count({ where: { alunoId: alunoMatriculado.usuario.id, temaId: temaMaisProximo.id } }), 0)
+  })
+
   it('deve listar somente os temas ativos da turma atual', async () => {
     const resposta = await request(app)
       .get('/api/aluno/temas')

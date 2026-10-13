@@ -87,6 +87,10 @@ npm.cmd run db:seed:verify
 
 O seed é idempotente, recusa execução em produção e usa contas `@lexis.example.com`. A senha conhecida das contas fictícias é documentada na saída do comando; nunca a reutilize em outro ambiente.
 
+Em banco já utilizado, não repita o seed para corrigir somente o código da turma: ele redefine dados das contas e trabalhos fictícios. A nova turma de demonstração usa o código válido `LEXDEM26`. Para uma turma antiga com `LEX-DEMO`, `npm.cmd run db:demo:code` faz somente a conferência. Após aprovar a alteração específica, `npm.cmd run db:demo:code -- --apply` atualiza apenas esse código, verificando o ID da turma, a identidade do professor fictício e possíveis conflitos. Códigos válidos já regenerados são preservados. O comando recusa bancos remotos e produção.
+
+O roteiro de conferência das propostas, envio atrasado e fluxo completo nas duas máquinas está em [docs/aceite-b01-b04.md](docs/aceite-b01-b04.md).
+
 ### 2. Frontend
 
 Em outro terminal, a partir da raiz do projeto:
