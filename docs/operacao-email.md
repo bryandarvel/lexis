@@ -8,6 +8,25 @@ Na configuração sandbox atualmente utilizada, o teste autorizado foi aceito pe
 
 ## Processamento
 
+Antes de iniciar qualquer processamento real, consulte o estado agregado sem enviar mensagens:
+
+```powershell
+npm.cmd run email:status
+```
+
+Esse comando aceita somente os bancos `lexis` ou `lexis_test` em loopback, fora de produção. Retorna contagens de `PENDENTE`, `ENVIANDO`, `ENVIADO` e `ERRO` para cada fila, se o envio está habilitado e o limite por fila. Não carrega/imprime destinatários, links, tokens ou corpos. É somente leitura; não valida quem consentiu com os envios, não comprova que todos os registros são fictícios e não os torna elegíveis novamente.
+
+### Rotina local supervisionada
+
+1. Confirme o destino local e a configuração pessoal sem compartilhar `.env`.
+2. Rode `email:status` e confira que os dados pendentes pertencem ao ambiente fictício da demonstração. A contagem agregada não substitui essa conferência.
+3. Obtenha autorização do destinatário para o lote previsto. O comando de processamento pode enviar itens das duas filas; não é teste de uma mensagem isolada.
+4. Execute um lote com `email:process` e confira os contadores de processados/enviados/erros e seu código de saída.
+5. Rode `email:status` novamente e siga a seção de falhas abaixo antes de outra execução.
+6. Use o loop abaixo somente se quiser operar continuamente a demonstração, mantendo um único terminal supervisionado. Ele não foi iniciado por esta entrega.
+
+Não confunda `ENVIADO` (aceito pelo cliente/provedor) com confirmação de recebimento na caixa de entrada. Essa última evidência exige retorno do destinatário.
+
 A API enfileira as solicitações; não existe serviço de agendamento instalado. Em outro PowerShell, dentro de `backend/`, execute um lote:
 
 ```powershell
@@ -42,6 +61,17 @@ Notificações usam reserva condicional no banco, uma chave de idempotência por
 Recuperação usa uma tentativa por solicitação. O token em texto puro só existe durante o envio; uma falha invalida essa solicitação. O usuário pode solicitar outro link, respeitando o cooldown de 60 segundos e os limites da API. O sucesso de uma redefinição invalida todos os outros links e sessões daquela conta. Não reutilize uma solicitação de recuperação para gerar outro token com a mesma chave de idempotência.
 
 Limitação operacional: se o processo for encerrado abruptamente depois da reserva, itens podem permanecer em `ENVIANDO`. Eles não são retomados automaticamente, pois o resultado do envio pode ser incerto. Para recuperação, solicite um novo link; o anterior expira. Para notificação, o operador deve conferir o resultado no provedor antes de decidir por uma recuperação manual. Nunca redefina todos os itens para `PENDENTE` indiscriminadamente. A retomada automática com lease e conciliação é uma melhoria operacional futura, não uma garantia atual.
+
+### Como agir sem expor dados
+
+- `EMAIL_NOT_CONFIGURED`/`EMAIL_AUTHENTICATION_FAILED`: confira configuração local e reinicie a API quando aplicável; não imprima a chave nem aumente tentativas repetidamente.
+- `EMAIL_DELIVERY_FORBIDDEN`: confira remetente e permissão de destinatário; não troque para uma conta real para contornar o sandbox.
+- `EMAIL_SERVICE_LIMIT_REACHED`/`EMAIL_SEND_FAILED`: em notificações, aguarde `proximaTentativaEm` e respeite `EMAIL_MAX_ATTEMPTS`. O código, não a exceção bruta do provedor, é persistido.
+- Falha na recuperação: a solicitação é invalidada; solicite outro link respeitando cooldown. Não há retry do mesmo token.
+- `ENVIANDO`: pode indicar lote ainda ativo ou interrupção. Não iniciar múltiplos workers para tentar resolver. Não alterar todos os estados no banco.
+- Falha de consulta/ORM: `email:status` retorna erro genérico e saída 1; confira conexão local sem publicar stack, URL ou credenciais.
+
+Para reproduzir a suíte simulada B30 no banco de teste preparado: `npx.cmd cross-env NODE_ENV=test node --test tests/unit/email-operation.test.js tests/integration/email-queue-persistence.test.js`. A integração confirma `lexis_test`, usa filtros reais e restringe as reservas aos seus próprios IDs por cliente Prisma escopado; a persistência é real e o envio é simulado. Nenhuma chamada real ao Resend foi feita na entrega B30.
 
 ## Evidência do teste real
 

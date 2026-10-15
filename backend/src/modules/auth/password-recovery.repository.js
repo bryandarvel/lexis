@@ -11,18 +11,26 @@ export function enfileirarRecuperacao({ usuarioId, agora, expiraEm }) {
   })
 }
 
-export async function reservarRecuperacao({ agora }) {
-  const candidata = await prisma.recuperacaoSenha.findFirst({
+export async function reservarRecuperacao({ agora }, cliente = prisma) {
+  const candidata = await cliente.recuperacaoSenha.findFirst({
     where: { statusEmail: 'PENDENTE', consumidoEm: null, expiraEm: { gt: agora }, usuario: { ativo: true } },
     orderBy: { criadoEm: 'asc' }, select: { id: true },
   })
   if (!candidata) return null
-  const reserva = await prisma.recuperacaoSenha.updateMany({
+  const reserva = await cliente.recuperacaoSenha.updateMany({
     where: { id: candidata.id, statusEmail: 'PENDENTE', consumidoEm: null, expiraEm: { gt: agora } },
     data: { statusEmail: 'ENVIANDO' },
   })
   if (reserva.count !== 1) return null
-  return prisma.recuperacaoSenha.findUnique({ where: { id: candidata.id }, include: { usuario: { select: { email: true, ativo: true } } } })
+  return cliente.recuperacaoSenha.findUnique({ where: { id: candidata.id }, include: { usuario: { select: { email: true, ativo: true } } } })
+}
+
+// Consulta agregada: não carrega tokens, contas ou links.
+export function contarEstadosRecuperacoesEmail() {
+  return prisma.recuperacaoSenha.groupBy({
+    by: ['statusEmail'],
+    _count: { _all: true },
+  })
 }
 
 export async function registrarTokenRecuperacao({ id, tokenHash, agora }) {

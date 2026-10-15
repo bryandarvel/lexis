@@ -198,4 +198,6 @@ O botão “Esqueci minha senha” solicita instruções sem revelar se a conta 
 
 Configure as variáveis localmente e consulte [docs/operacao-email.md](docs/operacao-email.md) antes de processar a fila com `npm.cmd run email:process`, dentro de `backend/`. Com `EMAIL_ENABLED=false`, a recuperação informa indisponibilidade. Nenhum agendamento de produção é instalado automaticamente.
 
+Antes e depois de um lote supervisionado, `npm.cmd run email:status` consulta somente contagens por estado das filas locais. Não envia mensagens, expõe destinatários/tokens nem recupera automaticamente itens interrompidos. O procedimento e as limitações estão no guia de operação.
+
 As evidências e pendências desta entrega estão em [docs/entrega-funcional.md](docs/entrega-funcional.md). A proposta acadêmica para avaliar a IA, dependente de corpus autorizado e avaliadores, está em [docs/protocolo-academico-ia.md](docs/protocolo-academico-ia.md).

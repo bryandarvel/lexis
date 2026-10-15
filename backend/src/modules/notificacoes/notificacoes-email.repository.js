@@ -51,12 +51,12 @@ function criarFiltroDisponibilidade({
 export async function reservarProximaNotificacaoEmail({
   agora,
   maxTentativas,
-}) {
+}, cliente = prisma) {
   const filtro = criarFiltroDisponibilidade({
     agora,
     maxTentativas,
   })
-  const candidata = await prisma.notificacao.findFirst({
+  const candidata = await cliente.notificacao.findFirst({
     where: filtro,
     select: {
       id: true,
@@ -70,7 +70,7 @@ export async function reservarProximaNotificacaoEmail({
     return null
   }
 
-  const reserva = await prisma.notificacao.updateMany({
+  const reserva = await cliente.notificacao.updateMany({
     where: {
       id: candidata.id,
       ...filtro,
@@ -89,11 +89,19 @@ export async function reservarProximaNotificacaoEmail({
     return null
   }
 
-  return prisma.notificacao.findUnique({
+  return cliente.notificacao.findUnique({
     where: {
       id: candidata.id,
     },
     select: notificacaoEmailSelect,
+  })
+}
+
+// Consulta agregada: não carrega destinatários, texto ou links.
+export function contarEstadosNotificacoesEmail() {
+  return prisma.notificacao.groupBy({
+    by: ['statusEmail'],
+    _count: { _all: true },
   })
 }
 
