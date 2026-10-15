@@ -12,6 +12,7 @@
     "lint": "oxlint src server.js tests prisma.config.ts",
     "lint:fix": "oxlint --fix src server.js tests prisma.config.ts",
     "email:process": "node scripts/process-email-notifications.js",
+    "email:status": "node scripts/email-status.js",
     "db:seed": "prisma db seed",
     "db:seed:verify": "node scripts/verify-demo-seed.js",
     "db:demo:code": "node scripts/fix-demo-class-code.js",
