@@ -12,6 +12,7 @@
     "lint": "oxlint src server.js tests prisma.config.ts",
     "lint:fix": "oxlint --fix src server.js tests prisma.config.ts",
     "email:process": "node scripts/process-email-notifications.js",
+    "email:status": "node scripts/email-status.js",
     "db:seed": "prisma db seed",
     "db:seed:verify": "node scripts/verify-demo-seed.js",
     "db:demo:code": "node scripts/fix-demo-class-code.js",
@@ -23,8 +24,8 @@
   "type": "module",
   "dependencies": {
     "@google/genai": "2.16.0",
-    "@prisma/adapter-mariadb": "7.9.1",
-    "@prisma/client": "7.9.1",
+    "@prisma/adapter-mariadb": "7.10.0",
+    "@prisma/client": "7.10.0",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
@@ -44,7 +45,7 @@
   "devDependencies": {
     "cross-env": "^10.1.0",
     "oxlint": "^1.76.0",
-    "prisma": "7.9.1",
+    "prisma": "7.10.0",
     "supertest": "^7.2.2"
   }
 }
