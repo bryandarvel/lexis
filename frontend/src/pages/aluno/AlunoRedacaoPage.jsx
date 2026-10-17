@@ -4,21 +4,27 @@ import {
   useRef,
   useState,
 } from 'react'
-import { Link, useParams } from 'react-router'
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useParams,
+} from 'react-router'
 
 import ConferenciaEnvioCard from '../../components/aluno/ConferenciaEnvioCard.jsx'
 import ConfirmarEnvioDialogo from '../../components/aluno/ConfirmarEnvioDialogo.jsx'
 import EnvioFotoPainel from '../../components/aluno/EnvioFotoPainel.jsx'
 import RevisaoLinguisticaCard from '../../components/aluno/RevisaoLinguisticaCard.jsx'
+import { useAuth } from '../../hooks/useAuth.js'
 import AlunoLayout from '../../layouts/AlunoLayout.jsx'
 import {
-  confirmarRevisaoOcr,
   enviarRedacao,
   listarMinhasRedacoes,
   revisarLinguagemRedacao,
   salvarRascunho,
   transcreverImagemRedacao,
 } from '../../services/redacoes.js'
+import { guardarRevisaoOcr } from '../../services/revisao-ocr-pendente.js'
 import { obterTemaDoAluno } from '../../services/temas.js'
 import { formatarDiaMes } from '../../utils/aluno-painel.js'
 import { interpretarErroApi } from '../../utils/api-error.js'
@@ -31,7 +37,6 @@ import {
   ITENS_CONFERENCIA_ENVIO,
   LIMITE_CARACTERES_REDACAO,
   mensagemRevisaoLinguistica,
-  precisaConfirmarSubstituicaoOcr,
   validarImagemRedacao,
 } from '../../utils/essay-editor.js'
 
@@ -198,9 +203,7 @@ function EditorCard({
   textareaRef,
   somenteLeitura,
   onAlterarTexto,
-  revisaoOcrPendente,
   rodape,
-  blocoRevisaoOcr,
 }) {
   const extensao = descreverExtensao(texto)
   const proximoDoLimite =
@@ -248,54 +251,10 @@ function EditorCard({
         className="font-editorial mt-[17px] min-h-[348px] w-full flex-1 resize-none bg-transparent text-[17px] leading-8 text-lexis-100 outline-none placeholder:text-lexis-200 read-only:cursor-default"
       />
 
-      {revisaoOcrPendente && blocoRevisaoOcr}
-
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--surface-border)] pt-[9px]">
         {rodape}
       </div>
     </section>
-  )
-}
-
-function BlocoRevisaoOcr({
-  ocupado,
-  confirmando,
-  onConfirmar,
-  onRestaurar,
-}) {
-  return (
-    <div className="relative mt-4 overflow-hidden rounded-lg bg-[var(--aluno-atencao-fundo)] py-3 pl-4 pr-4">
-      <span
-        aria-hidden="true"
-        className="absolute inset-y-0 left-0 w-[3px] bg-[var(--aluno-atencao)]"
-      />
-      <h3 className="text-[13px] font-semibold leading-[18px] text-[var(--aluno-atencao)]">
-        Revise o texto transcrito
-      </h3>
-      <p className="mt-1 text-xs font-medium leading-[17px] text-lexis-100">
-        A transcrição automática pode conter erros. Confira e corrija o texto acima; ele só substitui o rascunho do servidor depois da sua confirmação.
-      </p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={onConfirmar}
-          disabled={ocupado}
-          className="h-9 rounded-lg bg-[var(--color-brand-accent)] px-4 text-[13px] font-semibold leading-[18px] text-[#ffffff] disabled:opacity-55"
-        >
-          {confirmando
-            ? 'Confirmando...'
-            : 'Confirmar texto revisado'}
-        </button>
-        <button
-          type="button"
-          onClick={onRestaurar}
-          disabled={ocupado}
-          className="h-9 rounded-lg border border-[var(--aluno-borda-campo)] bg-lexis-900 px-4 text-[13px] font-semibold leading-[18px] text-lexis-100 disabled:opacity-55"
-        >
-          Restaurar texto anterior
-        </button>
-      </div>
-    </div>
   )
 }
 
@@ -367,6 +326,9 @@ function EsqueletoEditor() {
 
 export default function AlunoRedacaoPage() {
   const { temaId } = useParams()
+  const location = useLocation()
+  const navigate = useNavigate()
+  const { usuario } = useAuth()
   const [pagina, setPagina] = useState({
     status: 'carregando',
     tema: null,
@@ -377,16 +339,20 @@ export default function AlunoRedacaoPage() {
     status: 'pronto',
     salvoEm: null,
   })
-  const [aviso, setAviso] = useState(null)
+  // A tela de revisão do OCR volta para cá com um aviso ou com a aba de foto
+  // aberta; esse estado de navegação é lido uma vez e depois descartado.
+  const [aviso, setAviso] = useState(
+    () => location.state?.aviso ?? null,
+  )
   const [acao, setAcao] = useState(null)
-  const [abaAtiva, setAbaAtiva] = useState('digitar')
+  const [abaAtiva, setAbaAtiva] = useState(() =>
+    location.state?.aba === 'foto'
+      ? 'foto'
+      : 'digitar',
+  )
   const [imagem, setImagem] = useState(null)
   const [progressoOcr, setProgressoOcr] =
     useState(0)
-  const [revisaoOcr, setRevisaoOcr] = useState({
-    pendente: false,
-    textoAnterior: '',
-  })
   const [revisaoLinguistica, setRevisaoLinguistica] =
     useState(REVISAO_LINGUISTICA_INICIAL)
   const [conferencia, setConferencia] = useState({})
@@ -402,6 +368,15 @@ export default function AlunoRedacaoPage() {
   const botaoEnviarRef = useRef(null)
 
   textoAtualRef.current = texto
+
+  useEffect(() => {
+    if (location.state) {
+      navigate(location.pathname, {
+        replace: true,
+        state: null,
+      })
+    }
+  }, [location.pathname, location.state, navigate])
 
   useEffect(() => {
     let ativo = true
@@ -471,7 +446,6 @@ export default function AlunoRedacaoPage() {
       if (
         pagina.status !== 'pronto' ||
         redacaoImutavel ||
-        revisaoOcr.pendente ||
         !textoLimpo ||
         textoParaSalvar === ultimoTextoSalvoRef.current
       ) {
@@ -521,7 +495,6 @@ export default function AlunoRedacaoPage() {
       pagina.redacao,
       pagina.status,
       redacaoImutavel,
-      revisaoOcr.pendente,
       temaId,
     ],
   )
@@ -530,7 +503,6 @@ export default function AlunoRedacaoPage() {
     if (
       pagina.status !== 'pronto' ||
       redacaoImutavel ||
-      revisaoOcr.pendente ||
       texto === ultimoTextoSalvoRef.current ||
       !texto.trim()
     ) {
@@ -553,7 +525,6 @@ export default function AlunoRedacaoPage() {
   }, [
     pagina.status,
     redacaoImutavel,
-    revisaoOcr.pendente,
     salvarTexto,
     texto,
   ])
@@ -631,22 +602,17 @@ export default function AlunoRedacaoPage() {
       return
     }
 
-    const textoAnterior = texto
-
-    if (
-      precisaConfirmarSubstituicaoOcr(
-        textoAnterior,
-      ) &&
-      !globalThis.confirm(
-        'O texto extraído será mostrado para revisão. Deseja substituir o conteúdo atual no editor? O rascunho salvo no servidor será preservado até sua confirmação.',
-      )
-    ) {
-      return
-    }
-
     setAcao('ocr')
     setAviso(null)
     setProgressoOcr(0)
+
+    try {
+      // O texto em edição é salvo antes, para não se perder ao abrir a revisão.
+      await salvarTexto(textoAtualRef.current)
+    } catch {
+      setAcao(null)
+      return
+    }
 
     try {
       const resultado =
@@ -656,27 +622,15 @@ export default function AlunoRedacaoPage() {
           setProgressoOcr,
         )
 
-      setTexto(resultado.textoExtraido)
-      setRevisaoLinguistica(
-        REVISAO_LINGUISTICA_INICIAL,
-      )
-      setRevisaoOcr({
-        pendente: true,
-        textoAnterior,
+      guardarRevisaoOcr({
+        usuarioId: usuario?.id,
+        temaId,
+        textoExtraido: resultado.textoExtraido,
+        imagem,
+        textoAnterior: ultimoTextoSalvoRef.current,
       })
-      setSalvamento((estado) => ({
-        ...estado,
-        status: 'alterado',
-      }))
-      setAbaAtiva('digitar')
-      setAviso({
-        tipo: 'sucesso',
-        mensagem:
-          'Transcrição concluída. Revise o texto e confirme antes de enviá-lo ao servidor.',
-      })
-      globalThis.setTimeout(
-        () => textareaRef.current?.focus(),
-        0,
+      navigate(
+        `/aluno/temas/${encodeURIComponent(temaId)}/redacao/ocr`,
       )
     } catch (error) {
       setAviso({
@@ -686,59 +640,6 @@ export default function AlunoRedacaoPage() {
           'Não foi possível processar a imagem. Seu texto foi preservado.',
         ).mensagem,
       })
-    } finally {
-      setAcao(null)
-    }
-  }
-
-  async function handleConfirmarOcr() {
-    if (!texto.trim()) {
-      setAviso({
-        tipo: 'erro',
-        mensagem:
-          'A transcrição revisada não pode ficar vazia.',
-      })
-      textareaRef.current?.focus()
-      return
-    }
-
-    setAcao('revisao-ocr')
-    setAviso(null)
-
-    try {
-      const redacao = await confirmarRevisaoOcr(
-        temaId,
-        texto,
-      )
-
-      ultimoTextoSalvoRef.current = texto
-      setPagina((estado) => ({
-        ...estado,
-        redacao,
-      }))
-      setRevisaoOcr({
-        pendente: false,
-        textoAnterior: '',
-      })
-      setImagem(null)
-      setSalvamento({
-        status: 'pronto',
-        salvoEm: redacao.atualizadoEm,
-      })
-      setAviso({
-        tipo: 'sucesso',
-        mensagem:
-          'Texto do OCR revisado e salvo como rascunho.',
-      })
-    } catch (error) {
-      setAviso({
-        tipo: 'erro',
-        mensagem: interpretarErroApi(
-          error,
-          'Não foi possível confirmar a revisão do OCR.',
-        ).mensagem,
-      })
-    } finally {
       setAcao(null)
     }
   }
@@ -824,43 +725,7 @@ export default function AlunoRedacaoPage() {
     )
   }
 
-  function handleRestaurarTexto() {
-    const textoRestaurado = revisaoOcr.textoAnterior
-    setTexto(textoRestaurado)
-    setRevisaoLinguistica(REVISAO_LINGUISTICA_INICIAL)
-    setRevisaoOcr({
-      pendente: false,
-      textoAnterior: '',
-    })
-    setSalvamento((estado) => ({
-      ...estado,
-      status:
-        textoRestaurado ===
-        ultimoTextoSalvoRef.current
-          ? 'pronto'
-          : 'alterado',
-    }))
-    setAviso({
-      tipo: 'sucesso',
-      mensagem:
-        'O texto anterior foi restaurado; nenhum resultado do OCR foi salvo.',
-    })
-    globalThis.setTimeout(
-      () => textareaRef.current?.focus(),
-      0,
-    )
-  }
-
   function handleRevisarEEnviar() {
-    if (revisaoOcr.pendente) {
-      setAviso({
-        tipo: 'erro',
-        mensagem:
-          'Confirme ou descarte a transcrição do OCR antes do envio.',
-      })
-      return
-    }
-
     if (!texto.trim()) {
       setAviso({
         tipo: 'erro',
@@ -994,7 +859,6 @@ export default function AlunoRedacaoPage() {
         salvamento={salvamento}
         podeSalvar={
           !ocupado &&
-          !revisaoOcr.pendente &&
           Boolean(texto.trim()) &&
           texto !== ultimoTextoSalvoRef.current
         }
@@ -1006,7 +870,6 @@ export default function AlunoRedacaoPage() {
         onClick={handleRevisarEEnviar}
         disabled={
           ocupado ||
-          revisaoOcr.pendente ||
           !texto.trim()
         }
         className="h-11 w-full rounded-lg bg-[var(--color-brand-accent)] px-5 text-[13px] font-semibold leading-[18px] text-[#ffffff] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-55 sm:w-[160px]"
@@ -1024,15 +887,6 @@ export default function AlunoRedacaoPage() {
       textareaRef={textareaRef}
       somenteLeitura={Boolean(redacaoImutavel)}
       onAlterarTexto={handleAlterarTexto}
-      revisaoOcrPendente={revisaoOcr.pendente}
-      blocoRevisaoOcr={
-        <BlocoRevisaoOcr
-          ocupado={ocupado}
-          confirmando={acao === 'revisao-ocr'}
-          onConfirmar={handleConfirmarOcr}
-          onRestaurar={handleRestaurarTexto}
-        />
-      }
       rodape={rodapeEditor}
     />
   )
@@ -1138,9 +992,11 @@ export default function AlunoRedacaoPage() {
               : 'status'
           }
           className={`mt-4 rounded-lg px-4 py-3 text-sm font-medium leading-[22px] outline-none ${
-            aviso.tipo === 'erro'
-              ? 'bg-[var(--aluno-neutro-fundo)] text-[var(--aluno-erro)]'
-              : 'bg-[var(--aluno-sucesso-fundo)] text-[var(--aluno-sucesso)]'
+            {
+              erro: 'bg-[var(--aluno-neutro-fundo)] text-[var(--aluno-erro)]',
+              info: 'bg-[var(--aluno-neutro-fundo)] text-lexis-100',
+            }[aviso.tipo] ??
+            'bg-[var(--aluno-sucesso-fundo)] text-[var(--aluno-sucesso)]'
           }`}
         >
           {aviso.mensagem}
@@ -1170,14 +1026,7 @@ export default function AlunoRedacaoPage() {
                 imagem={imagem}
                 enviando={acao === 'ocr'}
                 progresso={progressoOcr}
-                desabilitado={
-                  ocupado || revisaoOcr.pendente
-                }
-                motivoBloqueio={
-                  revisaoOcr.pendente
-                    ? 'Há uma transcrição aguardando revisão na aba “Digitar redação”. Confirme ou restaure o texto antes de enviar outra foto.'
-                    : null
-                }
+                desabilitado={ocupado}
                 onSelecionar={(arquivo) => {
                   setImagem(arquivo)
                   setAviso(null)
@@ -1197,7 +1046,6 @@ export default function AlunoRedacaoPage() {
                 estado={revisaoLinguistica}
                 desabilitado={
                   ocupado ||
-                  revisaoOcr.pendente ||
                   !texto.trim()
                 }
                 onRevisar={handleRevisarLinguagem}
