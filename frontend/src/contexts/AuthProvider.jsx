@@ -14,6 +14,7 @@ import {
   apiPublica,
   renovarSessaoApi,
 } from '../services/api.js'
+import { descartarRevisaoOcr } from '../services/revisao-ocr-pendente.js'
 import {
   EVENTO_SESSAO_EXPIRADA,
   notificarSessaoRestaurada,
@@ -117,6 +118,7 @@ export default function AuthProvider({ children }) {
       await apiPublica.post('/api/auth/logout')
     } finally {
       limparRascunhosUsuario(usuario?.id)
+      descartarRevisaoOcr()
       limparAccessToken()
       notificarSessaoRestaurada()
       setUsuario(null)

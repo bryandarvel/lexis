@@ -13,7 +13,6 @@ import {
   formatarPrazoCurto,
   LIMITE_IMAGEM_REDACAO_BYTES,
   mensagemRevisaoLinguistica,
-  precisaConfirmarSubstituicaoOcr,
   validarImagemRedacao,
 } from '../src/utils/essay-editor.js'
 
@@ -75,12 +74,6 @@ test('calcula progresso de upload dentro do intervalo de 0 a 100', () => {
   assert.equal(calcularProgressoUpload(-5, 100), 0)
   assert.equal(calcularProgressoUpload(1, 0), null)
   assert.equal(calcularProgressoUpload(1, undefined), null)
-})
-
-test('pede confirmação antes de substituir conteúdo existente pelo OCR', () => {
-  assert.equal(precisaConfirmarSubstituicaoOcr('  texto  '), true)
-  assert.equal(precisaConfirmarSubstituicaoOcr('   '), false)
-  assert.equal(precisaConfirmarSubstituicaoOcr(undefined), false)
 })
 
 test('aplica sugestão somente quando os offsets ainda correspondem ao texto', () => {
