@@ -29,6 +29,21 @@ export function descreverEtapaAtual(passos = PASSOS_ENVIO_FOTO) {
     : `Etapa ${indice + 1} de ${passos.length}`
 }
 
+// A revisão pendente só vale para o aluno autenticado e a proposta da rota.
+// Sem aluno ou proposta definidos, nunca há vínculo.
+export function revisaoPertenceA(
+  revisao,
+  { usuarioId, temaId } = {},
+) {
+  return Boolean(
+    revisao &&
+      usuarioId &&
+      temaId &&
+      revisao.usuarioId === usuarioId &&
+      revisao.temaId === temaId,
+  )
+}
+
 export function formatarTamanhoArquivo(bytes) {
   if (!Number.isFinite(bytes) || bytes < 0) {
     return ''

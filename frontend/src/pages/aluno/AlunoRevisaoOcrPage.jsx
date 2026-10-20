@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useReducer,
   useRef,
   useState,
 } from 'react'
@@ -13,6 +14,7 @@ import { useAuth } from '../../hooks/useAuth.js'
 import AlunoLayout from '../../layouts/AlunoLayout.jsx'
 import { confirmarRevisaoOcr } from '../../services/redacoes.js'
 import {
+  atualizarTextoRevisaoOcr,
   descartarRevisaoOcr,
   obterRevisaoOcr,
 } from '../../services/revisao-ocr-pendente.js'
@@ -234,17 +236,23 @@ export default function AlunoRevisaoOcrPage() {
   const { temaId } = useParams()
   const navigate = useNavigate()
   const { usuario } = useAuth()
-  const [revisao] = useState(() =>
-    obterRevisaoOcr({
-      usuarioId: usuario?.id,
-      temaId,
-    }),
-  )
+  const vinculo = {
+    usuarioId: usuario?.id,
+    temaId,
+  }
+  // Lida a cada render: a revisão só aparece enquanto pertencer ao aluno
+  // autenticado agora e à proposta da rota.
+  const revisao = obterRevisaoOcr(vinculo)
+  const possuiRevisao = Boolean(revisao)
   const [texto, setTexto] = useState(
-    revisao?.textoExtraido ?? '',
+    () => revisao?.textoRevisado ?? '',
   )
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
+  const [, reverificarVinculo] = useReducer(
+    (versao) => versao + 1,
+    0,
+  )
   const tituloRef = useRef(null)
   const textareaRef = useRef(null)
 
@@ -255,7 +263,7 @@ export default function AlunoRevisaoOcrPage() {
   }, [])
 
   useEffect(() => {
-    if (!revisao) return undefined
+    if (!possuiRevisao) return undefined
 
     function confirmarSaida(evento) {
       evento.preventDefault()
@@ -272,7 +280,7 @@ export default function AlunoRevisaoOcrPage() {
         'beforeunload',
         confirmarSaida,
       )
-  }, [revisao])
+  }, [possuiRevisao])
 
   if (!revisao) {
     return (
@@ -298,7 +306,38 @@ export default function AlunoRevisaoOcrPage() {
     })
   }
 
+  // O vínculo deixou de bater: limpa o estado local e força um novo render,
+  // que já não encontra a revisão e mostra o estado de revisão indisponível.
+  function encerrarRevisaoSemVinculo() {
+    setTexto('')
+    setErro('')
+    setSalvando(false)
+    reverificarVinculo()
+  }
+
+  function handleAlterarTexto(evento) {
+    const novoTexto = evento.target.value
+
+    if (
+      !atualizarTextoRevisaoOcr({
+        ...vinculo,
+        texto: novoTexto,
+      })
+    ) {
+      encerrarRevisaoSemVinculo()
+      return
+    }
+
+    setTexto(novoTexto)
+    setErro('')
+  }
+
   async function handleAceitar() {
+    if (!obterRevisaoOcr(vinculo)) {
+      encerrarRevisaoSemVinculo()
+      return
+    }
+
     if (!texto.trim()) {
       setErro(
         'A transcrição revisada não pode ficar vazia.',
@@ -388,10 +427,7 @@ export default function AlunoRevisaoOcrPage() {
           <textarea
             ref={textareaRef}
             value={texto}
-            onChange={(evento) => {
-              setTexto(evento.target.value)
-              setErro('')
-            }}
+            onChange={handleAlterarTexto}
             readOnly={salvando}
             maxLength={LIMITE_CARACTERES_REDACAO}
             aria-labelledby="titulo-texto-extraido"

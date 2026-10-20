@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { afterEach, test } from 'node:test'
 
 import {
+  atualizarTextoRevisaoOcr,
   descartarRevisaoOcr,
   guardarRevisaoOcr,
   obterRevisaoOcr,
@@ -12,6 +13,7 @@ import {
   formatarTamanhoArquivo,
   mensagemErroRevisaoOcr,
   PASSOS_ENVIO_FOTO,
+  revisaoPertenceA,
 } from '../src/utils/ocr-revisao.js'
 
 afterEach(() => {
@@ -84,6 +86,96 @@ test('mantém uma revisão por vez e permite descartá-la', () => {
       temaId: 'tema-2',
     }),
     null,
+  )
+})
+
+test('a revisão pertence somente ao aluno e à proposta que a criaram', () => {
+  const revisao = { usuarioId: 'aluno-1', temaId: 'tema-1' }
+
+  assert.equal(revisaoPertenceA(revisao, { usuarioId: 'aluno-1', temaId: 'tema-1' }), true)
+  assert.equal(revisaoPertenceA(revisao, { usuarioId: 'aluno-2', temaId: 'tema-1' }), false)
+  assert.equal(revisaoPertenceA(revisao, { usuarioId: 'aluno-1', temaId: 'tema-2' }), false)
+  assert.equal(revisaoPertenceA(revisao, { usuarioId: undefined, temaId: 'tema-1' }), false)
+  assert.equal(revisaoPertenceA(revisao, { usuarioId: 'aluno-1', temaId: '' }), false)
+  assert.equal(revisaoPertenceA(revisao), false)
+  assert.equal(revisaoPertenceA(null, { usuarioId: 'aluno-1', temaId: 'tema-1' }), false)
+  assert.equal(
+    revisaoPertenceA(
+      { usuarioId: undefined, temaId: undefined },
+      { usuarioId: undefined, temaId: undefined },
+    ),
+    false,
+  )
+})
+
+test('preserva o texto editado para a remontagem da página, sem alterar a transcrição original', () => {
+  guardarRevisaoOcr({
+    usuarioId: 'aluno-1',
+    temaId: 'tema-1',
+    textoExtraido: 'Transcrição crua.',
+  })
+
+  assert.equal(
+    obterRevisaoOcr({ usuarioId: 'aluno-1', temaId: 'tema-1' }).textoRevisado,
+    'Transcrição crua.',
+  )
+  assert.equal(
+    atualizarTextoRevisaoOcr({
+      usuarioId: 'aluno-1',
+      temaId: 'tema-1',
+      texto: 'Transcrição corrigida pelo aluno.',
+    }),
+    true,
+  )
+
+  // A página lê o store de novo ao ser montada: recebe a versão editada.
+  const remontada = obterRevisaoOcr({ usuarioId: 'aluno-1', temaId: 'tema-1' })
+
+  assert.equal(remontada.textoRevisado, 'Transcrição corrigida pelo aluno.')
+  assert.equal(remontada.textoExtraido, 'Transcrição crua.')
+})
+
+test('não deixa outro aluno ou outra proposta alterar o texto em revisão', () => {
+  guardarRevisaoOcr({
+    usuarioId: 'aluno-1',
+    temaId: 'tema-1',
+    textoExtraido: 'Original.',
+  })
+
+  assert.equal(
+    atualizarTextoRevisaoOcr({ usuarioId: 'aluno-2', temaId: 'tema-1', texto: 'Intruso.' }),
+    false,
+  )
+  assert.equal(
+    atualizarTextoRevisaoOcr({ usuarioId: 'aluno-1', temaId: 'tema-2', texto: 'Outra proposta.' }),
+    false,
+  )
+  assert.equal(
+    atualizarTextoRevisaoOcr({ usuarioId: 'aluno-1', temaId: 'tema-1', texto: null }),
+    false,
+  )
+  assert.equal(
+    obterRevisaoOcr({ usuarioId: 'aluno-1', temaId: 'tema-1' }).textoRevisado,
+    'Original.',
+  )
+})
+
+test('descartar ou guardar outra foto encerra as edições da revisão anterior', () => {
+  guardarRevisaoOcr({ usuarioId: 'aluno-1', temaId: 'tema-1', textoExtraido: 'Primeira.' })
+  atualizarTextoRevisaoOcr({ usuarioId: 'aluno-1', temaId: 'tema-1', texto: 'Primeira editada.' })
+  guardarRevisaoOcr({ usuarioId: 'aluno-1', temaId: 'tema-1', textoExtraido: 'Segunda.' })
+
+  assert.equal(
+    obterRevisaoOcr({ usuarioId: 'aluno-1', temaId: 'tema-1' }).textoRevisado,
+    'Segunda.',
+  )
+
+  descartarRevisaoOcr()
+
+  assert.equal(obterRevisaoOcr({ usuarioId: 'aluno-1', temaId: 'tema-1' }), null)
+  assert.equal(
+    atualizarTextoRevisaoOcr({ usuarioId: 'aluno-1', temaId: 'tema-1', texto: 'Depois do descarte.' }),
+    false,
   )
 })
 
