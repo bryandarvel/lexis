@@ -1,0 +1,18 @@
+.turma-back { margin-bottom: 20px; }
+.turma-eyebrow { margin: 0 0 6px; color: var(--panel-muted); font-size: 12px; font-weight: 600; line-height: 17px; letter-spacing: .16em; text-transform: uppercase; }
+.turma-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
+.turma-heading .panel-subtitle { max-width: 62ch; margin-bottom: 22px; }
+.turma-create { min-width: 200px; min-height: 44px; margin-top: 4px; }
+.turma-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+/* A monospace é mais larga que a display: reduz para o código caber no cartão. */
+.turma-codigo { font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: 28px; line-height: 34px; overflow-wrap: anywhere; }
+.turma-temas .classes-grid { margin-top: 19px; }
+@media (max-width: 1100px) {
+  .turma-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 767px) {
+  .turma-heading { flex-wrap: wrap; gap: 0; }
+  .turma-heading .panel-subtitle { margin-bottom: 12px; }
+  .turma-create { width: 100%; margin-top: 0; }
+  .turma-stats { grid-template-columns: minmax(0, 1fr); }
+}
