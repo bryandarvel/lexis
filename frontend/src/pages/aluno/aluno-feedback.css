@@ -1,0 +1,130 @@
+/*
+ * Tokens da tela de feedback do aluno (Figma, nó 49:2). Os tons dos
+ * critérios seguem as cores de marcação do protótipo; o quinto tom e as
+ * variantes escuras acompanham a paleta da correção do professor.
+ */
+.aluno-feedback {
+  --feedback-destaque: #1c6eba;
+  --feedback-barra: #93a1b5;
+}
+
+:root[data-theme="dark"] .aluno-feedback {
+  --feedback-destaque: #7dccff;
+  --feedback-barra: #6b7a90;
+}
+
+.feedback-tom-0 { --feedback-tom: #7c3aed; }
+.feedback-tom-1 { --feedback-tom: #0f766e; }
+.feedback-tom-2 { --feedback-tom: #a16207; }
+.feedback-tom-3 { --feedback-tom: #be185d; }
+.feedback-tom-4 { --feedback-tom: #4d7c0f; }
+.feedback-tom-neutro { --feedback-tom: #516075; }
+
+:root[data-theme="dark"] .feedback-tom-0 { --feedback-tom: #c4a1fa; }
+:root[data-theme="dark"] .feedback-tom-1 { --feedback-tom: #66ddd2; }
+:root[data-theme="dark"] .feedback-tom-2 { --feedback-tom: #f0bb64; }
+:root[data-theme="dark"] .feedback-tom-3 { --feedback-tom: #ff9cc5; }
+:root[data-theme="dark"] .feedback-tom-4 { --feedback-tom: #b8d98c; }
+:root[data-theme="dark"] .feedback-tom-neutro { --feedback-tom: #a9bed1; }
+
+/*
+ * "Baixar em PDF" usa a impressão do navegador. As regras só valem quando a
+ * página de feedback está montada: o shell do aluno, os botões e os
+ * controles somem, e o conteúdo sai em preto sobre branco.
+ */
+@media print {
+  @page {
+    margin: 16mm 14mm;
+  }
+
+  /*
+   * O color-scheme escuro do tema pinta a margem da folha, então a impressão
+   * volta ao esquema claro mesmo com a tela em tema escuro.
+   */
+  html:has(.aluno-feedback) {
+    color-scheme: light !important;
+  }
+
+  html:has(.aluno-feedback),
+  body:has(.aluno-feedback),
+  .aluno-shell:has(.aluno-feedback) {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .aluno-shell:has(.aluno-feedback) > header,
+  .aluno-shell:has(.aluno-feedback) > nav,
+  .aluno-shell:has(.aluno-feedback) > button,
+  .aluno-shell:has(.aluno-feedback) > a[href="#conteudo-principal"] {
+    display: none !important;
+  }
+
+  .aluno-shell:has(.aluno-feedback) main,
+  .aluno-shell:has(.aluno-feedback) main > div {
+    padding: 0 !important;
+  }
+
+  .aluno-shell:has(.aluno-feedback) main > div > div {
+    max-width: none !important;
+  }
+
+  .aluno-feedback,
+  .aluno-feedback * {
+    color: #000000 !important;
+    background: transparent !important;
+    border-color: #8c8c8c !important;
+    box-shadow: none !important;
+  }
+
+  .aluno-feedback .feedback-impressao-grade {
+    display: block !important;
+  }
+
+  .aluno-feedback .feedback-impressao-grade > * + * {
+    margin-top: 6mm;
+  }
+
+  /*
+   * Só os blocos curtos ficam inteiros na folha. Os longos quebram, com
+   * órfãs e viúvas controladas e com os títulos presos ao que vem depois,
+   * para não deixar páginas quase vazias nem título sozinho no pé.
+   */
+  .aluno-feedback .feedback-impressao-inteiro {
+    break-inside: avoid;
+  }
+
+  .aluno-feedback p,
+  .aluno-feedback .feedback-texto-redacao {
+    orphans: 3;
+    widows: 3;
+  }
+
+  .aluno-feedback h2,
+  .aluno-feedback h3,
+  .aluno-feedback h4,
+  .aluno-feedback .feedback-cabecalho-cartao {
+    break-after: avoid;
+    break-inside: avoid;
+  }
+
+  .aluno-feedback .feedback-trilho,
+  .aluno-feedback .feedback-trilho > span,
+  .aluno-feedback .feedback-faixa {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .aluno-feedback .feedback-trilho {
+    background: #e6e6e6 !important;
+  }
+
+  .aluno-feedback .feedback-trilho > span,
+  .aluno-feedback .feedback-faixa {
+    background: #404040 !important;
+  }
+
+  .aluno-feedback .feedback-texto-redacao {
+    font-size: 12pt;
+    line-height: 1.7;
+  }
+}
