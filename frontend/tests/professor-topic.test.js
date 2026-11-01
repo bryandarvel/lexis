@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { agruparCriteriosProposta, prepararCriterioPersonalizado, obterPublicacaoFeedback, resumirEntregasProposta } from '../src/utils/professor-topic.js'
+import { agruparCriteriosProposta, prepararCriterioPersonalizado, obterPublicacaoFeedback, resumirEntregasProposta, descreverEdicaoTema, formatarPrazoParaInput, prepararEdicaoTema } from '../src/utils/professor-topic.js'
 
 const modelo = { criterios: ['Legitimação', 'Pertinência', 'Uso produtivo'].map((nome) => ({ nome, descricao: `Descrição de ${nome}` })) }
 const base = modelo.criterios.map((criterio, ordem) => ({ ...criterio, id: `base-${ordem}`, ordem }))
@@ -78,4 +78,81 @@ test('conta entregas por aluno e exclui rascunhos não enviados', () => {
   ])
   assert.equal(resumo.alunos, 1)
   assert.equal(resumo.redacoes.length, 2)
+})
+
+const temaBase = {
+  ativo: true,
+  criteriosBloqueados: false,
+  enunciado: 'Desafios da inclusao digital',
+  descricao: 'Produza um texto dissertativo-argumentativo sobre o tema.',
+  instrucoes: null,
+  prazoEntrega: '2027-01-10T23:59:00.000Z',
+}
+const AGORA = new Date('2026-11-01T12:00:00.000Z').getTime()
+const formularioDe = (tema, mudancas = {}) => ({
+  enunciado: tema.enunciado,
+  descricao: tema.descricao,
+  instrucoes: tema.instrucoes ?? '',
+  prazoEntrega: formatarPrazoParaInput(tema.prazoEntrega),
+  ...mudancas,
+})
+
+test('edicao da proposta envia apenas os campos alterados', () => {
+  const { erros, dados } = prepararEdicaoTema(
+    formularioDe(temaBase, { enunciado: '  Novo   enunciado da proposta  ' }), temaBase, AGORA,
+  )
+  assert.deepEqual(erros, {})
+  assert.deepEqual(dados, { enunciado: 'Novo enunciado da proposta' })
+})
+
+test('edicao sem nenhuma mudanca é recusada antes de chamar a API', () => {
+  const { erros, dados } = prepararEdicaoTema(formularioDe(temaBase), temaBase, AGORA)
+  assert.equal(dados, null)
+  assert.ok(erros.formulario)
+})
+
+test('edicao valida cada campo pelos limites do backend', () => {
+  const { erros } = prepararEdicaoTema(
+    formularioDe(temaBase, { enunciado: 'abc', descricao: 'curta', instrucoes: 'x'.repeat(5001) }),
+    temaBase, AGORA,
+  )
+  assert.ok(erros.enunciado)
+  assert.ok(erros.descricao)
+  assert.ok(erros.instrucoes)
+  assert.equal(erros.prazoEntrega, undefined)
+})
+
+test('prazo precisa ser futuro e valido', () => {
+  assert.ok(prepararEdicaoTema(formularioDe(temaBase, { prazoEntrega: '2026-01-01T10:00' }), temaBase, AGORA).erros.prazoEntrega)
+  assert.ok(prepararEdicaoTema(formularioDe(temaBase, { prazoEntrega: 'nao-e-data' }), temaBase, AGORA).erros.prazoEntrega)
+})
+
+test('com redacoes enviadas, so o prazo pode mudar', () => {
+  const bloqueado = { ...temaBase, criteriosBloqueados: true }
+  const conteudo = prepararEdicaoTema(formularioDe(bloqueado, { descricao: 'Outra descricao bem mais longa.' }), bloqueado, AGORA)
+  assert.equal(conteudo.dados, null)
+  assert.ok(conteudo.erros.descricao)
+
+  const prazo = prepararEdicaoTema(formularioDe(bloqueado, { prazoEntrega: '2027-02-01T23:59' }), bloqueado, AGORA)
+  assert.deepEqual(prazo.erros, {})
+  assert.deepEqual(Object.keys(prazo.dados), ['prazoEntrega'])
+})
+
+test('orientacoes vazias viram null, como o contrato espera', () => {
+  const comInstrucoes = { ...temaBase, instrucoes: 'Leia os textos motivadores.' }
+  const { dados } = prepararEdicaoTema(formularioDe(comInstrucoes, { instrucoes: '   ' }), comInstrucoes, AGORA)
+  assert.deepEqual(dados, { instrucoes: null })
+})
+
+test('descreve o bloqueio da proposta conforme o estado', () => {
+  assert.deepEqual(descreverEdicaoTema(temaBase), { podeEditar: true, conteudoBloqueado: false, motivo: '' })
+  assert.equal(descreverEdicaoTema({ ...temaBase, criteriosBloqueados: true }).conteudoBloqueado, true)
+  assert.equal(descreverEdicaoTema({ ...temaBase, ativo: false }).podeEditar, false)
+  assert.equal(descreverEdicaoTema(null).podeEditar, false)
+})
+
+test('prazo é formatado para o input e tolera valor invalido', () => {
+  assert.match(formatarPrazoParaInput('2027-01-10T23:59:00.000Z'), /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)
+  assert.equal(formatarPrazoParaInput(null), '')
+  assert.equal(formatarPrazoParaInput('nao-e-data'), '')
 })
