@@ -332,7 +332,7 @@ function ComentarioGeral({ comentario }) {
   return (
     <section
       aria-labelledby="feedback-titulo-comentario"
-      className={`${classeCartao} feedback-impressao-inteiro mt-5 overflow-hidden`}
+      className={`${classeCartao} mt-5 overflow-hidden`}
     >
       <div className="border-l-[3px] border-l-[var(--color-brand-accent)] px-6 py-5">
         <h2
@@ -341,7 +341,7 @@ function ComentarioGeral({ comentario }) {
         >
           Comentário geral
         </h2>
-        <p className="mt-3 max-w-[72ch] whitespace-pre-wrap text-base leading-[26px] text-lexis-100">
+        <p className="mt-3 max-w-[72ch] whitespace-pre-wrap break-words text-base leading-[26px] text-lexis-100">
           {comentario?.trim() ||
             'A correção foi publicada sem comentário geral.'}
         </p>
@@ -361,7 +361,7 @@ function CompetenciaDois({ feedback }) {
   return (
     <section
       aria-labelledby="feedback-titulo-competencia-2"
-      className="feedback-impressao-inteiro overflow-hidden rounded-xl border-2 border-[var(--color-brand-accent)] bg-lexis-900"
+      className="overflow-hidden rounded-xl border-2 border-[var(--color-brand-accent)] bg-lexis-900"
     >
       <div className="flex items-start justify-between gap-4 bg-[var(--aluno-acao-suave)] px-[22px] pb-3 pt-[14px]">
         <div className="min-w-0">
@@ -402,7 +402,7 @@ function CompetenciaDois({ feedback }) {
             {criterios.map((criterio) => (
               <li
                 key={criterio.id}
-                className={`feedback-tom-${criterio.tom} feedback-impressao-inteiro relative overflow-hidden rounded-lg bg-[var(--aluno-neutro-fundo)] py-3 pl-[18px] pr-[18px]`}
+                className={`feedback-tom-${criterio.tom} relative overflow-hidden rounded-lg bg-[var(--aluno-neutro-fundo)] py-3 pl-[18px] pr-[18px]`}
               >
                 <span
                   aria-hidden="true"
@@ -415,7 +415,7 @@ function CompetenciaDois({ feedback }) {
                   />
                   {criterio.nome}
                 </h4>
-                <p className="mt-2 whitespace-pre-wrap text-[13px] leading-5 text-lexis-100">
+                <p className="mt-2 whitespace-pre-wrap break-words text-[13px] leading-5 text-lexis-100">
                   {criterio.comentario}
                 </p>
               </li>
@@ -441,7 +441,7 @@ function TextoRedacao({ redacao }) {
       aria-labelledby="feedback-titulo-redacao"
       className={`${classeCartao} px-[23px] pb-7 pt-[19px]`}
     >
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+      <div className="feedback-cabecalho-cartao flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h2
           id="feedback-titulo-redacao"
           className="aluno-titulo-interface text-lg font-semibold leading-6 tracking-[-0.09px] text-lexis-50"

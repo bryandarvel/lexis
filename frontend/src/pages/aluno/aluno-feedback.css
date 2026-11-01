@@ -37,6 +37,14 @@
     margin: 16mm 14mm;
   }
 
+  /*
+   * O color-scheme escuro do tema pinta a margem da folha, então a impressão
+   * volta ao esquema claro mesmo com a tela em tema escuro.
+   */
+  html:has(.aluno-feedback) {
+    color-scheme: light !important;
+  }
+
   html:has(.aluno-feedback),
   body:has(.aluno-feedback),
   .aluno-shell:has(.aluno-feedback) {
@@ -76,7 +84,26 @@
     margin-top: 6mm;
   }
 
+  /*
+   * Só os blocos curtos ficam inteiros na folha. Os longos quebram, com
+   * órfãs e viúvas controladas e com os títulos presos ao que vem depois,
+   * para não deixar páginas quase vazias nem título sozinho no pé.
+   */
   .aluno-feedback .feedback-impressao-inteiro {
+    break-inside: avoid;
+  }
+
+  .aluno-feedback p,
+  .aluno-feedback .feedback-texto-redacao {
+    orphans: 3;
+    widows: 3;
+  }
+
+  .aluno-feedback h2,
+  .aluno-feedback h3,
+  .aluno-feedback h4,
+  .aluno-feedback .feedback-cabecalho-cartao {
+    break-after: avoid;
     break-inside: avoid;
   }
 
