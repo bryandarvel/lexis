@@ -17,6 +17,9 @@
 .panel-primary-button.turma-botao-perigo { background: var(--panel-error); color: #fff; }
 [data-theme="dark"] .panel-primary-button.turma-botao-perigo { color: #18212f; }
 
+/* Os botões base têm 40 px; nos diálogos desta tela o alvo mínimo é 44 px. */
+.turma-dialogo .panel-dialog-actions button { min-height: 44px; }
+.turma-dialogo .class-input { min-height: 44px; }
 .turma-efeitos { margin: 16px 0 0; padding-left: 20px; color: var(--panel-muted); font-size: 14px; line-height: 22px; }
 .turma-efeitos li + li { margin-top: 8px; }
 

@@ -102,7 +102,7 @@ function RenomearTurmaDialog({ nomeAtual, enviando, erro, onSave, onClose }) {
   }
 
   return (
-    <dialog ref={dialogRef} className="professor-panel-dialog class-create-dialog" aria-labelledby="turma-renomear-title" onCancel={cancelar}>
+    <dialog ref={dialogRef} className="professor-panel-dialog turma-dialogo class-create-dialog" aria-labelledby="turma-renomear-title" onCancel={cancelar}>
       <h2 id="turma-renomear-title">Renomear turma</h2>
       <p>O código de acesso, os alunos e os temas não mudam.</p>
       <form onSubmit={enviar} noValidate aria-busy={enviando}>
@@ -140,7 +140,7 @@ function ConfirmarAcaoDialog({ titulo, efeitos, rotulo, rotuloEnviando, enviando
   enviandoRef.current = enviando
 
   return (
-    <dialog ref={dialogRef} className="professor-panel-dialog" aria-labelledby="turma-confirmar-title" aria-describedby="turma-confirmar-efeitos" onCancel={cancelar}>
+    <dialog ref={dialogRef} className="professor-panel-dialog turma-dialogo" aria-labelledby="turma-confirmar-title" aria-describedby="turma-confirmar-efeitos" onCancel={cancelar}>
       <h2 id="turma-confirmar-title">{titulo}</h2>
       <ul id="turma-confirmar-efeitos" className="turma-efeitos">
         {efeitos.map((efeito) => <li key={efeito}>{efeito}</li>)}
