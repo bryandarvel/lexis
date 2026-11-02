@@ -23,6 +23,15 @@ const AlunoRedacaoPage = lazy(() =>
 const AlunoNotificacoesPage = lazy(() =>
   import('../pages/aluno/AlunoNotificacoesPage.jsx'),
 )
+const AlunoRedacoesPage = lazy(() =>
+  import('../pages/aluno/AlunoRedacoesPage.jsx'),
+)
+const AlunoFeedbacksPage = lazy(() =>
+  import('../pages/aluno/AlunoFeedbacksPage.jsx'),
+)
+const AlunoPerfilPage = lazy(() =>
+  import('../pages/aluno/AlunoPerfilPage.jsx'),
+)
 const CadastroPage = lazy(() =>
   import('../pages/auth/CadastroPage.jsx'),
 )
@@ -126,6 +135,18 @@ export default function AppRoutes() {
           <Route
             path="/aluno/notificacoes"
             element={<AlunoNotificacoesPage />}
+          />
+          <Route
+            path="/aluno/redacoes"
+            element={<AlunoRedacoesPage />}
+          />
+          <Route
+            path="/aluno/feedbacks"
+            element={<AlunoFeedbacksPage />}
+          />
+          <Route
+            path="/aluno/perfil"
+            element={<AlunoPerfilPage />}
           />
           <Route
             path="/aluno/temas/:temaId/redacao"
