@@ -60,12 +60,6 @@ export function calcularProgressoUpload(
   return Math.min(100, percentual)
 }
 
-export function precisaConfirmarSubstituicaoOcr(
-  texto,
-) {
-  return Boolean(texto?.trim())
-}
-
 export function aplicarSugestaoLinguistica(
   texto,
   sugestao,
