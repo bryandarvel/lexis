@@ -17,6 +17,7 @@ import {
   mensagemErroMinhaTurma,
   obterCodigoErroApi,
   CODIGO_SEM_MATRICULA,
+  CODIGO_MATRICULA_ALTERADA,
 } from '../../utils/minha-turma.js'
 
 const classeBotaoContorno =
@@ -96,6 +97,7 @@ export default function MinhaTurmaDialogo({
   const dialogoRef = useRef(null)
   const voltarRef = useRef(null)
   const fecharRef = useRef(null)
+  const saidaEmAndamentoRef = useRef(false)
   const [estado, setEstado] = useState(ESTADO_INICIAL)
   const [etapa, setEtapa] = useState('detalhes')
   const [saindo, setSaindo] = useState(false)
@@ -151,22 +153,32 @@ export default function MinhaTurmaDialogo({
   }
 
   async function confirmarSaida() {
-    if (saindo) return
+    if (saidaEmAndamentoRef.current || etapa !== 'confirmar' ||
+      estado.status !== 'pronto' || !estado.matricula?.podeSair) return
 
+    const matriculaConfirmada = estado.matricula
+    saidaEmAndamentoRef.current = true
     setSaindo(true)
     setErroSaida('')
 
     try {
-      await sairDaTurma()
+      await sairDaTurma(matriculaConfirmada.matriculaId)
       notificarMatriculaAtualizada({
         acao: 'saiu',
-        turma: estado.matricula?.turma ?? null,
+        turma: matriculaConfirmada.turma,
       })
-      setSaindo(false)
-      onSaiu(estado.matricula?.turma ?? null)
+      onSaiu(matriculaConfirmada.turma)
     } catch (erro) {
-      setSaindo(false)
       setErroSaida(mensagemErroMinhaTurma(erro))
+
+      if (obterCodigoErroApi(erro) === CODIGO_MATRICULA_ALTERADA) {
+        // A confirmação antiga nunca serve para a matrícula nova. Reconsulta
+        // somente os dados; nenhum DELETE é repetido automaticamente.
+        setEtapa('detalhes')
+        setEstado(ESTADO_INICIAL)
+        setEstado(await carregarMinhaTurma())
+        notificarMatriculaAtualizada({ acao: 'atualizada' })
+      }
 
       if (obterCodigoErroApi(erro) === CODIGO_SEM_MATRICULA) {
         // A matrícula já não existe: o painel precisa refletir o estado sem turma.
@@ -174,6 +186,9 @@ export default function MinhaTurmaDialogo({
         setEstado({ ...ESTADO_INICIAL, status: 'sem-turma' })
         setEtapa('detalhes')
       }
+    } finally {
+      saidaEmAndamentoRef.current = false
+      setSaindo(false)
     }
   }
 
@@ -353,7 +368,10 @@ export default function MinhaTurmaDialogo({
                 {estado.status === 'pronto' && matricula.podeSair && (
                   <button
                     type="button"
-                    onClick={() => setEtapa('confirmar')}
+                    onClick={() => {
+                      setErroSaida('')
+                      setEtapa('confirmar')
+                    }}
                     className="inline-flex h-11 items-center justify-center rounded-lg border border-[var(--aluno-erro)] px-5 text-[13px] font-semibold leading-[18px] text-[var(--aluno-erro)] transition-colors hover:bg-[var(--aluno-neutro-fundo)]"
                   >
                     Sair da turma
