@@ -23,6 +23,9 @@ const AlunoRedacaoPage = lazy(() =>
 const AlunoNotificacoesPage = lazy(() =>
   import('../pages/aluno/AlunoNotificacoesPage.jsx'),
 )
+const AlunoRevisaoOcrPage = lazy(() =>
+  import('../pages/aluno/AlunoRevisaoOcrPage.jsx'),
+)
 const CadastroPage = lazy(() =>
   import('../pages/auth/CadastroPage.jsx'),
 )
@@ -130,6 +133,10 @@ export default function AppRoutes() {
           <Route
             path="/aluno/temas/:temaId/redacao"
             element={<AlunoRedacaoPage />}
+          />
+          <Route
+            path="/aluno/temas/:temaId/redacao/ocr"
+            element={<AlunoRevisaoOcrPage />}
           />
         </Route>
 
