@@ -310,6 +310,7 @@ describe('Rotas de matrícula do aluno', () => {
         'Authorization',
         `Bearer ${aluno.accessToken}`,
       )
+      .send({ matriculaId: primeiraResposta.body.data.matricula.id })
       .expect(200)
 
     assert.equal(
@@ -347,6 +348,70 @@ describe('Rotas de matrícula do aluno', () => {
     assert.equal(matriculas.length, 2)
     assert.equal(matriculas[0].status, 'ENCERRADA')
     assert.equal(matriculas[1].status, 'ATIVA')
+  })
+
+  it('não deve encerrar a nova matrícula usando confirmação antiga de outra aba', async () => {
+    const primeira = await requisicaoEntrarTurma(turmaPrincipal.codigoAcesso).expect(201)
+    const matriculaId = primeira.body.data.matricula.id
+    await request(app).delete('/api/turmas/minha-matricula')
+      .set('Authorization', `Bearer ${aluno.accessToken}`)
+      .send({ matriculaId }).expect(200)
+    const segunda = await requisicaoEntrarTurma(turmaSecundaria.codigoAcesso).expect(201)
+    const resposta = await request(app).delete('/api/turmas/minha-matricula')
+      .set('Authorization', `Bearer ${aluno.accessToken}`)
+      .send({ matriculaId }).expect(409)
+    assert.equal(resposta.body.error.code, 'ACTIVE_ENROLLMENT_CHANGED')
+    const atual = await prisma.matricula.findUnique({ where: { id: segunda.body.data.matricula.id } })
+    assert.equal(atual.status, 'ATIVA')
+  })
+
+  it('deve encerrar a matrícula confirmada apenas uma vez em saídas simultâneas', async () => {
+    const entrada = await requisicaoEntrarTurma(turmaPrincipal.codigoAcesso).expect(201)
+    const matriculaId = entrada.body.data.matricula.id
+    const respostas = await Promise.all([0, 1].map(() =>
+      request(app).delete('/api/turmas/minha-matricula')
+        .set('Authorization', `Bearer ${aluno.accessToken}`).send({ matriculaId }),
+    ))
+    assert.deepEqual(respostas.map((r) => r.status).sort(), [200, 404])
+    assert.equal(respostas.find((r) => r.status === 404).body.error.code, 'ACTIVE_ENROLLMENT_NOT_FOUND')
+  })
+
+  it('deve validar o identificador confirmado antes de qualquer alteração', async () => {
+    await requisicaoEntrarTurma(turmaPrincipal.codigoAcesso).expect(201)
+    for (const corpo of [{}, { matriculaId: 'invalido' }, { matriculaId: randomUUID(), extra: true }]) {
+      const resposta = await request(app).delete('/api/turmas/minha-matricula')
+        .set('Authorization', `Bearer ${aluno.accessToken}`).send(corpo).expect(422)
+      assert.equal(resposta.body.error.code, 'VALIDATION_ERROR')
+    }
+    await request(app).delete('/api/turmas/minha-matricula')
+      .set('Authorization', `Bearer ${aluno.accessToken}`).expect(422)
+    assert.equal(await prisma.matricula.count({ where: { alunoId: aluno.usuario.id, status: 'ATIVA' } }), 1)
+  })
+
+  it('não deve aceitar matrícula de outro aluno nem expor seus dados', async () => {
+    const outro = await criarUsuarioComSessao({ nome: 'Outro aluno fictício', papel: 'ALUNO' })
+    const matriculaAlheia = await prisma.matricula.create({
+      data: { alunoId: outro.usuario.id, turmaId: turmaPrincipal.id },
+    })
+    const propria = await requisicaoEntrarTurma(turmaSecundaria.codigoAcesso).expect(201)
+    const resposta = await request(app).delete('/api/turmas/minha-matricula')
+      .set('Authorization', `Bearer ${aluno.accessToken}`)
+      .send({ matriculaId: matriculaAlheia.id }).expect(409)
+    assert.equal(resposta.body.error.code, 'ACTIVE_ENROLLMENT_CHANGED')
+    assert.equal(resposta.body.data, undefined)
+    for (const id of [matriculaAlheia.id, propria.body.data.matricula.id]) {
+      assert.equal((await prisma.matricula.findUnique({ where: { id } })).status, 'ATIVA')
+    }
+  })
+
+  it('deve manter autenticação e papel obrigatórios na saída', async () => {
+    const corpo = { matriculaId: randomUUID() }
+    await request(app).delete('/api/turmas/minha-matricula').send(corpo).expect(401)
+    await request(app).delete('/api/turmas/minha-matricula')
+      .set('Authorization', `Bearer ${professor.accessToken}`).send(corpo).expect(403)
+    const resposta = await request(app).delete('/api/turmas/minha-matricula')
+      .set('Authorization', `Bearer ${aluno.accessToken}`).send(corpo).expect(404)
+    assert.equal(resposta.body.error.code, 'ACTIVE_ENROLLMENT_NOT_FOUND')
   })
 
   it('deve impedir matrículas simultâneas', async () => {

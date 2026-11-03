@@ -336,9 +336,16 @@ export async function obterMatriculaAtivaParaAluno(
   return matricula
 }
 
-export async function sairDaTurmaComoAluno(alunoId) {
+export async function sairDaTurmaComoAluno(alunoId, matriculaId) {
   const matricula =
-    await encerrarMatriculaAtivaDoAluno(alunoId)
+    await encerrarMatriculaAtivaDoAluno(alunoId, matriculaId)
+
+  if (matricula === 'MATRICULA_ALTERADA') {
+    throw new AppError(
+      'Sua matrícula mudou. Confira a turma atual e confirme novamente.',
+      { statusCode: 409, code: 'ACTIVE_ENROLLMENT_CHANGED' },
+    )
+  }
 
   if (!matricula) {
     throw criarErroMatriculaNaoEncontrada()
