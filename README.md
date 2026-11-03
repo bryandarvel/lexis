@@ -141,6 +141,8 @@ Os relatórios locais são gravados em `backend/output/ai-evaluation` e não sã
 - A API pública gratuita do LanguageTool não é adequada para automação contínua; possui limites, não oferece garantia de disponibilidade e exige atenção à privacidade.
 - Em desenvolvimento, o Resend redireciona mensagens para `EMAIL_DEMO_RECIPIENT`.
 
+O [guia de observabilidade local e triagem](docs/observabilidade-local.md) explica logs, `X-Request-Id`, `/health` e consulta agregada de filas, distinguindo recursos presentes na `dev` daqueles que ainda dependem de PR. Não há telemetria externa ou monitor automático instalado por essa etapa.
+
 ## Limitações conhecidas
 
 - A fixture sintética da IA valida o harness, não a qualidade do modelo.
