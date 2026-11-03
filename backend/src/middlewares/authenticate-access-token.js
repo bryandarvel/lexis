@@ -50,6 +50,7 @@ return async function autenticar(req, _res, next) {
     req.auth = {
       usuarioId: payload.sub,
       papel: usuario.papel,
+      sessaoVersao: usuario.sessaoVersao,
     }
 
     return next()
