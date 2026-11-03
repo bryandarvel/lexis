@@ -131,6 +131,7 @@ export async function obterMinhaMatriculaController(
 export async function sairDaTurmaController(req, res) {
   const matricula = await sairDaTurmaComoAluno(
     req.auth.usuarioId,
+    req.body.matriculaId,
   )
 
   return res.status(200).json({

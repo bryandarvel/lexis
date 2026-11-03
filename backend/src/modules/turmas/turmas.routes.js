@@ -29,6 +29,7 @@ import {
   atualizarTurmaSchema,
   criarTurmaSchema,
   entrarTurmaSchema,
+  sairTurmaSchema,
   turmaAlunoParamsSchema,
   turmaParamsSchema,
 } from './turmas.schemas.js'
@@ -322,11 +323,23 @@ turmasRouter.post(
  *         description: O aluno não possui matrícula ativa
  *   delete:
  *     summary: Sai da turma atual
- *     description: Encerra a matrícula ativa sem apagar seu histórico.
+ *     description: Encerra apenas a matrícula confirmada, sem apagar seu histórico. Em conflito, consulte novamente a matrícula e exija nova confirmação; não repita automaticamente.
  *     tags:
  *       - Turmas
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             additionalProperties: false
+ *             required: [matriculaId]
+ *             properties:
+ *               matriculaId:
+ *                 type: string
+ *                 format: uuid
  *     responses:
  *       '200':
  *         description: Matrícula encerrada
@@ -336,6 +349,10 @@ turmasRouter.post(
  *         description: Recurso exclusivo para alunos
  *       '404':
  *         description: O aluno não possui matrícula ativa
+ *       '409':
+ *         description: ACTIVE_ENROLLMENT_CHANGED — a matrícula ativa mudou; nenhuma matrícula foi encerrada
+ *       '422':
+ *         description: VALIDATION_ERROR — corpo ausente, UUID inválido ou campos extras
  */
 turmasRouter.get(
   '/minha-matricula',
@@ -348,6 +365,7 @@ turmasRouter.delete(
   '/minha-matricula',
   autenticarAccessToken,
   somenteAluno,
+  validarBody(sairTurmaSchema),
   sairDaTurmaController,
 )
  
