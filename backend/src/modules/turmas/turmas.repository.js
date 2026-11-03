@@ -16,13 +16,13 @@ const turmaProfessorSelect = {
       email: true,
     },
   },
+  matriculas: {
+    where: { status: 'ATIVA' },
+    select: { alunoId: true },
+    distinct: ['alunoId'],
+  },
   _count: {
     select: {
-      matriculas: {
-        where: {
-          status: 'ATIVA',
-        },
-      },
       temas: {
         where: {
           ativo: true,

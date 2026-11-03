@@ -330,7 +330,7 @@ redacoesRouter.get(
  * /api/turmas/{turmaId}/redacoes:
  *   get:
  *     summary: Lista as redações enviadas de uma turma
- *     description: Retorna somente redações enviadas ou avaliadas. Rascunhos dos alunos permanecem privados.
+ *     description: Retorna data.redacoes (enviadas/avaliadas, inclusive histórico) e data.resumoEntregas (totalAlunosAtivos, alunosAtivosQueEntregaram, alunosSemMatriculaAtivaQueEntregaram). Contagens distintas de aluno, na mesma fotografia do banco e respeitando os filtros. Cada aluno na lista inclui matriculaAtivaNaTurma. Rascunhos permanecem privados; turma arquivada não tem alunos ativos no resumo.
  *     tags:
  *       - Redações
  *     security:
