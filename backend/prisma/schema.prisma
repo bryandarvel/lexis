@@ -227,6 +227,8 @@ model AnaliseIA {
   iniciadaEm           DateTime?
   concluidaEm          DateTime?
 
+  trechosAprovados FeedbackCriterioTrecho[]
+
   @@index([redacaoId, solicitadaEm])
   @@index([solicitadaPorId])
   @@index([status])
@@ -283,9 +285,28 @@ model FeedbackCriterio {
   criadoEm         DateTime          @default(now())
   atualizadoEm     DateTime          @updatedAt
 
+  trechos FeedbackCriterioTrecho[]
+
   @@unique([feedbackVersaoId, criterioId])
   @@index([criterioId])
   @@map("feedbacks_criterios")
+}
+
+model FeedbackCriterioTrecho {
+  id                String           @id @default(uuid())
+  feedbackCriterioId String
+  feedbackCriterio   FeedbackCriterio @relation(fields: [feedbackCriterioId], references: [id], onDelete: Cascade)
+  inicio            Int
+  fim               Int
+  trecho            String           @db.Text
+  sugeridoPorIa      Boolean          @default(false)
+  analiseIaId        String?
+  analiseIa          AnaliseIA?       @relation(fields: [analiseIaId], references: [id], onDelete: Restrict)
+  criadoEm          DateTime         @default(now())
+
+  @@unique([feedbackCriterioId, inicio, fim])
+  @@index([analiseIaId])
+  @@map("feedbacks_criterios_trechos")
 }
 
 model Notificacao {
