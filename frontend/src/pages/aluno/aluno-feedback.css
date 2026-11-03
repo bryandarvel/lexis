@@ -28,6 +28,16 @@
 :root[data-theme="dark"] .feedback-tom-neutro { --feedback-tom: #a9bed1; }
 
 /*
+ * O tamanho mínimo automático de um item de grade é min-content, e uma palavra
+ * ou URL longa num comentário torna esse mínimo maior que a tela. A quebra já
+ * existe nos parágrafos; o que falta é deixar o item encolher. Não afeta a
+ * impressão, onde a grade vira display: block.
+ */
+.feedback-impressao-grade > * {
+  min-width: 0;
+}
+
+/*
  * "Baixar em PDF" usa a impressão do navegador. As regras só valem quando a
  * página de feedback está montada: o shell do aluno, os botões e os
  * controles somem, e o conteúdo sai em preto sobre branco.
