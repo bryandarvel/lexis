@@ -37,6 +37,25 @@ function criarInicio(overrides = {}) {
 }
 
 describe('Serviço de análise por IA', () => {
+  for (const etapa of ['preparacao', 'persistencia']) {
+    it(`deve encerrar a tentativa com erro quando falhar na ${etapa}, sem repetir a IA`, async () => {
+      const original = new Error('Detalhes privados da falha simulada')
+      let chamadas = 0
+      let falha
+      await assert.rejects(() => solicitarAnaliseIaParaProfessor({ redacaoId: 'redacao-1', professorId: 'professor-1' }, {
+        iniciar: async () => criarInicio(),
+        criarSolicitacao: () => { if (etapa === 'preparacao') throw original; return { input: 'Fictício' } },
+        gerar: async () => { chamadas += 1; return { texto: '{}' } },
+        interpretar: () => ({ resumoGeral: 'Resultado fictício' }),
+        concluir: async () => { throw original },
+        falhar: async (dados) => { falha = dados },
+      }), (erro) => erro === original)
+      assert.equal(chamadas, etapa === 'preparacao' ? 0 : 1)
+      assert.equal(falha?.analiseId, 'analise-1')
+      assert.equal(falha?.mensagemErro, 'UNEXPECTED_AI_ANALYSIS_ERROR')
+    })
+  }
+
   it('deve concluir e persistir uma análise estruturada', async () => {
     let conclusaoRecebida
 

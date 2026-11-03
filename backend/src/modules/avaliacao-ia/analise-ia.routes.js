@@ -113,13 +113,43 @@ export function criarAnalisesIaRouter({
    *       '422':
    *         description: Identificador ou redação inválida
    *       '429':
-   *         description: Limite de solicitações de análise excedido
+   *         description: Limite local de solicitações por professor excedido (AI_ANALYSIS_RATE_LIMIT_EXCEEDED). Inclui Retry-After e error.details.retryAfterSeconds para aguardar a renovação dessa janela, sem chamar o Gemini.
    *       '502':
-   *         description: Resposta inválida ou falha do serviço de IA
+   *         description: Resposta inválida, indisponibilidade externa (GEMINI_SERVICE_UNAVAILABLE), conexão interrompida (GEMINI_CONNECTION_FAILED) ou solicitação recusada por configuração (GEMINI_REQUEST_REJECTED). Erros de conexão/indisponibilidade temporária incluem Retry-After e details.retryAfterSeconds. details.statusExterno identifica o HTTP do provedor quando conhecido; details.codigoTransporte usa lista positiva, sem mensagem bruta.
    *       '503':
-   *         description: Gemini não configurado, indisponível ou com limite externo atingido
+   *         description: Gemini não configurado, com limite externo, em espera local ou com outra chamada em andamento. Códigos GEMINI_RATE_LIMITED (taxa), GEMINI_DAILY_QUOTA_EXCEEDED (diária), GEMINI_SERVICE_LIMIT_REACHED (cota não identificada), GEMINI_COOLDOWN e GEMINI_REQUEST_IN_PROGRESS. Sem repetição automática.
+   *         headers:
+   *           Retry-After:
+   *             description: Espera mínima em segundos quando informada. Não garante a liberação da cota do Google.
+   *             schema:
+   *               type: integer
+   *               minimum: 1
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 error:
+   *                   type: object
+   *                   properties:
+   *                     code:
+   *                       type: string
+   *                     message:
+   *                       type: string
+   *                     details:
+   *                       type: object
+   *                       properties:
+   *                         retryAfterSeconds:
+   *                           type: integer
+   *                           minimum: 1
+   *                         statusExterno:
+   *                           type: integer
+   *                           enum: [429]
+   *                         codigoProvedor:
+   *                           type: string
+   *                           enum: [rate_limit_exceeded, too_many_requests, quota_exceeded, unknown]
    *       '504':
-   *         description: Tempo limite do Gemini excedido
+   *         description: Tempo limite do Gemini excedido, com Retry-After e details.retryAfterSeconds para aguardar antes de uma nova solicitação manual.
    */
   router.post(
     '/redacoes/:redacaoId/analises-ia',
