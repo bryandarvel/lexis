@@ -147,6 +147,8 @@ function buscarTemaDisponivelParaAluno(
       id: true,
       prazoEntrega: true,
       criteriosBloqueadosEm: true,
+      enunciado: true,
+      turma: { select: { nome: true, professorId: true } },
     },
   })
 }
@@ -450,6 +452,18 @@ export function enviarRedacaoDoAluno({
         },
         data: {
           criteriosBloqueadosEm: enviadaEm,
+        },
+      })
+
+      await transaction.notificacao.create({
+        data: {
+          usuarioId: tema.turma.professorId,
+          redacaoId: redacao.id,
+          tipo: 'REDACAO_ENVIADA',
+          titulo: 'Nova redação recebida',
+          mensagem: `Uma redação foi enviada para a proposta “${tema.enunciado}” da turma “${tema.turma.nome}”.`,
+          emailDestino: null,
+          statusEmail: null,
         },
       })
 
