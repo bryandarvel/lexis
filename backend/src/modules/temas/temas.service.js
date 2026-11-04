@@ -226,6 +226,10 @@ export async function atualizarTemaParaProfessor({
       dados,
     })
 
+  if (temaAtualizado === 'CONTEUDO_BLOQUEADO') {
+    throw criarErroConteudoBloqueado()
+  }
+
   if (!temaAtualizado) {
     throw criarErroTemaArquivado()
   }

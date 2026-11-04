@@ -174,11 +174,19 @@ export async function atualizarTemaDoProfessor({
   professorId,
   dados,
 }) {
+  const alteraConteudo = Object.keys(dados).some(
+    (campo) => campo !== 'prazoEntrega',
+  )
+
   const resultado =
     await prisma.temaRedacao.updateMany({
       where: {
         id: temaId,
         ativo: true,
+        // O envio bloqueia esta mesma linha antes de marcar o primeiro envio.
+        // O UPDATE verifica a condição sob o lock da linha, não a partir da
+        // leitura anterior do service. Não há novos locks em ordem inversa.
+        ...(alteraConteudo && { criteriosBloqueadosEm: null }),
         turma: {
           professorId,
         },
@@ -187,6 +195,10 @@ export async function atualizarTemaDoProfessor({
     })
 
   if (resultado.count !== 1) {
+    const atual = await buscarTemaDoProfessor({ temaId, professorId })
+    if (atual?.ativo && alteraConteudo && atual.criteriosBloqueadosEm) {
+      return 'CONTEUDO_BLOQUEADO'
+    }
     return null
   }
 
