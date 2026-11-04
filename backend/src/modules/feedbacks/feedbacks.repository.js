@@ -537,10 +537,10 @@ export async function consultarFeedbackPublicadoAluno({
     where: {
       id: redacaoId,
       alunoId,
-      status: 'AVALIADA',
     },
     select: {
       id: true,
+      status: true,
       feedback: {
         select: {
           versoes: {
@@ -568,7 +568,7 @@ export async function consultarFeedbackPublicadoAluno({
   const feedbackVersao =
     redacao.feedback?.versoes[0] ?? null
 
-  if (!feedbackVersao) {
+  if (redacao.status !== 'AVALIADA' || !feedbackVersao) {
     return {
       status: 'FEEDBACK_INDISPONIVEL',
       feedbackVersao: null,
