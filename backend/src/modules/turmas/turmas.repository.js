@@ -16,13 +16,13 @@ const turmaProfessorSelect = {
       email: true,
     },
   },
+  matriculas: {
+    where: { status: 'ATIVA' },
+    select: { alunoId: true },
+    distinct: ['alunoId'],
+  },
   _count: {
     select: {
-      matriculas: {
-        where: {
-          status: 'ATIVA',
-        },
-      },
       temas: {
         where: {
           ativo: true,
@@ -188,6 +188,25 @@ export async function arquivarTurma({
   // Crescimento contínuo: nenhuma tentativa fez alterações ou criou avisos.
   return 'MATRICULAS_ALTERADAS'
 }
+export function reabrirTurma({ turmaId, professorId }) {
+  return prisma.$transaction(async (transaction) => {
+    const resultado = await transaction.turma.updateMany({
+      where: { id: turmaId, professorId, ativa: false },
+      data: { ativa: true, arquivadaEm: null },
+    })
+
+    if (resultado.count !== 1) {
+      return null
+    }
+
+    // Matrículas encerradas e propostas arquivadas são histórico, não são restauradas.
+    return transaction.turma.findUnique({
+      where: { id: turmaId },
+      select: turmaProfessorSelect,
+    })
+  })
+}
+
 const matriculaAlunoSelect = {
   id: true,
   status: true,

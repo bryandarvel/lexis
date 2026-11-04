@@ -30,6 +30,6 @@ Os testes de `notificacoes-saida-turma.test.js` usam API e MySQL reais locais co
 
 ## Pendências explícitas
 
-Integração dos PRs, revisão do Lucas e aceite conjunto ainda são necessários. O backend do aviso de saída está neste recorte dependente; os avisos ao aluno estão no #116. O rótulo visual “histórico de todas as turmas” no desempenho e a apresentação de `ALUNO_SAIU_TURMA` na futura tela do professor continuam com Lucas.
+O merge depende dos pré-requisitos e CI verde no head atualizado; a exceção de revisão autorizada por Bryan para este lote está registrada no PR. O aceite conjunto das interfaces ainda é necessário. O backend do aviso de saída está neste recorte dependente; os avisos ao aluno estão no #116. O rótulo visual “histórico de todas as turmas” no desempenho e a apresentação de `ALUNO_SAIU_TURMA` na futura tela do professor continuam com Lucas.
 
 Não fechar a #55 inteira sem conferir o rótulo do desempenho. Depois de integrar, repetir as regressões e conferir FKs/limpeza somente dos IDs fictícios, sem excluir filas globais ou dados de demonstração. A contagem da #54 e seus rótulos de ativos/histórico continuam sendo uma entrega própria.

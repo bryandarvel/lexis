@@ -31,12 +31,15 @@
 .review-badge { display: inline-block; padding: 3px 8px; border-radius: 999px; background: var(--panel-soft); color: var(--panel-action); font-size: 12px; line-height: 17px; white-space: nowrap; }
 .review-badge.human { background: #dcfce7; color: #166534; }
 .review-essay figure { margin: 0; }
+.review-evidence-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 12px 0 8px; padding: 0; list-style: none; font-size: 12px; line-height: 19px; color: var(--panel-text); }
+.review-evidence-legend li { display: flex; align-items: center; gap: 6px; }
 .review-essay-text { max-width: 66ch; margin: 20px auto 0; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--font-display); font-size: 17px; line-height: 1.9; color: var(--panel-text); }
-.review-tone-0 { --review-tone: #7c3aed; --review-highlight: #ede4fb; }
-.review-tone-1 { --review-tone: #0f766e; --review-highlight: #d0efeb; }
-.review-tone-2 { --review-tone: #a16207; --review-highlight: #faedc4; }
-.review-tone-3 { --review-tone: #be185d; --review-highlight: #fbe0ed; }
-.review-tone-4 { --review-tone: #4d7c0f; --review-highlight: #e9f2d6; }
+.review-main, .review-sheet { --review-color-0: #7c3aed; --review-color-1: #0f766e; --review-color-2: #a16207; --review-color-3: #be185d; --review-color-4: #4d7c0f; }
+.review-tone-0 { --review-tone: var(--review-color-0); --review-highlight: #ede4fb; }
+.review-tone-1 { --review-tone: var(--review-color-1); --review-highlight: #d0efeb; }
+.review-tone-2 { --review-tone: var(--review-color-2); --review-highlight: #faedc4; }
+.review-tone-3 { --review-tone: var(--review-color-3); --review-highlight: #fbe0ed; }
+.review-tone-4 { --review-tone: var(--review-color-4); --review-highlight: #e9f2d6; }
 .review-mark { display: inline; border: 0; border-bottom: 2px solid var(--review-tone); border-radius: 4px; background: var(--review-highlight); color: inherit; font: inherit; text-align: left; padding: 1px 2px; cursor: pointer; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
 .review-mark mark { color: inherit; background: transparent; }
 .review-mark sup { color: var(--review-tone); font-family: var(--font-interface); font-size: 10px; font-weight: 700; padding-left: 4px; }
@@ -102,6 +105,7 @@
 .review-load-error { max-width: 720px; margin: 30px auto; }
 .review-load-error p { margin: 16px 0; }
 [data-theme="dark"] .review-card { box-shadow: inset 0 1px rgb(255 255 255 / 12%); }
+[data-theme="dark"] .review-main, [data-theme="dark"] .review-sheet { --review-color-0: #c4a1fa; --review-color-1: #66ddd2; --review-color-2: #f0bb64; --review-color-3: #ff9cc5; --review-color-4: #b8d98c; }
 [data-theme="dark"] .review-tone-0 { --review-tone: #c4a1fa; --review-highlight: #362748; }
 [data-theme="dark"] .review-tone-1 { --review-tone: #66ddd2; --review-highlight: #113d3a; }
 [data-theme="dark"] .review-tone-2 { --review-tone: #f0bb64; --review-highlight: #453512; }

@@ -2,6 +2,14 @@
 
 **Estado:** proposta para aprovação pelos autores e orientadores. Não é um experimento realizado nem uma declaração de qualidade do Gemini. A demonstração de uma chamada real comprova integração, não validade pedagógica.
 
+## Situação confirmada em 03/11/2026
+
+- Bryan informou que ainda não há corpus com uso/envio autorizados definido para o estudo. Nenhum texto real foi coletado ou autorizado por este documento.
+- Bryan e Lucas atuarão inicialmente como avaliadores preliminares; pretendem buscar outro avaliador depois. Essa decisão não comprova formação específica, independência em relação ao desenvolvimento ou aprovação metodológica. Registrar essas limitações e combinar calibração/adjudicação com o orientador.
+- Amostra, critérios operacionais da rubrica, orçamento de chamadas/tokens/custo, retenção e autorização institucional continuam pendentes. Não preencher com resultados de fixtures.
+- Há um [modelo de registro do estudo](modelo-registro-estudo-ia.md) para copiar para um local privado, preencher e submeter à revisão. O template em branco pode ser versionado; corpus, autorizações identificáveis, anotações e relatórios reais não.
+- O item 16 (execução real) continua sem as pré-condições. A documentação e os testes técnicos não autorizam enviar textos ao Google.
+
 ## Pergunta e unidade de análise
 
 Em redações dissertativo-argumentativas em português, a análise consultiva identifica evidências reais e oferece diagnósticos úteis sobre Legitimação, Pertinência e Uso produtivo, comparados com referências humanas independentes?
@@ -41,6 +49,8 @@ Exportar as referências adjudicadas para esse contrato e registrar, separadamen
 
 Com as aprovações documentadas, usar as travas e comandos de [avaliacao-ia.md](avaliacao-ia.md). Cada execução deve ter diretório próprio com `--saida`, pois `latest.json` e `latest.md` são sobrescritos dentro do diretório escolhido. Não executar agora o modo real por este documento.
 
+O harness atual não verifica consentimento, qualificação dos avaliadores, aprovação do orientador, orçamento global ou independência da referência humana. O limite de casos por comando não é limite de tokens/custo nem coordenação entre máquinas. Após integrar a #36, sua proteção por processo também se aplica ao harness; um caso seguinte pode ser recusado localmente se a execução anterior terminou antes do intervalo. Fixar previamente espaçamento/coordenação e tratamento dessas recusas, sem reiniciar processos para contornar limites nem adicionar repetições não aprovadas. Registrar casos não processados e falhas separadamente; não interpretá-los como diagnósticos pedagógicos do modelo.
+
 Exemplo de forma do comando, após aprovação e configuração local:
 
 ```powershell
@@ -55,6 +65,8 @@ Registrar falhas, respostas inválidas e tentativas repetidas; não apagá-las d
 - **Evidências:** precisão, revocação e F1 por correspondência exata de intervalo e critério, seguindo a implementação atual do harness. Apresentar também os denominadores e casos sem referência/previsão. Sobreposição aproximada pode ser uma análise secundária, mas exige implementação e regra previamente definida; não confundir com a métrica já existente.
 - **Pedagógicas:** avaliadores analisam correção do diagnóstico, relação com o tema, utilidade da orientação e risco de afirmações sem apoio, em uma escala com exemplos definidos antes do experimento. O harness atual não calcula essas avaliações automaticamente.
 - **Concordância humana:** reportar a métrica adequada a cada tipo de anotação, definida com o orientador; reportar divergências e adjudicação. Não usar apenas o consenso final como prova de concordância independente.
+
+O resumo implementado agrega contagens de evidências e latência média; não produz automaticamente todas as análises propostas aqui (por critério/tema, concordância humana, utilidade pedagógica ou intervalos de incerteza). Campos com denominador zero retornam null, não zero. O F1 atual também retorna null quando precisão+revocação é zero; declarar essa convenção ao interpretar/exportar dados e fechar com o orientador antes do experimento. Conferir duplicatas de casos/intervalos e denominadores: anotação ou previsão duplicada não deve ser aceita silenciosamente como evidência de melhor desempenho. Não alterar convenções depois de observar resultados para favorecer o modelo.
 
 Apresentar resultados agregados por redação e critério, dispersão de latência, análise de erros e incerteza compatível com o tamanho da amostra. Se forem usados intervalos por reamostragem, reamostrar por redação, não tratar trechos do mesmo texto como amostras independentes. Não definir um limiar de aprovação depois de observar os resultados.
 
