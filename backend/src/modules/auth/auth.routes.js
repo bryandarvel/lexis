@@ -10,11 +10,15 @@ import {
   logoutController,
   obterUsuarioAtualController,
   renovarSessaoController,
+  atualizarPerfilController,
+  alterarSenhaController,
 } from './auth.controller.js'
 
 import {
   cadastroSchema,
   loginSchema,
+  atualizarPerfilSchema,
+  alterarSenhaSchema,
 } from './auth.schemas.js'
 
 import {
@@ -25,6 +29,7 @@ import {
   limitarCadastro,
   limitarLogin,
   limitarRefresh,
+  limitarAlteracaoSenha,
 } from '../../middlewares/auth-rate-limiters.js'
 
 export const authRouter = Router()
@@ -252,3 +257,58 @@ authRouter.get(
   autenticarAccessToken,
   obterUsuarioAtualController,
 )
+
+/**
+ * @openapi
+ * /api/auth/me:
+ *   patch:
+ *     summary: Altera o próprio nome
+ *     description: Válido para aluno e professor. Aceita somente nome, com as mesmas regras do cadastro. Não altera e-mail, papel ou dados de outra conta. Resposta data.usuario no formato de GET /auth/me.
+ *     tags: [Autenticação]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             additionalProperties: false
+ *             required: [nome]
+ *             properties:
+ *               nome: { type: string, minLength: 2, maxLength: 120 }
+ *     responses:
+ *       '200': { description: Nome atualizado em data.usuario }
+ *       '401': { description: Autenticação inválida, sessão alterada ou conta inativa }
+ *       '422': { description: Nome inválido ou campos fora do contrato; detalhes por campo }
+ * /api/auth/alterar-senha:
+ *   post:
+ *     summary: Troca a senha mantendo a sessão atual
+ *     description: Confere a senha atual, altera a senha e incrementa sessaoVersao atomicamente. Revoga todos os refresh tokens e links de recuperação antigos, criando uma nova família para a sessão atual. O cliente deve substituir o accessToken em memória pelo retornado; cookie HttpOnly é renovado. Não repetir automaticamente.
+ *     tags: [Autenticação]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             additionalProperties: false
+ *             required: [senhaAtual, novaSenha]
+ *             properties:
+ *               senhaAtual: { type: string, format: password, minLength: 1, maxLength: 72 }
+ *               novaSenha: { type: string, format: password, minLength: 10, maxLength: 72, description: Deve conter letra maiúscula, minúscula e número; limite de 72 bytes UTF-8 }
+ *     responses:
+ *       '200':
+ *         description: data.usuario e data.accessToken renovados; nunca retorna refresh token no corpo
+ *         headers:
+ *           Set-Cookie:
+ *             description: Novo refresh token HttpOnly da sessão atual
+ *             schema: { type: string }
+ *       '401': { description: Autenticação inválida ou sessão alterada por outra operação concorrente }
+ *       '422': { description: CURRENT_PASSWORD_INVALID ou VALIDATION_ERROR, com detalhes por campo }
+ *       '429': { description: RATE_LIMIT_EXCEEDED — máximo de 10 tentativas por usuário em 15 minutos, incluindo sucessos }
+ */
+authRouter.patch('/me', autenticarAccessToken, validarBody(atualizarPerfilSchema), atualizarPerfilController)
+authRouter.post('/alterar-senha', autenticarAccessToken, limitarAlteracaoSenha, validarBody(alterarSenhaSchema), alterarSenhaController)
