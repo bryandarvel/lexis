@@ -229,7 +229,7 @@ redacoesRouter.post(
  * /api/aluno/temas/{temaId}/redacao/enviar:
  *   post:
  *     summary: Envia definitivamente uma redação
- *     description: Envia o rascunho existente. A redação não poderá mais ser alterada ou reenviada.
+ *     description: Envia o rascunho existente e cria um aviso REDACAO_ENVIADA para o professor na mesma transação, sem e-mail. A redação não poderá mais ser alterada ou reenviada; falha ao persistir o aviso reverte o envio.
  *     tags:
  *       - Redações
  *     security:

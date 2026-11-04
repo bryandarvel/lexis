@@ -35,6 +35,8 @@ npm.cmd run email:process
 
 O comando processa primeiro a recuperação de senha e depois notificações de feedback. `EMAIL_BATCH_SIZE` limita **cada fila**, não a soma das duas. Antes de executar, confira que o ambiente contém apenas dados fictícios de demonstração e que o destinatário concorda com os envios pendentes. Não use esse comando para testar uma única mensagem quando houver outros itens na fila.
 
+Os eventos novos de redação enviada, matrícula encerrada, turma arquivada e saída voluntária são exclusivamente internos. Não entram na fila de e-mail nem em suas contagens operacionais. Nesses avisos, `statusEmail: null` indica ausência de envio previsto; não é uma pendência a reenviar. A criação dos gatilhos de matrícula/turma é uma entrega separada da notificação de redação enviada.
+
 Para a apresentação, um integrante pode manter o seguinte loop em um terminal dedicado, depois de habilitar e revisar a configuração:
 
 ```powershell
