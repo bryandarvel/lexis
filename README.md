@@ -180,7 +180,7 @@ Consulte [CONTRIBUTING.md](CONTRIBUTING.md) para conhecer a rotina completa de I
 
 ## Segurança
 
-O estado conhecido da auditoria de dependências e as medidas pendentes estão em [docs/seguranca-dependencias.md](docs/seguranca-dependencias.md). O frontend está sem alertas no `npm audit`; o backend ainda depende de correções upstream do ecossistema Prisma e não deve ser tratado como pronto para produção pública sem nova revisão.
+O histórico da auditoria de dependências e as medidas pendentes estão em [docs/seguranca-dependencias.md](docs/seguranca-dependencias.md). Os resultados dependem da data, do lockfile e dos patches realmente integrados; PR aprovado ou instalado em outra branch não elimina alertas desta versão. Antes de publicar, repita a auditoria nos pacotes da árvore integrada e revise os alertas restantes, sem downgrade ou override para apenas obter resultado verde. O projeto não deve ser tratado como pronto para produção pública sem essa revisão e o aceite integrado.
 
 Nunca envie ao GitHub:
 
