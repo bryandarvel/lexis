@@ -32,6 +32,7 @@ before(async () => {
 after(async () => {
   if (confirmado) {
     const ids = turmas.map(t => t.id)
+    await prisma.notificacao.deleteMany({ where: { usuarioId: { in: usuarios.map(u => u.id) } } })
     await prisma.redacao.deleteMany({ where: { tema: { turmaId: { in: ids } } } })
     await prisma.matricula.deleteMany({ where: { turmaId: { in: ids } } })
     await prisma.temaRedacao.deleteMany({ where: { turmaId: { in: ids } } })
@@ -83,6 +84,9 @@ test('reabre proposta vencida sem alterar conteúdo, critérios ou prazo, e envi
     .set('Authorization', `Bearer ${tokens[2]}`).expect(200)
   assert.equal(envio.body.data.redacao.enviadaComAtraso, true)
   assert.equal(envio.body.data.redacao.prazoConsideradoEm, tema.prazoEntrega.toISOString())
+  assert.equal(await prisma.notificacao.count({ where: {
+    usuarioId: usuarios[0].id, redacaoId: envio.body.data.redacao.id, tipo: 'REDACAO_ENVIADA',
+  } }), 1)
 })
 
 test('reabre proposta com prazo futuro preservando o prazo', async () => {
