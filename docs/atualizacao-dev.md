@@ -38,7 +38,7 @@ npx.cmd prisma migrate deploy
 npm.cmd run dev
 ```
 
-A migration de recuperação adiciona versão de sessão e a tabela de links de recuperação; não converte critérios históricos. Não é necessário apagar o banco nem executar o seed novamente. Mantenha as senhas e dados locais já configurados. A nova variável `PASSWORD_RESET_TTL_MINUTES` tem padrão de 30 minutos.
+As migrations aplicadas dependem dos PRs já integrados no hash atualizado. A de recuperação adiciona versão de sessão e links; as de notificações/trechos só estarão disponíveis depois dos respectivos merges. Antes de aplicar migrations novas, preserve um backup local e confira o destino. Não é necessário apagar o banco nem executar o seed novamente. Não converta critérios históricos para “compatibilizar” a atualização. Mantenha as senhas e dados locais já configurados. `PASSWORD_RESET_TTL_MINUTES` tem padrão de 30 minutos.
 
 ## 4. Preparar o frontend
 
@@ -61,3 +61,5 @@ Abra o endereço informado pelo Vite. Se a sessão anterior não funcionar, faç
 - Recuperação: depende de e-mail habilitado e fila supervisionada conforme [operacao-email.md](operacao-email.md). Não execute o worker sem revisar destinatários e mensagens pendentes.
 
 Integrações externas dependem das credenciais/cotas locais. CI aprovado não comprova disponibilidade do Gemini, OCR.space, LanguageTool ou Resend na máquina de cada integrante.
+
+Para a composição dos PRs de novembro, preparação isolada do banco de teste e aceite do mesmo commit nas duas máquinas, siga [integracao-aceite-2026-11.md](integracao-aceite-2026-11.md). O [registro de aceite](registro-aceite-integrado.md) é um modelo vazio, não uma declaração de execução. O [plano de deploy](plano-deploy-vercel-railway.md) exige aprovação posterior e não provisiona serviços.
