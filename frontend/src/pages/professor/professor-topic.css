@@ -87,3 +87,24 @@
   .topic-status { margin-left: 38px; width: auto; max-width: calc(100% - 38px); }
   .topic-section-heading { flex-wrap: wrap; }
 }
+
+.topic-acoes { display: flex; flex-wrap: wrap; gap: 10px; }
+.topic-acoes > button { min-height: 44px; }
+.topic-botao-perigo { color: var(--panel-error); }
+.panel-primary-button.topic-botao-perigo { background: var(--panel-error); color: #fff; }
+[data-theme="dark"] .panel-primary-button.topic-botao-perigo { color: #18212f; }
+.topic-efeitos { margin: 16px 0 0; padding-left: 20px; color: var(--panel-muted); font-size: 14px; line-height: 22px; }
+.topic-efeitos li + li { margin-top: 8px; }
+.topic-proposta-dialog .panel-dialog-actions button { min-height: 44px; }
+.topic-edit-dialog { width: min(560px, calc(100% - 32px)); margin: auto; }
+.topic-campo { margin: 18px 0 0; }
+.topic-campo label { display: block; margin-bottom: 8px; font-size: 13px; line-height: 18px; font-weight: 600; }
+.topic-proposta-dialog input, .topic-proposta-dialog textarea { display: block; width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid #8895ab; border-radius: 10px; background: var(--panel-surface); color: var(--panel-text); font-family: var(--font-interface); font-size: 14px; line-height: 22px; }
+.topic-proposta-dialog textarea { min-height: 88px; resize: vertical; }
+.topic-proposta-dialog [aria-invalid="true"] { border-color: var(--panel-error); }
+.topic-campo-erro { display: block; margin: 6px 0 0; color: var(--panel-error); font-size: 12px; line-height: 17px; }
+.topic-proposta-dialog input:disabled, .topic-proposta-dialog textarea:disabled { opacity: .6; cursor: not-allowed; }
+@media (max-width: 767px) {
+  .topic-acoes { width: 100%; }
+  .topic-acoes > button { flex: 1 1 100%; }
+}
