@@ -50,6 +50,7 @@ before(async () => {
 after(async () => {
   try {
     if (confirmado) {
+      await prisma.notificacao.deleteMany({ where: { usuarioId: { in: usuarios.map(u => u.id) } } })
       if (turma) {
         await prisma.redacao.deleteMany({ where: { tema: { turmaId: turma.id } } })
         await prisma.temaRedacao.deleteMany({ where: { turmaId: turma.id } })

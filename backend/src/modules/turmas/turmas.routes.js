@@ -84,7 +84,7 @@ turmasRouter.get(
  * /api/turmas/{turmaId}/alunos/{alunoId}:
  *   delete:
  *     summary: Desvincula um aluno da turma
- *     description: Encerra a matrícula ativa do aluno sem apagar seu histórico.
+ *     description: Encerra a matrícula ativa do aluno sem apagar seu histórico e cria um aviso interno MATRICULA_ENCERRADA na mesma transação. Não envia e-mail. Repetição sem vínculo ativo não cria outro aviso.
  *     tags:
  *       - Turmas
  *     security:
@@ -433,7 +433,7 @@ turmasRouter.post(
  * /api/turmas/{turmaId}/arquivar:
  *   post:
  *     summary: Arquiva uma turma
- *     description: Arquiva a turma e encerra suas matrículas ativas, preservando todo o histórico.
+ *     description: Arquiva a turma e encerra suas matrículas ativas, preservando todo o histórico. Na mesma transação cria um aviso TURMA_ARQUIVADA por aluno ativo distinto, sem e-mail. Revalida alterações concorrentes da lista de alunos antes de qualquer escrita.
  *     tags:
  *       - Turmas
  *     security:
@@ -455,7 +455,7 @@ turmasRouter.post(
  *       '404':
  *         description: Turma não encontrada
  *       '409':
- *         description: Turma já arquivada
+ *         description: Turma já arquivada ou CLASS_ENROLLMENTS_CHANGED quando a lista ativa muda continuamente nas três conferências. Neste último caso nada foi alterado; conferir e confirmar novamente, sem repetição automática pelo cliente.
  *       '422':
  *         description: Identificador inválido
  */

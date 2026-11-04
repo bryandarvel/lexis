@@ -47,6 +47,7 @@ beforeEach(async () => {
 
 after(async () => {
   if (confirmado) {
+    await prisma.notificacao.deleteMany({ where: { usuarioId: { in: usuarios } } })
     await prisma.matricula.deleteMany({ where: { turmaId: { in: turmas } } })
     await prisma.turma.deleteMany({ where: { id: { in: turmas } } })
     await prisma.usuario.deleteMany({ where: { id: { in: usuarios } } })
@@ -132,12 +133,13 @@ test('entrada iniciada primeiro é encerrada pelo arquivamento concorrente', { t
   const entradaPausada = Promise.withResolvers()
   const liberarEntrada = Promise.withResolvers()
   const arquivoPonto = Promise.withResolvers()
-  interceptarTransacoes(t, async (numero, operacao, _args, executar) => {
+  interceptarTransacoes(t, async (numero, operacao, args, executar) => {
     if (numero === 1 && operacao === 'matricula.create') {
       entradaPausada.resolve()
       await liberarEntrada.promise
     }
-    if (numero === 2 && operacao === 'turma.updateMany') arquivoPonto.resolve()
+    if (numero === 2 && (operacao === 'turma.updateMany' ||
+      (operacao === '$queryRaw' && args[0].join(' ').includes('FROM turmas')))) arquivoPonto.resolve()
     return executar()
   })
   const entrada = criarMatriculaAtivaComExclusividade({ alunoId: aluno.id, turmaId: turma.id })

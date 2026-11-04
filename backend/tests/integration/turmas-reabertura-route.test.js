@@ -32,6 +32,7 @@ before(async () => {
 after(async () => {
   if (confirmado) {
     const ids = turmas.map(t => t.id)
+    await prisma.notificacao.deleteMany({ where: { usuarioId: { in: usuarios.map(u => u.id) } } })
     await prisma.matricula.deleteMany({ where: { turmaId: { in: ids } } })
     await prisma.temaRedacao.deleteMany({ where: { turmaId: { in: ids } } })
     await prisma.turma.deleteMany({ where: { id: { in: ids } } })
