@@ -137,6 +137,10 @@ beforeEach(async () => {
     professorSecundario.usuario.id,
   ]
 
+  await prisma.notificacao.deleteMany({
+    where: { usuarioId: { in: [...professorIds, aluno.usuario.id] } },
+  })
+
   await prisma.redacao.deleteMany({
     where: {
       tema: {
@@ -162,22 +166,17 @@ beforeEach(async () => {
 
 after(async () => {
   if (bancoDeTesteConfirmado) {
-    const usuarios = await prisma.usuario.findMany({
-      where: {
-        email: {
-          startsWith: prefixoEmail,
-        },
-      },
-      select: {
-        id: true,
-      },
-    })
-
-    const usuarioIds = usuarios.map(
-      (usuario) => usuario.id,
-    )
+    const usuarioIds = [
+      professorPrincipal?.usuario.id,
+      professorSecundario?.usuario.id,
+      aluno?.usuario.id,
+    ].filter(Boolean)
 
     if (usuarioIds.length > 0) {
+      await prisma.notificacao.deleteMany({
+        where: { usuarioId: { in: usuarioIds } },
+      })
+
       await prisma.redacao.deleteMany({
         where: {
           tema: {

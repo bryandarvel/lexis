@@ -44,6 +44,10 @@ enum StatusFeedbackVersao {
 enum TipoNotificacao {
   FEEDBACK_PUBLICADO
   FEEDBACK_CORRIGIDO
+  REDACAO_ENVIADA
+  MATRICULA_ENCERRADA
+  TURMA_ARQUIVADA
+  ALUNO_SAIU_TURMA
 }
 
 enum StatusEnvioEmail {
@@ -203,6 +207,7 @@ model Redacao {
 
   analises AnaliseIA[]
   feedback Feedback?
+  notificacoes Notificacao[]
 
   @@unique([alunoId, temaId])
   @@index([temaId, status])
@@ -292,14 +297,16 @@ model Notificacao {
   id                 String           @id @default(uuid())
   usuarioId          String
   usuario            Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
-  feedbackVersaoId   String
-  feedbackVersao     FeedbackVersao   @relation(fields: [feedbackVersaoId], references: [id], onDelete: Restrict)
+  feedbackVersaoId   String?
+  feedbackVersao     FeedbackVersao?  @relation(fields: [feedbackVersaoId], references: [id], onDelete: Restrict)
+  redacaoId          String?
+  redacao            Redacao?         @relation(fields: [redacaoId], references: [id], onDelete: Restrict)
   tipo               TipoNotificacao
   titulo             String
   mensagem           String           @db.Text
   lidaEm             DateTime?
-  emailDestino       String           @db.VarChar(191)
-  statusEmail        StatusEnvioEmail @default(PENDENTE)
+  emailDestino       String?          @db.VarChar(191)
+  statusEmail        StatusEnvioEmail? @default(PENDENTE)
   tentativasEmail    Int              @default(0)
   emailEnviadoEm     DateTime?
   proximaTentativaEm DateTime?
@@ -309,5 +316,7 @@ model Notificacao {
   @@index([usuarioId, lidaEm])
   @@index([statusEmail, proximaTentativaEm])
   @@index([feedbackVersaoId])
+  @@unique([usuarioId, redacaoId, tipo])
+  @@index([redacaoId])
   @@map("notificacoes")
 }
