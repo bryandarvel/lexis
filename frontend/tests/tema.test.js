@@ -3,67 +3,61 @@ import assert from 'node:assert/strict'
 import {
   CHAVE_TEMA,
   decidirTemaInicial,
-  lerPreferenciaDoSistema,
   lerPreferenciaSalva,
 } from '../src/utils/tema.js'
 
-test('a preferência salva vence a do sistema', () => {
-  assert.equal(decidirTemaInicial('dark', 'light'), 'dark')
-  assert.equal(decidirTemaInicial('light', 'dark'), 'light')
+const armazenamentoCom = (valor) => ({
+  getItem: (chave) => (chave === CHAVE_TEMA ? valor : null),
 })
 
-test('sem preferência salva, o tema do sistema decide', () => {
-  assert.equal(decidirTemaInicial(null, 'dark'), 'dark')
-  assert.equal(decidirTemaInicial(null, 'light'), 'light')
-  assert.equal(decidirTemaInicial(undefined, 'dark'), 'dark')
+test('sem escolha salva, abre claro', () => {
+  assert.equal(decidirTemaInicial(lerPreferenciaSalva(armazenamentoCom(null))), 'light')
+  assert.equal(decidirTemaInicial(undefined), 'light')
+  assert.equal(decidirTemaInicial(null), 'light')
 })
 
-test('valor salvo inválido é ignorado e cai no sistema', () => {
-  assert.equal(decidirTemaInicial('azul', 'dark'), 'dark')
-  assert.equal(decidirTemaInicial('', 'dark'), 'dark')
-  assert.equal(decidirTemaInicial('DARK', 'light'), 'light')
-})
+test('sem escolha salva, abre claro mesmo com o sistema no escuro', () => {
+  const original = globalThis.matchMedia
+  let consultas = 0
 
-test('sem salva e sem sistema reconhecido, usa o tema claro', () => {
-  assert.equal(decidirTemaInicial(null, null), 'light')
-  assert.equal(decidirTemaInicial(null, 'sepia'), 'light')
-})
-
-test('lê a preferência salva pela chave do projeto', () => {
-  const armazenamento = {
-    getItem: (chave) => (chave === CHAVE_TEMA ? 'dark' : null),
+  globalThis.matchMedia = () => {
+    consultas += 1
+    return { matches: true }
   }
-  assert.equal(lerPreferenciaSalva(armazenamento), 'dark')
-  assert.equal(lerPreferenciaSalva({ getItem: () => null }), null)
+
+  try {
+    const tema = decidirTemaInicial(lerPreferenciaSalva(armazenamentoCom(null)))
+
+    assert.equal(tema, 'light')
+    assert.equal(consultas, 0, 'o tema do sistema não deve ser consultado')
+  } finally {
+    if (original === undefined) delete globalThis.matchMedia
+    else globalThis.matchMedia = original
+  }
 })
 
-test('armazenamento indisponível não derruba a leitura', () => {
+test('a escolha salva, clara ou escura, é respeitada', () => {
+  assert.equal(lerPreferenciaSalva(armazenamentoCom('dark')), 'dark')
+  assert.equal(lerPreferenciaSalva(armazenamentoCom('light')), 'light')
+  assert.equal(decidirTemaInicial('dark'), 'dark')
+  assert.equal(decidirTemaInicial('light'), 'light')
+})
+
+test('valor salvo inválido cai em claro', () => {
+  for (const invalido of ['azul', '', 'DARK', 'system', '1']) {
+    assert.equal(lerPreferenciaSalva(armazenamentoCom(invalido)), null)
+    assert.equal(decidirTemaInicial(invalido), 'light')
+  }
+})
+
+test('armazenamento indisponível não derruba a leitura e abre claro', () => {
   const queLanca = {
     getItem() {
       throw new Error('acesso negado ao armazenamento')
     },
   }
+
   assert.equal(lerPreferenciaSalva(queLanca), null)
   assert.equal(lerPreferenciaSalva(undefined), null)
-  // Sem armazenamento, a decisão continua sendo a do sistema.
-  assert.equal(
-    decidirTemaInicial(lerPreferenciaSalva(queLanca), 'dark'),
-    'dark',
-  )
-})
-
-test('lê a preferência do sistema por matchMedia', () => {
-  assert.equal(lerPreferenciaDoSistema(() => ({ matches: true })), 'dark')
-  assert.equal(lerPreferenciaDoSistema(() => ({ matches: false })), 'light')
-})
-
-test('matchMedia ausente ou com erro cai no tema claro', () => {
-  assert.equal(lerPreferenciaDoSistema(undefined), 'light')
-  assert.equal(lerPreferenciaDoSistema(() => undefined), 'light')
-  assert.equal(
-    lerPreferenciaDoSistema(() => {
-      throw new Error('matchMedia indisponível')
-    }),
-    'light',
-  )
+  assert.equal(decidirTemaInicial(lerPreferenciaSalva(queLanca)), 'light')
 })

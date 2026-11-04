@@ -10,29 +10,17 @@ import { ThemeContext } from './theme-context.js'
 import {
   CHAVE_TEMA,
   decidirTemaInicial,
-  lerPreferenciaDoSistema,
   lerPreferenciaSalva,
 } from '../utils/tema.js'
-
-const CONSULTA_ESCURO = '(prefers-color-scheme: dark)'
-
-function consultarMidia(consulta) {
-  return globalThis.matchMedia?.(consulta)
-}
 
 function obterPreferenciaSalva() {
   return lerPreferenciaSalva(globalThis.localStorage)
 }
 
-function obterTemaInicial() {
-  return decidirTemaInicial(
-    obterPreferenciaSalva(),
-    lerPreferenciaDoSistema(consultarMidia),
-  )
-}
-
 export default function ThemeProvider({ children }) {
-  const [tema, setTema] = useState(obterTemaInicial)
+  const [tema, setTema] = useState(() =>
+    decidirTemaInicial(obterPreferenciaSalva()),
+  )
   const [escolhido, setEscolhido] = useState(
     () => obterPreferenciaSalva() !== null,
   )
@@ -42,8 +30,8 @@ export default function ThemeProvider({ children }) {
     document.documentElement.style.colorScheme = tema
   }, [tema])
 
-  // Só grava depois de uma escolha explícita: assim o tema do sistema não é
-  // sobrescrito por um valor que o usuário nunca pediu.
+  // Só grava depois de uma escolha explícita: o tema padrão não vira uma
+  // preferência salva que o usuário nunca pediu.
   useEffect(() => {
     if (!escolhido) return
 
@@ -53,23 +41,6 @@ export default function ThemeProvider({ children }) {
       // A preferência continua válida durante a sessão.
     }
   }, [tema, escolhido])
-
-  // Enquanto não houver escolha, acompanha o sistema também durante a sessão.
-  useEffect(() => {
-    if (escolhido) return undefined
-
-    const consulta = consultarMidia(CONSULTA_ESCURO)
-
-    if (!consulta?.addEventListener) return undefined
-
-    const aoMudar = (evento) =>
-      setTema(evento.matches ? 'dark' : 'light')
-
-    consulta.addEventListener('change', aoMudar)
-
-    return () =>
-      consulta.removeEventListener('change', aoMudar)
-  }, [escolhido])
 
   const alternarTema = useCallback(() => {
     setTema((temaAtual) =>
