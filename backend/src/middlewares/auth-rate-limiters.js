@@ -84,3 +84,10 @@ export const limitarRedefinicao = criarLimitador({
   limite: 20,
   mensagem: 'Muitas tentativas de redefinição. Aguarde alguns minutos.',
 })
+
+export const limitarAlteracaoSenha = criarLimitador({
+  windowMs: QUINZE_MINUTOS_MS,
+  limite: 10,
+  mensagem: 'Muitas tentativas de alteração de senha. Aguarde alguns minutos.',
+  keyGenerator: req => req.auth.usuarioId,
+})
