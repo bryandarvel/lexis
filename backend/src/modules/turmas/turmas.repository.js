@@ -267,6 +267,18 @@ export function criarMatriculaAtivaComExclusividade({
       FOR UPDATE
     `
 
+    // Ordem: usuário -> turma -> matrícula. O arquivamento bloqueia a turma
+    // pelo UPDATE antes de encerrar matrículas e não adquire lock de usuário.
+    // Saída/desvinculação usam usuário -> matrícula, sem ordem inversa.
+    // A leitura abaixo só pode ocorrer depois de um arquivamento concorrente
+    // terminar, ou a entrada termina antes e será encerrada por ele.
+    await transaction.$queryRaw`
+      SELECT id
+      FROM turmas
+      WHERE id = ${turmaId}
+      FOR UPDATE
+    `
+
     const turmaAtiva =
       await transaction.turma.findFirst({
         where: {
