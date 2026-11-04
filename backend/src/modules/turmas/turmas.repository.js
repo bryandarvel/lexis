@@ -315,6 +315,7 @@ export function criarMatriculaAtivaComExclusividade({
 
 export function encerrarMatriculaAtivaDoAluno(
   alunoId,
+  matriculaId,
 ) {
   return prisma.$transaction(async (transaction) => {
     await transaction.$queryRaw`
@@ -342,14 +343,28 @@ export function encerrarMatriculaAtivaDoAluno(
       return null
     }
 
-    return transaction.matricula.update({
+    if (matricula.id !== matriculaId) {
+      return 'MATRICULA_ALTERADA'
+    }
+
+    // A condição também protege contra encerramento por arquivamento
+    // ou desvinculação depois da leitura, sem reativar nem alterar o histórico.
+    const resultado = await transaction.matricula.updateMany({
       where: {
-        id: matricula.id,
+        id: matriculaId,
+        alunoId,
+        status: 'ATIVA',
       },
       data: {
         status: 'ENCERRADA',
         encerradaEm: new Date(),
       },
+    })
+
+    if (resultado.count !== 1) return null
+
+    return transaction.matricula.findUnique({
+      where: { id: matriculaId },
       select: matriculaAlunoSelect,
     })
   })
