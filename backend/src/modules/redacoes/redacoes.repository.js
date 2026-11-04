@@ -522,34 +522,63 @@ export function listarRedacoesDaTurmaDoProfessor({
   temaId,
   status,
 }) {
-  return prisma.redacao.findMany({
-    where: {
-      temaId: temaId ?? undefined,
-      status:
-        status ??
+  return prisma.$transaction(async transaction => {
+    const turma = await transaction.turma.findFirst({
+      where: { id: turmaId, professorId },
+      select: {
+        ativa: true,
+        matriculas: {
+          where: { status: 'ATIVA' },
+          select: { alunoId: true },
+          distinct: ['alunoId'],
+        },
+      },
+    })
+    if (!turma) return null
+
+    const redacoes = await transaction.redacao.findMany({
+      where: {
+        temaId: temaId ?? undefined,
+        status:
+          status ??
+          {
+            in: [
+              'ENVIADA',
+              'AVALIADA',
+            ],
+          },
+        tema: {
+          turmaId,
+          turma: {
+            professorId,
+          },
+        },
+      },
+      select: redacaoProfessorResumoSelect,
+      orderBy: [
         {
-          in: [
-            'ENVIADA',
-            'AVALIADA',
-          ],
+          enviadaEm: 'desc',
         },
-      tema: {
-        turmaId,
-        turma: {
-          professorId,
+        {
+          atualizadoEm: 'desc',
         },
+      ],
+    })
+
+    // A mesma fotografia do banco fornece numerador e denominador. O histórico
+    // permanece na lista, mas nunca é misturado aos alunos atualmente ativos.
+    const ativos = new Set(turma.ativa ? turma.matriculas.map(m => m.alunoId) : [])
+    const entregaram = new Set(redacoes.map(r => r.aluno.id))
+    const ativosQueEntregaram = [...entregaram].filter(id => ativos.has(id)).length
+    return {
+      redacoes: redacoes.map(r => ({ ...r, aluno: { ...r.aluno, matriculaAtivaNaTurma: ativos.has(r.aluno.id) } })),
+      resumoEntregas: {
+        totalAlunosAtivos: ativos.size,
+        alunosAtivosQueEntregaram: ativosQueEntregaram,
+        alunosSemMatriculaAtivaQueEntregaram: entregaram.size - ativosQueEntregaram,
       },
-    },
-    select: redacaoProfessorResumoSelect,
-    orderBy: [
-      {
-        enviadaEm: 'desc',
-      },
-      {
-        atualizadoEm: 'desc',
-      },
-    ],
-  })
+    }
+  }, { isolationLevel: 'RepeatableRead' })
 }
 
 export function buscarRedacaoDoProfessor({

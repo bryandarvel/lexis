@@ -102,12 +102,13 @@ function criarErroAlunoNaoMatriculadoNaTurma() {
 function prepararTurmaParaResposta(turma) {
   const {
     _count,
+    matriculas,
     ...dadosTurma
   } = turma
 
   return {
     ...dadosTurma,
-    quantidadeAlunosAtivos: _count.matriculas,
+    quantidadeAlunosAtivos: turma.ativa ? matriculas.length : 0,
     quantidadeTemasAtivos: _count.temas,
   }
 }
