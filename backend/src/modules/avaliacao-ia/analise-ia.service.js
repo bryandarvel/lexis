@@ -119,13 +119,13 @@ export async function solicitarAnaliseIaParaProfessor(
     }),
   )
 
-  const solicitacao = criarSolicitacao({
-    texto: inicio.redacao.texto,
-    tema: inicio.redacao.tema,
-    criterios: inicio.redacao.tema.criterios,
-  })
-
   try {
+    const solicitacao = criarSolicitacao({
+      texto: inicio.redacao.texto,
+      tema: inicio.redacao.tema,
+      criterios: inicio.redacao.tema.criterios,
+    })
+
     const resposta = await gerar({
       input: solicitacao.input,
       systemInstruction:
@@ -142,7 +142,8 @@ export async function solicitarAnaliseIaParaProfessor(
       textoRedacao: inicio.redacao.texto,
     })
 
-    return concluir({
+    // Aguarda a persistência dentro do try para registrar também sua falha.
+    return await concluir({
       analiseId: inicio.analise.id,
       resultadoEstruturado,
       duracaoMs: Math.max(
