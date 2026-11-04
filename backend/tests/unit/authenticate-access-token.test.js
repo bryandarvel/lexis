@@ -18,6 +18,7 @@ describe('Middleware de autenticação', () => {
     const token = criarAccessToken({
       usuarioId: 'usuario-de-teste',
       papel: 'PROFESSOR',
+      sessaoVersao: 0,
     })
 
     const req = {
@@ -44,6 +45,7 @@ describe('Middleware de autenticação', () => {
     assert.deepEqual(req.auth, {
       usuarioId: 'usuario-de-teste',
       papel: 'PROFESSOR',
+      sessaoVersao: 0,
     })
   })
 
