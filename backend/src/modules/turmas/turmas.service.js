@@ -277,6 +277,12 @@ export async function arquivarTurmaParaProfessor({
       professorId,
     })
 
+  if (turmaArquivada === 'MATRICULAS_ALTERADAS') {
+    throw new AppError('As matrículas mudaram durante a operação. Nenhuma alteração foi feita. Confira a turma e confirme o arquivamento novamente.', {
+      statusCode: 409, code: 'CLASS_ENROLLMENTS_CHANGED',
+    })
+  }
+
   if (!turmaArquivada) {
     throw criarErroTurmaArquivada()
   }

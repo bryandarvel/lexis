@@ -50,7 +50,7 @@ export function criarNotificacoesRouter({
    * /api/aluno/notificacoes:
    *   get:
    *     summary: Lista as notificações do aluno
-   *     description: Retorna as notificações da mais recente para a mais antiga e a quantidade total de notificações não lidas.
+   *     description: Retorna as notificações próprias da mais recente para a mais antiga e a quantidade total não lida. Além de FEEDBACK_PUBLICADO/FEEDBACK_CORRIGIDO, inclui MATRICULA_ENCERRADA e TURMA_ARQUIVADA; estes avisos internos têm feedbackVersaoId, feedbackVersao, redacaoId e redacao nulos, statusEmail nulo, título e mensagem sobre o histórico preservado. Não representam correção nova nem devem abrir feedback inexistente.
    *     tags:
    *       - Notificações
    *     security:
