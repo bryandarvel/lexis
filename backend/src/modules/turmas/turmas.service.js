@@ -13,6 +13,7 @@ import {
   encerrarMatriculaPeloProfessor,
   listarMatriculasAtivasDaTurma,
   listarTurmasDoProfessor,
+  reabrirTurma,
 } from './turmas.repository.js'
 
 import {
@@ -101,12 +102,13 @@ function criarErroAlunoNaoMatriculadoNaTurma() {
 function prepararTurmaParaResposta(turma) {
   const {
     _count,
+    matriculas,
     ...dadosTurma
   } = turma
 
   return {
     ...dadosTurma,
-    quantidadeAlunosAtivos: _count.matriculas,
+    quantidadeAlunosAtivos: turma.ativa ? matriculas.length : 0,
     quantidadeTemasAtivos: _count.temas,
   }
 }
@@ -284,6 +286,20 @@ export async function arquivarTurmaParaProfessor({
   return prepararTurmaParaResposta(turmaArquivada)
 }
 
+export async function reabrirTurmaParaProfessor({ turmaId, professorId }) {
+  await buscarTurmaObrigatoria({ turmaId, professorId })
+
+  const turma = await reabrirTurma({ turmaId, professorId })
+  if (!turma) {
+    throw new AppError('Esta turma já está ativa.', {
+      statusCode: 409,
+      code: 'CLASS_ALREADY_ACTIVE',
+    })
+  }
+
+  return prepararTurmaParaResposta(turma)
+}
+
 export async function entrarEmTurmaComoAluno({
   alunoId,
   codigoAcesso,
@@ -336,9 +352,16 @@ export async function obterMatriculaAtivaParaAluno(
   return matricula
 }
 
-export async function sairDaTurmaComoAluno(alunoId) {
+export async function sairDaTurmaComoAluno(alunoId, matriculaId) {
   const matricula =
-    await encerrarMatriculaAtivaDoAluno(alunoId)
+    await encerrarMatriculaAtivaDoAluno(alunoId, matriculaId)
+
+  if (matricula === 'MATRICULA_ALTERADA') {
+    throw new AppError(
+      'Sua matrícula mudou. Confira a turma atual e confirme novamente.',
+      { statusCode: 409, code: 'ACTIVE_ENROLLMENT_CHANGED' },
+    )
+  }
 
   if (!matricula) {
     throw criarErroMatriculaNaoEncontrada()
