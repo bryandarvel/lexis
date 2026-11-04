@@ -174,7 +174,7 @@ O Pull Request deve mencionar a Issue com `Closes #NUMERO`, passar pela integra�
 
 O destino das tarefas é `dev`, com merge commit. A `main` só receberá uma promoção posterior por PR, depois dos testes e aprovação explícita; nunca recebe commits diretos. Para atualizar uma máquina já configurada após a integração, consulte [docs/atualizacao-dev.md](docs/atualizacao-dev.md).
 
-O [roteiro de integração e aceite de novembro](docs/integracao-aceite-2026-11.md) separa PR preparado, código integrado e teste nas duas máquinas. Use o [modelo vazio de registro](docs/registro-aceite-integrado.md) depois de executar os fluxos. A [proposta futura Vercel + Railway](docs/plano-deploy-vercel-railway.md) documenta decisões e impedimentos; nenhum recurso externo foi provisionado e o plano ainda exige aprovação.
+O [roteiro de integração e aceite de novembro](docs/integracao-aceite-2026-11.md) separa PR preparado, código integrado e teste nas duas máquinas. Use o [modelo vazio de registro](docs/registro-aceite-integrado.md) depois de executar os fluxos. A [proposta futura Vercel + Railway](docs/plano-deploy-vercel-railway.md) teve sua estrutura técnica aprovada, sem provisionar agora; recursos concretos, domínio, orçamento e retenção ainda exigem aprovação separada.
 
 Consulte [CONTRIBUTING.md](CONTRIBUTING.md) para conhecer a rotina completa de Issues, branches, commits, push, revisão e Pull Request. Agentes de IA também devem seguir as regras de [AGENTS.md](AGENTS.md).
 

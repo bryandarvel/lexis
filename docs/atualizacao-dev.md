@@ -62,4 +62,4 @@ Abra o endereço informado pelo Vite. Se a sessão anterior não funcionar, faç
 
 Integrações externas dependem das credenciais/cotas locais. CI aprovado não comprova disponibilidade do Gemini, OCR.space, LanguageTool ou Resend na máquina de cada integrante.
 
-Para a composição dos PRs de novembro, preparação isolada do banco de teste e aceite do mesmo commit nas duas máquinas, siga [integracao-aceite-2026-11.md](integracao-aceite-2026-11.md). O [registro de aceite](registro-aceite-integrado.md) é um modelo vazio, não uma declaração de execução. O [plano de deploy](plano-deploy-vercel-railway.md) exige aprovação posterior e não provisiona serviços.
+Para a composição dos PRs de novembro, preparação isolada do banco de teste e aceite do mesmo commit nas duas máquinas, siga [integracao-aceite-2026-11.md](integracao-aceite-2026-11.md). O [registro de aceite](registro-aceite-integrado.md) é um modelo vazio, não uma declaração de execução. A estrutura técnica do [plano de deploy](plano-deploy-vercel-railway.md) foi aprovada sem provisionar agora; as decisões concretas e sua execução exigem autorização posterior.

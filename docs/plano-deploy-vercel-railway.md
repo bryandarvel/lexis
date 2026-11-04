@@ -1,6 +1,6 @@
 # Proposta de deploy — Vercel + Railway
 
-**Plano para aprovação, não implantação concluída.** Bryan escolheu demonstração local agora e Vercel + Railway depois de terminar o projeto. Nenhuma conta, domínio, DNS, recurso, credencial, migration remota, worker, envio ou cobrança é autorizado por este documento. Promoção para `main` está fora da meta atual.
+**Proposta técnica aprovada por Bryan em 04/11/2026, sem provisionamento agora.** A aprovação cobre frontend Vercel, API Express + MySQL Railway, subdomínios HTTPS do mesmo domínio, backup diário e antes de migrations, e-mail desligado até autorização específica. Bryan mantém demonstração local agora e deploy depois de terminar o projeto. Domínio concreto, orçamento, retenção e recursos ainda precisam de aprovação separada. Nenhuma conta, domínio, DNS, recurso, credencial, migration remota, worker, envio ou cobrança é autorizado por este documento. Promoção para `main` está fora da meta atual.
 
 ## Arquitetura proposta e limites atuais
 
@@ -10,14 +10,14 @@ O código atual usa upload OCR em memória (`upload-ocr-image.js`), não arquivo
 
 ## Decisões necessárias antes de criar recursos
 
-| Decisão do Bryan | Proposta para avaliar; ainda não aprovada |
+| Decisão do Bryan | Estado da proposta e detalhes ainda pendentes |
 | --- | --- |
 | Público/dados da primeira publicação | Homologação restrita, só fictícios, sem corpus real ou uso escolar até consentimento/protocolo e revisão apropriados. |
-| Domínio e sessão | Subdomínios HTTPS do mesmo domínio controlado, por exemplo `app.example.com` e `api.example.com` (nomes fictícios, não existentes). Confirmar propriedade e orçamento antes de registrar/configurar. |
+| Domínio e sessão | Estratégia de subdomínios HTTPS do mesmo domínio aprovada; por exemplo `app.example.com` e `api.example.com` (nomes fictícios, não existentes). Domínio concreto, propriedade e orçamento pendentes antes de registrar/configurar. |
 | Ambiente/branch | Homologação separada da produção, release por hash revisado. Não vincular deploy automático a todos os pushes nem promover `main` nesta meta. Definir fluxo posterior expressamente. |
 | Orçamento | Aprovar teto mensal, responsável, alertas e política de parada para Vercel, Railway/banco/volume/backups, domínio e provedores. Não presumir gratuidade, disponibilidade ou plano contratado. |
-| Retenção e backup | Proposta inicial: backup diário e antes de migration; definir retenção, RPO/RTO e responsável. Homologar restauração e exportação privada; não copiar banco real para teste local. |
-| E-mail | Domínio/remetente próprios verificados e destinatários reais só após autorização. Começar com envio desativado; decidir frequência/limite e responsável pela fila. |
+| Retenção e backup | Frequência diária e antes de migration aprovada. Definir retenção, RPO/RTO e responsável. Homologar restauração e exportação privada; não copiar banco real para teste local. |
+| E-mail | Envio desativado até autorização específica, aprovado. Domínio/remetente próprios verificados e destinatários reais ainda precisam de autorização. Decidir frequência/limite e responsável pela fila. |
 
 Aprovar o plano não equivale a autorizar compras, DNS ou envio de dados. Solicitar autorização dos recursos/destinos concretos quando chegar a essa fase.
 
