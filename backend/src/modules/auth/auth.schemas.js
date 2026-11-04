@@ -70,3 +70,12 @@ export const redefinirSenhaSchema = z.object({
   token: z.string().regex(/^[a-f0-9]{64}$/, 'Link inválido. Solicite uma nova recuperação.'),
   senha: senhaCadastroSchema,
 }).strict()
+
+export const atualizarPerfilSchema = z.object({
+  nome: cadastroSchema.shape.nome,
+}).strict()
+
+export const alterarSenhaSchema = z.object({
+  senhaAtual: senhaLoginSchema,
+  novaSenha: senhaCadastroSchema,
+}).strict()

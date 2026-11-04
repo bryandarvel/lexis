@@ -15,6 +15,14 @@ const comentarioOpcional = z
     z.null(),
   ])
 
+const trechoSchema = z.object({
+  inicio: z.number().int().min(0).max(20000),
+  fim: z.number().int().min(1).max(20000),
+  // Não normalizar nem aparar: o texto precisa coincidir literalmente com a redação.
+  trecho: z.string().min(1).max(20000),
+  analiseIaId: z.uuid().optional(),
+}).strict().refine(t => t.fim > t.inicio, { message: 'O fim deve ser posterior ao início.', path: ['fim'] })
+
 const comentarioCriterioSchema = z
   .object({
     criterioId: z.uuid(
@@ -31,8 +39,17 @@ const comentarioCriterioSchema = z
         5000,
         'O comentário do critério deve possuir no máximo 5000 caracteres.',
       ),
+    trechos: z.array(trechoSchema).max(20).optional(),
   })
   .strict()
+  .superRefine((criterio, contexto) => {
+    const intervalos = new Set()
+    criterio.trechos?.forEach((trecho, indice) => {
+      const chave = `${trecho.inicio}:${trecho.fim}`
+      if (intervalos.has(chave)) contexto.addIssue({ code: 'custom', path: ['trechos', indice], message: 'O mesmo intervalo não pode se repetir no critério.' })
+      intervalos.add(chave)
+    })
+  })
 
 const notaCompetenciaSchema = z
   .number()

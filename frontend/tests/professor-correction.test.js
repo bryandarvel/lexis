@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { criarFormularioFeedback, montarDadosFeedback, validarFeedback, sugestaoDoCriterio, criterioFixo, tomCriterio, evidenciasVerificadas, organizarFila, comentarioEditavel, atualizarComentario } from '../src/utils/professor-correction.js'
+import { criarFormularioFeedback, montarDadosFeedback, validarFeedback, sugestaoDoCriterio, criterioFixo, tomCriterio, evidenciasVerificadas, organizarFila, comentarioEditavel, atualizarComentario, selecionarAnaliseParaCorrecao } from '../src/utils/professor-correction.js'
 
 const criterio = { id: 'c1', nome: 'Legitimação', ordem: 1 }
 const redacao = { tema: { criterios: [criterio] } }
@@ -109,4 +109,32 @@ test('a fila exclui rascunhos e Pular procura outra redação enviada sem mutar 
   assert.deepEqual(lista, copia)
   assert.equal(organizarFila([lista[1]], 'b').proxima, null)
   assert.equal(organizarFila(lista, 'inexistente').posicao, null)
+})
+
+test('preserva análise concluída e marcações quando a tentativa mais recente falha ou está processando', () => {
+  const concluida = { id: 'sucesso', status: 'CONCLUIDA', resultadoEstruturado: { analisePorCriterio: [
+    { ordem: 1, criterio: 'Legitimação', diagnostico: 'Sugestão anterior.', evidencias: [{ trecho: 'fonte', inicio: 2, fim: 7, statusLocalizacao: 'LOCALIZADA' }] },
+  ] } }
+  for (const status of ['ERRO', 'PROCESSANDO', 'PENDENTE']) {
+    const ultima = { id: 'tentativa', status }
+    const historico = [ultima, concluida]
+    const copia = structuredClone(historico)
+    const selecionada = selecionarAnaliseParaCorrecao(historico)
+    assert.equal(selecionada.ultima, ultima)
+    assert.equal(selecionada.concluida, concluida)
+    assert.equal(evidenciasVerificadas('A fonte citada.', selecionada.concluida).trechos.length, 1)
+    assert.equal(evidenciasVerificadas('Texto alterado.', selecionada.concluida).trechos.length, 0)
+    assert.deepEqual(historico, copia)
+  }
+})
+
+test('usa a conclusão mais recente sem transformar falha em sucesso nem alterar o feedback humano', () => {
+  assert.deepEqual(selecionarAnaliseParaCorrecao(), { ultima: null, concluida: null })
+  const falha = { id: 'falha', status: 'ERRO' }
+  assert.deepEqual(selecionarAnaliseParaCorrecao([falha]), { ultima: falha, concluida: null })
+  const nova = { id: 'nova', status: 'CONCLUIDA', resultadoEstruturado: { analisePorCriterio: [] } }
+  const antiga = { ...nova, id: 'antiga' }
+  assert.equal(selecionarAnaliseParaCorrecao([nova, antiga]).concluida, nova)
+  const form = atualizarComentario(criarFormularioFeedback(redacao, null), 'c1', 'Decisão humana preservada.')
+  assert.deepEqual(comentarioEditavel(form, nova, criterio), { texto: 'Decisão humana preservada.', sugerido: false })
 })

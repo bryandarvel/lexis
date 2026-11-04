@@ -230,6 +230,7 @@ beforeEach(async () => {
     alunoOutraTurma.usuario.id,
   ]
 
+  await prisma.notificacao.deleteMany({ where: { redacao: { temaId: { in: temaIds } } } })
   await prisma.redacao.deleteMany({
     where: {
       temaId: {
@@ -320,6 +321,7 @@ after(async () => {
     )
 
     if (usuarioIds.length > 0) {
+      await prisma.notificacao.deleteMany({ where: { usuarioId: { in: usuarioIds } } })
       await prisma.redacao.deleteMany({
         where: {
           OR: [
