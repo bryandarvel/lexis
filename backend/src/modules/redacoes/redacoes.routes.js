@@ -229,7 +229,7 @@ redacoesRouter.post(
  * /api/aluno/temas/{temaId}/redacao/enviar:
  *   post:
  *     summary: Envia definitivamente uma redação
- *     description: Envia o rascunho existente. A redação não poderá mais ser alterada ou reenviada.
+ *     description: Envia o rascunho existente e cria um aviso REDACAO_ENVIADA para o professor na mesma transação, sem e-mail. A redação não poderá mais ser alterada ou reenviada; falha ao persistir o aviso reverte o envio.
  *     tags:
  *       - Redações
  *     security:
@@ -330,7 +330,7 @@ redacoesRouter.get(
  * /api/turmas/{turmaId}/redacoes:
  *   get:
  *     summary: Lista as redações enviadas de uma turma
- *     description: Retorna somente redações enviadas ou avaliadas. Rascunhos dos alunos permanecem privados.
+ *     description: Retorna data.redacoes (enviadas/avaliadas, inclusive histórico) e data.resumoEntregas (totalAlunosAtivos, alunosAtivosQueEntregaram, alunosSemMatriculaAtivaQueEntregaram). Contagens distintas de aluno, na mesma fotografia do banco e respeitando os filtros. Cada aluno na lista inclui matriculaAtivaNaTurma. Rascunhos permanecem privados; turma arquivada não tem alunos ativos no resumo.
  *     tags:
  *       - Redações
  *     security:

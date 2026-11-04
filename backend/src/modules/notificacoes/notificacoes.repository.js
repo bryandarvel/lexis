@@ -4,12 +4,19 @@ const notificacaoSelect = {
   id: true,
   usuarioId: true,
   feedbackVersaoId: true,
+  redacaoId: true,
   tipo: true,
   titulo: true,
   mensagem: true,
   lidaEm: true,
   statusEmail: true,
   criadaEm: true,
+  redacao: {
+    select: {
+      id: true,
+      tema: { select: { id: true, enunciado: true, turma: { select: { id: true, nome: true } } } },
+    },
+  },
   feedbackVersao: {
     select: {
       numero: true,
@@ -22,13 +29,13 @@ const notificacaoSelect = {
   },
 }
 
-export async function listarNotificacoesAluno({
-  alunoId,
+async function listarNotificacoesUsuario({
+  usuarioId,
 }) {
   const [notificacoes, totalNaoLidas] = await Promise.all([
     prisma.notificacao.findMany({
       where: {
-        usuarioId: alunoId,
+        usuarioId,
       },
       select: notificacaoSelect,
       orderBy: {
@@ -37,7 +44,7 @@ export async function listarNotificacoesAluno({
     }),
     prisma.notificacao.count({
       where: {
-        usuarioId: alunoId,
+        usuarioId,
         lidaEm: null,
       },
     }),
@@ -49,15 +56,15 @@ export async function listarNotificacoesAluno({
   }
 }
 
-export async function marcarNotificacaoComoLida({
+async function marcarNotificacaoUsuarioComoLida({
   notificacaoId,
-  alunoId,
+  usuarioId,
   lidaEm,
 }) {
   const notificacao = await prisma.notificacao.findFirst({
     where: {
       id: notificacaoId,
-      usuarioId: alunoId,
+      usuarioId,
     },
     select: notificacaoSelect,
   })
@@ -76,19 +83,40 @@ export async function marcarNotificacaoComoLida({
     }
   }
 
-  const notificacaoAtualizada =
-    await prisma.notificacao.update({
-      where: {
-        id: notificacaoId,
-      },
-      data: {
-        lidaEm,
-      },
-      select: notificacaoSelect,
-    })
+  await prisma.notificacao.updateMany({
+    where: {
+      id: notificacaoId,
+      usuarioId,
+      lidaEm: null,
+    },
+    data: {
+      lidaEm,
+    },
+  })
+
+  const notificacaoAtualizada = await prisma.notificacao.findFirst({
+    where: { id: notificacaoId, usuarioId },
+    select: notificacaoSelect,
+  })
 
   return {
     status: 'NOTIFICACAO_LIDA',
     notificacao: notificacaoAtualizada,
   }
+}
+
+export function listarNotificacoesAluno({ alunoId }) {
+  return listarNotificacoesUsuario({ usuarioId: alunoId })
+}
+
+export function listarNotificacoesProfessor({ professorId }) {
+  return listarNotificacoesUsuario({ usuarioId: professorId })
+}
+
+export function marcarNotificacaoComoLida({ alunoId, ...dados }) {
+  return marcarNotificacaoUsuarioComoLida({ ...dados, usuarioId: alunoId })
+}
+
+export function marcarNotificacaoProfessorComoLida({ professorId, ...dados }) {
+  return marcarNotificacaoUsuarioComoLida({ ...dados, usuarioId: professorId })
 }

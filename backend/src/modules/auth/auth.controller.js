@@ -9,6 +9,8 @@ import {
   encerrarSessao,
   obterUsuarioAtual,
   renovarSessao,
+  atualizarPerfilUsuario,
+  alterarSenhaUsuario,
 } from './auth.service.js'
 
 export async function cadastrarUsuarioController(req, res) {
@@ -100,4 +102,15 @@ export async function obterUsuarioAtualController(
       usuario,
     },
   })
+}
+
+export async function atualizarPerfilController(req, res) {
+  const usuario = await atualizarPerfilUsuario({ ...req.auth, nome: req.body.nome })
+  return res.status(200).json({ data: { usuario } })
+}
+
+export async function alterarSenhaController(req, res) {
+  const sessao = await alterarSenhaUsuario({ ...req.auth, ...req.body })
+  res.cookie(REFRESH_TOKEN_COOKIE_NAME, sessao.refreshToken, criarOpcoesRefreshCookie(sessao.refreshTokenExpiraEm))
+  return res.status(200).json({ data: { usuario: sessao.usuario, accessToken: sessao.accessToken } })
 }
