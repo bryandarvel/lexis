@@ -84,6 +84,13 @@ function obterStatusExterno(erro) {
   return Number.isInteger(status) ? status : null
 }
 
+// Sem esta opção, interactions.create repete a chamada até 4 vezes diante de
+// 408, 409, 429, 5xx e falhas de conexão (@google/genai 2.16.0, RetryConfig em
+// dist/node/node.d.ts), consumindo a cota a cada tentativa da análise.
+const SEM_REPETICOES_AUTOMATICAS = Object.freeze({
+  strategy: 'none',
+})
+
 function criarClienteGemini({ apiKey, timeoutMs }) {
   return new GoogleGenAI({
     apiKey,
@@ -138,6 +145,7 @@ export async function gerarConteudoComGemini(
         parametros,
         {
           timeout_ms: timeoutMs,
+          retries: SEM_REPETICOES_AUTOMATICAS,
         },
       )
 
