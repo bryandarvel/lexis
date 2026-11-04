@@ -1,6 +1,6 @@
 # Integração e aceite nas duas máquinas — novembro de 2026
 
-Roteiro da Issue #118, item 17 da meta do Bryan. **Preparado não significa integrado nem validado em interface.** Base conferida em 03/11/2026: `dev` em `a47854b`, `main` em `ffd68fd`; revisões incrementais abaixo registradas em 04/11. Reconfira no GitHub antes de agir. Não há autorização para promover à `main`, dispensar revisão ou executar chamadas reais neste roteiro.
+Roteiro da Issue #118, item 17 da meta do Bryan. **Preparado não significa integrado nem validado em interface.** Base inicial de 03/11/2026: `dev` em `a47854b`, `main` em `ffd68fd`. Em 04/11, o #68 entrou por merge commit `edece90` na `dev`; `main` preservada. Reconfira no GitHub antes de agir. Não há autorização para promover à `main`, dispensar revisão ou executar chamadas reais neste roteiro.
 
 ## 1. Integrar por etapas verificáveis
 
@@ -16,11 +16,11 @@ Cada PR precisa de revisão do outro integrante no head atual e CI verde. Atuali
 | #101 e #103 | Consolidação Gemini e prompt v4. Preservar também normalização do parser do #93 no error-handler. O #70 é comparação, não uma camada a mesclar sobre #101; não encerrar #36 apenas por retirar repetições do SDK. |
 | #107, #109, #110 | Dependências aprovadas separadamente. Conciliar manifests e regenerar apenas o lock necessário com as versões aprovadas, revisar o diff, repetir instalação/auditoria/testes na árvore conjunta. Não somar resultados de auditorias de branches isoladas. Repetir SSR da #101 com o Vite da #110. |
 | #111, #113 e este guia | Observabilidade local, preparação acadêmica e entrega. Conciliar links/README sem apresentar guias como recursos já integrados. |
-| #68 e #78 | #68 corrigiu prazo vencido inalterado/segundos no head 0b7368e e recebeu aprovação técnica em 04/11: 21 específicos, 82 testes do head e 110 da composição com dev, lint/build e CI verdes. Duas tentativas de merge falharam por erro interno/502 do GitHub; na última confirmação o PR continua aberto, sem alteração da dev. Revalidar estado/gates antes de retomar. #78 não pode introduzir tema automático: Bryan manteve claro como padrão e escolha manual salva. |
+| #68 e #78 | #68 corrigiu prazo vencido inalterado/segundos no head 0b7368e e recebeu aprovação técnica em 04/11: 21 específicos, 82 testes do head e 110 da composição com dev, lint/build e CI verdes. O merge edece90 foi confirmado depois de uma resposta 502 do endpoint REST; a árvore é idêntica à composição testada cb02f51. Não repetir a operação por causa da resposta de erro. #78 foi ajustado para preservar claro/manual, mas o head c829336 recebeu solicitação de correção por lançar SecurityError ao acessar o getter localStorage fora do try. |
 
 Revisão incremental de 04/11: #82 (`31bf4e5`) e #83 (`9d5df81`) receberam solicitação de mudanças por ocultar/bloquear propostas ativas vencidas ainda pendentes. A entrega com atraso já é permitida: alinhar hook/atalhos ao painel e manter rascunho vencido da turma atual editável, sem liberar arquivadas/já enviadas. #84 repete a seleção de atalho e recebeu aviso de integração; #85 herda o hook da #82. Correções e novas revisões continuam com Lucas. O #79 teve apenas revisão estática do recorte, sem novo bloqueio identificado; não equivale a aceite visual ou CI da composição.
 
-#61 e #63 já estão em `dev`. As dependências da tabela não substituem a revisão técnica de cada diff. As URLs são `https://github.com/bryandarvel/lexis/pull/NUMERO`.
+#61, #63 e #68 estão em `dev`. As dependências da tabela não substituem a revisão técnica de cada diff. As URLs são `https://github.com/bryandarvel/lexis/pull/NUMERO`.
 
 ## 2. Preparar cada máquina sem perder trabalho
 
