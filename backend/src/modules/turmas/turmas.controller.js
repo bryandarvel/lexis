@@ -9,6 +9,7 @@ import {
   obterTurmaParaProfessor,
   regenerarCodigoParaProfessor,
   renomearTurmaParaProfessor,
+  reabrirTurmaParaProfessor,
   sairDaTurmaComoAluno,
 } from './turmas.service.js'
 
@@ -94,6 +95,15 @@ export async function arquivarTurmaController(
       turma,
     },
   })
+}
+
+export async function reabrirTurmaController(req, res) {
+  const turma = await reabrirTurmaParaProfessor({
+    turmaId: req.params.turmaId,
+    professorId: req.auth.usuarioId,
+  })
+
+  return res.status(200).json({ data: { turma } })
 }
 
 export async function entrarEmTurmaController(

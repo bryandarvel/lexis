@@ -13,6 +13,7 @@ import {
   encerrarMatriculaPeloProfessor,
   listarMatriculasAtivasDaTurma,
   listarTurmasDoProfessor,
+  reabrirTurma,
 } from './turmas.repository.js'
 
 import {
@@ -282,6 +283,20 @@ export async function arquivarTurmaParaProfessor({
   }
 
   return prepararTurmaParaResposta(turmaArquivada)
+}
+
+export async function reabrirTurmaParaProfessor({ turmaId, professorId }) {
+  await buscarTurmaObrigatoria({ turmaId, professorId })
+
+  const turma = await reabrirTurma({ turmaId, professorId })
+  if (!turma) {
+    throw new AppError('Esta turma já está ativa.', {
+      statusCode: 409,
+      code: 'CLASS_ALREADY_ACTIVE',
+    })
+  }
+
+  return prepararTurmaParaResposta(turma)
 }
 
 export async function entrarEmTurmaComoAluno({
