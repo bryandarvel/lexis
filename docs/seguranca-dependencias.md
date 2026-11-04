@@ -2,7 +2,11 @@
 
 Revisão B36 da Issue #28. Linha de base registrada em 13 de outubro de 2026; conferência com `npm audit --json` e `npm audit --omit=dev --json`, seguida da atualização expressamente aprovada do conjunto Prisma.
 
-## Resultado atual
+## Revisão de 03/11/2026
+
+As contagens de outubro abaixo são históricas, não o diagnóstico atual. A nova conferência encontrou 14 pacotes sinalizados no backend (8 altos/6 moderados) e 2 altos no frontend; e2e não apresentou alertas. O recorte aprovado do conjunto Prisma 7.10.1 reduziu o backend desta branch para 8 (3 altos/5 moderados), tanto completo quanto omit=dev. Outros grupos de atualização foram aprovados separadamente e não estão incorporados automaticamente aqui. Consulte o [registro Prisma de novembro](dependencias-2026-11-prisma.md) para versões, validações e limites. Não somar resultados de branches como se fossem uma entrega integrada.
+
+## Resultado histórico — 13/10/2026
 
 - **Frontend:** 0 vulnerabilidades informadas pelo gerenciador após atualizar `axios` e `source-map-js` no lockfile.
 - **Backend:** 6 alertas (5 altos e 1 moderado) permanecem na árvore transitiva do Prisma.

@@ -9,6 +9,9 @@ import {
   revogarFamiliaRefreshTokens,
   rotacionarRefreshToken,
   salvarRefreshToken,
+  atualizarNomeUsuario,
+  buscarUsuarioParaAlterarSenha,
+  trocarSenhaComNovaSessao,
 } from './auth.repository.js'
 
 import {
@@ -264,4 +267,42 @@ export async function obterUsuarioAtual(usuarioId) {
   }
 
   return usuario
+}
+
+function criarErroSessaoDesatualizada() {
+  return new AppError('A sessão mudou. Entre novamente antes de alterar seus dados.', {
+    statusCode: 401,
+    code: 'AUTHENTICATION_REQUIRED',
+  })
+}
+
+export async function atualizarPerfilUsuario({ usuarioId, sessaoVersao, nome }) {
+  if (!Number.isSafeInteger(sessaoVersao) || sessaoVersao < 0) throw criarErroSessaoDesatualizada()
+  const usuario = await atualizarNomeUsuario({ usuarioId, sessaoVersao, nome })
+  if (!usuario) throw criarErroSessaoDesatualizada()
+  return usuario
+}
+
+export async function alterarSenhaUsuario({ usuarioId, sessaoVersao, senhaAtual, novaSenha }) {
+  const usuario = await buscarUsuarioParaAlterarSenha(usuarioId)
+  if (!usuario?.ativo || usuario.sessaoVersao !== sessaoVersao) throw criarErroSessaoDesatualizada()
+  if (!await verificarSenha(senhaAtual, usuario.senhaHash)) {
+    throw new AppError('A senha atual está incorreta.', {
+      statusCode: 422,
+      code: 'CURRENT_PASSWORD_INVALID',
+      details: [{ field: 'senhaAtual', message: 'A senha atual está incorreta.' }],
+    })
+  }
+
+  const senhaHash = await criarHashSenha(novaSenha)
+  const familiaId = randomUUID()
+  const accessToken = criarAccessToken({ usuarioId, papel: usuario.papel, sessaoVersao: sessaoVersao + 1 })
+  const refreshToken = criarRefreshToken({ usuarioId, familiaId })
+  const refreshTokenExpiraEm = obterExpiracaoToken(refreshToken)
+  const atualizado = await trocarSenhaComNovaSessao({
+    usuarioId, sessaoVersao, senhaHashEsperada: usuario.senhaHash, senhaHash,
+    tokenHash: criarHashToken(refreshToken), familiaId, expiraEm: refreshTokenExpiraEm,
+  })
+  if (!atualizado) throw criarErroSessaoDesatualizada()
+  return { usuario: atualizado, accessToken, refreshToken, refreshTokenExpiraEm }
 }

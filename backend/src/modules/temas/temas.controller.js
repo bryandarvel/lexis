@@ -6,6 +6,7 @@ import {
   listarTemasParaProfessor,
   obterTemaParaAluno,
   obterTemaParaProfessor,
+  reabrirTemaParaProfessor,
   substituirCriteriosParaProfessor,
 } from './temas.service.js'
 import {
@@ -116,6 +117,15 @@ export async function arquivarTemaController(
       tema,
     },
   })
+}
+
+export async function reabrirTemaController(req, res) {
+  const tema = await reabrirTemaParaProfessor({
+    temaId: req.params.temaId,
+    professorId: req.auth.usuarioId,
+  })
+
+  return res.status(200).json({ data: { tema } })
 }
 
 export async function listarTemasAlunoController(

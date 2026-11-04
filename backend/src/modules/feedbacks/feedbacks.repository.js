@@ -5,6 +5,12 @@ import {
   CAMPOS_COMPETENCIAS,
   extrairCompetencias,
 } from './feedbacks.competencias.js'
+import { coincideComEvidenciaIa, trechoLiteralValido } from './feedbacks.trechos.js'
+
+const trechoSelect = {
+  id: true, inicio: true, fim: true, trecho: true, sugeridoPorIa: true, analiseIaId: true,
+}
+const trechosSelect = { select: trechoSelect, orderBy: [{ inicio: 'asc' }, { fim: 'asc' }] }
 
 const feedbackVersaoSelect = {
   id: true,
@@ -27,6 +33,7 @@ const feedbackVersaoSelect = {
       id: true,
       criterioId: true,
       comentario: true,
+      trechos: trechosSelect,
       criterio: {
         select: {
           nome: true,
@@ -39,6 +46,19 @@ const feedbackVersaoSelect = {
       criterio: {
         ordem: 'asc',
       },
+    },
+  },
+}
+
+// O aluno recebe só a decisão publicada, nunca o ID/JSON privado da análise.
+const { analiseIaId: _analisePrivada, ...trechoAlunoSelect } = trechoSelect
+const feedbackVersaoAlunoSelect = {
+  ...feedbackVersaoSelect,
+  criterios: {
+    ...feedbackVersaoSelect.criterios,
+    select: {
+      ...feedbackVersaoSelect.criterios.select,
+      trechos: { ...trechosSelect, select: trechoAlunoSelect },
     },
   },
 }
@@ -95,6 +115,7 @@ function buscarRedacaoDoProfessor(
     },
     select: {
       id: true,
+      texto: true,
       aluno: {
         select: {
           id: true,
@@ -107,6 +128,8 @@ function buscarRedacaoDoProfessor(
           criterios: {
             select: {
               id: true,
+              nome: true,
+              ordem: true,
             },
           },
         },
@@ -134,7 +157,31 @@ function criarDadosCriterios(criterios) {
   return criterios.map((criterio) => ({
     criterioId: criterio.criterioId,
     comentario: criterio.comentario,
+    trechos: { create: criterio.trechos },
   }))
+}
+
+async function prepararCriteriosComTrechos(transaction, redacao, criterios, versaoBase) {
+  const idsAnalises = [...new Set(criterios.flatMap(c => (c.trechos ??
+    versaoBase?.criterios.find(base => base.criterioId === c.criterioId)?.trechos ?? [])
+    .flatMap(t => t.analiseIaId ? [t.analiseIaId] : [])))]
+  const analises = idsAnalises.length ? await transaction.analiseIA.findMany({
+    where: { id: { in: idsAnalises }, redacaoId: redacao.id, status: 'CONCLUIDA' },
+    select: { id: true, criteriosSnapshot: true, resultadoEstruturado: true },
+  }) : []
+  if (analises.length !== idsAnalises.length) return { status: 'ANALISE_INVALIDA' }
+  const preparados = []
+  for (const comentario of criterios) {
+    const criterio = redacao.tema.criterios.find(c => c.id === comentario.criterioId)
+    const trechos = comentario.trechos ?? versaoBase?.criterios.find(c => c.criterioId === comentario.criterioId)?.trechos ?? []
+    if (trechos.some(t => !trechoLiteralValido(redacao.texto, t))) return { status: 'TRECHOS_INVALIDOS' }
+    preparados.push({ ...comentario, trechos: trechos.map(t => {
+      const analise = analises.find(a => a.id === t.analiseIaId)
+      const sugeridoPorIa = coincideComEvidenciaIa(analise, criterio, t)
+      return { inicio: t.inicio, fim: t.fim, trecho: t.trecho, sugeridoPorIa, analiseIaId: sugeridoPorIa ? analise.id : null }
+    }) })
+  }
+  return { status: 'TRECHOS_VALIDOS', criterios: preparados }
 }
 
 export function salvarFeedbackRascunho(dados) {
@@ -174,6 +221,19 @@ export function salvarFeedbackRascunho(dados) {
         }
       }
 
+      const rascunhoExistente = await transaction.feedbackVersao.findFirst({
+        where: { feedback: { redacaoId }, status: 'RASCUNHO' },
+        orderBy: { numero: 'desc' },
+        select: { id: true, criterios: { select: { criterioId: true, trechos: trechosSelect } } },
+      })
+      const versaoBase = rascunhoExistente ?? await transaction.feedbackVersao.findFirst({
+        where: { feedback: { redacaoId }, status: 'PUBLICADA' },
+        orderBy: { numero: 'desc' },
+        select: { criterios: { select: { criterioId: true, trechos: trechosSelect } } },
+      })
+      const preparados = await prepararCriteriosComTrechos(transaction, redacao, criterios, versaoBase)
+      if (preparados.status !== 'TRECHOS_VALIDOS') return { status: preparados.status, feedbackVersao: null }
+
       const feedback = await transaction.feedback.upsert({
         where: {
           redacaoId,
@@ -187,22 +247,8 @@ export function salvarFeedbackRascunho(dados) {
         },
       })
 
-      const rascunhoExistente =
-        await transaction.feedbackVersao.findFirst({
-          where: {
-            feedbackId: feedback.id,
-            status: 'RASCUNHO',
-          },
-          orderBy: {
-            numero: 'desc',
-          },
-          select: {
-            id: true,
-          },
-        })
-
       const dadosCriterios =
-        criarDadosCriterios(criterios)
+        criarDadosCriterios(preparados.criterios)
 
       if (rascunhoExistente) {
         const feedbackVersao =
@@ -369,6 +415,7 @@ export function publicarFeedback({
               competencia4: true,
               competencia5: true,
               comentarioGeral: true,
+              criterios: { select: { trechos: trechosSelect } },
             },
           },
         },
@@ -403,6 +450,10 @@ export function publicarFeedback({
           feedbackVersao: null,
           notificacao: null,
         }
+      }
+
+      if (rascunho.criterios.some(c => c.trechos.some(t => !trechoLiteralValido(redacao.texto, t)))) {
+        return { status: 'TRECHOS_INVALIDOS', feedbackVersao: null, notificacao: null }
       }
 
       const versaoPublicadaAnterior =
@@ -486,10 +537,10 @@ export async function consultarFeedbackPublicadoAluno({
     where: {
       id: redacaoId,
       alunoId,
-      status: 'AVALIADA',
     },
     select: {
       id: true,
+      status: true,
       feedback: {
         select: {
           versoes: {
@@ -500,7 +551,7 @@ export async function consultarFeedbackPublicadoAluno({
               numero: 'desc',
             },
             take: 1,
-            select: feedbackVersaoSelect,
+            select: feedbackVersaoAlunoSelect,
           },
         },
       },
@@ -517,7 +568,7 @@ export async function consultarFeedbackPublicadoAluno({
   const feedbackVersao =
     redacao.feedback?.versoes[0] ?? null
 
-  if (!feedbackVersao) {
+  if (redacao.status !== 'AVALIADA' || !feedbackVersao) {
     return {
       status: 'FEEDBACK_INDISPONIVEL',
       feedbackVersao: null,
