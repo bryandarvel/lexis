@@ -85,7 +85,7 @@ export function criarFeedbacksRouter({
    *       '403':
    *         description: Recurso exclusivo para alunos
    *       '404':
-   *         description: Redação inexistente ou correção ainda indisponível
+   *         description: ESSAY_NOT_FOUND para redação inexistente ou de outro aluno; FEEDBACK_NOT_AVAILABLE para redação própria sem correção publicada
    *       '422':
    *         description: Identificador inválido
    */
