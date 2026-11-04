@@ -220,6 +220,7 @@ before(async () => {
 })
 
 beforeEach(async () => {
+  await prisma.notificacao.deleteMany({ where: { redacao: { temaId: tema.id } } })
   await prisma.redacao.deleteMany({
     where: {
       temaId: tema.id,
@@ -231,6 +232,7 @@ after(async () => {
   globalThis.fetch = fetchOriginal
 
   if (bancoDeTesteConfirmado) {
+    await prisma.notificacao.deleteMany({ where: { redacao: { temaId: tema?.id } } })
     await prisma.redacao.deleteMany({
       where: {
         temaId: tema?.id,

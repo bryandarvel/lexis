@@ -49,6 +49,12 @@ export const entrarTurmaSchema = z
   })
   .strict()
 
+export const sairTurmaSchema = z
+  .object({
+    matriculaId: z.uuid('O identificador da matrícula é inválido.'),
+  })
+  .strict()
+
 export const turmaParamsSchema = z
   .object({
     turmaId: z.uuid(
