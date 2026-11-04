@@ -75,7 +75,12 @@ export function prepararEdicaoTema(formulario, tema, agora = Date.now()) {
   const enunciado = (formulario.enunciado ?? '').trim().replace(/\s+/g, ' ')
   const descricao = (formulario.descricao ?? '').trim()
   const instrucoes = (formulario.instrucoes ?? '').trim()
-  const prazo = new Date(formulario.prazoEntrega)
+  const prazoTexto = formulario.prazoEntrega ?? ''
+  // O campo datetime-local só expõe minutos: compara no mesmo nível para que um
+  // prazo não editado nunca seja validado nem enviado (o backend só exige prazo
+  // futuro quando prazoEntrega está no payload e preserva os segundos originais).
+  const prazoAlterado = prazoTexto !== formatarPrazoParaInput(tema.prazoEntrega)
+  const prazo = new Date(prazoTexto)
   const { conteudoBloqueado } = descreverEdicaoTema(tema)
 
   if (enunciado.length < LIMITES.enunciado.minimo || enunciado.length > LIMITES.enunciado.maximo) {
@@ -90,10 +95,12 @@ export function prepararEdicaoTema(formulario, tema, agora = Date.now()) {
     erros.instrucoes = `As orientações devem possuir no máximo ${LIMITES.instrucoes.maximo} caracteres.`
   }
 
-  if (Number.isNaN(prazo.getTime())) {
-    erros.prazoEntrega = 'Informe uma data e hora válidas.'
-  } else if (prazo.getTime() <= agora) {
-    erros.prazoEntrega = 'O prazo de entrega deve ser futuro.'
+  if (prazoAlterado) {
+    if (Number.isNaN(prazo.getTime())) {
+      erros.prazoEntrega = 'Informe uma data e hora válidas.'
+    } else if (prazo.getTime() <= agora) {
+      erros.prazoEntrega = 'O prazo de entrega deve ser futuro.'
+    }
   }
 
   if (Object.keys(erros).length > 0) {
@@ -105,9 +112,7 @@ export function prepararEdicaoTema(formulario, tema, agora = Date.now()) {
   if (enunciado !== tema.enunciado) dados.enunciado = enunciado
   if (descricao !== tema.descricao) dados.descricao = descricao
   if (instrucoes !== (tema.instrucoes ?? '')) dados.instrucoes = instrucoes.length ? instrucoes : null
-  if (prazo.toISOString() !== new Date(tema.prazoEntrega).toISOString()) {
-    dados.prazoEntrega = prazo.toISOString()
-  }
+  if (prazoAlterado) dados.prazoEntrega = prazo.toISOString()
 
   if (conteudoBloqueado) {
     for (const campo of ['enunciado', 'descricao', 'instrucoes']) {

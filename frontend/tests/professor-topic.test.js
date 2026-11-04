@@ -127,6 +127,47 @@ test('prazo precisa ser futuro e valido', () => {
   assert.ok(prepararEdicaoTema(formularioDe(temaBase, { prazoEntrega: 'nao-e-data' }), temaBase, AGORA).erros.prazoEntrega)
 })
 
+test('proposta com prazo vencido aceita editar só a descrição, sem enviar o prazo', () => {
+  const vencida = { ...temaBase, prazoEntrega: '2020-01-02T10:30:45.000Z' }
+  const { erros, dados } = prepararEdicaoTema(
+    formularioDe(vencida, { descricao: 'Nova descricao do tema, ainda dissertativa.' }), vencida, AGORA,
+  )
+  assert.deepEqual(erros, {})
+  assert.deepEqual(dados, { descricao: 'Nova descricao do tema, ainda dissertativa.' })
+  assert.equal('prazoEntrega' in dados, false)
+})
+
+test('prazo alterado para o passado é rejeitado mesmo em proposta com prazo vencido', () => {
+  const vencida = { ...temaBase, prazoEntrega: '2020-01-02T10:30:45.000Z' }
+  const { erros, dados } = prepararEdicaoTema(
+    formularioDe(vencida, { prazoEntrega: '2021-05-05T08:00' }), vencida, AGORA,
+  )
+  assert.equal(dados, null)
+  assert.match(erros.prazoEntrega, /futuro/)
+})
+
+test('prazo não editado não vai no payload e preserva os segundos originais', () => {
+  const comSegundos = { ...temaBase, prazoEntrega: '2027-01-10T23:59:45.000Z' }
+  const { erros, dados } = prepararEdicaoTema(
+    formularioDe(comSegundos, { enunciado: 'Enunciado revisado da proposta' }), comSegundos, AGORA,
+  )
+  assert.deepEqual(erros, {})
+  assert.deepEqual(dados, { enunciado: 'Enunciado revisado da proposta' })
+  // Só o prazo igual, sem outra mudança: nada a salvar (não reenvia o prazo truncado).
+  const semMudanca = prepararEdicaoTema(formularioDe(comSegundos), comSegundos, AGORA)
+  assert.equal(semMudanca.dados, null)
+  assert.ok(semMudanca.erros.formulario)
+})
+
+test('prazo alterado para o futuro vai no payload em ISO', () => {
+  const { erros, dados } = prepararEdicaoTema(
+    formularioDe(temaBase, { prazoEntrega: '2027-03-01T18:00' }), temaBase, AGORA,
+  )
+  assert.deepEqual(erros, {})
+  assert.deepEqual(Object.keys(dados), ['prazoEntrega'])
+  assert.equal(dados.prazoEntrega, new Date('2027-03-01T18:00').toISOString())
+})
+
 test('com redacoes enviadas, so o prazo pode mudar', () => {
   const bloqueado = { ...temaBase, criteriosBloqueados: true }
   const conteudo = prepararEdicaoTema(formularioDe(bloqueado, { descricao: 'Outra descricao bem mais longa.' }), bloqueado, AGORA)
