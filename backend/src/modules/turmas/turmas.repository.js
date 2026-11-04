@@ -172,6 +172,25 @@ export function arquivarTurma({
     })
   })
 }
+export function reabrirTurma({ turmaId, professorId }) {
+  return prisma.$transaction(async (transaction) => {
+    const resultado = await transaction.turma.updateMany({
+      where: { id: turmaId, professorId, ativa: false },
+      data: { ativa: true, arquivadaEm: null },
+    })
+
+    if (resultado.count !== 1) {
+      return null
+    }
+
+    // Matrículas encerradas e propostas arquivadas são histórico, não são restauradas.
+    return transaction.turma.findUnique({
+      where: { id: turmaId },
+      select: turmaProfessorSelect,
+    })
+  })
+}
+
 const matriculaAlunoSelect = {
   id: true,
   status: true,
@@ -248,6 +267,18 @@ export function criarMatriculaAtivaComExclusividade({
       FOR UPDATE
     `
 
+    // Ordem: usuário -> turma -> matrícula. O arquivamento bloqueia a turma
+    // pelo UPDATE antes de encerrar matrículas e não adquire lock de usuário.
+    // Saída/desvinculação usam usuário -> matrícula, sem ordem inversa.
+    // A leitura abaixo só pode ocorrer depois de um arquivamento concorrente
+    // terminar, ou a entrada termina antes e será encerrada por ele.
+    await transaction.$queryRaw`
+      SELECT id
+      FROM turmas
+      WHERE id = ${turmaId}
+      FOR UPDATE
+    `
+
     const turmaAtiva =
       await transaction.turma.findFirst({
         where: {
@@ -303,6 +334,7 @@ export function criarMatriculaAtivaComExclusividade({
 
 export function encerrarMatriculaAtivaDoAluno(
   alunoId,
+  matriculaId,
 ) {
   return prisma.$transaction(async (transaction) => {
     await transaction.$queryRaw`
@@ -330,14 +362,28 @@ export function encerrarMatriculaAtivaDoAluno(
       return null
     }
 
-    return transaction.matricula.update({
+    if (matricula.id !== matriculaId) {
+      return 'MATRICULA_ALTERADA'
+    }
+
+    // A condição também protege contra encerramento por arquivamento
+    // ou desvinculação depois da leitura, sem reativar nem alterar o histórico.
+    const resultado = await transaction.matricula.updateMany({
       where: {
-        id: matricula.id,
+        id: matriculaId,
+        alunoId,
+        status: 'ATIVA',
       },
       data: {
         status: 'ENCERRADA',
         encerradaEm: new Date(),
       },
+    })
+
+    if (resultado.count !== 1) return null
+
+    return transaction.matricula.findUnique({
+      where: { id: matriculaId },
       select: matriculaAlunoSelect,
     })
   })
