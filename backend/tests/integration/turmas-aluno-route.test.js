@@ -123,6 +123,9 @@ after(async () => {
     )
 
     if (usuarioIds.length > 0) {
+      await prisma.notificacao.deleteMany({
+        where: { usuarioId: { in: usuarioIds } },
+      })
       await prisma.matricula.deleteMany({
         where: {
           OR: [
