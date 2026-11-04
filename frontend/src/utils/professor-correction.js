@@ -4,6 +4,14 @@ import { segmentarTextoComEvidencias } from './ai-evidence.js'
 const normalizar = (texto) => String(texto ?? '').trim().normalize('NFC').toLocaleLowerCase('pt-BR')
 const BASE = ['legitimação', 'pertinência', 'uso produtivo']
 
+// O histórico chega do servidor da tentativa mais recente para a mais antiga.
+// O estado/progresso pertence à última tentativa; sugestões pertencem só a uma conclusão.
+export function selecionarAnaliseParaCorrecao(analises = []) {
+  const ultima = analises[0] ?? null
+  const concluida = analises.find((item) => item.status === 'CONCLUIDA' && item.resultadoEstruturado) ?? null
+  return { ultima, concluida }
+}
+
 export function criterioFixo(criterio) { return BASE.includes(normalizar(criterio.nome)) }
 
 export function tomCriterio(criterio, indice = 0) {

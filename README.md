@@ -137,6 +137,7 @@ Os relatórios locais são gravados em `backend/output/ai-evaluation` e não sã
 ## Serviços externos e privacidade
 
 - OCR.space e Gemini recebem somente o conteúdo necessário ao recurso solicitado; chaves e limites pertencem a cada desenvolvedor.
+- O Gemini não repete chamadas automaticamente; há controle de concorrência e espera no processo local. Chaves do mesmo projeto Google compartilham cota, inclusive entre máquinas. Consulte [operação e limites do Gemini](docs/operacao-gemini.md).
 - O LanguageTool só é chamado por ação explícita do aluno. O padrão aponta para uma instância local e fica desativado.
 - A API pública gratuita do LanguageTool não é adequada para automação contínua; possui limites, não oferece garantia de disponibilidade e exige atenção à privacidade.
 - Em desenvolvimento, o Resend redireciona mensagens para `EMAIL_DEMO_RECIPIENT`.
