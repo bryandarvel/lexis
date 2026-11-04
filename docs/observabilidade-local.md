@@ -10,7 +10,7 @@ Escopo aprovado por Bryan em03/11/2026: aproveitar os recursos existentes para a
 | Erros correlacionados | error-handler.js usa requestId e código controlado; erros inesperados não devolvem sua mensagem bruta. operational-log.js admite apenas metadados de lista positiva; não serializa exceção/request/headers/usuário. |
 | Banco | prisma.js emite database_error/database_warning sem mensagem ou parâmetros brutos. GET /health confirma somente processo HTTP e uma consulta SELECT1 ao banco; não verifica serviços externos, e-mail ou sucesso da IA. |
 | E-mail | npm run email:status consulta contagens agregadas de notificações/recuperação em banco local permitido. Não envia e-mail, reserva fila ou lista destinatários/textos. email:process é outra operação, não uma verificação passiva. |
-| Gemini | Diagnóstico ampliado e espera segura estão implementados no [PR #101](https://github.com/bryandarvel/lexis/pull/101), ainda sujeitos à integração. Incluem status externo, espera e transporte de lista positiva, sem corpo externo/projeto/chave. Não descrever esses campos como já presentes na dev antes do merge. |
+| Gemini | Diagnóstico ampliado e espera segura foram integrados na dev pelo [PR #101](https://github.com/bryandarvel/lexis/pull/101), merge044e710. Incluem status externo, espera e transporte de lista positiva, sem corpo externo/projeto/chave. Conferir o hash da máquina: cópias anteriores ao merge ainda não possuem esses campos. |
 
 Esses logs são locais/console. Não foi configurada centralização, retenção persistente, agregação entre máquinas, alerta de plantão, medição de percentis ou garantia de captura quando o processo encerra abruptamente.
 
@@ -35,7 +35,7 @@ Registrar somente horário/fuso, branch/commit, ação genérica, status HTTP, c
 
 Procurar o mesmo UUID no terminal do backend. Uma rejeição controlada4xx pode ser entrada inválida, sessão/papel ou conflito de estado; não é automaticamente indisponibilidade. Para erro inesperado500, preservar o trabalho, registrar metadados e reproduzir com fixture antes de corrigir. Não publicar stacktrace bruto em Issue nem desativar autenticação/validação para continuar.
 
-Após a integração do #101:
+Na dev que contém o #101:
 
 - `GEMINI_*LIMIT*`/cota: respeitar a espera mínima, conferir a configuração/cota no painel do provedor sem mostrar chave. O prazo não garante liberação; não repetir em várias abas ou trocar de chave do mesmo projeto para tentar renovar cota.
 - `GEMINI_COOLDOWN`/`GEMINI_REQUEST_IN_PROGRESS`: proteção deste processo recusou nova chamada. Não reiniciar a API para contorná-la.
