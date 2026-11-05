@@ -112,7 +112,7 @@ export function criarNotificacoesRouter({
    * /api/professor/notificacoes:
    *   get:
    *     summary: Lista as notificações do professor
-   *     description: Somente avisos do professor autenticado, da mais recente para a mais antiga. data contém notificacoes e totalNaoLidas. REDACAO_ENVIADA inclui redacaoId e redacao.tema (id, enunciado, turma com id e nome), nunca texto da redação ou análise privada. Eventos novos são exclusivamente internos.
+   *     description: Somente avisos do professor autenticado, da mais recente para a mais antiga. data contém notificacoes e totalNaoLidas. REDACAO_ENVIADA inclui redacaoId e redacao.tema (id, enunciado, turma com id e nome), nunca texto da redação ou análise privada. ALUNO_SAIU_TURMA identifica aluno e turma na mensagem, com redacaoId, redacao e feedbackVersao nulos; não há correção a abrir. Eventos novos são exclusivamente internos, sem e-mail.
    *     tags:
    *       - Notificações
    *     security:

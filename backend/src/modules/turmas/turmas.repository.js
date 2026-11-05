@@ -398,10 +398,23 @@ export function encerrarMatriculaAtivaDoAluno(
 
     if (resultado.count !== 1) return null
 
-    return transaction.matricula.findUnique({
+    const matriculaEncerrada = await transaction.matricula.findUnique({
       where: { id: matriculaId },
       select: matriculaAlunoSelect,
     })
+    const aluno = await transaction.usuario.findUnique({
+      where: { id: alunoId }, select: { nome: true },
+    })
+    await transaction.notificacao.create({
+      data: {
+        usuarioId: matriculaEncerrada.turma.professor.id,
+        tipo: 'ALUNO_SAIU_TURMA',
+        titulo: 'Aluno saiu da turma',
+        mensagem: `${aluno.nome} saiu voluntariamente da turma "${matriculaEncerrada.turma.nome}". As redações enviadas e correções continuam no histórico.`,
+        feedbackVersaoId: null, redacaoId: null, emailDestino: null, statusEmail: null,
+      },
+    })
+    return matriculaEncerrada
   })
 }
 

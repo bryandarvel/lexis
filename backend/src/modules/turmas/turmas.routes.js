@@ -324,7 +324,7 @@ turmasRouter.post(
  *         description: O aluno não possui matrícula ativa
  *   delete:
  *     summary: Sai da turma atual
- *     description: Encerra apenas a matrícula confirmada, sem apagar seu histórico. Em conflito, consulte novamente a matrícula e exija nova confirmação; não repita automaticamente.
+ *     description: Encerra apenas a matrícula confirmada e cria um aviso interno ALUNO_SAIU_TURMA para o professor responsável na mesma transação, sem e-mail e sem apagar o histórico. Falha no aviso desfaz o encerramento. Em conflito, consulte novamente a matrícula e exija nova confirmação; não repita automaticamente.
  *     tags:
  *       - Turmas
  *     security:
