@@ -21,9 +21,12 @@ git fetch origin
 git switch dev
 git pull --ff-only origin dev
 git status
+git rev-parse HEAD
 ```
 
 Se o pull indicar divergência, não use force/reset: confira os commits antes de continuar. Não desenvolva diretamente na dev ou main; depois dos testes, crie/retome a branch da sua Issue.
+
+Compare o hash com o outro integrante. Para atualizar sua branch de trabalho, primeiro preserve e revise as alterações locais nela; depois, com o diretório limpo, volte para essa branch e faça `git merge dev`. Se houver conflito, preserve ambos os lados e peça revisão quando o contrato não estiver claro. Não faça push diretamente para `dev`.
 
 ## 3. Preparar o backend
 
@@ -38,7 +41,7 @@ npx.cmd prisma migrate deploy
 npm.cmd run dev
 ```
 
-As migrations aplicadas dependem dos PRs já integrados no hash atualizado. A de recuperação adiciona versão de sessão e links; as de notificações/trechos só estarão disponíveis depois dos respectivos merges. Antes de aplicar migrations novas, preserve um backup local e confira o destino. Não é necessário apagar o banco nem executar o seed novamente. Não converta critérios históricos para “compatibilizar” a atualização. Mantenha as senhas e dados locais já configurados. `PASSWORD_RESET_TTL_MINUTES` tem padrão de 30 minutos.
+As migrations aplicadas dependem do hash atualizado. No lote de novembro, as de notificações múltiplas (#97) e trechos publicados (#102) já estão na `dev`. Antes de aplicar migrations novas, preserve um backup local e confira o destino. A validação automatizada deste lote só aplicou migrations em `lexis_test`. Não é necessário apagar o banco nem executar o seed novamente. Não converta critérios históricos para “compatibilizar” a atualização. Mantenha as senhas e dados locais já configurados. `PASSWORD_RESET_TTL_MINUTES` tem padrão de 30 minutos.
 
 ## 4. Preparar o frontend
 
