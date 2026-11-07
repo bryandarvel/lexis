@@ -7,9 +7,9 @@ export default function EssayEvidenceText({ texto, analise, criterios = [], onEv
   return <figure>
     <figcaption className="review-caption" id="review-evidence-description">Marcações consultivas da IA. Toque ou pressione Enter em um trecho para abrir os comentários relacionados.</figcaption>
     {analise?.status === 'CONCLUIDA' && <>
-      <ul className="review-evidence-legend" aria-label="Trechos marcados por critério">{criterios.map((c, indice) => {
+      <ul className="review-evidence-legend" aria-label="Trechos marcados por critério">{criterios.map((c) => {
         const quantidade = trechos.filter((t) => t.ordens.includes(c.ordem)).length
-        return <li key={c.id ?? c.ordem} className={`review-tone-${tomCriterio(c, indice)}`}>
+        return <li key={c.id ?? c.ordem} className={`review-tone-${tomCriterio(c)}`}>
           <span className="review-color" aria-hidden="true" /><span>{c.nome}: {quantidade} {quantidade === 1 ? 'trecho marcado' : 'trechos marcados'}</span>
         </li>
       })}</ul>
@@ -19,8 +19,8 @@ export default function EssayEvidenceText({ texto, analise, criterios = [], onEv
       {segmentos.length ? segmentos.map((segmento) => {
         if (!segmento.criterios.length) return segmento.texto
         const relacionados = criterios.filter((c) => segmento.criterios.includes(c.ordem))
-        const tom = tomCriterio(relacionados[0] ?? {}, Math.max(0, criterios.indexOf(relacionados[0])))
-        const tons = [...new Set(relacionados.map((c) => tomCriterio(c, criterios.indexOf(c))))]
+        const tom = tomCriterio(relacionados[0] ?? {})
+        const tons = [...new Set(relacionados.map((c) => tomCriterio(c)))]
         const compartilhado = tons.length > 1 ? {
           borderBottomColor: 'transparent',
           backgroundImage: tons.map((t) => `linear-gradient(var(--review-color-${t}), var(--review-color-${t}))`).join(', '),
