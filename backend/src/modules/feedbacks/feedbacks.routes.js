@@ -31,6 +31,52 @@ import {
 const somenteProfessor = autorizarPapeis('PROFESSOR')
 const somenteAluno = autorizarPapeis('ALUNO')
 
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     FeedbackTrechoPublicado:
+ *       type: object
+ *       additionalProperties: false
+ *       required: [id, inicio, fim, trecho, sugeridoPorIa]
+ *       properties:
+ *         id:
+ *           type: string
+ *           format: uuid
+ *         inicio:
+ *           type: integer
+ *           minimum: 0
+ *         fim:
+ *           type: integer
+ *           minimum: 1
+ *         trecho:
+ *           type: string
+ *         sugeridoPorIa:
+ *           type: boolean
+ *           description: Correspondência exata com evidência de IA mantida pelo professor, derivada no servidor. Não é verificação da veracidade do repertório.
+ *     FeedbackTrechoEntrada:
+ *       type: object
+ *       additionalProperties: false
+ *       required: [inicio, fim, trecho]
+ *       properties:
+ *         inicio:
+ *           type: integer
+ *           minimum: 0
+ *           maximum: 20000
+ *         fim:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 20000
+ *         trecho:
+ *           type: string
+ *           minLength: 1
+ *           maxLength: 20000
+ *         analiseIaId:
+ *           type: string
+ *           format: uuid
+ *           description: Análise concluída desta redação. Sem coincidência exata de critério, offsets e texto, a marcação é humana.
+ */
+
 export function criarFeedbacksRouter({
   autenticar = autenticarAccessToken,
   consultarFeedbackAluno =
@@ -65,7 +111,7 @@ export function criarFeedbacksRouter({
    * /api/aluno/redacoes/{redacaoId}/feedback:
    *   get:
    *     summary: Consulta a correção publicada do aluno
-   *     description: Retorna exclusivamente a versão publicada da correção de uma redação pertencente ao aluno autenticado. Rascunhos e versões substituídas permanecem privados.
+   *     description: Retorna exclusivamente a versão publicada da correção de uma redação pertencente ao aluno autenticado. criterios[].trechos contém somente marcações aprovadas (FeedbackTrechoPublicado), sem analiseIaId, diagnóstico ou JSON privado. Rascunhos e versões substituídas permanecem privados.
    *     tags:
    *       - Feedbacks
    *     security:
@@ -80,12 +126,32 @@ export function criarFeedbacksRouter({
    *     responses:
    *       '200':
    *         description: Correção publicada encontrada
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 data:
+   *                   type: object
+   *                   properties:
+   *                     feedback:
+   *                       type: object
+   *                       properties:
+   *                         criterios:
+   *                           type: array
+   *                           items:
+   *                             type: object
+   *                             properties:
+   *                               trechos:
+   *                                 type: array
+   *                                 items:
+   *                                   $ref: '#/components/schemas/FeedbackTrechoPublicado'
    *       '401':
    *         description: Autenticação necessária
    *       '403':
    *         description: Recurso exclusivo para alunos
    *       '404':
-   *         description: Redação inexistente ou correção ainda indisponível
+   *         description: ESSAY_NOT_FOUND para redação inexistente ou de outro aluno; FEEDBACK_NOT_AVAILABLE para redação própria sem correção publicada
    *       '422':
    *         description: Identificador inválido
    */
@@ -102,7 +168,7 @@ export function criarFeedbacksRouter({
    * /api/redacoes/{redacaoId}/feedback:
    *   get:
    *     summary: Consulta a correção da redação
-   *     description: Retorna a versão atual e o histórico completo do feedback humano, da versão mais recente para a mais antiga. Retorna feedback nulo quando a redação ainda não possui correção.
+   *     description: Retorna a versão atual e o histórico completo do feedback humano, da versão mais recente para a mais antiga. Cada comentário inclui trechos (id, inicio, fim, trecho, sugeridoPorIa, analiseIaId), por início/fim. A referência à análise é exclusiva do professor. Retorna feedback nulo quando a redação ainda não possui correção.
    *     tags:
    *       - Feedbacks
    *     security:
@@ -139,7 +205,7 @@ export function criarFeedbacksRouter({
    * /api/redacoes/{redacaoId}/feedback:
    *   put:
    *     summary: Salva o rascunho da correção
-   *     description: Cria ou atualiza a versão de rascunho do feedback humano. A nota total é calculada pela soma das cinco competências e nada é publicado para o aluno nesta etapa.
+   *     description: Cria ou atualiza a versão de rascunho do feedback humano. A nota total é calculada pela soma das cinco competências e nada é publicado para o aluno nesta etapa. trechos omitido preserva as marcações do critério no rascunho atual ou, ao criar nova versão, na publicação atual; lista vazia remove. Offsets UTF-16 com fim exclusivo devem corresponder literalmente à redação e não cortar um par surrogate. Sobreposições são permitidas, intervalos duplicados no mesmo critério não. Origem de IA é derivada pelo servidor; booleanos do cliente são recusados.
    *     tags:
    *       - Feedbacks
    *     security:
@@ -199,6 +265,7 @@ export function criarFeedbacksRouter({
    *                 type: array
    *                 items:
    *                   type: object
+   *                   additionalProperties: false
    *                   required:
    *                     - criterioId
    *                     - comentario
@@ -208,6 +275,13 @@ export function criarFeedbacksRouter({
    *                       format: uuid
    *                     comentario:
    *                       type: string
+   *                       minLength: 1
+   *                       maxLength: 5000
+   *                     trechos:
+   *                       type: array
+   *                       maxItems: 20
+   *                       items:
+   *                         $ref: '#/components/schemas/FeedbackTrechoEntrada'
    *     responses:
    *       '200':
    *         description: Rascunho salvo
@@ -218,7 +292,7 @@ export function criarFeedbacksRouter({
    *       '404':
    *         description: Redação indisponível para o professor
    *       '422':
-   *         description: Dados ou critérios inválidos
+   *         description: Dados/critérios inválidos, FEEDBACK_EVIDENCE_INVALID (trecho não literal) ou FEEDBACK_ANALYSIS_INVALID (referência de análise indisponível para esta redação). Nada é salvo nessas falhas.
    */
   router.put(
     '/redacoes/:redacaoId/feedback',
@@ -234,7 +308,7 @@ export function criarFeedbacksRouter({
    * /api/redacoes/{redacaoId}/feedback/publicar:
    *   post:
    *     summary: Publica a correção da redação
-   *     description: Publica o rascunho completo, marca a redação como avaliada e cria uma notificação para o aluno. Comentários por critério são opcionais.
+   *     description: Publica o rascunho completo, revalida os trechos aprovados, marca a redação como avaliada e cria uma notificação para o aluno na mesma transação. Comentários por critério são opcionais. A versão substituída conserva seus trechos.
    *     tags:
    *       - Feedbacks
    *     security:
@@ -258,7 +332,7 @@ export function criarFeedbacksRouter({
    *       '409':
    *         description: Rascunho inexistente
    *       '422':
-   *         description: Identificador inválido ou rascunho incompleto
+   *         description: Identificador inválido, rascunho incompleto ou FEEDBACK_EVIDENCE_INVALID. Nenhuma publicação parcial.
    */
   router.post(
     '/redacoes/:redacaoId/feedback/publicar',

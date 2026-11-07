@@ -137,6 +137,10 @@ beforeEach(async () => {
     professorSecundario.usuario.id,
   ]
 
+  await prisma.notificacao.deleteMany({
+    where: { usuarioId: { in: [...professorIds, aluno.usuario.id] } },
+  })
+
   await prisma.redacao.deleteMany({
     where: {
       tema: {
@@ -162,22 +166,17 @@ beforeEach(async () => {
 
 after(async () => {
   if (bancoDeTesteConfirmado) {
-    const usuarios = await prisma.usuario.findMany({
-      where: {
-        email: {
-          startsWith: prefixoEmail,
-        },
-      },
-      select: {
-        id: true,
-      },
-    })
-
-    const usuarioIds = usuarios.map(
-      (usuario) => usuario.id,
-    )
+    const usuarioIds = [
+      professorPrincipal?.usuario.id,
+      professorSecundario?.usuario.id,
+      aluno?.usuario.id,
+    ].filter(Boolean)
 
     if (usuarioIds.length > 0) {
+      await prisma.notificacao.deleteMany({
+        where: { usuarioId: { in: usuarioIds } },
+      })
+
       await prisma.redacao.deleteMany({
         where: {
           tema: {
@@ -540,6 +539,68 @@ describe('Rotas de temas do professor', () => {
     assert.equal(criterios[4].nome, 'Critério B')
     assert.equal(criterios[4].ordem, 5)
   })
+
+  for (const campo of ['enunciado', 'descricao', 'instrucoes', 'conteudoComPrazo', 'prazoEntrega']) {
+    it(`deve revalidar ${campo} se o primeiro envio ocorrer após a leitura do PATCH`, { timeout: 15000 }, async () => {
+      const tema = await criarTemaPelaApi({
+        accessToken: professorPrincipal.accessToken,
+        turmaId: turmaPrincipal.id,
+      })
+      await prisma.matricula.deleteMany({ where: { alunoId: aluno.usuario.id } })
+      await prisma.matricula.create({ data: { alunoId: aluno.usuario.id, turmaId: turmaPrincipal.id } })
+      await request(app).put(`/api/aluno/temas/${tema.id}/redacao`)
+        .set('Authorization', `Bearer ${aluno.accessToken}`)
+        .send({ texto: 'A Constituição Federal assegura o direito à educação. Esta é uma redação fictícia de teste.' }).expect(200)
+
+      const novoPrazo = criarPrazoFuturo(60)
+      const dados = campo === 'conteudoComPrazo'
+        ? { enunciado: 'Novo conteúdo que deve ser rejeitado', prazoEntrega: novoPrazo }
+        : { [campo]: campo === 'prazoEntrega' ? novoPrazo : 'Conteúdo alterado após o primeiro envio' }
+      const leu = Promise.withResolvers()
+      const continuar = Promise.withResolvers()
+      const metodoOriginal = prisma.temaRedacao.findFirst
+      let interceptou = false
+      // Pausa somente depois da leitura real do service; o envio e o UPDATE
+      // continuam usando o banco real. Nenhum estado SQL é simulado.
+      prisma.temaRedacao.findFirst = async function (...args) {
+        const resultado = await metodoOriginal.apply(this, args)
+        if (!interceptou && args[0]?.where?.id === tema.id) {
+          interceptou = true
+          assert.equal(resultado.criteriosBloqueadosEm, null)
+          leu.resolve()
+          await continuar.promise
+        }
+        return resultado
+      }
+      const patch = request(app).patch(`/api/temas/${tema.id}`)
+        .set('Authorization', `Bearer ${professorPrincipal.accessToken}`).send(dados).then((r) => r)
+      let resposta
+      try {
+        await leu.promise
+        await request(app).post(`/api/aluno/temas/${tema.id}/redacao/enviar`)
+          .set('Authorization', `Bearer ${aluno.accessToken}`).expect(200)
+        continuar.resolve()
+        resposta = await patch
+      } finally {
+        continuar.resolve()
+        await Promise.allSettled([patch])
+        prisma.temaRedacao.findFirst = metodoOriginal
+      }
+      const depois = await prisma.temaRedacao.findUnique({ where: { id: tema.id } })
+      assert.ok(depois.criteriosBloqueadosEm)
+      if (campo === 'prazoEntrega') {
+        assert.equal(resposta.status, 200)
+        assert.equal(depois.prazoEntrega.toISOString(), novoPrazo)
+      } else {
+        assert.equal(resposta.status, 409)
+        assert.equal(resposta.body.error.code, 'ESSAY_TOPIC_CONTENT_LOCKED')
+        for (const chave of ['enunciado', 'descricao', 'instrucoes']) {
+          assert.equal(depois[chave], tema[chave])
+        }
+        assert.equal(depois.prazoEntrega.toISOString(), tema.prazoEntrega)
+      }
+    })
+  }
 
   it('deve bloquear conteúdo e critérios, mas permitir o prazo', async () => {
     const tema = await criarTemaPelaApi({

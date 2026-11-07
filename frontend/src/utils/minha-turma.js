@@ -1,4 +1,5 @@
 export const CODIGO_SEM_MATRICULA = 'ACTIVE_ENROLLMENT_NOT_FOUND'
+export const CODIGO_MATRICULA_ALTERADA = 'ACTIVE_ENROLLMENT_CHANGED'
 export const CODIGO_TURMA_INDISPONIVEL = 'CLASS_ACCESS_CODE_INVALID'
 
 // interpretarErroApi não expõe o código; ele é lido direto da resposta.
@@ -33,13 +34,14 @@ export function descreverMatricula(matricula) {
   }
 
   return {
+    matriculaId: matricula.id ?? null,
     turmaId: matricula.turma.id,
     turma: matricula.turma.nome?.trim() || 'Turma',
     professor:
       matricula.turma.professor?.nome?.trim() || null,
     desde: formatarDataEntrada(matricula.iniciadaEm),
     // Arquivar a turma encerra as matrículas; a saída não é oferecida nesse caso.
-    podeSair: matricula.turma.ativa !== false,
+    podeSair: Boolean(matricula.id) && matricula.turma.ativa !== false,
   }
 }
 
@@ -85,6 +87,10 @@ export function mensagemErroMinhaTurma(erro) {
   }
 
   const codigo = obterCodigoErroApi(erro)
+
+  if (codigo === CODIGO_MATRICULA_ALTERADA) {
+    return 'Sua matrícula mudou em outra aba. Confira os dados atualizados e confirme novamente se quiser sair desta turma.'
+  }
 
   if (codigo === CODIGO_SEM_MATRICULA) {
     return 'Você não está mais matriculado em uma turma. O painel foi atualizado.'

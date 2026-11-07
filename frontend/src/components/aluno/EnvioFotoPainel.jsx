@@ -1,14 +1,6 @@
 import { useId } from 'react'
 
-function formatarTamanho(bytes) {
-  if (!Number.isFinite(bytes)) {
-    return ''
-  }
-
-  return bytes >= 1024 * 1024
-    ? `${(bytes / (1024 * 1024)).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} MB`
-    : `${Math.max(1, Math.round(bytes / 1024)).toLocaleString('pt-BR')} KB`
-}
+import { formatarTamanhoArquivo } from '../../utils/ocr-revisao.js'
 
 function IconeFoto() {
   return (
@@ -83,7 +75,6 @@ export default function EnvioFotoPainel({
   enviando,
   progresso,
   desabilitado,
-  motivoBloqueio,
   onSelecionar,
   onExtrair,
 }) {
@@ -99,7 +90,7 @@ export default function EnvioFotoPainel({
         id={idAjuda}
         className="mt-1 text-sm leading-[22px] text-lexis-200"
       >
-        Envie uma foto nítida da folha, em JPEG ou PNG de até 1 MB. A transcrição automática pode conter erros: o texto extraído aparece no editor para você revisar antes de salvar.
+        Envie uma foto nítida da folha, em JPEG ou PNG de até 1 MB. A transcrição automática pode conter erros: você revisa o texto extraído ao lado da foto antes de salvar.
       </p>
 
       <label
@@ -114,7 +105,7 @@ export default function EnvioFotoPainel({
         </span>
         <span className="text-xs font-medium leading-[17px] text-lexis-200">
           {imagem
-            ? formatarTamanho(imagem.size)
+            ? formatarTamanhoArquivo(imagem.size)
             : 'JPEG ou PNG, até 1 MB'}
         </span>
         <input
@@ -131,12 +122,6 @@ export default function EnvioFotoPainel({
           className="sr-only"
         />
       </label>
-
-      {motivoBloqueio && !enviando && (
-        <p className="mt-4 rounded-lg bg-[var(--aluno-atencao-fundo)] px-3.5 py-2.5 text-xs font-medium leading-[17px] text-lexis-100">
-          {motivoBloqueio}
-        </p>
-      )}
 
       {enviando && (
         <ProgressoOcr progresso={progresso} />
