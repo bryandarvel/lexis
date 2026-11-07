@@ -313,12 +313,14 @@ export async function listarRedacoesParaProfessor({
     throw criarErroTurmaNaoEncontrada()
   }
 
-  return listarRedacoesDaTurmaDoProfessor({
+  const resultado = await listarRedacoesDaTurmaDoProfessor({
     turmaId,
     professorId,
     temaId,
     status,
   })
+  if (!resultado) throw criarErroTurmaNaoEncontrada()
+  return resultado
 }
 
 export async function obterRedacaoParaProfessor({
