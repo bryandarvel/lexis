@@ -9,6 +9,7 @@ import {
   criarTemaComCriterios,
   listarTemasAtivosParaAluno,
   listarTemasDoProfessor,
+  reabrirTemaDoProfessor,
   substituirCriteriosDoTema,
 } from './temas.repository.js'
 
@@ -225,6 +226,10 @@ export async function atualizarTemaParaProfessor({
       dados,
     })
 
+  if (temaAtualizado === 'CONTEUDO_BLOQUEADO') {
+    throw criarErroConteudoBloqueado()
+  }
+
   if (!temaAtualizado) {
     throw criarErroTemaArquivado()
   }
@@ -286,6 +291,31 @@ export async function arquivarTemaParaProfessor({
   }
 
   return prepararTemaParaResposta(tema)
+}
+
+export async function reabrirTemaParaProfessor({ temaId, professorId }) {
+  const existente = await buscarTemaObrigatorio({ temaId, professorId })
+  const resultado = await reabrirTemaDoProfessor({
+    temaId,
+    turmaId: existente.turmaId,
+    professorId,
+  })
+
+  if (resultado.status === 'TEMA_NAO_ENCONTRADO') throw criarErroTemaNaoEncontrado()
+  if (resultado.status === 'TURMA_ARQUIVADA') {
+    throw new AppError('Reabra a turma antes de reabrir a proposta.', {
+      statusCode: 409,
+      code: 'CLASS_ARCHIVED',
+    })
+  }
+  if (resultado.status === 'TEMA_JA_ATIVO') {
+    throw new AppError('Esta proposta já está ativa.', {
+      statusCode: 409,
+      code: 'ESSAY_TOPIC_ALREADY_ACTIVE',
+    })
+  }
+
+  return prepararTemaParaResposta(resultado.tema)
 }
 
 export async function listarTemasParaAluno(

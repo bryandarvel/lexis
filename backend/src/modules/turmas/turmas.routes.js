@@ -23,12 +23,14 @@ import {
   sairDaTurmaController,
   desvincularAlunoController,
   listarAlunosDaTurmaController,
+  reabrirTurmaController,
 } from './turmas.controller.js'
 
 import {
   atualizarTurmaSchema,
   criarTurmaSchema,
   entrarTurmaSchema,
+  sairTurmaSchema,
   turmaAlunoParamsSchema,
   turmaParamsSchema,
 } from './turmas.schemas.js'
@@ -82,7 +84,7 @@ turmasRouter.get(
  * /api/turmas/{turmaId}/alunos/{alunoId}:
  *   delete:
  *     summary: Desvincula um aluno da turma
- *     description: Encerra a matrícula ativa do aluno sem apagar seu histórico.
+ *     description: Encerra a matrícula ativa do aluno sem apagar seu histórico e cria um aviso interno MATRICULA_ENCERRADA na mesma transação. Não envia e-mail. Repetição sem vínculo ativo não cria outro aviso.
  *     tags:
  *       - Turmas
  *     security:
@@ -322,11 +324,23 @@ turmasRouter.post(
  *         description: O aluno não possui matrícula ativa
  *   delete:
  *     summary: Sai da turma atual
- *     description: Encerra a matrícula ativa sem apagar seu histórico.
+ *     description: Encerra apenas a matrícula confirmada e cria um aviso interno ALUNO_SAIU_TURMA para o professor responsável na mesma transação, sem e-mail e sem apagar o histórico. Falha no aviso desfaz o encerramento. Em conflito, consulte novamente a matrícula e exija nova confirmação; não repita automaticamente.
  *     tags:
  *       - Turmas
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             additionalProperties: false
+ *             required: [matriculaId]
+ *             properties:
+ *               matriculaId:
+ *                 type: string
+ *                 format: uuid
  *     responses:
  *       '200':
  *         description: Matrícula encerrada
@@ -336,6 +350,10 @@ turmasRouter.post(
  *         description: Recurso exclusivo para alunos
  *       '404':
  *         description: O aluno não possui matrícula ativa
+ *       '409':
+ *         description: ACTIVE_ENROLLMENT_CHANGED — a matrícula ativa mudou; nenhuma matrícula foi encerrada
+ *       '422':
+ *         description: VALIDATION_ERROR — corpo ausente, UUID inválido ou campos extras
  */
 turmasRouter.get(
   '/minha-matricula',
@@ -348,6 +366,7 @@ turmasRouter.delete(
   '/minha-matricula',
   autenticarAccessToken,
   somenteAluno,
+  validarBody(sairTurmaSchema),
   sairDaTurmaController,
 )
  
@@ -414,7 +433,7 @@ turmasRouter.post(
  * /api/turmas/{turmaId}/arquivar:
  *   post:
  *     summary: Arquiva uma turma
- *     description: Arquiva a turma e encerra suas matrículas ativas, preservando todo o histórico.
+ *     description: Arquiva a turma e encerra suas matrículas ativas, preservando todo o histórico. Na mesma transação cria um aviso TURMA_ARQUIVADA por aluno ativo distinto, sem e-mail. Revalida alterações concorrentes da lista de alunos antes de qualquer escrita.
  *     tags:
  *       - Turmas
  *     security:
@@ -436,7 +455,7 @@ turmasRouter.post(
  *       '404':
  *         description: Turma não encontrada
  *       '409':
- *         description: Turma já arquivada
+ *         description: Turma já arquivada ou CLASS_ENROLLMENTS_CHANGED quando a lista ativa muda continuamente nas três conferências. Neste último caso nada foi alterado; conferir e confirmar novamente, sem repetição automática pelo cliente.
  *       '422':
  *         description: Identificador inválido
  */
@@ -446,4 +465,43 @@ turmasRouter.post(
   somenteProfessor,
   validarParams(turmaParamsSchema),
   arquivarTurmaController,
+)
+
+/**
+ * @openapi
+ * /api/turmas/{turmaId}/reabrir:
+ *   post:
+ *     summary: Reabre uma turma arquivada
+ *     description: Exclusivo do professor responsável. Mantém o código atual e o histórico, sem restaurar matrículas encerradas nem reabrir propostas arquivadas. Alunos precisam entrar novamente pelo código. Não recebe corpo.
+ *     tags:
+ *       - Turmas
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: turmaId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       '200':
+ *         description: Turma reaberta em data.turma, com ativa true e arquivadaEm null, no mesmo formato da consulta da turma
+ *       '401':
+ *         description: Autenticação necessária
+ *       '403':
+ *         description: Recurso exclusivo para professores
+ *       '404':
+ *         description: CLASS_NOT_FOUND — turma inexistente ou de outro professor
+ *       '409':
+ *         description: CLASS_ALREADY_ACTIVE — turma já ativa, inclusive após reabertura concorrente
+ *       '422':
+ *         description: Identificador inválido
+ */
+turmasRouter.post(
+  '/:turmaId/reabrir',
+  autenticarAccessToken,
+  somenteProfessor,
+  validarParams(turmaParamsSchema),
+  reabrirTurmaController,
 )
