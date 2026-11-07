@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 
 import AlunoLayout from '../../layouts/AlunoLayout.jsx'
@@ -14,6 +14,11 @@ import {
   resolverBloco,
   resumirDesempenho,
 } from '../../utils/aluno-perfil.js'
+import {
+  estadoDaContaAtual,
+  marcarConta,
+  mesmaConta,
+} from '../../utils/identidade-sessao.js'
 import { indicaSemMatricula } from '../../utils/minha-turma.js'
 import './aluno-perfil.css'
 
@@ -180,20 +185,42 @@ function BlocoDesempenho({ estado, onTentar }) {
   )
 }
 
+const BLOCOS_CARREGANDO = {
+  conta: CARREGANDO,
+  turma: CARREGANDO,
+  desempenho: CARREGANDO,
+}
+
+const ESTADO_INICIAL = marcarConta({ blocos: BLOCOS_CARREGANDO }, null)
+
 export default function AlunoPerfilPage() {
   const rotaEnviarRedacao = useRotaEnviarRedacao()
-  const { sair } = useAuth()
+  const { usuario, sair } = useAuth()
+  const usuarioId = usuario?.id ?? null
   const navigate = useNavigate()
-  const ativoRef = useRef(true)
-  const [blocos, setBlocos] = useState({
-    conta: CARREGANDO,
-    turma: CARREGANDO,
-    desempenho: CARREGANDO,
-  })
+  const [estado, setEstado] = useState(ESTADO_INICIAL)
   const [saindo, setSaindo] = useState(false)
 
+  // Conferir a conta no próprio setter distingue gerações concorrentes: um
+  // sinalizador de montagem não separa a resposta pedida por quem saiu da
+  // resposta pedida por quem entrou.
+  const aplicarSeForDaConta = useCallback((conta, atualizar) => {
+    setEstado((atual) =>
+      mesmaConta(atual.usuarioId, conta)
+        ? marcarConta({ blocos: atualizar(atual.blocos) }, conta)
+        : atual,
+    )
+  }, [])
+
   useEffect(() => {
-    ativoRef.current = true
+    let ativo = true
+    // A conta desta consulta. Respostas dela não podem preencher a tela de
+    // outra pessoa depois de uma reautenticação.
+    const contaDaConsulta = usuarioId
+
+    setEstado(marcarConta({ blocos: BLOCOS_CARREGANDO }, contaDaConsulta))
+
+    if (!contaDaConsulta) return undefined
 
     const chaves = Object.keys(BLOCOS)
 
@@ -201,9 +228,9 @@ export default function AlunoPerfilPage() {
     Promise.allSettled(
       chaves.map((chave) => BLOCOS[chave].carregar()),
     ).then((resultados) => {
-      if (!ativoRef.current) return
+      if (!ativo) return
 
-      setBlocos(
+      aplicarSeForDaConta(contaDaConsulta, () =>
         Object.fromEntries(
           chaves.map((chave, indice) => [
             chave,
@@ -214,28 +241,39 @@ export default function AlunoPerfilPage() {
     })
 
     return () => {
-      ativoRef.current = false
+      ativo = false
     }
-  }, [])
+  }, [usuarioId, aplicarSeForDaConta])
 
-  const tentarNovamente = useCallback((chave) => {
-    setBlocos((atual) => ({ ...atual, [chave]: CARREGANDO }))
+  const tentarNovamente = useCallback(
+    (chave) => {
+      const contaDaConsulta = usuarioId
 
-    BLOCOS[chave]
-      .carregar()
-      .then(
-        (valor) => ({ status: 'fulfilled', value: valor }),
-        (motivo) => ({ status: 'rejected', reason: motivo }),
-      )
-      .then((resultado) => {
-        if (!ativoRef.current) return
+      if (!contaDaConsulta) return
 
-        setBlocos((atual) => ({
-          ...atual,
-          [chave]: resolverBloco(resultado, BLOCOS[chave]),
-        }))
-      })
-  }, [])
+      aplicarSeForDaConta(contaDaConsulta, (blocos) => ({
+        ...blocos,
+        [chave]: CARREGANDO,
+      }))
+
+      BLOCOS[chave]
+        .carregar()
+        .then(
+          (valor) => ({ status: 'fulfilled', value: valor }),
+          (motivo) => ({ status: 'rejected', reason: motivo }),
+        )
+        .then((resultado) => {
+          aplicarSeForDaConta(contaDaConsulta, (blocos) => ({
+            ...blocos,
+            [chave]: resolverBloco(resultado, BLOCOS[chave]),
+          }))
+        })
+    },
+    [usuarioId, aplicarSeForDaConta],
+  )
+
+  // O render nunca usa dados de outra conta: na troca, tudo volta ao carregando.
+  const { blocos } = estadoDaContaAtual(estado, usuarioId, ESTADO_INICIAL)
 
   async function handleSair() {
     if (saindo) return
