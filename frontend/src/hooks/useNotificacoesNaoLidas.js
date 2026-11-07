@@ -8,8 +8,11 @@ import {
   observarContagemNotificacoes,
 } from '../services/notification-events.js'
 
+// A listagem é injetável para o sino do professor usar o endpoint dele; o
+// padrão continua sendo o do aluno, então o comportamento atual não muda.
 export function useNotificacoesNaoLidas({
   habilitado,
+  listar = listarNotificacoes,
 }) {
   const [totalNaoLidas, setTotalNaoLidas] =
     useState(0)
@@ -26,7 +29,7 @@ export function useNotificacoesNaoLidas({
         }
       })
 
-    listarNotificacoes({ signal: controlador.signal })
+    listar({ signal: controlador.signal })
       .then((resultado) => {
         if (ativo) {
           setTotalNaoLidas(resultado.totalNaoLidas)
@@ -41,7 +44,7 @@ export function useNotificacoesNaoLidas({
       controlador.abort()
       pararObservacao()
     }
-  }, [habilitado])
+  }, [habilitado, listar])
 
   return totalNaoLidas
 }

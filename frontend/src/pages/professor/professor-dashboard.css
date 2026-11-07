@@ -32,6 +32,40 @@
 .panel-header-label { font-size: 14px; color: #93c4f7; }
 .panel-header-tools { margin-left: auto; display: flex; align-items: center; gap: 16px; }
 .panel-header .theme-toggle { background: var(--surface-shell-2); color: white; border-color: #3d72b0; min-height: 32px; padding: 4px 9px; }
+/* Alvo de 44 px no sino, que o painel desenha com 30 px de caixa. */
+.panel-sino {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 10px;
+  background: transparent;
+  color: white;
+  cursor: pointer;
+}
+
+.panel-sino:hover {
+  background: var(--surface-shell-2);
+}
+
+.panel-sino-contagem {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #b91c1c;
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 18px;
+}
 .panel-avatar { display: grid; place-items: center; flex: 0 0 auto; width: 30px; height: 30px; border-radius: 999px; background: #1c6eba; color: white; font-size: 12px; font-weight: 500; cursor: pointer; }
 .panel-sidebar { position: fixed; z-index: 40; top: 56px; bottom: 0; left: 0; width: 240px; display: flex; flex-direction: column; padding: 24px 16px 16px; background: var(--surface-shell-1); color: #93c4f7; }
 .panel-sidebar nav { display: grid; gap: 6px; }

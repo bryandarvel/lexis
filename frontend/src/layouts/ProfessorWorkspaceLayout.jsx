@@ -2,10 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import ThemeToggle from '../components/layout/ThemeToggle.jsx'
 import { useAuth } from '../hooks/useAuth.js'
+import { useNotificacoesNaoLidas } from '../hooks/useNotificacoesNaoLidas.js'
+import { listarNotificacoesProfessor } from '../services/notificacoes-professor.js'
 import { obterIniciais } from '../utils/professor-dashboard.js'
 import '../pages/professor/professor-dashboard.css'
 
-function WorkspaceDialog({ tipo, usuario, turmas, onClose, onLogout, saindo }) {
+// turmas tem padrão porque nem toda tela do painel carrega a lista.
+function WorkspaceDialog({ tipo, usuario, turmas = [], onClose, onLogout, saindo }) {
   const dialogRef = useRef(null)
   useEffect(() => {
     if (!tipo) return undefined
@@ -52,6 +55,16 @@ export default function ProfessorWorkspaceLayout({ secao, cabecalho, turmas, pro
   const [dialogo, setDialogo] = useState(null)
   const [saindo, setSaindo] = useState(false)
   const iniciais = obterIniciais(usuario?.nome)
+  const totalNaoLidas = useNotificacoesNaoLidas({
+    habilitado: usuario?.papel === 'PROFESSOR',
+    listar: listarNotificacoesProfessor,
+  })
+  const rotuloNotificacoes =
+    totalNaoLidas === 0
+      ? 'Notificações: nenhum aviso não lido'
+      : totalNaoLidas === 1
+        ? 'Notificações: 1 aviso não lido'
+        : `Notificações: ${totalNaoLidas} avisos não lidos`
 
   async function encerrarSessao() {
     if (saindo) return
@@ -71,6 +84,10 @@ export default function ProfessorWorkspaceLayout({ secao, cabecalho, turmas, pro
         <span className="panel-header-label">{cabecalho ?? secao}</span>
         <div className="panel-header-tools">
           {indicador}
+          <Link to="/professor/notificacoes" className="panel-sino" aria-label={rotuloNotificacoes}>
+            <span aria-hidden="true">🔔</span>
+            {totalNaoLidas > 0 && <span className="panel-sino-contagem" aria-hidden="true">{totalNaoLidas > 99 ? '99+' : totalNaoLidas}</span>}
+          </Link>
           <ThemeToggle compacto />
           <button type="button" className="panel-avatar" onClick={() => setDialogo('perfil')} aria-label="Abrir seu perfil">{iniciais}</button>
         </div>
@@ -79,6 +96,7 @@ export default function ProfessorWorkspaceLayout({ secao, cabecalho, turmas, pro
         <nav aria-label="Navegação do professor">
           <Link to="/professor" aria-current={secao === 'Painel' ? 'page' : undefined}><span className="panel-nav-icon" aria-hidden="true" />Painel</Link>
           <Link to="/professor/turmas" aria-current={secao === 'Turmas' ? 'page' : undefined}><span className="panel-nav-icon" aria-hidden="true" />Turmas</Link>
+          <Link to="/professor/notificacoes" aria-current={secao === 'Notificações' ? 'page' : undefined}><span className="panel-nav-icon" aria-hidden="true" />Notificações</Link>
           <button type="button" aria-current={secao === 'Propostas' ? 'page' : undefined} onClick={() => setDialogo('propostas')} disabled={!pronto}><span className="panel-nav-icon" aria-hidden="true" />Propostas</button>
           <button type="button" onClick={onRedacoes ?? (() => navigate('/professor'))}><span className="panel-nav-icon" aria-hidden="true" />Redações</button>
           <button type="button" onClick={() => setDialogo('perfil')}><span className="panel-nav-icon" aria-hidden="true" />Perfil</button>

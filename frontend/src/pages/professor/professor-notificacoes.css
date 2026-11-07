@@ -1,0 +1,149 @@
+/*
+ * Avisos do professor. Usa a linguagem do painel (panel-*), cujas variáveis já
+ * têm variante para o tema escuro; nenhum token --aluno-* entra aqui.
+ */
+.avisos-main h1 {
+  font-size: 24px;
+  line-height: 30px;
+}
+
+.avisos-carregando,
+.avisos-contagem {
+  margin-top: 16px;
+}
+
+.avisos-contagem {
+  color: var(--panel-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.avisos-erro {
+  margin-top: 16px;
+  padding: 12px 16px;
+  border-left: 3px solid var(--panel-error);
+  border-radius: 8px;
+  background: var(--panel-soft);
+  color: var(--panel-error);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.avisos-vazio {
+  max-width: 620px;
+  margin-top: 20px;
+  padding: 24px;
+  border: 1px dashed var(--panel-border);
+  border-radius: 12px;
+}
+
+.avisos-vazio h2 {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.avisos-vazio p {
+  margin-top: 8px;
+  color: var(--panel-muted);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.avisos-vazio .panel-primary-button {
+  margin-top: 16px;
+}
+
+.avisos-lista {
+  display: grid;
+  gap: 10px;
+  max-width: 820px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.avisos-item {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  min-height: 44px;
+  padding: 16px 20px;
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  background: var(--panel-surface);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.avisos-item:hover:not(:disabled) {
+  border-color: var(--panel-action);
+}
+
+.avisos-item:disabled {
+  cursor: default;
+}
+
+/* Além da borda, o item não lido mostra o rótulo .avisos-marca. */
+.avisos-item.nao-lido {
+  border-left: 3px solid var(--panel-action);
+}
+
+.avisos-item-topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.avisos-item-topo strong {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.avisos-data {
+  color: var(--panel-muted);
+  font-size: 12px;
+  line-height: 17px;
+}
+
+.avisos-marca {
+  justify-self: start;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--panel-soft);
+  color: var(--panel-action);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+}
+
+.avisos-mensagem {
+  font-size: 14px;
+  line-height: 22px;
+  overflow-wrap: anywhere;
+}
+
+.avisos-origem {
+  color: var(--panel-muted);
+  font-size: 12px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+}
+
+.avisos-acao {
+  margin-top: 2px;
+  color: var(--panel-action);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+@media (max-width: 767px) {
+  .avisos-item {
+    padding: 14px 16px;
+  }
+}

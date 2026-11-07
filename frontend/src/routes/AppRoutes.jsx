@@ -42,6 +42,9 @@ const ProfessorTurmasPage = lazy(() =>
 const ProfessorRedacaoPage = lazy(() =>
   import('../pages/professor/ProfessorRedacaoPage.jsx'),
 )
+const ProfessorNotificacoesPage = lazy(() =>
+  import('../pages/professor/ProfessorNotificacoesPage.jsx'),
+)
 const ProfessorNovoTemaPage = lazy(() =>
   import('../pages/professor/ProfessorNovoTemaPage.jsx'),
 )
@@ -108,6 +111,11 @@ export default function AppRoutes() {
           <Route
             path="/professor/redacoes/:redacaoId"
             element={<ProfessorRedacaoPage />}
+          />
+
+          <Route
+            path="/professor/notificacoes"
+            element={<ProfessorNotificacoesPage />}
           />
         </Route>
 
