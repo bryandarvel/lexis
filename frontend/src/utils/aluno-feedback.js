@@ -4,6 +4,8 @@ import {
   obterTomCriterio,
 } from './criterio-cores.js'
 import { COMPETENCIAS_ENEM } from '../constants/competencias-enem.js'
+import { segmentarTextoComEvidencias } from './ai-evidence.js'
+import { validarTrechosRecebidos } from './trechos-feedback.js'
 import {
   calcularPercentual,
   formatarDiaMes,
@@ -207,4 +209,78 @@ export function descreverFeedbackIndisponivel(redacao) {
       destino: '/aluno',
     },
   }
+}
+
+/*
+ * Trechos marcados no texto publicado (#42).
+ *
+ * O aluno recebe trechos[{id, inicio, fim, trecho, sugeridoPorIa}] em cada
+ * comentário, sem analiseIaId nem diagnóstico. A tela só marca o que ainda
+ * coincide com o texto publicado; o resto é descartado, para nunca destacar o
+ * lugar errado. A origem por IA não é exibida: significa apenas coincidência
+ * com uma sugestão mantida pelo professor, não que o repertório seja verdadeiro.
+ */
+export function montarTextoComTrechos(texto, criterios) {
+  const conteudo = typeof texto === 'string' ? texto : ''
+  const porOrdem = new Map()
+
+  for (const item of Array.isArray(criterios) ? criterios : []) {
+    const ordem = Number.isInteger(item?.criterio?.ordem)
+      ? item.criterio.ordem
+      : null
+    const validos = validarTrechosRecebidos(conteudo, item?.trechos)
+
+    if (ordem === null || validos.length === 0) {
+      continue
+    }
+
+    const atual = porOrdem.get(ordem) ?? {
+      ordem,
+      nome: item.criterio?.nome?.trim() || 'Critério',
+      tom: obterTomCriterio(ordem),
+      evidencias: [],
+    }
+
+    // segmentarTextoComEvidencias espera o formato das evidências da análise.
+    atual.evidencias.push(
+      ...validos.map((trecho) => ({
+        inicio: trecho.inicio,
+        fim: trecho.fim,
+        trecho: trecho.trecho,
+        statusLocalizacao: 'LOCALIZADA',
+      })),
+    )
+    porOrdem.set(ordem, atual)
+  }
+
+  const comTrechos = [...porOrdem.values()].sort((a, b) => a.ordem - b.ordem)
+
+  if (comTrechos.length === 0) {
+    return { segmentos: [], legenda: [], total: 0 }
+  }
+
+  return {
+    segmentos: segmentarTextoComEvidencias(conteudo, comTrechos),
+    legenda: comTrechos.map(({ ordem, nome, tom, evidencias }) => ({
+      ordem,
+      nome,
+      tom,
+      quantidade: evidencias.length,
+    })),
+    total: comTrechos.reduce((soma, c) => soma + c.evidencias.length, 0),
+  }
+}
+
+// Nome acessível de um segmento marcado: diz quais critérios o apoiam, em vez
+// de depender só da cor.
+export function descreverSegmentoMarcado(segmento, legenda) {
+  const nomes = (segmento?.criterios ?? [])
+    .map((ordem) => legenda.find((item) => item.ordem === ordem)?.nome)
+    .filter(Boolean)
+
+  if (nomes.length === 0) {
+    return ''
+  }
+
+  return `Trecho comentado em ${nomes.join(', ')}: ${segmento.texto}`
 }

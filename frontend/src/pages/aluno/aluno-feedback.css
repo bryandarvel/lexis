@@ -138,3 +138,76 @@
     line-height: 1.7;
   }
 }
+
+/*
+ * Trechos comentados no texto publicado (#42). A cor sai de
+ * utils/criterio-cores.js, igual à da correção do professor, e nunca é o
+ * único indicador: cada marca tem número visível e nome acessível.
+ */
+.feedback-trechos-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feedback-trechos-legenda li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 24px;
+  color: var(--color-lexis-200);
+  font-size: 12px;
+  line-height: 17px;
+}
+
+.feedback-trechos-cor {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+  border-radius: 4px;
+  background: var(--feedback-tom);
+}
+
+.feedback-trechos-nota {
+  margin: 8px 0 0;
+  color: var(--color-lexis-200);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.feedback-trecho {
+  /* Alvo de 44 px na vertical sem quebrar a linha do texto corrido. */
+  display: inline;
+  padding: 10px 2px;
+  border-bottom: 2px solid var(--feedback-tom);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--feedback-tom) 16%, transparent);
+  color: inherit;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.feedback-trecho sup {
+  padding-left: 3px;
+  color: var(--feedback-tom);
+  font-family: var(--font-interface);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+@media print {
+  /* Na impressão a cor pode sumir: o sublinhado e o número continuam. */
+  .feedback-trecho {
+    padding: 0 1px;
+    border-bottom: 1.5px solid currentColor;
+    background: transparent;
+  }
+
+  .feedback-trecho sup,
+  .feedback-trechos-cor {
+    color: inherit;
+  }
+}
