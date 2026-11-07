@@ -13,8 +13,8 @@ import { obterFeedbackProfessor, publicarFeedback, salvarRascunhoFeedback } from
 import { listarRedacoesDaTurma, obterRedacaoProfessor } from '../../services/redacoes.js'
 import { criarChaveRascunho } from '../../utils/draft-storage.js'
 import { obterIniciais } from '../../utils/professor-dashboard.js'
-import { avisoEstadoAnalise } from '../../utils/external-request.js'
-import { criarFormularioFeedback, montarDadosFeedback, validarFeedback, criterioFixo, tomCriterio, evidenciasVerificadas, organizarFila, atualizarComentario } from '../../utils/professor-correction.js'
+import { avisoEstadoAnalise, obterEsperaMinimaAnalise } from '../../utils/external-request.js'
+import { criarFormularioFeedback, montarDadosFeedback, validarFeedback, criterioFixo, tomCriterio, evidenciasVerificadas, organizarFila, atualizarComentario, selecionarAnaliseParaCorrecao } from '../../utils/professor-correction.js'
 import fixedIcon from '../../assets/criterion-fixed.svg'
 import './professor-correction.css'
 
@@ -38,6 +38,7 @@ function Correcao({ redacaoId, usuarioId }) {
   const [analysisBusy, setAnalysisBusy] = useState(false)
   const [feedbackAction, setFeedbackAction] = useState(null)
   const [analysisNotice, setAnalysisNotice] = useState(null)
+  const [analysisRetryAt, setAnalysisRetryAt] = useState(0)
   const [feedbackNotice, setFeedbackNotice] = useState(null)
   const [painelAtivo, setPainelAtivo] = useState('criterios')
   const [mobile, setMobile] = useState(() => globalThis.matchMedia('(max-width: 767px)').matches)
@@ -118,15 +119,25 @@ function Correcao({ redacaoId, usuarioId }) {
     }))
   }
   async function analisar(atualizar = false) {
-    if (analiseEmCurso.current || operacao.current) return
+    if (analiseEmCurso.current || operacao.current || (!atualizar && Date.now() < analysisRetryAt)) return
     analiseEmCurso.current = true; setAnalysisBusy(true); setAnalysisNotice(null)
     try {
       const analises = atualizar ? await listarAnalisesIa(redacaoId) : [await solicitarAnaliseIa(redacaoId)]
       if (!ativo.current) return
       setPagina((p) => ({ ...p, analises: atualizar ? analises : [...analises, ...p.analises.filter((a) => a.id !== analises[0].id)] }))
-      setAnalysisNotice(avisoEstadoAnalise(analises[0]))
+      setAnalysisNotice(avisoEstadoAnalise(analises[0], { nova: !atualizar }))
     } catch (error) {
-      if (ativo.current) setAnalysisNotice({ type: 'error', message: erroApi(error, 'A resposta da análise foi interrompida. Consulte o resultado antes de solicitar outra análise. Seus comentários foram preservados.') })
+      if (ativo.current) {
+        setAnalysisRetryAt((anterior) => Math.max(anterior, obterEsperaMinimaAnalise(error)))
+        setAnalysisNotice({ type: 'error', message: erroApi(error, 'A resposta da análise foi interrompida. Consulte o resultado antes de solicitar outra análise. Seus comentários foram preservados.') })
+      }
+      // Consultar o histórico não chama o modelo. Preserva a falha original se a consulta falhar.
+      if (!atualizar && ativo.current) {
+        try {
+          const analises = await listarAnalisesIa(redacaoId)
+          if (ativo.current) setPagina((p) => ({ ...p, analises }))
+        } catch { /* O resultado já disponível e os comentários humanos permanecem na tela. */ }
+      }
     } finally {
       analiseEmCurso.current = false
       if (ativo.current) setAnalysisBusy(false)
@@ -181,7 +192,7 @@ function Correcao({ redacaoId, usuarioId }) {
 
   const pronto = pagina.status === 'pronto'
   const redacao = pagina.redacao
-  const analise = pagina.analises?.[0] ?? null
+  const { ultima: ultimaAnalise, concluida: analise } = selecionarAnaliseParaCorrecao(pagina.analises)
   const criterios = redacao?.tema.criterios ?? []
   const { trechos } = evidenciasVerificadas(redacao?.texto ?? '', analise)
   const base = criterios.filter(criterioFixo)
@@ -203,7 +214,7 @@ function Correcao({ redacaoId, usuarioId }) {
       <p className="review-caption">Critérios definidos na proposta. A seleção individual por redação ainda não está disponível.</p>
       <Link className="review-text-link" to={pronto ? `/professor/temas/${redacao.tema.id}` : '/professor/turmas'}>Consultar proposta e critérios</Link>
     </section>
-    <AnalysisPanel analysis={analise} isRequesting={analysisBusy} notice={analysisNotice} disabled={Boolean(feedbackAction)} onRequest={() => analisar()} onRefresh={() => analisar(true)} />
+    <AnalysisPanel analysis={ultimaAnalise} resultAnalysis={analise} retryAt={analysisRetryAt} isRequesting={analysisBusy} notice={analysisNotice} disabled={Boolean(feedbackAction)} onRequest={() => analisar()} onRefresh={() => analisar(true)} />
     <section className="review-card review-evidence-list" aria-labelledby="review-evidence-title">
       <h2 id="review-evidence-title">Trechos identificados</h2>
       {trechos.length ? <ol>{trechos.map((e, i) => {

@@ -21,6 +21,7 @@ import {
   obterTemaAlunoController,
   obterTemaController,
   substituirCriteriosController,
+  reabrirTemaController,
 } from './temas.controller.js'
 
 import {
@@ -431,4 +432,43 @@ temasRouter.post(
   somenteProfessor,
   validarParams(temaParamsSchema),
   arquivarTemaController,
+)
+
+/**
+ * @openapi
+ * /api/temas/{temaId}/reabrir:
+ *   post:
+ *     summary: Reabre uma proposta arquivada
+ *     description: Exclusivo do professor responsável, com turma ativa. Preserva conteúdo, critérios, bloqueio após primeiro envio e prazo original. Prazo vencido não impede reabertura nem entrega, que será registrada como atrasada. Não recebe corpo.
+ *     tags:
+ *       - Temas de redação
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: temaId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       '200':
+ *         description: Proposta reaberta em data.tema, com ativo true e arquivadoEm null, no mesmo formato da consulta do tema
+ *       '401':
+ *         description: Autenticação necessária
+ *       '403':
+ *         description: Recurso exclusivo para professores
+ *       '404':
+ *         description: ESSAY_TOPIC_NOT_FOUND — proposta inexistente ou de outro professor
+ *       '409':
+ *         description: CLASS_ARCHIVED — reabra a turma primeiro; ESSAY_TOPIC_ALREADY_ACTIVE — proposta já ativa, inclusive após reabertura concorrente
+ *       '422':
+ *         description: Identificador inválido
+ */
+temasRouter.post(
+  '/temas/:temaId/reabrir',
+  autenticarAccessToken,
+  somenteProfessor,
+  validarParams(temaParamsSchema),
+  reabrirTemaController,
 )
