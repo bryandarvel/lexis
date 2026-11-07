@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 
@@ -21,12 +22,19 @@ import {
 } from '../services/session-events.js'
 import { AuthContext } from './auth-context.js'
 import { limparRascunhosUsuario } from '../utils/draft-storage.js'
+import { deveDescartarRevisaoOcr } from '../utils/sessao-ocr.js'
 
 export default function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null)
   const [status, setStatus] = useState('carregando')
   const [reautenticacaoAberta, setReautenticacaoAberta] =
     useState(false)
+  // Lido dentro de entrar sem recriar o callback a cada troca de usuário.
+  const usuarioIdRef = useRef(null)
+
+  useEffect(() => {
+    usuarioIdRef.current = usuario?.id ?? null
+  }, [usuario?.id])
 
   useEffect(() => {
     let componenteAtivo = true
@@ -87,6 +95,17 @@ export default function AuthProvider({ children }) {
 
     const sessao = resposta.data.data
 
+    // A reautenticação aceita outro e-mail: quando a conta muda de fato, a
+    // revisão de OCR da anterior não pode seguir em memória (#49).
+    if (
+      deveDescartarRevisaoOcr(
+        usuarioIdRef.current,
+        sessao.usuario?.id,
+      )
+    ) {
+      descartarRevisaoOcr()
+    }
+
     definirAccessToken(sessao.accessToken)
     notificarSessaoRestaurada()
     setUsuario(sessao.usuario)
@@ -127,6 +146,21 @@ export default function AuthProvider({ children }) {
     }
   }, [usuario?.id])
 
+  // Usado depois de PATCH /auth/me e POST /auth/alterar-senha: a troca de
+  // senha devolve um access token novo, e a sessão atual continua valendo.
+  const atualizarSessao = useCallback(
+    ({ usuario: usuarioAtualizado, accessToken } = {}) => {
+      if (accessToken) {
+        definirAccessToken(accessToken)
+      }
+
+      if (usuarioAtualizado) {
+        setUsuario(usuarioAtualizado)
+      }
+    },
+    [],
+  )
+
   const valorContexto = useMemo(
     () => ({
       usuario,
@@ -135,6 +169,7 @@ export default function AuthProvider({ children }) {
       entrar,
       cadastrar,
       sair,
+      atualizarSessao,
     }),
     [
       usuario,
@@ -142,6 +177,7 @@ export default function AuthProvider({ children }) {
       entrar,
       cadastrar,
       sair,
+      atualizarSessao,
     ],
   )
 
