@@ -179,9 +179,9 @@
 }
 
 .feedback-trecho {
-  /* Alvo de 44 px na vertical sem quebrar a linha do texto corrido. */
+  /* Marca não interativa dentro do texto corrido: sem alvo de toque. */
   display: inline;
-  padding: 10px 2px;
+  padding: 1px 2px;
   border-bottom: 2px solid var(--feedback-tom);
   border-radius: 4px;
   background: color-mix(in srgb, var(--feedback-tom) 16%, transparent);
@@ -192,7 +192,8 @@
 
 .feedback-trecho sup {
   padding-left: 3px;
-  color: var(--feedback-tom);
+  /* Herda a cor do texto: a cor do tom sobre o realce não alcança 4,5:1. */
+  color: inherit;
   font-family: var(--font-interface);
   font-size: 10px;
   font-weight: 700;
