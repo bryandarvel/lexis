@@ -9,6 +9,11 @@ export function criarRegistroOperacional(evento, dados = {}, agora = new Date())
   if (Number.isInteger(dados.status) && dados.status >= 100 && dados.status <= 599) registro.status = dados.status
   if (Number.isFinite(dados.duracaoMs) && dados.duracaoMs >= 0) registro.duracaoMs = Math.round(dados.duracaoMs)
   if (typeof dados.codigo === 'string' && /^[A-Z][A-Z0-9_]{0,63}$/.test(dados.codigo)) registro.codigo = dados.codigo
+  if (evento === 'request_error' && registro.codigo?.startsWith('GEMINI_')) {
+    if (Number.isInteger(dados.statusExterno) && dados.statusExterno >= 400 && dados.statusExterno <= 599) registro.statusExterno = dados.statusExterno
+    if (Number.isSafeInteger(dados.retryAfterSeconds) && dados.retryAfterSeconds > 0) registro.retryAfterSeconds = dados.retryAfterSeconds
+    if (['ENOTFOUND', 'EAI_AGAIN', 'ECONNRESET', 'ECONNREFUSED', 'ETIMEDOUT', 'UND_ERR_CONNECT_TIMEOUT', 'UND_ERR_HEADERS_TIMEOUT', 'UND_ERR_SOCKET', 'unknown'].includes(dados.codigoTransporte)) registro.codigoTransporte = dados.codigoTransporte
+  }
   return registro
 }
 

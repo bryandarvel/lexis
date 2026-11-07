@@ -388,6 +388,7 @@ describe('Serviço de consulta do feedback pelo aluno', () => {
       (erro) => {
         assert.equal(erro.statusCode, 404)
         assert.equal(erro.code, 'FEEDBACK_NOT_AVAILABLE')
+        assert.equal(erro.message, 'A correção desta redação ainda não está disponível.')
         return true
       },
     )

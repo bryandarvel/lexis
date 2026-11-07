@@ -212,6 +212,40 @@ describe('POST /api/redacoes/:redacaoId/analises-ia', () => {
       resposta.body.error.code,
       'AI_ANALYSIS_RATE_LIMIT_EXCEEDED',
     )
+    assert.ok(Number.isInteger(resposta.body.error.details?.retryAfterSeconds))
+    assert.ok(resposta.body.error.details.retryAfterSeconds > 0 && resposta.body.error.details.retryAfterSeconds <= 60)
+    assert.equal(resposta.headers['retry-after'], String(resposta.body.error.details.retryAfterSeconds))
+  })
+
+  it('deve devolver espera mínima e diagnóstico seguro de limite do Gemini sem chamar a IA', async () => {
+    const app = criarAplicacao({
+      solicitarAnalise: async () => {
+        throw new AppError('Limite temporário do projeto. Aguarde antes de tentar novamente.', {
+          statusCode: 503,
+          code: 'GEMINI_RATE_LIMITED',
+          details: { statusExterno: 429, codigoProvedor: 'too_many_requests', retryAfterSeconds: 120 },
+        })
+      },
+    })
+    const resposta = await request(app)
+      .post(`/api/redacoes/${randomUUID()}/analises-ia`)
+      .set('Authorization', `Bearer ${criarToken('PROFESSOR')}`)
+      .expect(503)
+    assert.equal(resposta.headers['retry-after'], '120')
+    assert.deepEqual(resposta.body.error.details, { statusExterno: 429, codigoProvedor: 'too_many_requests', retryAfterSeconds: 120 })
+    assert.equal(resposta.body.error.code, 'GEMINI_RATE_LIMITED')
+  })
+
+  it('deve encaminhar indisponibilidade temporária externa e espera sem expor erro bruto', async () => {
+    const app = criarAplicacao({ solicitarAnalise: async () => {
+      throw new AppError('Serviço temporariamente indisponível.', {
+        statusCode: 502, code: 'GEMINI_SERVICE_UNAVAILABLE', details: { statusExterno: 503, retryAfterSeconds: 30 },
+      })
+    } })
+    const resposta = await request(app).post(`/api/redacoes/${randomUUID()}/analises-ia`)
+      .set('Authorization', `Bearer ${criarToken('PROFESSOR')}`).expect(502)
+    assert.equal(resposta.headers['retry-after'], '30')
+    assert.deepEqual(resposta.body.error.details, { statusExterno: 503, retryAfterSeconds: 30 })
   })
 })
 

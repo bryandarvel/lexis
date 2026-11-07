@@ -19,8 +19,21 @@ function redacao(id, status, turmaId, enunciado) {
   return { id, status, tema: { enunciado, turma: { id: turmaId } } }
 }
 
+test('preserva o ID da matrícula, não só o da turma, inclusive na reentrada', () => {
+  const turma = { id: 'mesma-turma', nome: 'Turma fictícia', ativa: true }
+  const antiga = descreverMatricula({ id: 'matricula-antiga', turma })
+  const nova = descreverMatricula({ id: 'matricula-nova', turma })
+  assert.equal(antiga.turmaId, nova.turmaId)
+  assert.notEqual(antiga.matriculaId, nova.matriculaId)
+})
+
+test('conflito de matrícula exige conferência e nova confirmação, não retry', () => {
+  assert.match(mensagemErroMinhaTurma(erroApi(409, 'ACTIVE_ENROLLMENT_CHANGED', 'Texto genérico')), /dados atualizados e confirme novamente/)
+})
+
 test('descreve a matrícula com turma, professor e data de entrada', () => {
   const descricao = descreverMatricula({
+    id: 'matricula-1',
     iniciadaEm: new Date(2026, 9, 5, 14, 30).toISOString(),
     turma: {
       id: 't1',
@@ -31,6 +44,7 @@ test('descreve a matrícula com turma, professor e data de entrada', () => {
   })
 
   assert.deepEqual(descricao, {
+    matriculaId: 'matricula-1',
     turmaId: 't1',
     turma: '3º A',
     professor: 'Helena Demo',
@@ -40,6 +54,7 @@ test('descreve a matrícula com turma, professor e data de entrada', () => {
 })
 
 test('não oferece a saída de turma arquivada e tolera dados ausentes', () => {
+  assert.equal(descreverMatricula({ turma: { id: 't1', ativa: true } }).podeSair, false)
   assert.equal(
     descreverMatricula({ turma: { id: 't1', nome: 'A', ativa: false } }).podeSair,
     false,
@@ -110,6 +125,7 @@ test('confirma a saída com o nome da turma quando disponível', () => {
 })
 
 test('traduz os erros da turma em mensagens claras', () => {
+  assert.match(mensagemErroMinhaTurma(erroApi(409, 'ACTIVE_ENROLLMENT_CHANGED')), /confirme novamente/)
   assert.match(mensagemErroMinhaTurma(new Error('Network Error')), /conectar ao servidor/)
   assert.match(
     mensagemErroMinhaTurma(erroApi(404, 'ACTIVE_ENROLLMENT_NOT_FOUND')),
