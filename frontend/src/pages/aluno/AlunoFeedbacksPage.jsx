@@ -2,9 +2,15 @@ import { useEffect, useId, useState } from 'react'
 import { Link } from 'react-router'
 
 import AlunoLayout from '../../layouts/AlunoLayout.jsx'
+import { useAuth } from '../../hooks/useAuth.js'
 import { listarMinhasRedacoes } from '../../services/redacoes.js'
 import { listarTemasDoAluno } from '../../services/temas.js'
-import { selecionarPropostaAberta } from '../../utils/aluno-painel.js'
+import { obterRotaEnviarRedacao } from '../../utils/aluno-feedback.js'
+import {
+  estadoDaContaAtual,
+  marcarConta,
+  mesmaConta,
+} from '../../utils/identidade-sessao.js'
 import {
   ORDENACOES_FEEDBACK,
   caminhoDoFeedback,
@@ -50,20 +56,30 @@ function ItemFeedback({ redacao }) {
   )
 }
 
+const CARREGANDO = {
+  status: 'carregando',
+  feedbacks: [],
+  rotaEnviar: null,
+  usuarioId: null,
+}
+
 export default function AlunoFeedbacksPage() {
   const idOrdem = useId()
-  const [carregamento, setCarregamento] = useState({
-    status: 'carregando',
-    feedbacks: [],
-    rotaEnviar: null,
-  })
+  const { usuario } = useAuth()
+  const usuarioId = usuario?.id ?? null
+  const [carregamento, setCarregamento] = useState(CARREGANDO)
   const [tentativa, setTentativa] = useState(0)
   const [ordenacao, setOrdenacao] = useState('recentes')
 
   useEffect(() => {
     let ativo = true
+    // A conta desta consulta. Uma resposta que chegue depois de outra pessoa
+    // entrar é descartada, em vez de preencher a tela dela.
+    const contaDaConsulta = usuarioId
 
-    setCarregamento((atual) => ({ ...atual, status: 'carregando' }))
+    setCarregamento(marcarConta(CARREGANDO, contaDaConsulta))
+
+    if (!contaDaConsulta) return undefined
 
     // A lista é o que a página existe para mostrar; as propostas só definem o
     // item "Enviar redação" da sidebar, então a falha delas não derruba a tela.
@@ -74,33 +90,46 @@ export default function AlunoFeedbacksPage() {
       if (!ativo) return
 
       if (listaResultado.status === 'rejected') {
-        setCarregamento({ status: 'erro', feedbacks: [], rotaEnviar: null })
+        setCarregamento(
+          marcarConta({ ...CARREGANDO, status: 'erro' }, contaDaConsulta),
+        )
         return
       }
 
       const redacoes = Array.isArray(listaResultado.value)
         ? listaResultado.value
         : []
-      const proposta =
-        temasResultado.status === 'fulfilled'
-          ? selecionarPropostaAberta(temasResultado.value, redacoes)
-          : null
 
-      setCarregamento({
-        status: 'pronto',
-        feedbacks: selecionarFeedbacks(redacoes),
-        rotaEnviar: proposta
-          ? `/aluno/temas/${encodeURIComponent(proposta.id)}/redacao`
-          : null,
-      })
+      setCarregamento((atual) =>
+        // Descarta a resposta se a conta mudou entre o pedido e a chegada.
+        mesmaConta(atual.usuarioId, contaDaConsulta)
+          ? marcarConta(
+              {
+                status: 'pronto',
+                feedbacks: selecionarFeedbacks(redacoes),
+                // Mesma regra do painel, sem repetir a seleção do atalho.
+                rotaEnviar:
+                  temasResultado.status === 'fulfilled'
+                    ? obterRotaEnviarRedacao(temasResultado.value, redacoes)
+                    : null,
+              },
+              contaDaConsulta,
+            )
+          : atual,
+      )
     })
 
     return () => {
       ativo = false
     }
-  }, [tentativa])
+  }, [tentativa, usuarioId])
 
-  const { status, feedbacks, rotaEnviar } = carregamento
+  // O render nunca usa estado de outra conta: na troca, volta ao carregando.
+  const { status, feedbacks, rotaEnviar } = estadoDaContaAtual(
+    carregamento,
+    usuarioId,
+    CARREGANDO,
+  )
   const resumo = resumirFeedbacks(feedbacks)
   const visiveis = ordenarFeedbacks(feedbacks, ordenacao)
 
