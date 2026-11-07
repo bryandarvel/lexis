@@ -3,12 +3,19 @@ import assert from 'node:assert/strict'
 import {
   CHAVE_TEMA,
   decidirTemaInicial,
+  gravarPreferencia,
   lerPreferenciaSalva,
 } from '../src/utils/tema.js'
 
-const armazenamentoCom = (valor) => ({
+const armazenamentoCom = (valor) => () => ({
   getItem: (chave) => (chave === CHAVE_TEMA ? valor : null),
 })
+
+// Em contexto com armazenamento bloqueado, ler a própria propriedade global
+// lança SecurityError. O acesso precisa acontecer dentro da proteção.
+const getterQueLanca = () => {
+  throw new DOMException('fixture', 'SecurityError')
+}
 
 test('sem escolha salva, abre claro', () => {
   assert.equal(decidirTemaInicial(lerPreferenciaSalva(armazenamentoCom(null))), 'light')
@@ -51,13 +58,81 @@ test('valor salvo inválido cai em claro', () => {
 })
 
 test('armazenamento indisponível não derruba a leitura e abre claro', () => {
-  const queLanca = {
+  const queLanca = () => ({
     getItem() {
       throw new Error('acesso negado ao armazenamento')
     },
-  }
+  })
 
   assert.equal(lerPreferenciaSalva(queLanca), null)
-  assert.equal(lerPreferenciaSalva(undefined), null)
+  assert.equal(lerPreferenciaSalva(() => undefined), null)
   assert.equal(decidirTemaInicial(lerPreferenciaSalva(queLanca)), 'light')
+})
+
+test('getter do armazenamento que lança é protegido na leitura', () => {
+  let acessos = 0
+  const acessor = () => {
+    acessos += 1
+    return getterQueLanca()
+  }
+
+  assert.equal(lerPreferenciaSalva(acessor), null)
+  assert.equal(acessos, 1, 'o acessor precisa ser chamado dentro da proteção')
+  assert.equal(decidirTemaInicial(lerPreferenciaSalva(acessor)), 'light')
+})
+
+test('getter do armazenamento que lança é protegido na gravação', () => {
+  let acessos = 0
+  const acessor = () => {
+    acessos += 1
+    return getterQueLanca()
+  }
+
+  assert.equal(gravarPreferencia('dark', acessor), false)
+  assert.equal(acessos, 1, 'o acessor precisa ser chamado dentro da proteção')
+  assert.equal(
+    gravarPreferencia('dark', () => ({
+      setItem() {
+        throw new Error('cota excedida')
+      },
+    })),
+    false,
+  )
+})
+
+test('gravação guarda o tema escolhido na chave do projeto', () => {
+  const escritas = []
+
+  assert.equal(
+    gravarPreferencia('dark', () => ({
+      setItem: (chave, valor) => escritas.push([chave, valor]),
+    })),
+    true,
+  )
+  assert.deepEqual(escritas, [[CHAVE_TEMA, 'dark']])
+})
+
+// Reproduz o cenário relatado: a propriedade global em si lança ao ser lida.
+test('propriedade global que lança não derruba a leitura padrão', () => {
+  const descritorOriginal = Object.getOwnPropertyDescriptor(
+    globalThis,
+    'localStorage',
+  )
+
+  Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true,
+    get: getterQueLanca,
+  })
+
+  try {
+    assert.equal(lerPreferenciaSalva(), null)
+    assert.equal(decidirTemaInicial(lerPreferenciaSalva()), 'light')
+    assert.equal(gravarPreferencia('dark'), false)
+  } finally {
+    if (descritorOriginal) {
+      Object.defineProperty(globalThis, 'localStorage', descritorOriginal)
+    } else {
+      delete globalThis.localStorage
+    }
+  }
 })

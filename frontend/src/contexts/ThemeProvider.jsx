@@ -8,13 +8,16 @@ import {
 
 import { ThemeContext } from './theme-context.js'
 import {
-  CHAVE_TEMA,
   decidirTemaInicial,
+  gravarPreferencia,
   lerPreferenciaSalva,
 } from '../utils/tema.js'
 
+// lerPreferenciaSalva acessa globalThis.localStorage dentro do próprio try:
+// em contexto com armazenamento bloqueado, até ler a propriedade lança, e o
+// provider precisa montar mesmo assim.
 function obterPreferenciaSalva() {
-  return lerPreferenciaSalva(globalThis.localStorage)
+  return lerPreferenciaSalva()
 }
 
 export default function ThemeProvider({ children }) {
@@ -35,11 +38,8 @@ export default function ThemeProvider({ children }) {
   useEffect(() => {
     if (!escolhido) return
 
-    try {
-      localStorage.setItem(CHAVE_TEMA, tema)
-    } catch {
-      // A preferência continua válida durante a sessão.
-    }
+    // A preferência continua válida durante a sessão se a gravação falhar.
+    gravarPreferencia(tema)
   }, [tema, escolhido])
 
   const alternarTema = useCallback(() => {
