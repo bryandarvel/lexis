@@ -58,8 +58,10 @@ export function temNotaPublicada(redacao) {
 }
 
 // A lista traz as redações de todas as turmas, inclusive as que o aluno deixou.
-// O editor só abre para um rascunho da turma da matrícula atual, de uma
-// proposta ativa e dentro do prazo, que é o que o backend aceita para escrever.
+// O editor só abre para um rascunho da turma da matrícula atual e de proposta
+// ativa, que é o que o backend aceita para escrever. O prazo vencido não
+// bloqueia: a entrega com atraso é permitida, como no painel, e o item só
+// ganha um aviso.
 export function descreverDestino(
   redacao,
   { turmaAtualId = null, agora = new Date() } = {},
@@ -91,15 +93,15 @@ export function descreverDestino(
     }
 
     const prazo = converterData(tema?.prazoEntrega)
-
-    if (prazo && prazo.getTime() < agora.getTime()) {
-      return { tipo: 'nenhum', motivo: 'O prazo desta proposta já terminou.' }
-    }
+    const vencido = Boolean(prazo && prazo.getTime() < agora.getTime())
 
     return {
       tipo: 'editor',
       para: `/aluno/temas/${encodeURIComponent(redacao.temaId)}/redacao`,
       rotulo: 'Continuar escrevendo',
+      ...(vencido && {
+        aviso: 'O prazo já terminou. A entrega será registrada com atraso.',
+      }),
     }
   }
 

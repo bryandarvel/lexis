@@ -58,13 +58,49 @@ test('rascunho de turma que o aluno deixou não abre o editor e explica', () => 
   assert.equal(descreverDestino(redacao(), { turmaAtualId: null, agora: AGORA }).tipo, 'nenhum')
 })
 
-test('rascunho de proposta arquivada ou vencida não abre o editor', () => {
+test('rascunho de proposta arquivada não abre o editor', () => {
   const arquivada = descreverDestino(redacao({ tema: tema({ ativo: false }) }), { turmaAtualId: TURMA, agora: AGORA })
   assert.equal(arquivada.tipo, 'nenhum')
   assert.match(arquivada.motivo, /arquivada/)
-  const vencida = descreverDestino(redacao({ tema: tema({ prazoEntrega: '2026-10-01T12:00:00.000Z' }) }), { turmaAtualId: TURMA, agora: AGORA })
-  assert.equal(vencida.tipo, 'nenhum')
-  assert.match(vencida.motivo, /prazo/)
+})
+
+// O backend aceita a entrega com atraso, e o painel oferece a mesma proposta:
+// o prazo vencido avisa, não bloqueia.
+test('rascunho da turma atual com prazo vencido continua editável, com aviso', () => {
+  const vencida = descreverDestino(
+    redacao({ tema: tema({ prazoEntrega: '2026-10-01T12:00:00.000Z' }) }),
+    { turmaAtualId: TURMA, agora: AGORA },
+  )
+
+  assert.equal(vencida.tipo, 'editor')
+  assert.equal(vencida.para, '/aluno/temas/t1/redacao')
+  assert.equal(vencida.rotulo, 'Continuar escrevendo')
+  assert.match(vencida.aviso, /atraso/)
+  assert.equal(vencida.motivo, undefined)
+})
+
+test('dentro do prazo o editor abre sem aviso de atraso', () => {
+  const noPrazo = descreverDestino(redacao(), { turmaAtualId: TURMA, agora: AGORA })
+
+  assert.equal(noPrazo.tipo, 'editor')
+  assert.equal(noPrazo.aviso, undefined)
+})
+
+test('prazo vencido não libera turma antiga, proposta arquivada nem enviada', () => {
+  const vencido = { prazoEntrega: '2026-10-01T12:00:00.000Z' }
+
+  assert.equal(
+    descreverDestino(redacao({ tema: tema(vencido) }), { turmaAtualId: 'outra-turma', agora: AGORA }).tipo,
+    'nenhum',
+  )
+  assert.equal(
+    descreverDestino(redacao({ tema: tema({ ...vencido, ativo: false }) }), { turmaAtualId: TURMA, agora: AGORA }).tipo,
+    'nenhum',
+  )
+  assert.equal(
+    descreverDestino(redacao({ status: 'ENVIADA', tema: tema(vencido) }), { turmaAtualId: TURMA, agora: AGORA }).tipo,
+    'nenhum',
+  )
 })
 
 test('redação enviada explica que aguarda a correção', () => {

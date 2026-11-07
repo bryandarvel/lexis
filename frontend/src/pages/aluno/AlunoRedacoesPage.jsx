@@ -2,10 +2,16 @@ import { useEffect, useId, useState } from 'react'
 import { Link } from 'react-router'
 
 import AlunoLayout from '../../layouts/AlunoLayout.jsx'
+import { useAuth } from '../../hooks/useAuth.js'
 import { listarMinhasRedacoes } from '../../services/redacoes.js'
 import { listarTemasDoAluno } from '../../services/temas.js'
 import { obterMinhaMatricula } from '../../services/turmas.js'
-import { selecionarPropostaAberta } from '../../utils/aluno-painel.js'
+import { obterRotaEnviarRedacao } from '../../utils/aluno-feedback.js'
+import {
+  estadoDaContaAtual,
+  marcarConta,
+  mesmaConta,
+} from '../../utils/identidade-sessao.js'
 import {
   FILTROS_SITUACAO,
   ORDENACOES,
@@ -43,6 +49,10 @@ function ItemRedacao({ redacao, turmaAtualId }) {
         {destino.tipo === 'nenhum' && destino.motivo && (
           <p className="aluno-redacao-motivo">{destino.motivo}</p>
         )}
+
+        {destino.aviso && (
+          <p className="aluno-redacao-motivo">{destino.aviso}</p>
+        )}
       </div>
 
       <div className="aluno-redacao-lado">
@@ -70,23 +80,33 @@ function ItemRedacao({ redacao, turmaAtualId }) {
   )
 }
 
+const CARREGANDO = {
+  status: 'carregando',
+  redacoes: [],
+  turmaAtualId: null,
+  rotaEnviar: null,
+  usuarioId: null,
+}
+
 export default function AlunoRedacoesPage() {
   const idFiltro = useId()
   const idOrdem = useId()
-  const [carregamento, setCarregamento] = useState({
-    status: 'carregando',
-    redacoes: [],
-    turmaAtualId: null,
-    rotaEnviar: null,
-  })
+  const { usuario } = useAuth()
+  const usuarioId = usuario?.id ?? null
+  const [carregamento, setCarregamento] = useState(CARREGANDO)
   const [tentativa, setTentativa] = useState(0)
   const [filtro, setFiltro] = useState('todas')
   const [ordenacao, setOrdenacao] = useState('recentes')
 
   useEffect(() => {
     let ativo = true
+    // A conta desta consulta. Uma resposta que chegue depois de outra pessoa
+    // entrar é descartada, em vez de preencher a tela dela.
+    const contaDaConsulta = usuarioId
 
-    setCarregamento((atual) => ({ ...atual, status: 'carregando' }))
+    setCarregamento(marcarConta(CARREGANDO, contaDaConsulta))
+
+    if (!contaDaConsulta) return undefined
 
     // A lista é o que a página existe para mostrar; a turma atual e as
     // propostas só refinam o link e o item "Enviar redação" da sidebar, então a
@@ -99,42 +119,49 @@ export default function AlunoRedacoesPage() {
       if (!ativo) return
 
       if (listaResultado.status === 'rejected') {
-        setCarregamento({
-          status: 'erro',
-          redacoes: [],
-          turmaAtualId: null,
-          rotaEnviar: null,
-        })
+        setCarregamento(
+          marcarConta({ ...CARREGANDO, status: 'erro' }, contaDaConsulta),
+        )
         return
       }
 
       const redacoes = Array.isArray(listaResultado.value)
         ? listaResultado.value
         : []
-      const proposta =
-        temasResultado.status === 'fulfilled'
-          ? selecionarPropostaAberta(temasResultado.value, redacoes)
-          : null
 
-      setCarregamento({
-        status: 'pronto',
-        redacoes,
-        turmaAtualId:
-          matriculaResultado.status === 'fulfilled'
-            ? matriculaResultado.value?.turma?.id ?? null
-            : null,
-        rotaEnviar: proposta
-          ? `/aluno/temas/${encodeURIComponent(proposta.id)}/redacao`
-          : null,
-      })
+      setCarregamento((atual) =>
+        // Descarta a resposta se a conta mudou entre o pedido e a chegada.
+        mesmaConta(atual.usuarioId, contaDaConsulta)
+          ? marcarConta(
+              {
+                status: 'pronto',
+                redacoes,
+                turmaAtualId:
+                  matriculaResultado.status === 'fulfilled'
+                    ? matriculaResultado.value?.turma?.id ?? null
+                    : null,
+                rotaEnviar:
+                  temasResultado.status === 'fulfilled'
+                    ? obterRotaEnviarRedacao(temasResultado.value, redacoes)
+                    : null,
+              },
+              contaDaConsulta,
+            )
+          : atual,
+      )
     })
 
     return () => {
       ativo = false
     }
-  }, [tentativa])
+  }, [tentativa, usuarioId])
 
-  const { status, redacoes, turmaAtualId, rotaEnviar } = carregamento
+  // O render nunca usa estado de outra conta: na troca, volta ao carregando.
+  const { status, redacoes, turmaAtualId, rotaEnviar } = estadoDaContaAtual(
+    carregamento,
+    usuarioId,
+    CARREGANDO,
+  )
   const resumo = resumirRedacoes(redacoes)
   const visiveis = ordenarRedacoes(
     filtrarRedacoes(redacoes, filtro),
