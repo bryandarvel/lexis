@@ -21,9 +21,12 @@ git fetch origin
 git switch dev
 git pull --ff-only origin dev
 git status
+git rev-parse HEAD
 ```
 
 Se o pull indicar divergência, não use force/reset: confira os commits antes de continuar. Não desenvolva diretamente na dev ou main; depois dos testes, crie/retome a branch da sua Issue.
+
+Compare o hash com o outro integrante. Para atualizar sua branch de trabalho, primeiro preserve e revise as alterações locais nela; depois, com o diretório limpo, volte para essa branch e faça `git merge dev`. Se houver conflito, preserve ambos os lados e peça revisão quando o contrato não estiver claro. Não faça push diretamente para `dev`.
 
 ## 3. Preparar o backend
 
@@ -38,7 +41,7 @@ npx.cmd prisma migrate deploy
 npm.cmd run dev
 ```
 
-A migration de recuperação adiciona versão de sessão e a tabela de links de recuperação; não converte critérios históricos. Não é necessário apagar o banco nem executar o seed novamente. Mantenha as senhas e dados locais já configurados. A nova variável `PASSWORD_RESET_TTL_MINUTES` tem padrão de 30 minutos.
+As migrations aplicadas dependem do hash atualizado. No lote de novembro, as de notificações múltiplas (#97) e trechos publicados (#102) já estão na `dev`. Antes de aplicar migrations novas, preserve um backup local e confira o destino. A validação automatizada deste lote só aplicou migrations em `lexis_test`. Não é necessário apagar o banco nem executar o seed novamente. Não converta critérios históricos para “compatibilizar” a atualização. Mantenha as senhas e dados locais já configurados. `PASSWORD_RESET_TTL_MINUTES` tem padrão de 30 minutos.
 
 ## 4. Preparar o frontend
 
@@ -61,3 +64,5 @@ Abra o endereço informado pelo Vite. Se a sessão anterior não funcionar, faç
 - Recuperação: depende de e-mail habilitado e fila supervisionada conforme [operacao-email.md](operacao-email.md). Não execute o worker sem revisar destinatários e mensagens pendentes.
 
 Integrações externas dependem das credenciais/cotas locais. CI aprovado não comprova disponibilidade do Gemini, OCR.space, LanguageTool ou Resend na máquina de cada integrante.
+
+Para a composição dos PRs de novembro, preparação isolada do banco de teste e aceite do mesmo commit nas duas máquinas, siga [integracao-aceite-2026-11.md](integracao-aceite-2026-11.md). O [registro de aceite](registro-aceite-integrado.md) é um modelo vazio, não uma declaração de execução. A estrutura técnica do [plano de deploy](plano-deploy-vercel-railway.md) foi aprovada sem provisionar agora; as decisões concretas e sua execução exigem autorização posterior.

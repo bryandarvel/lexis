@@ -4,8 +4,15 @@ import { Link, useParams } from 'react-router'
 import ProfessorWorkspaceLayout from '../../layouts/ProfessorWorkspaceLayout.jsx'
 import CriterionDialog from '../../components/professor/CriterionDialog.jsx'
 import { carregarPropostaProfessor } from '../../services/professor-topic.js'
-import { substituirCriterios } from '../../services/temas.js'
-import { agruparCriteriosProposta, prepararCriterioPersonalizado } from '../../utils/professor-topic.js'
+import { arquivarTema, atualizarTema, substituirCriterios } from '../../services/temas.js'
+import { interpretarErroApi } from '../../utils/api-error.js'
+import {
+  agruparCriteriosProposta,
+  descreverEdicaoTema,
+  formatarPrazoParaInput,
+  prepararCriterioPersonalizado,
+  prepararEdicaoTema,
+} from '../../utils/professor-topic.js'
 import { obterIniciais } from '../../utils/professor-dashboard.js'
 import './professor-topic.css'
 
@@ -14,6 +21,103 @@ function formatarPrazo(valor) {
   return valor && !Number.isNaN(data.getTime())
     ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(data)
     : 'Prazo não informado'
+}
+
+// Mesmo padrão do NovaTurmaDialog: dialog nativo, Esc tratado e foco devolvido.
+function useDialogoProposta(onClose, enviando) {
+  const dialogRef = useRef(null)
+
+  useEffect(() => {
+    const dialog = dialogRef.current
+    dialog.showModal()
+    return () => dialog.close()
+  }, [])
+
+  return {
+    dialogRef,
+    cancelar: (event) => { event.preventDefault(); if (!enviando) onClose() },
+  }
+}
+
+function EditarPropostaDialog({ tema, enviando, erro, erros, onSave, onClose }) {
+  const { dialogRef, cancelar } = useDialogoProposta(onClose, enviando)
+  const primeiroRef = useRef(null)
+  const bloqueio = descreverEdicaoTema(tema)
+  const [formulario, setFormulario] = useState({
+    enunciado: tema.enunciado,
+    descricao: tema.descricao,
+    instrucoes: tema.instrucoes ?? '',
+    prazoEntrega: formatarPrazoParaInput(tema.prazoEntrega),
+  })
+
+  useEffect(() => {
+    if (!enviando && Object.keys(erros).length) primeiroRef.current?.focus()
+  }, [enviando, erros])
+
+  const alterar = (campo) => (event) =>
+    setFormulario((atual) => ({ ...atual, [campo]: event.target.value }))
+
+  const campo = (nome, rotulo, elemento) => (
+    <p className="topic-campo">
+      <label htmlFor={`tema-${nome}`}>{rotulo}</label>
+      {elemento}
+      {erros[nome] && <span id={`tema-${nome}-erro`} className="topic-campo-erro">{erros[nome]}</span>}
+    </p>
+  )
+
+  const comuns = (nome) => ({
+    id: `tema-${nome}`,
+    value: formulario[nome],
+    disabled: enviando || (bloqueio.conteudoBloqueado && nome !== 'prazoEntrega'),
+    onChange: alterar(nome),
+    'aria-invalid': erros[nome] ? true : undefined,
+    'aria-describedby': erros[nome] ? `tema-${nome}-erro` : undefined,
+  })
+
+  return (
+    <dialog ref={dialogRef} className="professor-panel-dialog topic-proposta-dialog topic-edit-dialog" aria-labelledby="tema-editar-title" onCancel={cancelar}>
+      <h2 id="tema-editar-title">Editar proposta</h2>
+      {bloqueio.conteudoBloqueado && <p className="topic-rule">{bloqueio.motivo}</p>}
+      <form
+        noValidate
+        aria-busy={enviando}
+        onSubmit={(event) => { event.preventDefault(); if (!enviando) onSave(formulario) }}
+      >
+        {campo('enunciado', 'Enunciado', <input ref={primeiroRef} type="text" maxLength={250} {...comuns('enunciado')} />)}
+        {campo('descricao', 'Descrição', <textarea rows={4} maxLength={10000} {...comuns('descricao')} />)}
+        {campo('instrucoes', 'Orientações e textos motivadores', <textarea rows={3} maxLength={5000} {...comuns('instrucoes')} />)}
+        {campo('prazoEntrega', 'Prazo de entrega', <input type="datetime-local" {...comuns('prazoEntrega')} />)}
+        {(erros.formulario || erro) && <p className="topic-campo-erro" role="alert">{erros.formulario || erro}</p>}
+        <div className="panel-dialog-actions">
+          <button type="button" className="panel-soft-button" disabled={enviando} onClick={onClose}>Cancelar</button>
+          <button type="submit" className="panel-primary-button" disabled={enviando}>{enviando ? 'Salvando...' : 'Salvar proposta'}</button>
+        </div>
+      </form>
+    </dialog>
+  )
+}
+
+function ArquivarPropostaDialog({ tema, enviando, erro, onConfirm, onClose }) {
+  const { dialogRef, cancelar } = useDialogoProposta(onClose, enviando)
+
+  return (
+    <dialog ref={dialogRef} className="professor-panel-dialog topic-proposta-dialog" aria-labelledby="tema-arquivar-title" aria-describedby="tema-arquivar-efeitos" onCancel={cancelar}>
+      <h2 id="tema-arquivar-title">Arquivar a proposta “{tema.enunciado}”?</h2>
+      <ul id="tema-arquivar-efeitos" className="topic-efeitos">
+        <li>A proposta sai da lista dos alunos e ninguém mais consegue abri-la nem enviar redação.</li>
+        <li>As redações já enviadas e as correções publicadas permanecem.</li>
+        <li>A proposta continua visível para você, marcada como arquivada.</li>
+        <li>Não há como reabrir a proposta pela interface.</li>
+      </ul>
+      {erro && <p className="topic-campo-erro" role="alert">{erro}</p>}
+      <div className="panel-dialog-actions">
+        <button type="button" className="panel-soft-button" disabled={enviando} onClick={onClose}>Cancelar</button>
+        <button type="button" className="panel-primary-button topic-botao-perigo" disabled={enviando} onClick={onConfirm}>
+          {enviando ? 'Arquivando...' : 'Arquivar proposta'}
+        </button>
+      </div>
+    </dialog>
+  )
 }
 
 export default function ProfessorTemaPage() {
@@ -25,6 +129,10 @@ export default function ProfessorTemaPage() {
   const [salvando, setSalvando] = useState(false)
   const [erroEditor, setErroEditor] = useState('')
   const [aviso, setAviso] = useState('')
+  const [proposta, setProposta] = useState(null)
+  const [acaoProposta, setAcaoProposta] = useState({ enviando: false, erro: '', erros: {} })
+  const acaoPropostaRef = useRef(false)
+  const origemProposta = useRef(null)
   const salvandoRef = useRef(false)
   const origemEditor = useRef(null)
   const criteriosRef = useRef(null)
@@ -45,6 +153,7 @@ export default function ProfessorTemaPage() {
   const pronto = pagina.status === 'pronto'
   const grupos = pronto ? agruparCriteriosProposta(pagina.tema.criterios, pagina.modelo) : null
   const podeEditar = pronto && grupos.compativel && !pagina.tema.criteriosBloqueados && pagina.tema.ativo && pagina.turma.ativa
+  const edicao = descreverEdicaoTema(pronto ? pagina.tema : null)
   const turmaId = pagina.turma?.id
 
   function abrirEditor(indice, event) {
@@ -74,6 +183,65 @@ export default function ProfessorTemaPage() {
       if (error?.response?.status === 409) setTentativa((atual) => atual + 1)
     } finally { salvandoRef.current = false; setSalvando(false) }
   }
+  function abrirProposta(tipo, event) {
+    origemProposta.current = event.currentTarget
+    setProposta(tipo)
+    setAcaoProposta({ enviando: false, erro: '', erros: {} })
+    setAviso('')
+  }
+
+  function fecharProposta() {
+    if (acaoPropostaRef.current) return
+    setProposta(null)
+    setAcaoProposta({ enviando: false, erro: '', erros: {} })
+    requestAnimationFrame(() => {
+      const origem = origemProposta.current
+      if (origem?.isConnected && !origem.disabled) origem.focus()
+      else criteriosRef.current?.focus()
+    })
+  }
+
+  async function executarProposta(operacao, mensagem) {
+    if (acaoPropostaRef.current) return
+    acaoPropostaRef.current = true
+    setAcaoProposta({ enviando: true, erro: '', erros: {} })
+    try {
+      const tema = await operacao()
+      acaoPropostaRef.current = false
+      setPagina((atual) => ({ ...atual, tema }))
+      setProposta(null)
+      setAcaoProposta({ enviando: false, erro: '', erros: {} })
+      setAviso(mensagem(tema))
+      requestAnimationFrame(() => {
+        const origem = origemProposta.current
+        if (origem?.isConnected && !origem.disabled) origem.focus()
+        else criteriosRef.current?.focus()
+      })
+    } catch (error) {
+      acaoPropostaRef.current = false
+      setAcaoProposta({
+        enviando: false,
+        erro: interpretarErroApi(error, 'Não foi possível concluir. Tente novamente.').mensagem,
+        erros: {},
+      })
+      // Revalida o bloqueio caso uma entrega tenha ocorrido durante a edição.
+      if (error?.response?.status === 409) setTentativa((atual) => atual + 1)
+    }
+  }
+
+  function salvarProposta(formulario) {
+    const { erros, dados } = prepararEdicaoTema(formulario, pagina.tema)
+    if (!dados) {
+      setAcaoProposta({ enviando: false, erro: '', erros })
+      return
+    }
+    executarProposta(() => atualizarTema(temaId, dados), () => 'Proposta atualizada.')
+  }
+
+  function arquivarProposta() {
+    executarProposta(() => arquivarTema(temaId), () => 'Proposta arquivada. Os alunos não a veem mais.')
+  }
+
   function irParaRedacoes() {
     redacoesRef.current?.scrollIntoView({ block: 'start' })
     redacoesRef.current?.focus()
@@ -95,7 +263,15 @@ export default function ProfessorTemaPage() {
           </section>
           <div className="topic-grid">
             <section className="topic-card topic-prompt" aria-labelledby="topic-prompt-title">
-              <h2 id="topic-prompt-title">Enunciado</h2><p className="topic-prose">{pagina.tema.descricao}</p>
+              <div className="topic-section-heading">
+                <h2 id="topic-prompt-title">Enunciado</h2>
+                <div className="topic-acoes">
+                  <button type="button" className="panel-soft-button" disabled={!edicao.podeEditar || salvando} onClick={(event) => abrirProposta('editar', event)}>Editar proposta</button>
+                  <button type="button" className="panel-soft-button topic-botao-perigo" disabled={!pagina.tema.ativo || salvando} onClick={(event) => abrirProposta('arquivar', event)}>Arquivar proposta</button>
+                </div>
+              </div>
+              {edicao.motivo && <p className="topic-rule">{edicao.motivo}</p>}
+              <p className="topic-prose">{pagina.tema.descricao}</p>
               <h3>Orientações e textos motivadores</h3>
               {pagina.tema.instrucoes ? <p className="topic-instructions">{pagina.tema.instrucoes}</p> : <p className="topic-empty-text">Nenhuma orientação adicional cadastrada nesta proposta.</p>}
             </section>
@@ -122,6 +298,27 @@ export default function ProfessorTemaPage() {
               <p role="status" className="topic-save-status">{aviso}</p>
             </aside>
           </div>
+
+          {proposta === 'editar' && (
+            <EditarPropostaDialog
+              tema={pagina.tema}
+              enviando={acaoProposta.enviando}
+              erro={acaoProposta.erro}
+              erros={acaoProposta.erros}
+              onSave={salvarProposta}
+              onClose={fecharProposta}
+            />
+          )}
+
+          {proposta === 'arquivar' && (
+            <ArquivarPropostaDialog
+              tema={pagina.tema}
+              enviando={acaoProposta.enviando}
+              erro={acaoProposta.erro}
+              onConfirm={arquivarProposta}
+              onClose={fecharProposta}
+            />
+          )}
         </>}
       </motion.main>
     </ProfessorWorkspaceLayout>

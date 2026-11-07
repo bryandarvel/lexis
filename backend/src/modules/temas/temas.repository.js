@@ -174,11 +174,19 @@ export async function atualizarTemaDoProfessor({
   professorId,
   dados,
 }) {
+  const alteraConteudo = Object.keys(dados).some(
+    (campo) => campo !== 'prazoEntrega',
+  )
+
   const resultado =
     await prisma.temaRedacao.updateMany({
       where: {
         id: temaId,
         ativo: true,
+        // O envio bloqueia esta mesma linha antes de marcar o primeiro envio.
+        // O UPDATE verifica a condição sob o lock da linha, não a partir da
+        // leitura anterior do service. Não há novos locks em ordem inversa.
+        ...(alteraConteudo && { criteriosBloqueadosEm: null }),
         turma: {
           professorId,
         },
@@ -187,6 +195,10 @@ export async function atualizarTemaDoProfessor({
     })
 
   if (resultado.count !== 1) {
+    const atual = await buscarTemaDoProfessor({ temaId, professorId })
+    if (atual?.ativo && alteraConteudo && atual.criteriosBloqueadosEm) {
+      return 'CONTEUDO_BLOQUEADO'
+    }
     return null
   }
 
@@ -313,6 +325,33 @@ export async function arquivarTemaDoProfessor({
   return buscarTemaDoProfessor({
     temaId,
     professorId,
+  })
+}
+
+export function reabrirTemaDoProfessor({ temaId, turmaId, professorId }) {
+  return prisma.$transaction(async (transaction) => {
+    // Mesma ordem do arquivamento da turma: turma antes de outros registros.
+    // Impede reabertura baseada numa leitura anterior ao arquivamento concorrente.
+    const turmas = await transaction.$queryRaw`
+      SELECT id, ativa
+      FROM turmas
+      WHERE id = ${turmaId} AND professorId = ${professorId}
+      FOR UPDATE
+    `
+    if (turmas.length !== 1) return { status: 'TEMA_NAO_ENCONTRADO' }
+    if (!turmas[0].ativa) return { status: 'TURMA_ARQUIVADA' }
+
+    const resultado = await transaction.temaRedacao.updateMany({
+      where: { id: temaId, turmaId, ativo: false },
+      data: { ativo: true, arquivadoEm: null },
+    })
+    if (resultado.count !== 1) return { status: 'TEMA_JA_ATIVO' }
+
+    const tema = await transaction.temaRedacao.findUnique({
+      where: { id: temaId },
+      select: temaDetalhadoSelect,
+    })
+    return { status: 'TEMA_REABERTO', tema }
   })
 }
 
