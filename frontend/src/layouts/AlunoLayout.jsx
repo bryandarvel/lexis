@@ -10,12 +10,14 @@ import {
   useNavigate,
 } from 'react-router'
 
+import MinhaTurmaDialogo from '../components/aluno/MinhaTurmaDialogo.jsx'
 import ThemeToggle from '../components/layout/ThemeToggle.jsx'
 import { useAuth } from '../hooks/useAuth.js'
 import {
   useNotificacoesNaoLidas,
 } from '../hooks/useNotificacoesNaoLidas.js'
 import { obterIniciais } from '../utils/aluno-painel.js'
+import { mensagemSaidaDaTurma } from '../utils/minha-turma.js'
 import './aluno-layout.css'
 
 const classeItemNavegacao =
@@ -137,9 +139,10 @@ function MenuUsuario({
   usuario,
   saindo,
   onSair,
+  onAbrirMinhaTurma,
+  botaoRef,
 }) {
   const [aberto, setAberto] = useState(false)
-  const botaoRef = useRef(null)
   const painelRef = useRef(null)
   const idPainel = useId()
 
@@ -178,7 +181,7 @@ function MenuUsuario({
         fecharAoClicarFora,
       )
     }
-  }, [aberto])
+  }, [aberto, botaoRef])
 
   return (
     <div className="relative">
@@ -210,6 +213,17 @@ function MenuUsuario({
               {usuario.email}
             </p>
           )}
+
+          <button
+            type="button"
+            onClick={() => {
+              setAberto(false)
+              onAbrirMinhaTurma()
+            }}
+            className="mt-4 h-10 w-full rounded-lg border border-[var(--aluno-borda-campo)] text-[13px] font-semibold text-lexis-100 transition-colors hover:bg-[var(--aluno-neutro-fundo)]"
+          >
+            Minha turma
+          </button>
 
           <div className="mt-4 flex items-center justify-between gap-3 border-t border-[var(--surface-border)] pt-4">
             <span className="text-xs font-medium text-lexis-200">
@@ -288,8 +302,22 @@ export default function AlunoLayout({
   const [saindo, setSaindo] = useState(false)
   const [navegacaoAberta, setNavegacaoAberta] =
     useState(false)
+  const [minhaTurmaAberta, setMinhaTurmaAberta] =
+    useState(false)
   const botaoNavegacaoRef = useRef(null)
   const navegacaoRef = useRef(null)
+  const botaoAvatarRef = useRef(null)
+
+  function fecharMinhaTurma() {
+    setMinhaTurmaAberta(false)
+  }
+
+  function concluirSaidaDaTurma(turma) {
+    fecharMinhaTurma()
+    navigate('/aluno', {
+      state: { aviso: mensagemSaidaDaTurma(turma) },
+    })
+  }
 
   useEffect(() => {
     if (!navegacaoAberta) return undefined
@@ -403,6 +431,10 @@ export default function AlunoLayout({
               usuario={usuario}
               saindo={saindo}
               onSair={handleSair}
+              onAbrirMinhaTurma={() =>
+                setMinhaTurmaAberta(true)
+              }
+              botaoRef={botaoAvatarRef}
             />
           </div>
         </div>
@@ -479,6 +511,13 @@ export default function AlunoLayout({
           </div>
         </div>
       </main>
+
+      <MinhaTurmaDialogo
+        aberto={minhaTurmaAberta}
+        onFechar={fecharMinhaTurma}
+        onSaiu={concluirSaidaDaTurma}
+        retornoFocoRef={botaoAvatarRef}
+      />
     </div>
   )
 }
