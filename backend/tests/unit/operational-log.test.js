@@ -21,6 +21,20 @@ test('log rejeita injeção por campos de metadados', () => {
   assert.deepEqual(Object.keys(registro), ['evento', 'instante'])
 })
 
+test('diagnóstico Gemini registra status e transporte seguros, sem copiar o erro externo', () => {
+  const dados = { codigo: 'GEMINI_CONNECTION_FAILED', statusExterno: 503, retryAfterSeconds: 30, codigoTransporte: 'ECONNRESET', mensagemExterna: 'segredo', headers: { authorization: 'segredo' } }
+  const registro = criarRegistroOperacional('request_error', dados)
+  assert.equal(registro.statusExterno, 503)
+  assert.equal(registro.retryAfterSeconds, 30)
+  assert.equal(registro.codigoTransporte, 'ECONNRESET')
+  assert.doesNotMatch(JSON.stringify(registro), /segredo|headers/)
+  const invalido = criarRegistroOperacional('request_error', { ...dados, statusExterno: 999, retryAfterSeconds: Infinity, codigoTransporte: 'segredo' })
+  assert.equal(invalido.statusExterno, undefined)
+  assert.equal(invalido.retryAfterSeconds, undefined)
+  assert.equal(invalido.codigoTransporte, undefined)
+  assert.equal(criarRegistroOperacional('http_request', dados).statusExterno, undefined)
+})
+
 test('requisicao gera ID próprio e registra conclusão sem URL nem conta', () => {
   const res = new EventEmitter()
   let id, evento

@@ -137,9 +137,12 @@ Os relatórios locais são gravados em `backend/output/ai-evaluation` e não sã
 ## Serviços externos e privacidade
 
 - OCR.space e Gemini recebem somente o conteúdo necessário ao recurso solicitado; chaves e limites pertencem a cada desenvolvedor.
+- O Gemini não repete chamadas automaticamente; há controle de concorrência e espera no processo local. Chaves do mesmo projeto Google compartilham cota, inclusive entre máquinas. Consulte [operação e limites do Gemini](docs/operacao-gemini.md).
 - O LanguageTool só é chamado por ação explícita do aluno. O padrão aponta para uma instância local e fica desativado.
 - A API pública gratuita do LanguageTool não é adequada para automação contínua; possui limites, não oferece garantia de disponibilidade e exige atenção à privacidade.
 - Em desenvolvimento, o Resend redireciona mensagens para `EMAIL_DEMO_RECIPIENT`.
+
+O [guia de observabilidade local e triagem](docs/observabilidade-local.md) explica logs, `X-Request-Id`, `/health` e consulta agregada de filas, distinguindo recursos presentes na `dev` daqueles que ainda dependem de PR. Não há telemetria externa ou monitor automático instalado por essa etapa.
 
 ## Limitações conhecidas
 
@@ -174,11 +177,13 @@ O Pull Request deve mencionar a Issue com `Closes #NUMERO`, passar pela integra�
 
 O destino das tarefas é `dev`, com merge commit. A `main` só receberá uma promoção posterior por PR, depois dos testes e aprovação explícita; nunca recebe commits diretos. Para atualizar uma máquina já configurada após a integração, consulte [docs/atualizacao-dev.md](docs/atualizacao-dev.md).
 
+O [roteiro de integração e aceite de novembro](docs/integracao-aceite-2026-11.md) separa PR preparado, código integrado e teste nas duas máquinas. Use o [modelo vazio de registro](docs/registro-aceite-integrado.md) depois de executar os fluxos. A [proposta futura Vercel + Railway](docs/plano-deploy-vercel-railway.md) teve sua estrutura técnica aprovada, sem provisionar agora; recursos concretos, domínio, orçamento e retenção ainda exigem aprovação separada.
+
 Consulte [CONTRIBUTING.md](CONTRIBUTING.md) para conhecer a rotina completa de Issues, branches, commits, push, revisão e Pull Request. Agentes de IA também devem seguir as regras de [AGENTS.md](AGENTS.md).
 
 ## Segurança
 
-O estado conhecido da auditoria de dependências e as medidas pendentes estão em [docs/seguranca-dependencias.md](docs/seguranca-dependencias.md). O frontend está sem alertas no `npm audit`; o backend ainda depende de correções upstream do ecossistema Prisma e não deve ser tratado como pronto para produção pública sem nova revisão.
+O histórico da auditoria de dependências e as medidas pendentes estão em [docs/seguranca-dependencias.md](docs/seguranca-dependencias.md). Os resultados dependem da data, do lockfile e dos patches realmente integrados; PR aprovado ou instalado em outra branch não elimina alertas desta versão. Antes de publicar, repita a auditoria nos pacotes da árvore integrada e revise os alertas restantes, sem downgrade ou override para apenas obter resultado verde. O projeto não deve ser tratado como pronto para produção pública sem essa revisão e o aceite integrado.
 
 Nunca envie ao GitHub:
 

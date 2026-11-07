@@ -24,13 +24,15 @@ O modo real exige simultaneamente:
 1. uma `GEMINI_API_KEY` válida no ambiente local;
 2. `AI_EVALUATION_REAL_ENABLED=true` no ambiente;
 3. a opção `--confirmar-custo` no comando;
-4. um limite explícito entre 1 e 20 casos.
+4. um limite entre 1 e 20 casos; o CLI atual usa 1 quando `--limite` é omitido. O protocolo deve exigir que o valor aprovado seja informado explicitamente; isso não é uma trava adicional já implementada.
 
 ```powershell
 npm.cmd run ai:evaluate -- --modo=real --confirmar-custo --limite=1 --entrada=C:\caminho\avaliacao-autorizada.json --rotulo=experimento-v1
 ```
 
 O modo real pode gerar custo e enviar o texto das redações ao provedor. Só use conteúdo autorizado, minimizado e compatível com o protocolo aprovado para a pesquisa. Nunca versione o corpus, credenciais ou os relatórios de `backend/output`.
+
+As travas técnicas não verificam autorizações do corpus ou do orientador, referências humanas independentes ou um orçamento global de chamadas/tokens. O limite não define a amostra científica. Consulte [protocolo](protocolo-academico-ia.md) e [registro privado do estudo](modelo-registro-estudo-ia.md) antes de planejar um lote. Nenhum experimento real foi aprovado/executado pela preparação documental da #112.
 
 ## Comparação de versões
 
