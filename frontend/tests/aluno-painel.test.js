@@ -40,7 +40,7 @@ test('descreve a turma com o nome do professor', () => {
         nome: 'Ana Lima',
       },
     }),
-    '3ºA — Ensino Médio · Prof. Ana Lima',
+    '3ºA — Ensino Médio · Ana Lima',
   )
   assert.equal(
     descreverTurma({
@@ -49,6 +49,23 @@ test('descreve a turma com o nome do professor', () => {
     '3ºA',
   )
   assert.equal(descreverTurma(null), '')
+})
+
+// #51: o nome do professor é exibido como cadastrado. Acrescentar "Prof." duplicava
+// o título de quem já o tem no nome ("Prof. Professora Helena Demo").
+test('não prefixa Prof. ao nome do professor, com ou sem título no cadastro', () => {
+  for (const nome of ['Ana Lima', 'Professora Helena Demo', 'Prof. Carlos', 'Dra. Marta']) {
+    const texto = descreverTurma({ nome: '3ºA', professor: { nome } })
+
+    assert.equal(texto, `3ºA · ${nome}`)
+    assert.doesNotMatch(texto, /Prof\. Professor/)
+  }
+})
+
+test('nome do professor com espaços nas bordas ou vazio não gera separador solto', () => {
+  assert.equal(descreverTurma({ nome: '3ºA', professor: { nome: '  Ana Lima  ' } }), '3ºA · Ana Lima')
+  assert.equal(descreverTurma({ nome: '3ºA', professor: { nome: '   ' } }), '3ºA')
+  assert.equal(descreverTurma({ nome: '3ºA', professor: {} }), '3ºA')
 })
 
 test('escolhe a proposta aberta de prazo mais próximo ainda não entregue', () => {
