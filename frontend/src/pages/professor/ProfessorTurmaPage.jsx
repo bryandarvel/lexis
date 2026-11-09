@@ -8,11 +8,17 @@ import {
   desvincularAlunoDaTurma,
   listarAlunosDaTurma,
   obterTurma,
+  reabrirTurma,
   regenerarCodigoTurma,
   renomearTurma,
 } from '../../services/turmas.js'
 import { interpretarErroApi } from '../../utils/api-error.js'
 import { prepararNomeTurma } from '../../utils/professor-classes.js'
+import {
+  descreverDialogoReabrirTurma,
+  mapearErroReabertura,
+  MENSAGENS_SUCESSO_REABERTURA,
+} from '../../utils/reabertura.js'
 import {
   descreverSituacaoAluno,
   descreverSituacaoTurma,
@@ -133,7 +139,7 @@ function RenomearTurmaDialog({ nomeAtual, enviando, erro, onSave, onClose }) {
   )
 }
 
-function ConfirmarAcaoDialog({ titulo, efeitos, rotulo, rotuloEnviando, enviando, erro, onConfirm, onClose }) {
+function ConfirmarAcaoDialog({ titulo, efeitos, rotulo, rotuloEnviando, enviando, erro, onConfirm, onClose, perigo = true }) {
   const enviandoRef = useRef(false)
   const { dialogRef, cancelar } = useDialogoModal(onClose, enviandoRef)
 
@@ -148,7 +154,7 @@ function ConfirmarAcaoDialog({ titulo, efeitos, rotulo, rotuloEnviando, enviando
       {erro && <p className="class-field-error" role="alert">{erro}</p>}
       <div className="panel-dialog-actions">
         <button type="button" className="panel-soft-button" disabled={enviando} onClick={onClose}>Cancelar</button>
-        <button type="button" className="panel-primary-button turma-botao-perigo" disabled={enviando} onClick={onConfirm}>
+        <button type="button" className={`panel-primary-button${perigo ? ' turma-botao-perigo' : ''}`} disabled={enviando} onClick={onConfirm}>
           {enviando ? rotuloEnviando : rotulo}
         </button>
       </div>
@@ -194,6 +200,7 @@ export default function ProfessorTurmaPage() {
   const [aviso, setAviso] = useState('')
   const acaoRef = useRef(false)
   const alunosTituloRef = useRef(null)
+  const gestaoTituloRef = useRef(null)
 
   useEffect(() => {
     let ativo = true
@@ -297,6 +304,50 @@ export default function ProfessorTurmaPage() {
       setAlunos({ status: 'indisponivel', lista: [], mensagem: '' })
       setAviso('Turma arquivada. As matrículas ativas foram encerradas.')
     })
+  }
+
+  // O efeito roda depois da limpeza do diálogo, que devolve o foco ao botão que
+  // o abriu (já trocado por outra ação): assim o foco termina no título da seção.
+  const [focoGestao, setFocoGestao] = useState(0)
+  const devolverFocoAGestao = () => setFocoGestao((valor) => valor + 1)
+
+  useEffect(() => {
+    if (focoGestao > 0) gestaoTituloRef.current?.focus()
+  }, [focoGestao])
+
+  async function reabrir() {
+    if (acaoRef.current) return
+    acaoRef.current = true
+    setAcao({ enviando: true, erro: '' })
+    try {
+      const atualizada = await reabrirTurma(turmaId)
+      acaoRef.current = false
+      setPagina((atual) => ({ ...atual, turma: atualizada }))
+      setDialogo(null)
+      setAcao({ enviando: false, erro: '' })
+      setAviso(MENSAGENS_SUCESSO_REABERTURA.turma)
+      devolverFocoAGestao()
+    } catch (error) {
+      acaoRef.current = false
+      const erroMapeado = mapearErroReabertura(error, 'turma')
+
+      if (!erroMapeado.recarregar) {
+        setAcao({ enviando: false, erro: erroMapeado.mensagem })
+        return
+      }
+
+      // A turma já estava ativa: busca a situação atual antes de avisar.
+      try {
+        const [turmaAtual, temas] = await Promise.all([obterTurma(turmaId), listarTemasDaTurma(turmaId)])
+        setPagina({ status: 'pronto', turma: turmaAtual, temas: Array.isArray(temas) ? temas : [], mensagem: '' })
+      } catch {
+        // Mantém a tela atual; o aviso abaixo explica o conflito.
+      }
+      setDialogo(null)
+      setAcao({ enviando: false, erro: '' })
+      setAviso(erroMapeado.mensagem)
+      devolverFocoAGestao()
+    }
   }
 
   function desvincular(matricula) {
@@ -407,7 +458,7 @@ export default function ProfessorTurmaPage() {
             </dl>
 
             <section className="panel-attention turma-gestao" aria-labelledby="turma-gestao-title">
-              <h2 id="turma-gestao-title">Gestão da turma</h2>
+              <h2 id="turma-gestao-title" ref={gestaoTituloRef} tabIndex={-1}>Gestão da turma</h2>
               {situacao.podeGerenciar ? (
                 <>
                   <p>Renomear a turma, gerar um novo código de acesso ou arquivar a turma.</p>
@@ -418,11 +469,16 @@ export default function ProfessorTurmaPage() {
                   </div>
                 </>
               ) : (
-                <p>
-                  Esta turma está arquivada desde {formatarDataEntrada(turma.arquivadaEm)}. As matrículas
-                  foram encerradas e a turma não pode mais ser alterada. As redações e as correções
-                  continuam disponíveis.
-                </p>
+                <>
+                  <p>
+                    Esta turma está arquivada desde {formatarDataEntrada(turma.arquivadaEm)}. As matrículas
+                    foram encerradas e a turma não pode ser alterada enquanto estiver arquivada. As redações
+                    e as correções continuam disponíveis.
+                  </p>
+                  <div className="turma-acoes">
+                    <button type="button" className="panel-primary-button" onClick={() => setDialogo({ tipo: 'reabrir' })}>Reabrir turma</button>
+                  </div>
+                </>
               )}
             </section>
 
@@ -538,13 +594,24 @@ export default function ProfessorTurmaPage() {
                   'As matrículas de todos os alunos são encerradas.',
                   'Os alunos deixam de ver as propostas desta turma e não podem enviar redações.',
                   'As redações e as correções já publicadas continuam disponíveis.',
-                  'A turma continua na sua lista, marcada como arquivada, e não poderá mais ser alterada nem reaberta pela interface.',
+                  'A turma continua na sua lista, marcada como arquivada, e só poderá ser alterada de novo se você reabri-la.',
                 ]}
                 rotulo="Arquivar turma"
                 rotuloEnviando="Arquivando..."
                 enviando={acao.enviando}
                 erro={acao.erro}
                 onConfirm={arquivar}
+                onClose={fecharDialogo}
+              />
+            )}
+
+            {dialogo?.tipo === 'reabrir' && (
+              <ConfirmarAcaoDialog
+                {...descreverDialogoReabrirTurma(turma)}
+                perigo={false}
+                enviando={acao.enviando}
+                erro={acao.erro}
+                onConfirm={reabrir}
                 onClose={fecharDialogo}
               />
             )}
