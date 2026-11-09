@@ -55,7 +55,7 @@ export function descreverEdicaoTema(tema) {
     return {
       podeEditar: false,
       conteudoBloqueado: true,
-      motivo: 'Esta proposta está arquivada e não pode mais ser alterada.',
+      motivo: 'Esta proposta está arquivada e não pode ser alterada enquanto estiver arquivada.',
     }
   }
 

@@ -4,7 +4,7 @@ import { Link, useParams } from 'react-router'
 import ProfessorWorkspaceLayout from '../../layouts/ProfessorWorkspaceLayout.jsx'
 import CriterionDialog from '../../components/professor/CriterionDialog.jsx'
 import { carregarPropostaProfessor } from '../../services/professor-topic.js'
-import { arquivarTema, atualizarTema, substituirCriterios } from '../../services/temas.js'
+import { arquivarTema, atualizarTema, reabrirTema, substituirCriterios } from '../../services/temas.js'
 import { interpretarErroApi } from '../../utils/api-error.js'
 import {
   agruparCriteriosProposta,
@@ -14,6 +14,12 @@ import {
   prepararEdicaoTema,
 } from '../../utils/professor-topic.js'
 import { obterIniciais } from '../../utils/professor-dashboard.js'
+import {
+  descreverDialogoReabrirProposta,
+  descreverReabertura,
+  mapearErroReabertura,
+  MENSAGENS_SUCESSO_REABERTURA,
+} from '../../utils/reabertura.js'
 import './professor-topic.css'
 
 function formatarPrazo(valor) {
@@ -107,13 +113,34 @@ function ArquivarPropostaDialog({ tema, enviando, erro, onConfirm, onClose }) {
         <li>A proposta sai da lista dos alunos e ninguém mais consegue abri-la nem enviar redação.</li>
         <li>As redações já enviadas e as correções publicadas permanecem.</li>
         <li>A proposta continua visível para você, marcada como arquivada.</li>
-        <li>Não há como reabrir a proposta pela interface.</li>
+        <li>Depois de arquivada, a proposta só volta a ficar ativa se você reabri-la nesta página.</li>
       </ul>
       {erro && <p className="topic-campo-erro" role="alert">{erro}</p>}
       <div className="panel-dialog-actions">
         <button type="button" className="panel-soft-button" disabled={enviando} onClick={onClose}>Cancelar</button>
         <button type="button" className="panel-primary-button topic-botao-perigo" disabled={enviando} onClick={onConfirm}>
           {enviando ? 'Arquivando...' : 'Arquivar proposta'}
+        </button>
+      </div>
+    </dialog>
+  )
+}
+
+function ReabrirPropostaDialog({ tema, enviando, erro, onConfirm, onClose }) {
+  const { dialogRef, cancelar } = useDialogoProposta(onClose, enviando)
+  const { titulo, efeitos, rotulo, rotuloEnviando } = descreverDialogoReabrirProposta(tema)
+
+  return (
+    <dialog ref={dialogRef} className="professor-panel-dialog topic-proposta-dialog" aria-labelledby="tema-reabrir-title" aria-describedby="tema-reabrir-efeitos" onCancel={cancelar}>
+      <h2 id="tema-reabrir-title">{titulo}</h2>
+      <ul id="tema-reabrir-efeitos" className="topic-efeitos">
+        {efeitos.map((efeito) => <li key={efeito}>{efeito}</li>)}
+      </ul>
+      {erro && <p className="topic-campo-erro" role="alert">{erro}</p>}
+      <div className="panel-dialog-actions">
+        <button type="button" className="panel-soft-button" disabled={enviando} onClick={onClose}>Cancelar</button>
+        <button type="button" className="panel-primary-button" disabled={enviando} onClick={onConfirm}>
+          {enviando ? rotuloEnviando : rotulo}
         </button>
       </div>
     </dialog>
@@ -136,6 +163,10 @@ export default function ProfessorTemaPage() {
   const salvandoRef = useRef(false)
   const origemEditor = useRef(null)
   const criteriosRef = useRef(null)
+  const editarRef = useRef(null)
+  // O botão Reabrir é trocado por Arquivar no mesmo lugar. O efeito roda depois da
+  // limpeza do diálogo e leva o foco a Editar proposta, não a uma ação destrutiva.
+  const [focoEditar, setFocoEditar] = useState(0)
   const redacoesRef = useRef(null)
 
   useEffect(() => {
@@ -150,11 +181,23 @@ export default function ProfessorTemaPage() {
     return () => { ativo = false }
   }, [temaId, tentativa])
 
+  useEffect(() => {
+    if (focoEditar === 0) return
+    const alvo = editarRef.current
+    if (alvo?.isConnected && !alvo.disabled) alvo.focus()
+    else criteriosRef.current?.focus()
+  }, [focoEditar])
+
   const pronto = pagina.status === 'pronto'
   const grupos = pronto ? agruparCriteriosProposta(pagina.tema.criterios, pagina.modelo) : null
   const podeEditar = pronto && grupos.compativel && !pagina.tema.criteriosBloqueados && pagina.tema.ativo && pagina.turma.ativa
   const edicao = descreverEdicaoTema(pronto ? pagina.tema : null)
   const turmaId = pagina.turma?.id
+  const reabertura = descreverReabertura({
+    tipo: 'proposta',
+    arquivada: pronto && !pagina.tema.ativo,
+    turmaAtiva: pronto && pagina.turma.ativa,
+  })
 
   function abrirEditor(indice, event) {
     origemEditor.current = event.currentTarget
@@ -242,6 +285,44 @@ export default function ProfessorTemaPage() {
     executarProposta(() => arquivarTema(temaId), () => 'Proposta arquivada. Os alunos não a veem mais.')
   }
 
+  async function reabrirProposta() {
+    if (acaoPropostaRef.current) return
+    acaoPropostaRef.current = true
+    setAcaoProposta({ enviando: true, erro: '', erros: {} })
+    const devolverFoco = () => setFocoEditar((valor) => valor + 1)
+
+    try {
+      const tema = await reabrirTema(temaId)
+      acaoPropostaRef.current = false
+      setPagina((atual) => ({ ...atual, tema }))
+      setProposta(null)
+      setAcaoProposta({ enviando: false, erro: '', erros: {} })
+      setAviso(MENSAGENS_SUCESSO_REABERTURA.proposta)
+      devolverFoco()
+    } catch (error) {
+      acaoPropostaRef.current = false
+      const erroMapeado = mapearErroReabertura(error, 'proposta')
+
+      if (!erroMapeado.recarregar) {
+        setAcaoProposta({ enviando: false, erro: erroMapeado.mensagem, erros: {} })
+        return
+      }
+
+      // Conflito de estado (já ativa ou turma arquivada): busca a situação atual
+      // sem recarregar a página inteira, para o aviso continuar visível.
+      try {
+        const dados = await carregarPropostaProfessor(temaId)
+        setPagina({ status: 'pronto', ...dados })
+      } catch {
+        // Mantém a tela atual; o aviso abaixo explica o conflito.
+      }
+      setProposta(null)
+      setAcaoProposta({ enviando: false, erro: '', erros: {} })
+      setAviso(erroMapeado.mensagem)
+      devolverFoco()
+    }
+  }
+
   function irParaRedacoes() {
     redacoesRef.current?.scrollIntoView({ block: 'start' })
     redacoesRef.current?.focus()
@@ -266,11 +347,19 @@ export default function ProfessorTemaPage() {
               <div className="topic-section-heading">
                 <h2 id="topic-prompt-title">Enunciado</h2>
                 <div className="topic-acoes">
-                  <button type="button" className="panel-soft-button" disabled={!edicao.podeEditar || salvando} onClick={(event) => abrirProposta('editar', event)}>Editar proposta</button>
-                  <button type="button" className="panel-soft-button topic-botao-perigo" disabled={!pagina.tema.ativo || salvando} onClick={(event) => abrirProposta('arquivar', event)}>Arquivar proposta</button>
+                  <button ref={editarRef} type="button" className="panel-soft-button" disabled={!edicao.podeEditar || salvando} onClick={(event) => abrirProposta('editar', event)}>Editar proposta</button>
+                  {reabertura.oferecer
+                    ? <button type="button" className="panel-primary-button" disabled={salvando} onClick={(event) => abrirProposta('reabrir', event)}>Reabrir proposta</button>
+                    : <button type="button" className="panel-soft-button topic-botao-perigo" disabled={!pagina.tema.ativo || salvando} onClick={(event) => abrirProposta('arquivar', event)}>Arquivar proposta</button>}
                 </div>
               </div>
               {edicao.motivo && <p className="topic-rule">{edicao.motivo}</p>}
+              {reabertura.bloqueada && (
+                <div className="topic-rule">
+                  <p>{reabertura.motivo}</p>
+                  <Link className="panel-soft-button topic-rule-link" to={`/professor/turmas/${turmaId}`}>Ir para a turma e reabri-la</Link>
+                </div>
+              )}
               <p className="topic-prose">{pagina.tema.descricao}</p>
               <h3>Orientações e textos motivadores</h3>
               {pagina.tema.instrucoes ? <p className="topic-instructions">{pagina.tema.instrucoes}</p> : <p className="topic-empty-text">Nenhuma orientação adicional cadastrada nesta proposta.</p>}
@@ -306,6 +395,16 @@ export default function ProfessorTemaPage() {
               erro={acaoProposta.erro}
               erros={acaoProposta.erros}
               onSave={salvarProposta}
+              onClose={fecharProposta}
+            />
+          )}
+
+          {proposta === 'reabrir' && (
+            <ReabrirPropostaDialog
+              tema={pagina.tema}
+              enviando={acaoProposta.enviando}
+              erro={acaoProposta.erro}
+              onConfirm={reabrirProposta}
               onClose={fecharProposta}
             />
           )}

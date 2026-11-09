@@ -52,6 +52,8 @@
 .topic-add { width: 100%; margin-top: 12px; min-height: 42px; }
 .topic-limit, .topic-rule { margin: 10px 0 0; font-size: 12px; line-height: 19px; color: var(--panel-muted); }
 .topic-rule { padding: 10px; border-left: 3px solid var(--panel-attention); background: var(--panel-bg); border-radius: 5px; }
+.topic-rule > p { margin: 0; }
+.topic-rule-link { min-height: 44px; margin-top: 10px; text-align: center; }
 .topic-main button:disabled, .topic-tabs a[aria-disabled="true"] { opacity: .55; cursor: not-allowed; }
 .topic-save-status { margin: 8px 0 0; font-size: 13px; line-height: 20px; color: var(--panel-success); }
 .topic-save-status:empty { display: none; }
