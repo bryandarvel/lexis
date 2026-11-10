@@ -62,16 +62,28 @@ test('OCR exige revisão; professor publica feedback humano e só o aluno respon
     buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1sAAAAASUVORK5CYII=', 'base64'),
   })
   await page.getByRole('button', { name: 'Extrair texto da foto', exact: true }).click()
-  await expect(page.getByRole('heading', { name: 'Revise o texto transcrito' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Revisar e enviar', exact: true })).toBeDisabled()
+  // A tela de revisão (etapa 3 de 4) exibe a foto e a transcrição editável; o envio só existe no editor.
+  await expect(page.getByRole('heading', { name: 'Revise a transcrição', level: 1 })).toBeVisible()
+  await expect(page.getByRole('listitem').filter({ hasText: 'Você revisa' })).toContainText('etapa atual')
+  await expect(page.getByRole('img', { name: 'Foto da redação enviada para transcrição' })).toBeVisible()
+  const transcricao = page.getByRole('textbox', { name: 'Texto extraído — editável', exact: true })
+  await expect(transcricao).toBeEditable()
+  await expect(transcricao).toHaveValue(/Transcrição fictícia para revisão\./)
+  await expect(page.getByRole('button', { name: 'Revisar e enviar', exact: true })).toHaveCount(0)
+  // Nada é salvo até o aluno aceitar a transcrição.
   const antes = await cenario.chamada(cenario.aluno, 'get', '/api/aluno/redacoes')
   expect(antes.redacoes.some((r) => r.tema.id === cenario.tema.id)).toBe(false)
   const revisado = 'A Constituição Federal assegura o direito à educação. Texto fictício revisado pelo aluno.'
-  await page.getByLabel('Texto da redação', { exact: true }).fill(revisado)
-  await page.getByRole('button', { name: 'Confirmar texto revisado', exact: true }).click()
-  await expect(page.getByRole('heading', { name: 'Revise o texto transcrito' })).toHaveCount(0)
+  await transcricao.fill(revisado)
+  await page.getByRole('button', { name: 'Aceitar e continuar', exact: true }).click()
+  // Aceitar salva como rascunho e leva o texto revisado ao editor.
+  await expect(page.getByRole('heading', { name: 'Revise a transcrição' })).toHaveCount(0)
+  await expect(page).toHaveURL(new RegExp('/aluno/temas/' + cenario.tema.id + '/redacao$'))
+  await expect(page.getByText('Transcrição revisada e salva como rascunho.')).toBeVisible()
+  await expect(page.getByLabel('Texto da redação', { exact: true })).toHaveValue(revisado)
   const dados = await cenario.chamada(cenario.aluno, 'get', '/api/aluno/redacoes')
   const redacao = dados.redacoes.find((r) => r.tema.id === cenario.tema.id)
+  expect(redacao.status).toBe('RASCUNHO')
   expect(redacao.origemTexto).toBe('OCR')
   expect(redacao.ocrRevisadoEm).toBeTruthy()
   expect(redacao.texto).toBe(revisado)
@@ -98,11 +110,14 @@ test('OCR exige revisão; professor publica feedback humano e só o aluno respon
       await professorPage.getByRole('textbox', { name: 'Comentário: ' + criterio.nome, exact: true }).fill('Comentário humano de ' + criterio.nome + '.')
     }
     await professorPage.getByRole('button', { name: 'Salvar', exact: true }).click()
-    await expect(professorPage.getByRole('status').filter({ hasText: /salv/i })).toBeVisible()
+    // O aviso do servidor é distinto do aviso de rascunho local ("salvas neste dispositivo"), que também casaria com /salv/.
+    await expect(professorPage.getByText('Rascunho salvo. O aluno ainda não pode visualizar estas alterações.')).toBeVisible()
     const feedbackAntes = await cenario.chamada(cenario.professor, 'get', '/api/redacoes/' + redacao.id + '/feedback')
     expect(feedbackAntes.feedback.versaoAtual.status).toBe('RASCUNHO')
     await page.goto('/aluno/redacoes/' + redacao.id + '/feedback')
-    await expect(page.getByRole('heading', { name: 'Correção indisponível' })).toBeVisible()
+    // Redação enviada, mas com feedback ainda em rascunho: o aluno só vê que a correção não foi publicada.
+    await expect(page.getByRole('heading', { name: 'A correção ainda não foi publicada' })).toBeVisible()
+    await expect(page.getByText(comentario, { exact: true })).toHaveCount(0)
     professorPage.once('dialog', (d) => d.accept())
     await professorPage.getByRole('button', { name: 'Publicar correção', exact: true }).click()
     await expect(professorPage.getByRole('status').filter({ hasText: 'Correção publicada' })).toBeVisible()
@@ -119,7 +134,9 @@ test('OCR exige revisão; professor publica feedback humano e só o aluno respon
     const outroPage = await outroContext.newPage()
     await entrar(outroPage, cenario.outroAluno)
     await outroPage.goto('/aluno/redacoes/' + redacao.id + '/feedback')
-    await expect(outroPage.getByRole('heading', { name: 'Correção indisponível' })).toBeVisible()
+    // Redação de outra conta: a tela responde "não encontrada", sem revelar que ela existe.
+    await expect(outroPage.getByRole('heading', { name: 'Redação não encontrada' })).toBeVisible()
+    await expect(outroPage.getByText(comentario, { exact: true })).toHaveCount(0)
     const negado = await cenario.chamada(cenario.outroAluno, 'get', '/api/aluno/notificacoes')
     expect(negado.notificacoes).toHaveLength(0)
     const acesso = await outroContext.request.get('http://127.0.0.1:3100/api/redacoes/' + redacao.id + '/feedback', {
