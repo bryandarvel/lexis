@@ -51,9 +51,11 @@ export function descreverTurma(turma) {
     return ''
   }
 
-  return turma.professor?.nome
-    ? `${turma.nome} · Prof. ${turma.professor.nome}`
-    : turma.nome
+  // O nome do professor é exibido como cadastrado: o título, quando existe,
+  // já faz parte dele ("Professora Helena Demo"), e um prefixo fixo duplicava.
+  const professor = turma.professor?.nome?.trim()
+
+  return professor ? `${turma.nome} · ${professor}` : turma.nome
 }
 
 export function selecionarPropostaAberta(
