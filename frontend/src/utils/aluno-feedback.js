@@ -1,3 +1,8 @@
+import {
+  TOM_NEUTRO,
+  TOTAL_TONS_CRITERIO,
+  obterTomCriterio,
+} from './criterio-cores.js'
 import { COMPETENCIAS_ENEM } from '../constants/competencias-enem.js'
 import {
   calcularPercentual,
@@ -8,20 +13,11 @@ import {
 export const NOTA_MAXIMA_COMPETENCIA = 200
 export const NOTA_MAXIMA_TOTAL = 1000
 
-// Quantidade de tons em aluno-feedback.css (.feedback-tom-0 a -4).
-export const TOTAL_TONS_CRITERIO = 5
+// A cor do critério é a mesma da correção do professor: vem de
+// utils/criterio-cores.js, para o mapeamento não divergir entre as telas.
+export { TOM_NEUTRO, TOTAL_TONS_CRITERIO, obterTomCriterio }
 
 const CAMPO_COMPETENCIA_DESTACADA = 'competencia2'
-
-// A cor depende só da ordem do critério, então não muda quando outros
-// critérios ficam sem comentário. Acima do total de tons, a paleta recomeça.
-export function obterTomCriterio(ordem) {
-  if (!Number.isInteger(ordem) || ordem < 1) {
-    return 'neutro'
-  }
-
-  return String((ordem - 1) % TOTAL_TONS_CRITERIO)
-}
 
 // O backend só envia critérios comentados; o filtro protege contra
 // comentários vazios e a ordenação não depende da ordem recebida.
