@@ -57,6 +57,26 @@
   box-shadow: var(--aluno-elevacao-1);
 }
 
+/*
+ * A barra do aluno é navy nos dois temas, então o botão de tema acompanha os
+ * demais controles dela em vez de herdar a pílula clara do index.css. Mantém
+ * os 44 px do .theme-toggle base: a barra do professor reduz para 32 px, o que
+ * fica abaixo do alvo mínimo. O min-width completa o alvo de 44 px nas duas
+ * direções, já que o botão só mostra o ícone nesta barra.
+ */
+.aluno-shell > header .theme-toggle {
+  min-width: 2.75rem;
+  padding-inline: 0.75rem;
+  border-color: var(--aluno-shell-icone);
+  background: var(--surface-shell-3);
+  color: var(--aluno-shell-texto);
+}
+
+.aluno-shell > header .theme-toggle:hover {
+  border-color: var(--aluno-shell-texto-suave);
+  background: var(--surface-shell-4);
+}
+
 /* O foco global usa uma cor escura demais sobre o shell navy. */
 .aluno-foco-shell:focus-visible {
   outline-color: var(--aluno-shell-texto-suave);

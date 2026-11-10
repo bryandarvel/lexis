@@ -2,12 +2,18 @@ import {
   useCallback,
   useEffect,
   useId,
+  useRef,
   useState,
 } from 'react'
-import { Link } from 'react-router'
+import {
+  Link,
+  useLocation,
+  useNavigate,
+} from 'react-router'
 
 import AlunoLayout from '../../layouts/AlunoLayout.jsx'
 import { obterDesempenhoAluno } from '../../services/desempenho.js'
+import { observarMatriculaAtualizada } from '../../services/matricula-events.js'
 import {
   listarMinhasRedacoes,
 } from '../../services/redacoes.js'
@@ -770,6 +776,11 @@ export default function AlunoDashboardPage() {
     () => new Date(),
   )
   const [aviso, setAviso] = useState('')
+  const [focarAviso, setFocarAviso] = useState(false)
+  const avisoRef = useRef(null)
+  const location = useLocation()
+  const navigate = useNavigate()
+  const avisoNavegacao = location.state?.aviso
 
   useEffect(() => {
     let ativo = true
@@ -783,11 +794,43 @@ export default function AlunoDashboardPage() {
       INTERVALO_RELOGIO_MS,
     )
 
+    // A saída da turma acontece no diálogo do layout; o painel recarrega sem refresh.
+    const pararObservacao = observarMatriculaAtualizada(
+      () => {
+        carregarPainel().then((dados) => {
+          if (ativo) {
+            setPainel(dados)
+            setAgora(new Date())
+          }
+        })
+      },
+    )
+
     return () => {
       ativo = false
       globalThis.clearInterval(relogio)
+      pararObservacao()
     }
   }, [])
+
+  useEffect(() => {
+    if (!avisoNavegacao) return
+
+    setAviso(avisoNavegacao)
+    setFocarAviso(true)
+    navigate(location.pathname, {
+      replace: true,
+      state: null,
+    })
+  }, [avisoNavegacao, location.pathname, navigate])
+
+  // Depois de sair da turma, o foco vai para a confirmação, que é anunciada.
+  useEffect(() => {
+    if (!focarAviso || !aviso) return
+
+    avisoRef.current?.focus()
+    setFocarAviso(false)
+  }, [focarAviso, aviso])
 
   const recarregarAposMatricula = useCallback(
     async () => {
@@ -854,6 +897,8 @@ export default function AlunoDashboardPage() {
 
       {aviso && (
         <p
+          ref={avisoRef}
+          tabIndex={-1}
           role="status"
           className="mt-4 rounded-lg bg-[var(--aluno-sucesso-fundo)] px-4 py-3 text-sm font-medium leading-[22px] text-[var(--aluno-sucesso)]"
         >
