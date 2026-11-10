@@ -19,7 +19,7 @@ import {
 } from '../../services/notification-events.js'
 import {
   atualizarNotificacaoComoLida,
-  obterLinkNotificacao,
+  descreverAcaoNotificacao,
 } from '../../utils/notifications.js'
 
 function formatarDataHora(valor) {
@@ -106,10 +106,11 @@ export default function AlunoNotificacoesPage() {
   }, [])
 
   async function abrirNotificacao(notificacao) {
-    const destino = obterLinkNotificacao(notificacao)
+    // Sem feedback vinculado não há destino: o aviso só é marcado como lido.
+    const { destino } = descreverAcaoNotificacao(notificacao)
 
     if (notificacao.lidaEm) {
-      navigate(destino)
+      if (destino) navigate(destino)
       return
     }
 
@@ -143,7 +144,8 @@ export default function AlunoNotificacoesPage() {
         }
       })
       notificarContagemAtualizada(proximoTotalNaoLidas)
-      navigate(destino)
+
+      if (destino) navigate(destino)
     } catch (erro) {
       if (!montado.current) return
 
@@ -218,7 +220,7 @@ export default function AlunoNotificacoesPage() {
                   Nenhuma notificação
                 </h2>
                 <p className="mt-3 text-lexis-200">
-                  Quando uma correção for publicada, o aviso aparecerá aqui.
+                  Avisos sobre suas correções e sua turma aparecem aqui.
                 </p>
               </div>
             )}
@@ -229,12 +231,15 @@ export default function AlunoNotificacoesPage() {
                 {estado.notificacoes.map((notificacao) => {
                   const processando =
                     estado.processandoId === notificacao.id
+                  const acao = descreverAcaoNotificacao(notificacao)
 
                   return (
                     <li key={notificacao.id}>
                       <button
                         type="button"
-                        disabled={Boolean(estado.processandoId)}
+                        disabled={
+                          Boolean(estado.processandoId) || !acao.acionavel
+                        }
                         onClick={() => abrirNotificacao(notificacao)}
                         className="surface-card group w-full rounded-[14px] p-6 text-left transition hover:-translate-y-0.5 hover:border-lexis-300/50 disabled:cursor-wait disabled:opacity-70"
                       >
@@ -261,8 +266,8 @@ export default function AlunoNotificacoesPage() {
                             </span>
                             <span className="mt-4 inline-flex text-sm font-bold text-lexis-300 group-hover:text-white">
                               {processando
-                                ? 'Abrindo correção...'
-                                : 'Ver correção →'}
+                                ? acao.rotuloProcessando
+                                : acao.rotulo}
                             </span>
                           </span>
                         </span>
