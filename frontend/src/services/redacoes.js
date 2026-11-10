@@ -72,6 +72,33 @@ export async function listarRedacoesDaTurma(
   return resposta.data.data.redacoes
 }
 
+// Mesma rota, com os metadados que listarRedacoesDaTurma descarta. Os demais
+// consumidores continuam recebendo só o array, por isso a função é separada.
+// resumoEntregas é nulo quando a resposta não traz o campo.
+export async function listarRedacoesDaTurmaComResumo(
+  turmaId,
+  filtros = {},
+) {
+  const resposta = await api.get(
+    `/api/turmas/${prepararId(
+      turmaId,
+    )}/redacoes`,
+    {
+      params: {
+        temaId: filtros.temaId,
+        status: filtros.status,
+      },
+    },
+  )
+
+  const dados = resposta.data.data
+
+  return {
+    redacoes: dados.redacoes,
+    resumoEntregas: dados.resumoEntregas ?? null,
+  }
+}
+
 export async function obterRedacaoProfessor(
   redacaoId,
 ) {

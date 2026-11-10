@@ -207,7 +207,7 @@ function Correcao({ redacaoId, usuarioId }) {
       </div>)}
       {!base.length && <p className="review-caption">Esta proposta utiliza critérios anteriores à base atual.</p>}
       <div className="review-criteria-subheading"><h3>Personalizados</h3><span className="review-badge">{extras.length} {extras.length === 1 ? 'cadastrado' : 'cadastrados'}</span></div>
-      {extras.map((c) => <label className={`review-criterion-row review-tone-${tomCriterio(c, criterios.indexOf(c))}`} key={c.id}>
+      {extras.map((c) => <label className={`review-criterion-row review-tone-${tomCriterio(c)}`} key={c.id}>
         <input type="checkbox" checked disabled aria-label={`Critério definido na proposta: ${c.nome}`} /><span className="review-color" aria-hidden="true" /><span>{c.nome}</span>
       </label>)}
       {!extras.length && <p className="review-caption">Nenhum critério personalizado nesta proposta.</p>}
@@ -219,7 +219,7 @@ function Correcao({ redacaoId, usuarioId }) {
       <h2 id="review-evidence-title">Trechos identificados</h2>
       {trechos.length ? <ol>{trechos.map((e, i) => {
         const c = criterios.find((item) => item.ordem === e.ordens[0])
-        return <li key={`${e.inicio}-${e.fim}`}><button type="button" className={`review-tone-${tomCriterio(c ?? {}, Math.max(0, criterios.indexOf(c)))}`} onClick={() => abrirComentarios(e.ordens)}>
+        return <li key={`${e.inicio}-${e.fim}`}><button type="button" className={`review-tone-${tomCriterio(c ?? {})}`} onClick={() => abrirComentarios(e.ordens)}>
           <span className="review-color" aria-hidden="true" /><span>{e.trecho}</span><small>{String(i + 1).padStart(2, '0')}</small>
         </button></li>
       })}</ol> : <p className="review-caption">Nenhum trecho com localização confirmada nesta redação.</p>}
