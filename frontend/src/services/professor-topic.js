@@ -1,6 +1,6 @@
 import { obterTemaProfessor, listarTemasDaTurma, obterModeloCompetenciaDois } from './temas.js'
 import { obterTurma } from './turmas.js'
-import { listarRedacoesDaTurma } from './redacoes.js'
+import { listarRedacoesDaTurmaComResumo } from './redacoes.js'
 import { obterFeedbackProfessor } from './feedbacks.js'
 import { obterPublicacaoFeedback, resumirEntregasProposta } from '../utils/professor-topic.js'
 
@@ -9,9 +9,9 @@ export async function carregarPropostaProfessor(temaId) {
   const turmaId = tema.turma?.id ?? tema.turmaId
   const [turma, temas, modelo, recebidas] = await Promise.all([
     obterTurma(turmaId), listarTemasDaTurma(turmaId), obterModeloCompetenciaDois(),
-    listarRedacoesDaTurma(turmaId, { temaId }),
+    listarRedacoesDaTurmaComResumo(turmaId, { temaId }),
   ])
-  const { redacoes, alunos } = resumirEntregasProposta(recebidas)
+  const { redacoes, alunos } = resumirEntregasProposta(recebidas.redacoes)
   const avaliadas = redacoes.filter((redacao) => redacao.status === 'AVALIADA')
   const publicacoes = new Map()
   for (let inicio = 0; inicio < avaliadas.length; inicio += 4) {
@@ -25,5 +25,6 @@ export async function carregarPropostaProfessor(temaId) {
     }))
   }
   return { tema, turma, temas: temas.some((item) => item.id === tema.id) ? temas : [tema, ...temas], modelo,
-    alunos, redacoes: redacoes.map((redacao) => ({ ...redacao, publicacao: publicacoes.get(redacao.id) ?? null })) }
+    alunos, resumoEntregas: recebidas.resumoEntregas,
+    redacoes: redacoes.map((redacao) => ({ ...redacao, publicacao: publicacoes.get(redacao.id) ?? null })) }
 }
