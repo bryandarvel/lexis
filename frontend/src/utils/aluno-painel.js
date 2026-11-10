@@ -143,7 +143,7 @@ export function listarPropostasDoAluno(temas, redacoes, agora = new Date()) {
           : redacao.status === 'AVALIADA' ? 'Correção publicada' : 'Em correção',
         orientacao: podeEnviar
           ? prazoVencido
-            ? 'Você ainda pode enviar. A entrega será registrada com atraso.'
+            ? MENSAGEM_ENTREGA_ATRASADA
             : 'Você pode salvar um rascunho e enviar até o prazo. Após o prazo, a entrega será registrada com atraso.'
           : 'Redação já enviada. O texto não pode mais ser alterado.',
         acao: descricao?.acao ?? {
@@ -160,6 +160,34 @@ export function listarPropostasDoAluno(temas, redacoes, agora = new Date()) {
         (converterData(b.proposta.prazoEntrega)?.getTime() ?? Infinity) ||
         String(a.proposta.enunciado).localeCompare(String(b.proposta.enunciado), 'pt-BR')
     })
+}
+
+// Texto único do aviso de prazo vencido: o painel e o editor mostram o mesmo.
+// O backend aceita a entrega atrasada e registra o atraso.
+export const MENSAGEM_ENTREGA_ATRASADA =
+  'Você ainda pode enviar. A entrega será registrada com atraso.'
+
+// Aviso do editor (#52). Uma redação já enviada é imutável, então não faz
+// sentido dizer que ainda pode enviar. rotulo substitui "Entrega até …".
+export function descreverPrazoDoEditor({
+  prazoEntrega,
+  redacaoImutavel = false,
+  agora = new Date(),
+} = {}) {
+  const prazo = converterData(prazoEntrega)
+  const vencido = Boolean(
+    !redacaoImutavel && prazo && prazo.getTime() < agora.getTime(),
+  )
+
+  if (!vencido) {
+    return { vencido: false, rotulo: null, aviso: null }
+  }
+
+  return {
+    vencido: true,
+    rotulo: `Prazo vencido em ${formatarPrazoEntrega(prazoEntrega)}`,
+    aviso: MENSAGEM_ENTREGA_ATRASADA,
+  }
 }
 
 export function formatarPrazoEntrega(valor) {

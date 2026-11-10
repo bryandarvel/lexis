@@ -11,7 +11,9 @@ import {
   formatarIndicador,
   formatarPrazoEntrega,
   obterIniciais,
+  descreverPrazoDoEditor,
   listarPropostasDoAluno,
+  MENSAGEM_ENTREGA_ATRASADA,
   selecionarPropostaAberta,
 } from '../src/utils/aluno-painel.js'
 
@@ -297,4 +299,58 @@ test('formata indicadores sem inventar valores', () => {
   assert.equal(calcularPercentual(150, 200), 75)
   assert.equal(calcularPercentual(250, 200), 100)
   assert.equal(calcularPercentual(null, 200), 0)
+})
+
+// #52: o editor precisa avisar do prazo vencido com o mesmo texto do painel.
+test('proposta com prazo vencido avisa que a entrega será registrada com atraso', () => {
+  const resultado = descreverPrazoDoEditor({
+    prazoEntrega: new Date(2026, 7, 3, 23, 59).toISOString(),
+    agora,
+  })
+
+  assert.equal(resultado.vencido, true)
+  assert.match(resultado.rotulo, /^Prazo vencido em 03\/08\/2026, 23h59$/)
+  assert.equal(resultado.aviso, MENSAGEM_ENTREGA_ATRASADA)
+  assert.match(resultado.aviso, /Você ainda pode enviar\. A entrega será registrada com atraso\./)
+})
+
+test('o texto do aviso é o mesmo que o painel mostra para a proposta vencida', () => {
+  const [item] = listarPropostasDoAluno([criarTema('vencida', new Date(2026, 7, 3))], [], agora)
+
+  assert.equal(item.orientacao, MENSAGEM_ENTREGA_ATRASADA)
+})
+
+test('proposta no prazo não ganha aviso e mantém o rótulo de entrega', () => {
+  const resultado = descreverPrazoDoEditor({
+    prazoEntrega: new Date(2026, 7, 20).toISOString(),
+    agora,
+  })
+
+  assert.deepEqual(resultado, { vencido: false, rotulo: null, aviso: null })
+})
+
+test('o prazo exatamente agora ainda não está vencido', () => {
+  assert.equal(
+    descreverPrazoDoEditor({ prazoEntrega: agora.toISOString(), agora }).vencido,
+    false,
+  )
+})
+
+test('redação já enviada não recebe o aviso de que ainda pode enviar', () => {
+  const resultado = descreverPrazoDoEditor({
+    prazoEntrega: new Date(2026, 7, 3).toISOString(),
+    redacaoImutavel: true,
+    agora,
+  })
+
+  assert.deepEqual(resultado, { vencido: false, rotulo: null, aviso: null })
+})
+
+test('prazo ausente ou inválido não gera aviso nem quebra', () => {
+  for (const prazoEntrega of [undefined, null, '', 'não é data']) {
+    assert.deepEqual(
+      descreverPrazoDoEditor({ prazoEntrega, agora }),
+      { vencido: false, rotulo: null, aviso: null },
+    )
+  }
 })
