@@ -9,6 +9,7 @@ import { interpretarErroApi } from '../../utils/api-error.js'
 import {
   agruparCriteriosProposta,
   descreverEdicaoTema,
+  descreverEntregasProposta,
   formatarPrazoParaInput,
   prepararCriterioPersonalizado,
   prepararEdicaoTema,
@@ -189,6 +190,8 @@ export default function ProfessorTemaPage() {
   }, [focoEditar])
 
   const pronto = pagina.status === 'pronto'
+  // As duas contagens da tela usam o mesmo resumo do backend.
+  const entregas = descreverEntregasProposta(pronto ? pagina.resumoEntregas : null)
   const grupos = pronto ? agruparCriteriosProposta(pagina.tema.criterios, pagina.modelo) : null
   const podeEditar = pronto && grupos.compativel && !pagina.tema.criteriosBloqueados && pagina.tema.ativo && pagina.turma.ativa
   const edicao = descreverEdicaoTema(pronto ? pagina.tema : null)
@@ -336,7 +339,7 @@ export default function ProfessorTemaPage() {
         {pagina.status === 'erro' && <><h1>Proposta e critérios</h1><section className="panel-error" role="alert"><h2>Não foi possível abrir a proposta</h2><p>{pagina.mensagem}</p><button className="panel-primary-button" onClick={() => setTentativa((atual) => atual + 1)}>Tentar novamente</button><Link className="panel-soft-button" to="/professor/turmas">Voltar às turmas</Link></section></>}
         {pronto && <>
           <h1>{pagina.tema.enunciado}</h1>
-          <p className="panel-subtitle topic-subtitle">{pagina.turma.nome} <span aria-hidden="true"> · </span> entrega até {formatarPrazo(pagina.tema.prazoEntrega)} <span aria-hidden="true"> · </span> {pagina.alunos} de {pagina.turma.quantidadeAlunosAtivos} alunos entregaram{!pagina.tema.ativo && ' · Proposta arquivada'}</p>
+          <p className="panel-subtitle topic-subtitle">{pagina.turma.nome} <span aria-hidden="true"> · </span> entrega até {formatarPrazo(pagina.tema.prazoEntrega)} <span aria-hidden="true"> · </span> {entregas.texto}{!pagina.tema.ativo && ' · Proposta arquivada'}</p>
           <section className="topic-tabs" aria-labelledby="topic-tabs-title">
             <h2 id="topic-tabs-title">Temas</h2>
             <nav aria-label="Temas desta turma">{pagina.temas.map((tema) => <Link key={tema.id} to={`/professor/temas/${tema.id}`} title={tema.enunciado} aria-current={tema.id === temaId ? 'page' : undefined} aria-disabled={salvando || undefined} onClick={(event) => { if (salvando) event.preventDefault() }}>{tema.enunciado}</Link>)}</nav>
@@ -365,11 +368,11 @@ export default function ProfessorTemaPage() {
               {pagina.tema.instrucoes ? <p className="topic-instructions">{pagina.tema.instrucoes}</p> : <p className="topic-empty-text">Nenhuma orientação adicional cadastrada nesta proposta.</p>}
             </section>
             <section className="topic-card topic-received" aria-labelledby="topic-received-title">
-              <div className="topic-section-heading"><div><h2 ref={redacoesRef} tabIndex={-1} id="topic-received-title">Redações recebidas</h2><p>{pagina.alunos} de {pagina.turma.quantidadeAlunosAtivos} alunos entregaram</p></div>
+              <div className="topic-section-heading"><div><h2 ref={redacoesRef} tabIndex={-1} id="topic-received-title">Redações recebidas</h2><p>{entregas.texto}</p>{entregas.textoHistorico && <p className="topic-empty-text">{entregas.textoHistorico}. As entregas permanecem no histórico.</p>}</div>
                 {pagina.redacoes.length > 3 && <button type="button" className="panel-soft-button" onClick={() => setTodas(!todas)} aria-expanded={todas} aria-controls="topic-essays">{todas ? 'Mostrar menos' : 'Ver todas'}</button>}
               </div>
               {pagina.redacoes.length ? <ul className="topic-essays" id="topic-essays">{(todas ? pagina.redacoes : pagina.redacoes.slice(0, 3)).map((redacao) => <li key={redacao.id}><Link to={`/professor/redacoes/${redacao.id}`}>
-                <span className="panel-student-avatar" aria-hidden="true">{obterIniciais(redacao.aluno?.nome)}</span><span className="topic-student-name">{redacao.aluno?.nome ?? 'Aluno'}</span>
+                <span className="panel-student-avatar" aria-hidden="true">{obterIniciais(redacao.aluno?.nome)}</span><span className="topic-student-name">{redacao.aluno?.nome ?? 'Aluno'}{redacao.aluno?.matriculaAtivaNaTurma === false && <span className="topic-ex-aluno"> · sem matrícula ativa</span>}</span>
                 <span className={`topic-status ${redacao.status === 'ENVIADA' ? 'pending' : 'corrected'}`}>{redacao.status === 'ENVIADA' ? 'Aguardando correção' : redacao.publicacao ? `Publicada${Number.isFinite(redacao.publicacao.nota) ? ` · ${redacao.publicacao.nota}/1000` : ''}` : 'Corrigida · nota indisponível'}</span>
               </Link></li>)}</ul> : <div className="topic-empty"><h3>Nenhuma redação recebida</h3><p>As redações aparecem aqui após o envio dos alunos.</p></div>}
             </section>

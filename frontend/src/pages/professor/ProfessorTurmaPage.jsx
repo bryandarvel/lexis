@@ -592,6 +592,7 @@ export default function ProfessorTurmaPage() {
                 titulo={`Arquivar a turma “${turma.nome}”?`}
                 efeitos={[
                   'As matrículas de todos os alunos são encerradas.',
+                  'Cada aluno com matrícula ativa recebe um aviso dentro do LÉXIS, sem e-mail.',
                   'Os alunos deixam de ver as propostas desta turma e não podem enviar redações.',
                   'As redações e as correções já publicadas continuam disponíveis.',
                   'A turma continua na sua lista, marcada como arquivada, e só poderá ser alterada de novo se você reabri-la.',
@@ -622,7 +623,7 @@ export default function ProfessorTurmaPage() {
                 efeitos={[
                   'A matrícula é encerrada e o aluno deixa de ver as propostas desta turma.',
                   'As redações já enviadas e as correções publicadas permanecem.',
-                  'O aluno não recebe aviso automático: combine a saída com ele.',
+                  'O aluno recebe um aviso dentro do LÉXIS, sem e-mail.',
                   'Ele pode voltar depois com o código de acesso ou entrar em outra turma.',
                 ]}
                 rotulo="Desvincular aluno"

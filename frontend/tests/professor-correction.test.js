@@ -49,12 +49,17 @@ test('sugestão consultiva só corresponde quando nome, ordem e conclusão coinc
   assert.equal(sugestaoDoCriterio(analise, { ...criterio, ordem: 2 }), null)
 })
 
-test('os três fixos mantêm cores estáveis sem depender da ordem', () => {
+// A cor passou a vir da ordem, e não do nome, para o critério ter o mesmo tom
+// na correção e no feedback do aluno (#44). criterioFixo segue identificando
+// a base pelo nome, que é o que separa os três fixos dos personalizados.
+test('a base é reconhecida pelo nome e a cor vem da ordem', () => {
   assert.equal(criterioFixo({ nome: ' Pertinência ' }), true)
   assert.equal(criterioFixo({ nome: 'Diversidade' }), false)
-  assert.equal(tomCriterio({ nome: 'Uso produtivo' }, 0), 2)
-  assert.equal(tomCriterio({ nome: 'Diversidade' }, 3), 3)
-  assert.equal(tomCriterio({ nome: 'Atualidade' }, 4), 4)
+  assert.equal(tomCriterio({ nome: 'Uso produtivo', ordem: 3 }), '2')
+  assert.equal(tomCriterio({ nome: 'Diversidade', ordem: 4 }), '3')
+  assert.equal(tomCriterio({ nome: 'Atualidade', ordem: 5 }), '4')
+  // Proposta legada: o fixo fora da posição esperada acompanha a ordem.
+  assert.equal(tomCriterio({ nome: 'Uso produtivo', ordem: 1 }), '0')
 })
 
 test('exibe sugestão editável sem incorporá-la automaticamente ao feedback humano', () => {

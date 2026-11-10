@@ -28,6 +28,8 @@
 .topic-essays a:hover { background: var(--panel-soft); }
 .topic-essays .panel-student-avatar { width: 28px; height: 28px; }
 .topic-student-name { flex: 1; min-width: 0; font-size: 14px; line-height: 22px; overflow-wrap: anywhere; }
+/* Entrega de quem não está mais na turma: identificada sem destacar. */
+.topic-ex-aluno { color: var(--panel-muted); font-size: 12px; }
 .topic-status { flex: 0 0 auto; width: 210px; padding: 4px 10px; border-radius: 999px; text-align: center; font-size: 12px; line-height: 17px; }
 .topic-status.pending { background: #fff4c4; color: #854700; }
 .topic-status.corrected { background: #dcfce7; color: #166534; }

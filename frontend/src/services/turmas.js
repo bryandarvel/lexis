@@ -112,9 +112,10 @@ export async function obterMinhaMatricula() {
   return resposta.data.data.matricula
 }
 
-export async function sairDaTurma() {
+export async function sairDaTurma(matriculaId) {
   const resposta = await api.delete(
     '/api/turmas/minha-matricula',
+    { data: { matriculaId } },
   )
 
   return resposta.data.data.matricula
