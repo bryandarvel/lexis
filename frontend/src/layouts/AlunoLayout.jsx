@@ -225,13 +225,6 @@ function MenuUsuario({
             Minha turma
           </button>
 
-          <div className="mt-4 flex items-center justify-between gap-3 border-t border-[var(--surface-border)] pt-4">
-            <span className="text-xs font-medium text-lexis-200">
-              Tema
-            </span>
-            <ThemeToggle />
-          </div>
-
           <button
             type="button"
             disabled={saindo}
@@ -426,6 +419,8 @@ export default function AlunoLayout({
                 </span>
               )}
             </Link>
+
+            <ThemeToggle compacto />
 
             <MenuUsuario
               usuario={usuario}
