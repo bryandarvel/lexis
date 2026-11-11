@@ -1,0 +1,153 @@
+/*
+ * Seleção de trechos por critério (#42). Usa a linguagem do painel do
+ * professor (panel-* e review-tone-*), cujas variáveis já têm variante
+ * para o tema escuro.
+ */
+.trechos-painel {
+  padding: 14px 16px 16px;
+  border: 1px solid var(--panel-border);
+  border-left: 4px solid var(--review-tone);
+  border-radius: 10px;
+  background: var(--panel-surface);
+}
+
+.trechos-cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 16px;
+}
+
+.trechos-cabecalho h4 {
+  margin: 0;
+  color: var(--review-tone);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.trechos-contador {
+  margin: 0;
+  color: var(--panel-muted);
+  font-size: 12px;
+  line-height: 17px;
+}
+
+.trechos-subtitulo {
+  margin: 14px 0 0;
+  color: var(--panel-muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 17px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.trechos-botao,
+.trechos-acao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  background: var(--panel-soft);
+  color: var(--panel-action);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+  cursor: pointer;
+}
+
+.trechos-botao {
+  margin-top: 12px;
+  width: 100%;
+}
+
+.trechos-botao:hover:not(:disabled),
+.trechos-acao:hover:not(:disabled) {
+  filter: brightness(0.96);
+}
+
+.trechos-botao:disabled,
+.trechos-acao:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.trechos-acao {
+  flex: 0 0 auto;
+  min-width: 44px;
+}
+
+.trechos-acao-remover {
+  background: transparent;
+  color: var(--panel-error);
+}
+
+.trechos-lista {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.trechos-lista li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+}
+
+.trechos-texto {
+  min-width: 0;
+  flex: 1;
+  font-size: 13px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+.trechos-texto::before,
+.trechos-texto::after {
+  content: '“';
+  color: var(--panel-muted);
+}
+
+.trechos-texto::after {
+  content: '”';
+}
+
+.trechos-aviso {
+  margin: 10px 0 0;
+  color: var(--panel-muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.trechos-aviso-atencao {
+  color: var(--panel-error);
+}
+
+.trechos-vazio {
+  margin: 8px 0 0;
+  color: var(--panel-muted);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+@media (max-width: 767px) {
+  .trechos-lista li {
+    flex-wrap: wrap;
+  }
+
+  .trechos-acao {
+    width: 100%;
+  }
+}

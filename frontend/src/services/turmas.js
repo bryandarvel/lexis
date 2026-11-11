@@ -61,6 +61,14 @@ export async function arquivarTurma(turmaId) {
   return resposta.data.data.turma
 }
 
+export async function reabrirTurma(turmaId) {
+  const resposta = await api.post(
+    `/api/turmas/${prepararId(turmaId)}/reabrir`,
+  )
+
+  return resposta.data.data.turma
+}
+
 export async function listarAlunosDaTurma(
   turmaId,
 ) {
@@ -104,9 +112,10 @@ export async function obterMinhaMatricula() {
   return resposta.data.data.matricula
 }
 
-export async function sairDaTurma() {
+export async function sairDaTurma(matriculaId) {
   const resposta = await api.delete(
     '/api/turmas/minha-matricula',
+    { data: { matriculaId } },
   )
 
   return resposta.data.data.matricula
