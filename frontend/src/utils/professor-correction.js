@@ -1,5 +1,6 @@
 import { COMPETENCIAS_ENEM, calcularNotaTotalCompetencias } from '../constants/competencias-enem.js'
 import { segmentarTextoComEvidencias } from './ai-evidence.js'
+import { obterTomCriterio } from './criterio-cores.js'
 
 const normalizar = (texto) => String(texto ?? '').trim().normalize('NFC').toLocaleLowerCase('pt-BR')
 const BASE = ['legitimação', 'pertinência', 'uso produtivo']
@@ -14,10 +15,10 @@ export function selecionarAnaliseParaCorrecao(analises = []) {
 
 export function criterioFixo(criterio) { return BASE.includes(normalizar(criterio.nome)) }
 
-export function tomCriterio(criterio, indice = 0) {
-  const base = BASE.indexOf(normalizar(criterio.nome))
-  return base >= 0 ? base : 3 + Math.max(0, indice - 3) % 2
-}
+// A cor vem da ordem, pela regra compartilhada com o feedback do aluno (#44).
+// Antes saía do nome do critério e da posição na lista, o que dava cores
+// diferentes nas duas telas em propostas legadas.
+export function tomCriterio(criterio) { return obterTomCriterio(criterio) }
 
 export function criarFormularioFeedback(redacao, feedback) {
   const atual = feedback?.versaoAtual

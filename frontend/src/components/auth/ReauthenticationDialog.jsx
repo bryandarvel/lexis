@@ -5,6 +5,7 @@ import {
 } from 'react'
 
 import { interpretarErroApi } from '../../utils/api-error.js'
+import { MENSAGEM_REAUTENTICACAO } from '../../utils/reautenticacao.js'
 import AuthField from './AuthField.jsx'
 import AuthNotice from './AuthNotice.jsx'
 
@@ -156,7 +157,7 @@ export default function ReauthenticationDialog({
           id="descricao-reauth"
           className="mt-3 leading-7 text-lexis-200"
         >
-          Entre novamente para continuar. Sua correção foi salva localmente e esta tela será preservada. Se uma ação falhou, você poderá repeti-la com segurança.
+          {MENSAGEM_REAUTENTICACAO}
         </p>
 
         <form onSubmit={autenticar} className="mt-6 space-y-4">
