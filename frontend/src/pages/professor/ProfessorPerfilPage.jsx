@@ -12,10 +12,11 @@ import {
   mapearErroDaConta,
   prepararNovoNome,
   prepararTrocaDeSenha,
+  reiniciarCamposDaConta,
+  respostaAindaVale,
+  SENHA_VAZIA,
 } from '../../utils/conta-formulario.js'
 import './professor-perfil.css'
-
-const SENHA_VAZIA = { senhaAtual: '', novaSenha: '', confirmacao: '' }
 
 const PAPEIS = {
   PROFESSOR: 'Professor',
@@ -60,6 +61,29 @@ export default function ProfessorPerfilPage() {
     sucesso: '',
   })
 
+  // Conta dona do que está nos campos. Quando entra outra pessoa pela
+  // reautenticação, o formulário é reiniciado ainda neste render, antes de a
+  // tela aparecer para ela. Reautenticar na mesma conta não mexe em nada.
+  const [contaDoFormulario, setContaDoFormulario] = useState(usuario?.id)
+  const reinicio = reiniciarCamposDaConta({
+    contaDoFormulario,
+    usuario,
+    nome,
+    senha,
+  })
+
+  if (reinicio.trocou) {
+    setContaDoFormulario(usuario?.id)
+    setNome(reinicio.nome)
+    setSenha(reinicio.senha)
+    setNomeEstado({ enviando: false, erro: '', mensagem: '', sucesso: '' })
+    setSenhaEstado({ enviando: false, erros: {}, mensagem: '', sucesso: '' })
+  }
+
+  // Lido no momento da resposta: diz de quem é a sessão agora.
+  const contaAtual = useRef(usuario?.id)
+  contaAtual.current = usuario?.id
+
   // O nome pode mudar por outra via (a própria troca de senha devolve o
   // usuário); o campo acompanha enquanto não está sendo editado.
   useEffect(() => {
@@ -95,6 +119,9 @@ export default function ProfessorPerfilPage() {
 
     if (nomeEstado.enviando) return
 
+    // Conta que pediu a alteração: a resposta não pode mexer na sessão de
+    // quem entrar depois.
+    const contaDaAcao = usuario?.id
     const { nome: nomeValido, erro } = prepararNovoNome(nome, usuario?.nome)
 
     if (!nomeValido) {
@@ -108,6 +135,8 @@ export default function ProfessorPerfilPage() {
     try {
       const atualizado = await atualizarMeuNome(nomeValido)
 
+      if (!respostaAindaVale(contaDaAcao, contaAtual.current)) return
+
       atualizarSessao({ usuario: atualizado })
       setNome(atualizado.nome)
       setNomeEstado({
@@ -117,6 +146,8 @@ export default function ProfessorPerfilPage() {
         sucesso: 'Nome atualizado.',
       })
     } catch (erroApi) {
+      if (!respostaAindaVale(contaDaAcao, contaAtual.current)) return
+
       const tratado = mapearErroDaConta(erroApi)
 
       setNomeEstado({
@@ -136,6 +167,7 @@ export default function ProfessorPerfilPage() {
 
     if (senhaEstado.enviando) return
 
+    const contaDaAcao = usuario?.id
     const { dados, erros } = prepararTrocaDeSenha(senha)
 
     if (!dados) {
@@ -152,6 +184,8 @@ export default function ProfessorPerfilPage() {
     try {
       const sessao = await alterarMinhaSenha(dados)
 
+      if (!respostaAindaVale(contaDaAcao, contaAtual.current)) return
+
       // O token novo entra na hora: a sessão atual continua valendo.
       atualizarSessao({
         usuario: sessao.usuario,
@@ -166,6 +200,8 @@ export default function ProfessorPerfilPage() {
           'Senha alterada. Você continua conectado; as outras sessões foram encerradas.',
       })
     } catch (erroApi) {
+      if (!respostaAindaVale(contaDaAcao, contaAtual.current)) return
+
       const tratado = mapearErroDaConta(erroApi)
 
       setSenhaEstado({

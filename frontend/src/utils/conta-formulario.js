@@ -6,6 +6,7 @@
  * senha nova reusa validarNovaSenha, a mesma da redefinição por e-mail.
  */
 import { validarNovaSenha } from './password-recovery.js'
+import { mesmaConta } from './identidade-sessao.js'
 
 const NOME_MINIMO = 2
 const NOME_MAXIMO = 120
@@ -102,4 +103,35 @@ export function mapearErroDaConta(erro) {
       resposta.data?.error?.message ??
       'Não foi possível concluir a alteração. Tente novamente.',
   }
+}
+
+/*
+ * Troca de conta na reautenticação (revisão do PR #124).
+ *
+ * O que foi digitado pertence a quem digitou. Quando entra outra pessoa, as
+ * senhas somem e o nome volta a ser o de quem está agora; reautenticar na
+ * mesma conta preserva o que estava na tela. E uma resposta pedida pela conta
+ * anterior nunca pode atualizar a sessão de quem entrou depois.
+ */
+export const SENHA_VAZIA = {
+  senhaAtual: '',
+  novaSenha: '',
+  confirmacao: '',
+}
+
+export function reiniciarCamposDaConta({
+  contaDoFormulario,
+  usuario,
+  nome = '',
+  senha = SENHA_VAZIA,
+} = {}) {
+  if (mesmaConta(contaDoFormulario, usuario?.id)) {
+    return { trocou: false, nome, senha }
+  }
+
+  return { trocou: true, nome: usuario?.nome ?? '', senha: SENHA_VAZIA }
+}
+
+export function respostaAindaVale(contaDaRequisicao, contaAtual) {
+  return mesmaConta(contaDaRequisicao, contaAtual)
 }

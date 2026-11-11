@@ -5,6 +5,9 @@ import {
   mapearErroDaConta,
   prepararNovoNome,
   prepararTrocaDeSenha,
+  reiniciarCamposDaConta,
+  respostaAindaVale,
+  SENHA_VAZIA,
 } from '../src/utils/conta-formulario.js'
 
 const erroApi = (status, code, details) => ({
@@ -116,4 +119,77 @@ test('sem resposta do servidor, a mensagem fala de conexão', () => {
 
   assert.match(resultado.mensagem, /conex/i)
   assert.equal(resultado.sessaoExpirada, false)
+})
+
+// Revisão do PR #124: depois de reautenticar como outra pessoa, o formulário
+// ficava com o nome e as senhas digitados por quem saiu.
+const PROF_A = { id: 'prof-a', nome: 'Professor A' }
+const PROF_B = { id: 'prof-b', nome: 'Professor B' }
+const DIGITADO = {
+  senhaAtual: 'atual-de-a',
+  novaSenha: 'NovaDeA!2026',
+  confirmacao: 'NovaDeA!2026',
+}
+
+test('trocar de conta apaga as senhas e repõe o nome de quem entrou', () => {
+  const resultado = reiniciarCamposDaConta({
+    contaDoFormulario: PROF_A.id,
+    usuario: PROF_B,
+    nome: 'Nome que A estava digitando',
+    senha: DIGITADO,
+  })
+
+  assert.equal(resultado.trocou, true)
+  assert.equal(resultado.nome, 'Professor B')
+  assert.deepEqual(resultado.senha, SENHA_VAZIA)
+  assert.equal(resultado.senha.senhaAtual, '')
+  assert.equal(resultado.senha.novaSenha, '')
+  assert.equal(resultado.senha.confirmacao, '')
+})
+
+test('reautenticar na mesma conta preserva o nome e as senhas digitados', () => {
+  const resultado = reiniciarCamposDaConta({
+    contaDoFormulario: PROF_A.id,
+    usuario: PROF_A,
+    nome: 'Nome em edição',
+    senha: DIGITADO,
+  })
+
+  assert.equal(resultado.trocou, false)
+  assert.equal(resultado.nome, 'Nome em edição')
+  assert.deepEqual(resultado.senha, DIGITADO)
+})
+
+test('sair da conta também limpa os campos, sem herdar nome de ninguém', () => {
+  const resultado = reiniciarCamposDaConta({
+    contaDoFormulario: PROF_A.id,
+    usuario: null,
+    nome: 'Nome de A',
+    senha: DIGITADO,
+  })
+
+  assert.equal(resultado.trocou, true)
+  assert.equal(resultado.nome, '')
+  assert.deepEqual(resultado.senha, SENHA_VAZIA)
+})
+
+test('a resposta pedida por A não vale para a sessão de B', () => {
+  assert.equal(respostaAindaVale(PROF_A.id, PROF_B.id), false)
+  assert.equal(respostaAindaVale(PROF_A.id, PROF_A.id), true)
+  assert.equal(respostaAindaVale(PROF_A.id, undefined), false)
+  assert.equal(respostaAindaVale(undefined, undefined), true)
+})
+
+test('o nome salvo por A não vira o nome de B: a troca já reiniciou o campo', () => {
+  // Estado depois da troca, com a resposta de A ainda em voo.
+  const depoisDaTroca = reiniciarCamposDaConta({
+    contaDoFormulario: PROF_A.id,
+    usuario: PROF_B,
+    nome: 'Nome novo de A',
+    senha: DIGITADO,
+  })
+
+  assert.equal(depoisDaTroca.nome, 'Professor B')
+  // E a resposta de A é ignorada antes de chegar a atualizarSessao.
+  assert.equal(respostaAindaVale(PROF_A.id, PROF_B.id), false)
 })
