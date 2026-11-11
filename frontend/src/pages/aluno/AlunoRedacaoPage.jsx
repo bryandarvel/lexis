@@ -26,7 +26,10 @@ import {
 } from '../../services/redacoes.js'
 import { guardarRevisaoOcr } from '../../services/revisao-ocr-pendente.js'
 import { obterTemaDoAluno } from '../../services/temas.js'
-import { formatarDiaMes } from '../../utils/aluno-painel.js'
+import {
+  descreverPrazoDoEditor,
+  formatarDiaMes,
+} from '../../utils/aluno-painel.js'
 import { interpretarErroApi } from '../../utils/api-error.js'
 import {
   aplicarSugestaoLinguistica,
@@ -881,6 +884,12 @@ export default function AlunoRedacaoPage() {
     </>
   )
 
+  // Aviso de prazo vencido (#52); some quando a redação já foi enviada.
+  const avisoPrazo = descreverPrazoDoEditor({
+    prazoEntrega: tema.prazoEntrega,
+    redacaoImutavel: Boolean(redacaoImutavel),
+  })
+
   const editor = (
     <EditorCard
       texto={texto}
@@ -920,8 +929,18 @@ export default function AlunoRedacaoPage() {
           </div>
           <div className="flex flex-col items-start gap-1 sm:items-end">
             <p className="text-[13px] font-semibold leading-[18px] text-lexis-100">
-              Entrega até {formatarPrazoCurto(tema.prazoEntrega)}
+              {avisoPrazo.rotulo ??
+                `Entrega até ${formatarPrazoCurto(tema.prazoEntrega)}`}
             </p>
+            {avisoPrazo.aviso && (
+              <p
+                role="note"
+                className="max-w-[34ch] text-xs leading-[17px] text-lexis-100 sm:text-right"
+              >
+                <strong className="font-semibold">Entrega com atraso.</strong>{' '}
+                {avisoPrazo.aviso}
+              </p>
+            )}
             <button
               type="button"
               aria-expanded={propostaAberta}

@@ -61,6 +61,14 @@ export async function arquivarTurma(turmaId) {
   return resposta.data.data.turma
 }
 
+export async function reabrirTurma(turmaId) {
+  const resposta = await api.post(
+    `/api/turmas/${prepararId(turmaId)}/reabrir`,
+  )
+
+  return resposta.data.data.turma
+}
+
 export async function listarAlunosDaTurma(
   turmaId,
 ) {
