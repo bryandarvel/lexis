@@ -3,7 +3,13 @@ import test from 'node:test'
 
 import {
   descreverAvisoProfessor,
+  mensagemDeFalha,
 } from '../src/utils/notificacoes-professor.js'
+import {
+  estadoDaContaAtual,
+  marcarConta,
+  mesmaConta,
+} from '../src/utils/identidade-sessao.js'
 
 const redacaoEnviada = (extra = {}) => ({
   id: 'n1',
@@ -133,4 +139,99 @@ test('descreve a origem do aviso a partir do que a API fornece', () => {
 
   assert.equal(semContexto.proposta, null)
   assert.equal(semContexto.turma, null)
+})
+
+// Revisão do PR #123, defeito A: a tela renderizava o objeto de
+// interpretarErroApi ({ mensagem, campos }) e o React quebrava a página.
+test('a falha na listagem vira texto renderizável, nunca um objeto', () => {
+  const erro = {
+    response: { data: { error: { message: 'O servidor falhou ao listar.' } } },
+  }
+  const texto = mensagemDeFalha(erro, 'Não foi possível carregar seus avisos.')
+
+  assert.equal(typeof texto, 'string')
+  assert.equal(texto, 'O servidor falhou ao listar.')
+})
+
+test('a falha ao marcar como lido também vira texto, com padrão quando o servidor não explica', () => {
+  const padrao = 'Não foi possível marcar o aviso como lido. Tente novamente.'
+
+  assert.equal(mensagemDeFalha(new Error('Network Error'), padrao), padrao)
+  assert.equal(mensagemDeFalha({ response: { data: {} } }, padrao), padrao)
+  assert.equal(mensagemDeFalha({ response: { data: { error: { message: '   ' } } } }, padrao), padrao)
+  assert.equal(
+    mensagemDeFalha({ response: { data: { error: { message: 'Aviso de outra pessoa.' } } } }, padrao),
+    'Aviso de outra pessoa.',
+  )
+})
+
+test('nenhuma mensagem de falha é objeto, em qualquer formato de erro', () => {
+  const padrao = 'Falhou.'
+
+  for (const erro of [undefined, null, {}, new Error('x'), { response: { data: { error: { message: 'ok', details: [{ field: 'a', message: 'b' }] } } } }]) {
+    assert.equal(typeof mensagemDeFalha(erro, padrao), 'string')
+  }
+})
+
+// Revisão do PR #123, defeito B: os avisos de A ficavam na tela de B.
+const INICIAL_AVISOS = {
+  usuarioId: null,
+  status: 'carregando',
+  notificacoes: [],
+  totalNaoLidas: 0,
+  processandoId: null,
+  mensagem: '',
+}
+
+const avisosDe = (usuarioId, notificacoes, totalNaoLidas) =>
+  marcarConta(
+    { ...INICIAL_AVISOS, status: 'pronto', notificacoes, totalNaoLidas },
+    usuarioId,
+  )
+
+test('ao trocar de professor, a lista e a contagem de A não aparecem para B', () => {
+  const deA = avisosDe('prof-a', [redacaoEnviada()], 3)
+
+  assert.equal(estadoDaContaAtual(deA, 'prof-a', INICIAL_AVISOS).totalNaoLidas, 3)
+  const paraB = estadoDaContaAtual(deA, 'prof-b', INICIAL_AVISOS)
+  assert.deepEqual(paraB, INICIAL_AVISOS)
+  assert.deepEqual(paraB.notificacoes, [])
+  assert.equal(paraB.totalNaoLidas, 0)
+  assert.equal(paraB.status, 'carregando')
+})
+
+test('o aviso de erro de A não fica na tela de B', () => {
+  const erroDeA = marcarConta(
+    { ...INICIAL_AVISOS, status: 'erro', mensagem: 'Não foi possível carregar seus avisos.' },
+    'prof-a',
+  )
+
+  assert.equal(estadoDaContaAtual(erroDeA, 'prof-b', INICIAL_AVISOS).mensagem, '')
+  assert.equal(estadoDaContaAtual(erroDeA, 'prof-a', INICIAL_AVISOS).mensagem, 'Não foi possível carregar seus avisos.')
+})
+
+test('reautenticar no mesmo professor preserva a lista e a contagem', () => {
+  const deA = avisosDe('prof-a', [redacaoEnviada()], 2)
+
+  assert.deepEqual(estadoDaContaAtual(deA, 'prof-a', INICIAL_AVISOS), deA)
+})
+
+test('resposta atrasada pedida por A não marca aviso nem muda a contagem de B', () => {
+  // mesmaConta é o que a página consulta ao receber a resposta da ação.
+  assert.equal(mesmaConta('prof-a', 'prof-b'), false)
+  assert.equal(mesmaConta('prof-a', 'prof-a'), true)
+
+  const respostaDeA = avisosDe('prof-a', [redacaoEnviada({ lidaEm: '2026-11-10T12:00:00Z' })], 0)
+  const deB = avisosDe('prof-b', [redacaoEnviada({ id: 'n-b' })], 1)
+
+  assert.equal(estadoDaContaAtual(respostaDeA, 'prof-b', INICIAL_AVISOS).totalNaoLidas, 0)
+  assert.equal(estadoDaContaAtual(deB, 'prof-b', INICIAL_AVISOS).notificacoes[0].id, 'n-b')
+})
+
+test('a contagem do sino também não herda a conta anterior', () => {
+  const sinoDeA = marcarConta({ totalNaoLidas: 5 }, 'prof-a')
+  const INICIAL_SINO = { totalNaoLidas: 0, usuarioId: null }
+
+  assert.equal(estadoDaContaAtual(sinoDeA, 'prof-b', INICIAL_SINO).totalNaoLidas, 0)
+  assert.equal(estadoDaContaAtual(sinoDeA, 'prof-a', INICIAL_SINO).totalNaoLidas, 5)
 })

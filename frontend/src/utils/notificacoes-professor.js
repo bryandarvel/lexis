@@ -5,6 +5,9 @@
  * sai de redacaoId e da turma, nunca do feedback. Um tipo que o backend venha
  * a acrescentar cai no caminho seguro, só marcando como lido.
  */
+
+import { interpretarErroApi } from './api-error.js'
+
 function texto(valor) {
   const limpo = typeof valor === 'string' ? valor.trim() : ''
 
@@ -71,4 +74,18 @@ export function descreverAvisoProfessor(notificacao) {
   }
 
   return { ...contexto, ...semDestino(notificacao) }
+}
+
+// A tela renderiza esta mensagem direto no JSX: precisa ser texto, nunca o
+// objeto devolvido por interpretarErroApi (que tem mensagem e campos). Com o
+// objeto, o React quebra a renderização e a página fica em branco.
+export function mensagemDeFalha(erro, padrao) {
+  // interpretarErroApi lê erro.response e quebra sem um erro de verdade.
+  const { mensagem } = erro
+    ? interpretarErroApi(erro, padrao)
+    : { mensagem: padrao }
+
+  return typeof mensagem === 'string' && mensagem.trim() !== ''
+    ? mensagem
+    : padrao
 }
