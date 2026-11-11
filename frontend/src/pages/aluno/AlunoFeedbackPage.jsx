@@ -24,8 +24,10 @@ import {
   classificarCarregamentoFeedback,
   descreverFeedbackIndisponivel,
   descreverOrigemFeedback,
+  descreverSegmentoMarcado,
   descreverVersaoFeedback,
   listarNotasCompetencias,
+  montarTextoComTrechos,
   NOTA_MAXIMA_COMPETENCIA,
   NOTA_MAXIMA_TOTAL,
   obterRotaEnviarRedacao,
@@ -433,8 +435,12 @@ function CompetenciaDois({ feedback }) {
   )
 }
 
-function TextoRedacao({ redacao }) {
+function TextoRedacao({ redacao, criterios }) {
   const texto = redacao.texto?.trim()
+  const { segmentos, legenda, total } = montarTextoComTrechos(
+    redacao.texto,
+    criterios,
+  )
 
   return (
     <section
@@ -455,9 +461,70 @@ function TextoRedacao({ redacao }) {
         </p>
       </div>
 
+      {texto && total > 0 && (
+        <>
+          <ul
+            className="feedback-trechos-legenda"
+            aria-label="Trechos comentados por critério"
+          >
+            {legenda.map((item) => (
+              <li key={item.ordem} className={`feedback-tom-${item.tom}`}>
+                <span className="feedback-trechos-cor" aria-hidden="true" />
+                <span>
+                  {item.nome}: {item.quantidade}{' '}
+                  {item.quantidade === 1
+                    ? 'trecho comentado'
+                    : 'trechos comentados'}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="feedback-trechos-nota">
+            Os números identificam os trechos. Um mesmo trecho pode ser
+            comentado em mais de um critério.
+          </p>
+        </>
+      )}
+
       {texto ? (
         <div className="feedback-texto-redacao mt-2.5 whitespace-pre-wrap break-words font-display text-[17px] leading-8 text-lexis-100">
-          {redacao.texto}
+          {total > 0
+            ? segmentos.map((segmento, indice) => {
+                if (!segmento.criterios.length) {
+                  return (
+                    <span key={`${segmento.inicio}-${segmento.fim}`}>
+                      {segmento.texto}
+                    </span>
+                  )
+                }
+
+                const numero =
+                  segmentos
+                    .slice(0, indice + 1)
+                    .filter((item) => item.criterios.length).length
+                const tons = [
+                  ...new Set(
+                    segmento.criterios.map(
+                      (ordem) =>
+                        legenda.find((item) => item.ordem === ordem)?.tom,
+                    ),
+                  ),
+                ].filter(Boolean)
+
+                return (
+                  <mark
+                    key={`${segmento.inicio}-${segmento.fim}`}
+                    className={`feedback-trecho feedback-tom-${tons[0]}`}
+                    aria-label={descreverSegmentoMarcado(segmento, legenda)}
+                  >
+                    {segmento.texto}
+                    <sup aria-hidden="true">
+                      {String(numero).padStart(2, '0')}
+                    </sup>
+                  </mark>
+                )
+              })
+            : redacao.texto}
         </div>
       ) : (
         <p className="mt-2.5 text-sm leading-[22px] text-lexis-200">
@@ -574,7 +641,7 @@ export default function AlunoFeedbackPage() {
 
         <div className="feedback-impressao-grade mt-5 grid items-start gap-6 xl:grid-cols-2">
           <CompetenciaDois feedback={feedback} />
-          <TextoRedacao redacao={redacao} />
+          <TextoRedacao redacao={redacao} criterios={feedback.criterios} />
         </div>
       </>
     )

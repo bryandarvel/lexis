@@ -55,7 +55,7 @@ export function descreverEdicaoTema(tema) {
     return {
       podeEditar: false,
       conteudoBloqueado: true,
-      motivo: 'Esta proposta está arquivada e não pode mais ser alterada.',
+      motivo: 'Esta proposta está arquivada e não pode ser alterada enquanto estiver arquivada.',
     }
   }
 
@@ -144,4 +144,58 @@ export function resumirEntregasProposta(redacoes) {
     redacoes: entregues,
     alunos: new Set(entregues.map((redacao) => redacao.aluno?.id ?? redacao.alunoId ?? redacao.id)).size,
   }
+}
+
+/*
+ * Contagem de entregas da proposta (#54).
+ *
+ * Numerador e denominador vêm do MESMO resumoEntregas do backend, que conta
+ * alunos distintos na mesma fotografia do banco. Contar as redações recebidas
+ * contra o total de alunos da turma, de outra requisição, é o que fazia a
+ * contagem passar de 100% quando ex-alunos tinham entregado.
+ */
+export function descreverEntregasProposta(resumoEntregas) {
+  const inteiro = (valor) =>
+    Number.isInteger(valor) && valor >= 0 ? valor : null
+
+  const entregaram = inteiro(resumoEntregas?.alunosAtivosQueEntregaram)
+  const total = inteiro(resumoEntregas?.totalAlunosAtivos)
+  const historicas = inteiro(
+    resumoEntregas?.alunosSemMatriculaAtivaQueEntregaram,
+  )
+
+  if (entregaram === null || total === null) {
+    return {
+      disponivel: false,
+      texto: 'Contagem de entregas indisponível',
+      percentual: null,
+      historicas: historicas ?? 0,
+      textoHistorico: textoHistorico(historicas ?? 0),
+    }
+  }
+
+  // O backend já entrega o numerador como interseção com os ativos, mas a tela
+  // não divide por zero nem mostra mais de 100% se algo vier incoerente.
+  const comparaveis = Math.min(entregaram, total)
+
+  return {
+    disponivel: true,
+    texto:
+      total === 0
+        ? 'Nenhum aluno ativo na turma'
+        : `${comparaveis} de ${total} ${total === 1 ? 'aluno entregou' : 'alunos entregaram'}`,
+    percentual: total === 0 ? null : Math.round((comparaveis / total) * 100),
+    historicas: historicas ?? 0,
+    textoHistorico: textoHistorico(historicas ?? 0),
+  }
+}
+
+function textoHistorico(quantidade) {
+  if (quantidade <= 0) {
+    return null
+  }
+
+  return quantidade === 1
+    ? '1 entrega de aluno sem matrícula ativa'
+    : `${quantidade} entregas de alunos sem matrícula ativa`
 }
