@@ -46,6 +46,7 @@ export default function ProfessorWorkspaceLayout({ secao, cabecalho, turmas, pro
   const totalNaoLidas = useNotificacoesNaoLidas({
     habilitado: usuario?.papel === 'PROFESSOR',
     listar: listarNotificacoesProfessor,
+    usuarioId: usuario?.id,
   })
   const rotuloNotificacoes =
     totalNaoLidas === 0

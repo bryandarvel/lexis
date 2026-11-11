@@ -3,14 +3,22 @@ import { motion } from 'motion/react'
 import { useNavigate } from 'react-router'
 
 import ProfessorWorkspaceLayout from '../../layouts/ProfessorWorkspaceLayout.jsx'
+import { useAuth } from '../../hooks/useAuth.js'
 import {
   listarNotificacoesProfessor,
   marcarNotificacaoProfessorLida,
 } from '../../services/notificacoes-professor.js'
 import { notificarContagemAtualizada } from '../../services/notification-events.js'
-import { interpretarErroApi } from '../../utils/api-error.js'
 import { atualizarNotificacaoComoLida } from '../../utils/notifications.js'
-import { descreverAvisoProfessor } from '../../utils/notificacoes-professor.js'
+import {
+  descreverAvisoProfessor,
+  mensagemDeFalha,
+} from '../../utils/notificacoes-professor.js'
+import {
+  estadoDaContaAtual,
+  marcarConta,
+  mesmaConta,
+} from '../../utils/identidade-sessao.js'
 import './professor-notificacoes.css'
 
 function formatarDataHora(valor) {
@@ -27,6 +35,7 @@ function formatarDataHora(valor) {
 }
 
 const INICIAL = {
+  usuarioId: null,
   status: 'carregando',
   notificacoes: [],
   totalNaoLidas: 0,
@@ -36,7 +45,13 @@ const INICIAL = {
 
 export default function ProfessorNotificacoesPage() {
   const navigate = useNavigate()
+  const { usuario } = useAuth()
+  const usuarioId = usuario?.id
   const montado = useRef(true)
+  // Lido no momento da resposta: diz de quem é a sessão agora, e não de quem
+  // era quando a requisição começou.
+  const contaAtual = useRef(usuarioId)
+  contaAtual.current = usuarioId
   const [estado, setEstado] = useState(INICIAL)
   const [tentativa, setTentativa] = useState(0)
 
@@ -51,35 +66,38 @@ export default function ProfessorNotificacoesPage() {
       .then((resultado) => {
         if (!montado.current) return
 
-        setEstado({
+        setEstado(marcarConta({
           ...INICIAL,
           status: 'pronto',
           notificacoes: resultado.notificacoes ?? [],
           totalNaoLidas: resultado.totalNaoLidas ?? 0,
-        })
+        }, usuarioId))
       })
       .catch((erro) => {
         if (!montado.current || controlador.signal.aborted) return
 
-        setEstado({
+        setEstado(marcarConta({
           ...INICIAL,
           status: 'erro',
-          mensagem: interpretarErroApi(
+          mensagem: mensagemDeFalha(
             erro,
             'Não foi possível carregar seus avisos.',
           ),
-        })
+        }, usuarioId))
       })
 
     return () => {
       montado.current = false
       controlador.abort()
     }
-  }, [tentativa])
+  }, [tentativa, usuarioId])
 
   const abrirAviso = useCallback(
     async (notificacao) => {
       const { destino } = descreverAvisoProfessor(notificacao)
+      // Conta que pediu a ação. Se outra pessoa entrar antes da resposta,
+      // nada do que voltar pode mexer na tela dela.
+      const contaDaAcao = usuarioId
 
       if (notificacao.lidaEm) {
         if (destino) navigate(destino)
@@ -98,6 +116,7 @@ export default function ProfessorNotificacoesPage() {
         )
 
         if (!montado.current) return
+        if (!mesmaConta(contaDaAcao, contaAtual.current)) return
 
         let total = 0
 
@@ -106,26 +125,31 @@ export default function ProfessorNotificacoesPage() {
 
           total = proximo.totalNaoLidas
 
-          return { ...proximo, processandoId: null }
+          return marcarConta({ ...proximo, processandoId: null }, contaDaAcao)
         })
         notificarContagemAtualizada(total)
 
         if (destino) navigate(destino)
       } catch (erro) {
         if (!montado.current) return
+        if (!mesmaConta(contaDaAcao, contaAtual.current)) return
 
-        setEstado((atual) => ({
+        setEstado((atual) => marcarConta({
           ...atual,
           processandoId: null,
-          mensagem: interpretarErroApi(
+          mensagem: mensagemDeFalha(
             erro,
             'Não foi possível marcar o aviso como lido. Tente novamente.',
           ),
-        }))
+        }, contaDaAcao))
       }
     },
-    [navigate],
+    [navigate, usuarioId],
   )
+
+  // O que não é da conta atual não aparece: na troca de pessoa a lista, a
+  // contagem e o aviso de erro somem na hora, antes da nova consulta terminar.
+  const visivel = estadoDaContaAtual(estado, usuarioId, INICIAL)
 
   return (
     <ProfessorWorkspaceLayout secao="Notificações">
@@ -142,19 +166,19 @@ export default function ProfessorNotificacoesPage() {
           Avisos sobre as redações recebidas e suas turmas.
         </p>
 
-        {estado.mensagem && (
+        {visivel.mensagem && (
           <p className="avisos-erro" role="alert">
-            {estado.mensagem}
+            {visivel.mensagem}
           </p>
         )}
 
-        {estado.status === 'carregando' && (
+        {visivel.status === 'carregando' && (
           <p role="status" className="panel-subtitle avisos-carregando">
             Carregando seus avisos…
           </p>
         )}
 
-        {estado.status === 'erro' && (
+        {visivel.status === 'erro' && (
           <section className="avisos-vazio" aria-labelledby="avisos-erro-titulo">
             <h2 id="avisos-erro-titulo">Avisos indisponíveis</h2>
             <p>Verifique sua conexão e tente novamente.</p>
@@ -168,7 +192,7 @@ export default function ProfessorNotificacoesPage() {
           </section>
         )}
 
-        {estado.status === 'pronto' && estado.notificacoes.length === 0 && (
+        {visivel.status === 'pronto' && visivel.notificacoes.length === 0 && (
           <section className="avisos-vazio" aria-labelledby="avisos-vazio-titulo">
             <h2 id="avisos-vazio-titulo">Nenhum aviso por enquanto</h2>
             <p>
@@ -177,20 +201,20 @@ export default function ProfessorNotificacoesPage() {
           </section>
         )}
 
-        {estado.status === 'pronto' && estado.notificacoes.length > 0 && (
+        {visivel.status === 'pronto' && visivel.notificacoes.length > 0 && (
           <>
             <p role="status" className="avisos-contagem">
-              {estado.totalNaoLidas === 0
+              {visivel.totalNaoLidas === 0
                 ? 'Nenhum aviso não lido.'
-                : estado.totalNaoLidas === 1
+                : visivel.totalNaoLidas === 1
                   ? '1 aviso não lido.'
-                  : `${estado.totalNaoLidas} avisos não lidos.`}
+                  : `${visivel.totalNaoLidas} avisos não lidos.`}
             </p>
 
             <ul className="avisos-lista">
-              {estado.notificacoes.map((notificacao) => {
+              {visivel.notificacoes.map((notificacao) => {
                 const aviso = descreverAvisoProfessor(notificacao)
-                const processando = estado.processandoId === notificacao.id
+                const processando = visivel.processandoId === notificacao.id
                 const lido = Boolean(notificacao.lidaEm)
 
                 return (
@@ -199,7 +223,7 @@ export default function ProfessorNotificacoesPage() {
                       type="button"
                       className={`avisos-item${lido ? '' : ' nao-lido'}`}
                       disabled={
-                        Boolean(estado.processandoId) || !aviso.acionavel
+                        Boolean(visivel.processandoId) || !aviso.acionavel
                       }
                       onClick={() => abrirAviso(notificacao)}
                     >
