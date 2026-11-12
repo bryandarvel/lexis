@@ -1,0 +1,263 @@
+/*
+ * Lista "Minhas redações". Usa os tokens --aluno-* do shell do aluno, que já
+ * têm variante para o tema escuro, então as cores de selo, borda e fundo
+ * acompanham o tema sem regras próprias.
+ */
+.aluno-redacoes-resumo {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  max-width: 720px;
+  margin: 25px 0 0;
+}
+
+.aluno-redacoes-resumo > div {
+  padding: 14px 18px;
+  border: 1px solid var(--surface-border);
+  border-radius: 14px;
+  background: var(--color-lexis-900);
+  box-shadow: var(--aluno-elevacao-1);
+}
+
+.aluno-redacoes-resumo dt {
+  color: var(--color-lexis-200);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 17px;
+}
+
+.aluno-redacoes-resumo dd {
+  margin: 4px 0 0;
+  color: var(--color-lexis-50);
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 32px;
+}
+
+.aluno-redacoes-controles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.aluno-controle {
+  display: grid;
+  gap: 6px;
+  min-width: 200px;
+}
+
+.aluno-controle label {
+  color: var(--color-lexis-100);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.aluno-controle select {
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--aluno-borda-campo);
+  border-radius: 10px;
+  background: var(--color-lexis-900);
+  color: var(--color-lexis-50);
+  font-family: var(--font-interface);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.aluno-redacoes-contagem {
+  margin: 16px 0 0;
+  color: var(--color-lexis-200);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.aluno-redacoes-lista {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aluno-redacao {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  min-height: 92px;
+  padding: 18px 22px;
+  border: 1px solid var(--surface-border);
+  border-radius: 14px;
+  background: var(--color-lexis-900);
+  box-shadow: var(--aluno-elevacao-1);
+}
+
+.aluno-redacao-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.aluno-redacao-topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.aluno-selo {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 17px;
+}
+
+.aluno-selo-neutro {
+  background: var(--aluno-trilho);
+  color: var(--color-lexis-100);
+}
+
+.aluno-selo-atencao {
+  background: var(--aluno-atencao-fundo);
+  color: var(--aluno-atencao);
+}
+
+.aluno-selo-sucesso {
+  background: var(--aluno-sucesso-fundo);
+  color: var(--aluno-sucesso);
+}
+
+.aluno-redacao-data {
+  color: var(--color-lexis-200);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 17px;
+}
+
+.aluno-redacao-titulo {
+  margin: 8px 0 0;
+  color: var(--color-lexis-50);
+  font-family: var(--font-interface);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 22px;
+  overflow-wrap: anywhere;
+}
+
+.aluno-redacao-turma,
+.aluno-redacao-motivo {
+  margin: 2px 0 0;
+  color: var(--color-lexis-200);
+  font-size: 12px;
+  line-height: 17px;
+  overflow-wrap: anywhere;
+}
+
+.aluno-redacao-motivo {
+  margin-top: 6px;
+}
+
+.aluno-redacao-lado {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.aluno-redacao-nota {
+  margin: 0;
+  color: var(--color-lexis-200);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.aluno-redacao-nota-valor {
+  color: var(--color-lexis-50);
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 30px;
+}
+
+.aluno-botao-primario,
+.aluno-botao-secundario,
+.aluno-redacao-acao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.aluno-botao-primario {
+  background: #1c6eba;
+  color: #ffffff;
+}
+
+.aluno-botao-primario:hover {
+  background: #175795;
+}
+
+.aluno-botao-secundario,
+.aluno-redacao-acao {
+  border: 1px solid var(--aluno-borda-campo);
+  background: transparent;
+  color: var(--aluno-acao-suave-texto);
+}
+
+.aluno-botao-secundario:hover,
+.aluno-redacao-acao:hover {
+  background: var(--aluno-acao-suave);
+}
+
+.aluno-esqueleto {
+  background: var(--aluno-trilho);
+  animation: aluno-esqueleto-pulso 1.4s ease-in-out infinite;
+}
+
+@keyframes aluno-esqueleto-pulso {
+  50% { opacity: 0.55; }
+}
+
+@media (max-width: 767px) {
+  .aluno-redacoes-resumo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .aluno-controle {
+    flex: 1 1 100%;
+  }
+
+  .aluno-redacao {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    padding: 16px;
+  }
+
+  .aluno-redacao-lado {
+    align-items: stretch;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aluno-esqueleto {
+    animation: none;
+  }
+}

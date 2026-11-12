@@ -21,7 +21,7 @@ import { mensagemSaidaDaTurma } from '../utils/minha-turma.js'
 import './aluno-layout.css'
 
 const classeItemNavegacao =
-  'aluno-foco-shell relative flex h-[42px] w-full items-center gap-2.5 rounded-lg pl-3.5 pr-3 text-sm leading-[22px] transition-colors'
+  'aluno-foco-shell relative flex h-11 w-full items-center gap-2.5 rounded-lg pl-3.5 pr-3 text-sm leading-[22px] transition-colors'
 
 function IconeInicio() {
   return (
@@ -55,6 +55,61 @@ function IconeEscrever() {
     >
       <path d="M12 20h9" />
       <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  )
+}
+
+function IconeRedacoes() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="size-4"
+    >
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" />
+      <path d="M14 3v5h5" />
+      <path d="M9 13h6M9 17h4" />
+    </svg>
+  )
+}
+
+function IconeFeedbacks() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="size-4"
+    >
+      <path d="M21 12a8 8 0 0 1-11.5 7.2L3 21l1.8-6A8 8 0 1 1 21 12Z" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  )
+}
+
+function IconePerfil() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="size-4"
+    >
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21a8 8 0 0 1 16 0" />
     </svg>
   )
 }
@@ -494,6 +549,33 @@ export default function AlunoLayout({
                 </span>
               </span>
             )}
+          </li>
+          <li>
+            <ItemNavegacao
+              to="/aluno/redacoes"
+              icone={<IconeRedacoes />}
+              onNavegar={fecharNavegacao}
+            >
+              Minhas redações
+            </ItemNavegacao>
+          </li>
+          <li>
+            <ItemNavegacao
+              to="/aluno/feedbacks"
+              icone={<IconeFeedbacks />}
+              onNavegar={fecharNavegacao}
+            >
+              Feedbacks
+            </ItemNavegacao>
+          </li>
+          <li>
+            <ItemNavegacao
+              to="/aluno/perfil"
+              icone={<IconePerfil />}
+              onNavegar={fecharNavegacao}
+            >
+              Perfil
+            </ItemNavegacao>
           </li>
         </ul>
       </nav>
