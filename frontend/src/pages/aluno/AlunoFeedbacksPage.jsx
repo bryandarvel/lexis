@@ -4,6 +4,7 @@ import { Link } from 'react-router'
 import AlunoLayout from '../../layouts/AlunoLayout.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
 import { listarMinhasRedacoes } from '../../services/redacoes.js'
+import { obterDesempenhoAluno } from '../../services/desempenho.js'
 import { listarTemasDoAluno } from '../../services/temas.js'
 import { obterRotaEnviarRedacao } from '../../utils/aluno-feedback.js'
 import {
@@ -16,16 +17,19 @@ import {
   caminhoDoFeedback,
   descreverQuantidade,
   formatarPublicacao,
+  obterProfessorDoFeedback,
   ordenarFeedbacks,
   resumirFeedbacks,
   selecionarFeedbacks,
 } from '../../utils/aluno-feedbacks.js'
+import { formatarIndicador } from '../../utils/aluno-painel.js'
 import './aluno-feedbacks.css'
 
 function ItemFeedback({ redacao }) {
   const tema = redacao.tema?.enunciado ?? 'Proposta de redação'
   const turma = redacao.tema?.turma?.nome
   const publicacao = formatarPublicacao(redacao)
+  const professor = obterProfessorDoFeedback(redacao)
 
   return (
     <li className="aluno-fb-item">
@@ -33,6 +37,11 @@ function ItemFeedback({ redacao }) {
         {publicacao && <p className="aluno-fb-data">{publicacao}</p>}
         <h2 className="aluno-fb-titulo">{tema}</h2>
         {turma && <p className="aluno-fb-turma">{turma}</p>}
+        {professor && (
+          <p className="aluno-fb-turma aluno-fb-professor">
+            Professor: {professor}
+          </p>
+        )}
       </div>
 
       <div className="aluno-fb-lado">
@@ -60,6 +69,7 @@ const CARREGANDO = {
   status: 'carregando',
   feedbacks: [],
   rotaEnviar: null,
+  desempenho: null,
   usuarioId: null,
 }
 
@@ -83,10 +93,12 @@ export default function AlunoFeedbacksPage() {
 
     // A lista é o que a página existe para mostrar; as propostas só definem o
     // item "Enviar redação" da sidebar, então a falha delas não derruba a tela.
+    // O desempenho só dá o resumo; se falhar, o resumo usa a mesma regra sobre a lista.
     Promise.allSettled([
       listarMinhasRedacoes(),
       listarTemasDoAluno(),
-    ]).then(([listaResultado, temasResultado]) => {
+      obterDesempenhoAluno(),
+    ]).then(([listaResultado, temasResultado, desempenhoResultado]) => {
       if (!ativo) return
 
       if (listaResultado.status === 'rejected') {
@@ -107,6 +119,10 @@ export default function AlunoFeedbacksPage() {
               {
                 status: 'pronto',
                 feedbacks: selecionarFeedbacks(redacoes),
+                desempenho:
+                  desempenhoResultado.status === 'fulfilled'
+                    ? desempenhoResultado.value
+                    : null,
                 // Mesma regra do painel, sem repetir a seleção do atalho.
                 rotaEnviar:
                   temasResultado.status === 'fulfilled'
@@ -125,12 +141,12 @@ export default function AlunoFeedbacksPage() {
   }, [tentativa, usuarioId])
 
   // O render nunca usa estado de outra conta: na troca, volta ao carregando.
-  const { status, feedbacks, rotaEnviar } = estadoDaContaAtual(
+  const { status, feedbacks, rotaEnviar, desempenho } = estadoDaContaAtual(
     carregamento,
     usuarioId,
     CARREGANDO,
   )
-  const resumo = resumirFeedbacks(feedbacks)
+  const resumo = resumirFeedbacks(feedbacks, desempenho)
   const visiveis = ordenarFeedbacks(feedbacks, ordenacao)
 
   return (
@@ -204,7 +220,7 @@ export default function AlunoFeedbacksPage() {
             </div>
             <div>
               <dt>Média das notas publicadas</dt>
-              <dd>{resumo.media}</dd>
+              <dd>{formatarIndicador(resumo.media)}</dd>
             </div>
           </dl>
 

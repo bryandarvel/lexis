@@ -5,11 +5,13 @@ import {
   caminhoDoFeedback,
   descreverQuantidade,
   formatarPublicacao,
+  obterProfessorDoFeedback,
   ordenarFeedbacks,
   resumirFeedbacks,
   selecionarFeedbacks,
   temFeedbackPublicado,
 } from '../src/utils/aluno-feedbacks.js'
+import { formatarIndicador } from '../src/utils/aluno-painel.js'
 
 const redacao = (id, extra = {}) => ({
   id,
@@ -138,4 +140,80 @@ test('monta o caminho do feedback com o id codificado', () => {
     caminhoDoFeedback({ id: 'abc/1' }),
     '/aluno/redacoes/abc%2F1/feedback',
   )
+})
+
+// Revisão do PR #84: o resumo precisa bater com o Painel. O backend (desempenho.service.js) arredonda a
+// média para 1 casa e o Painel arredonda esse valor para inteiro (formatarIndicador). Arredondar a média
+// crua direto para inteiro diverge nos casos x,45 a x,49: 832,49 virava 832 aqui e 833 no Painel.
+const notas = (...valores) => valores.map((nota, i) => redacao('r' + i, { notaPublicada: nota }))
+const comoOPainel = (mediaGeralDoBackend) => formatarIndicador(mediaGeralDoBackend)
+const mediaDoBackend = (lista) => Math.round((lista.reduce((t, r) => t + r.notaPublicada, 0) / lista.length) * 10) / 10
+
+test('média x,5 exata arredonda para cima, igual ao Painel', () => {
+  const lista = notas(800, 865) // 832,5
+
+  assert.equal(resumirFeedbacks(lista).media, 833)
+  assert.equal(String(resumirFeedbacks(lista).media), comoOPainel(mediaDoBackend(lista)))
+})
+
+test('média x,49 segue a regra do backend em duas etapas e bate com o Painel', () => {
+  const lista = [...notas(...Array(49).fill(833)), ...notas(...Array(51).fill(832))] // 832,49
+
+  assert.equal(mediaDoBackend(lista), 832.5)
+  assert.equal(resumirFeedbacks(lista).media, 833)
+  assert.equal(String(resumirFeedbacks(lista).media), comoOPainel(mediaDoBackend(lista)))
+})
+
+test('média x,4615 (13 notas) também bate com o Painel', () => {
+  const lista = notas(...Array(7).fill(833), ...Array(6).fill(832)) // 832,538...
+  const outra = notas(...Array(6).fill(833), ...Array(7).fill(832)) // 832,4615...
+
+  assert.equal(String(resumirFeedbacks(lista).media), comoOPainel(mediaDoBackend(lista)))
+  assert.equal(mediaDoBackend(outra), 832.5)
+  assert.equal(String(resumirFeedbacks(outra).media), comoOPainel(mediaDoBackend(outra)))
+})
+
+test('média x,44 arredonda para baixo nas duas etapas', () => {
+  const lista = notas(...Array(44).fill(833), ...Array(56).fill(832)) // 832,44
+
+  assert.equal(mediaDoBackend(lista), 832.4)
+  assert.equal(resumirFeedbacks(lista).media, 832)
+})
+
+test('sem redações o resumo não tem média, com ou sem desempenho', () => {
+  assert.deepEqual(resumirFeedbacks([]), { quantidade: 0, media: null })
+  assert.deepEqual(
+    resumirFeedbacks([], { mediaGeral: null, totalCorrigidas: 0, totalEnviadas: 0 }),
+    { quantidade: 0, media: null },
+  )
+})
+
+test('com o desempenho do backend, o resumo usa o valor dele', () => {
+  const lista = notas(700, 800)
+
+  assert.deepEqual(
+    resumirFeedbacks(lista, { mediaGeral: 832.5, totalCorrigidas: 7, totalEnviadas: 9 }),
+    { quantidade: 7, media: 833 },
+  )
+  // Resposta inválida do desempenho: volta à mesma regra aplicada à lista, sem quebrar.
+  for (const ruim of [null, undefined, {}, { mediaGeral: 'x', totalCorrigidas: 2 }, { mediaGeral: 700, totalCorrigidas: 0 }]) {
+    assert.deepEqual(resumirFeedbacks(lista, ruim), { quantidade: 2, media: 750 })
+  }
+})
+
+test('mostra o professor só quando o backend o entrega em tema.turma.professor', () => {
+  const comProfessor = redacao('p', { tema: { turma: { nome: 'Turma A', professor: { id: 'pr1', nome: '  Ana Lima ' } } } })
+
+  assert.equal(obterProfessorDoFeedback(comProfessor), 'Ana Lima')
+  for (const semDado of [
+    redacao('a'),
+    redacao('b', { tema: null }),
+    redacao('c', { tema: { turma: { nome: 'Turma A' } } }),
+    redacao('d', { tema: { turma: { professor: { nome: '   ' } } } }),
+    redacao('e', { tema: { turma: { professor: { nome: 42 } } } }),
+    null,
+    undefined,
+  ]) {
+    assert.equal(obterProfessorDoFeedback(semDado), null)
+  }
 })
