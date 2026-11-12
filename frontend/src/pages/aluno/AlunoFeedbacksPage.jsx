@@ -10,7 +10,6 @@ import { obterRotaEnviarRedacao } from '../../utils/aluno-feedback.js'
 import {
   estadoDaContaAtual,
   marcarConta,
-  mesmaConta,
 } from '../../utils/identidade-sessao.js'
 import {
   ORDENACOES_FEEDBACK,
@@ -18,6 +17,7 @@ import {
   descreverQuantidade,
   formatarPublicacao,
   obterProfessorDoFeedback,
+  aplicarRespostaDaConta,
   ordenarFeedbacks,
   resumirFeedbacks,
   selecionarFeedbacks,
@@ -102,8 +102,10 @@ export default function AlunoFeedbacksPage() {
       if (!ativo) return
 
       if (listaResultado.status === 'rejected') {
-        setCarregamento(
-          marcarConta({ ...CARREGANDO, status: 'erro' }, contaDaConsulta),
+        // A falha também passa pela conferência da conta: a consulta de outra pessoa não
+        // pode apagar o que já está na tela de quem entrou depois.
+        setCarregamento((atual) =>
+          aplicarRespostaDaConta(atual, { ...CARREGANDO, status: 'erro' }, contaDaConsulta),
         )
         return
       }
@@ -114,9 +116,9 @@ export default function AlunoFeedbacksPage() {
 
       setCarregamento((atual) =>
         // Descarta a resposta se a conta mudou entre o pedido e a chegada.
-        mesmaConta(atual.usuarioId, contaDaConsulta)
-          ? marcarConta(
-              {
+        aplicarRespostaDaConta(
+          atual,
+          {
                 status: 'pronto',
                 feedbacks: selecionarFeedbacks(redacoes),
                 desempenho:
@@ -129,9 +131,8 @@ export default function AlunoFeedbacksPage() {
                     ? obterRotaEnviarRedacao(temasResultado.value, redacoes)
                     : null,
               },
-              contaDaConsulta,
-            )
-          : atual,
+          contaDaConsulta,
+        ),
       )
     })
 

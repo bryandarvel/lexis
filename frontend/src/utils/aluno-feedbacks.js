@@ -1,3 +1,8 @@
+import {
+  marcarConta,
+  mesmaConta,
+} from './identidade-sessao.js'
+
 // Lista "Feedbacks": só as redações com nota publicada, vindas de
 // GET /api/aluno/redacoes (status AVALIADA, notaPublicada e publicadoEm).
 
@@ -130,4 +135,15 @@ export function obterProfessorDoFeedback(redacao) {
   const nome = redacao?.tema?.turma?.professor?.nome
 
   return typeof nome === 'string' && nome.trim() !== '' ? nome.trim() : null
+}
+
+// Resposta de uma consulta que pertence a uma conta. Enquanto ela corre, outra pessoa pode entrar
+// pela reautenticação: o que volta não pode sobrescrever a tela de quem está agora.
+export function aplicarRespostaDaConta(estadoAtual, proximo, contaDaResposta) {
+  // Chegou de uma conta que já não é a da tela: nem sucesso nem falha podem mexer nela.
+  if (!mesmaConta(estadoAtual?.usuarioId, contaDaResposta)) {
+    return estadoAtual
+  }
+
+  return marcarConta(proximo, contaDaResposta)
 }

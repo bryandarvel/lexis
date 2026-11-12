@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
+  aplicarRespostaDaConta,
   caminhoDoFeedback,
   descreverQuantidade,
   formatarPublicacao,
@@ -12,6 +13,10 @@ import {
   temFeedbackPublicado,
 } from '../src/utils/aluno-feedbacks.js'
 import { formatarIndicador } from '../src/utils/aluno-painel.js'
+import {
+  estadoDaContaAtual,
+  marcarConta,
+} from '../src/utils/identidade-sessao.js'
 
 const redacao = (id, extra = {}) => ({
   id,
@@ -216,4 +221,76 @@ test('mostra o professor só quando o backend o entrega em tema.turma.professor'
   ]) {
     assert.equal(obterProfessorDoFeedback(semDado), null)
   }
+})
+
+// Isolamento por conta na tela de Feedbacks (revisão do PR #84). A consulta pertence à conta que a
+// pediu: enquanto ela corre, outra pessoa pode entrar pela reautenticação.
+const CARREGANDO = {
+  status: 'carregando',
+  feedbacks: [],
+  rotaEnviar: null,
+  desempenho: null,
+  usuarioId: null,
+}
+
+const prontoDe = (usuarioId, ...ids) =>
+  marcarConta(
+    { status: 'pronto', feedbacks: ids.map((id) => redacao(id)), rotaEnviar: null, desempenho: null },
+    usuarioId,
+  )
+
+test('ao trocar de conta, os feedbacks de A não aparecem para B', () => {
+  const deA = prontoDe('aluno-a', 'r1', 'r2')
+
+  assert.equal(estadoDaContaAtual(deA, 'aluno-a', CARREGANDO).feedbacks.length, 2)
+
+  const paraB = estadoDaContaAtual(deA, 'aluno-b', CARREGANDO)
+
+  assert.deepEqual(paraB.feedbacks, [])
+  assert.equal(paraB.status, 'carregando')
+  assert.equal(paraB.desempenho, null)
+})
+
+test('a resposta da consulta de A que chega depois da troca não sobrescreve a tela de B', () => {
+  const deB = prontoDe('aluno-b', 'b1')
+  const respostaDeA = { status: 'pronto', feedbacks: [redacao('r1')], rotaEnviar: null, desempenho: null }
+
+  const depois = aplicarRespostaDaConta(deB, respostaDeA, 'aluno-a')
+
+  assert.equal(depois, deB, 'o estado de B precisa ficar intacto')
+  assert.equal(estadoDaContaAtual(depois, 'aluno-b', CARREGANDO).feedbacks[0].id, 'b1')
+})
+
+test('a falha da consulta de A que chega depois da troca não apaga a tela de B', () => {
+  const deB = prontoDe('aluno-b', 'b1')
+
+  const depois = aplicarRespostaDaConta(deB, { ...CARREGANDO, status: 'erro' }, 'aluno-a')
+
+  assert.equal(depois.status, 'pronto')
+  assert.equal(estadoDaContaAtual(depois, 'aluno-b', CARREGANDO).feedbacks[0].id, 'b1')
+})
+
+test('a resposta da própria conta é aplicada', () => {
+  const deA = marcarConta(CARREGANDO, 'aluno-a')
+  const resposta = { status: 'pronto', feedbacks: [redacao('r1')], rotaEnviar: null, desempenho: null }
+
+  const depois = aplicarRespostaDaConta(deA, resposta, 'aluno-a')
+
+  assert.equal(depois.status, 'pronto')
+  assert.equal(depois.usuarioId, 'aluno-a')
+  assert.equal(estadoDaContaAtual(depois, 'aluno-a', CARREGANDO).feedbacks[0].id, 'r1')
+})
+
+test('reautenticar na mesma conta preserva os feedbacks já carregados', () => {
+  const deA = prontoDe('aluno-a', 'r1', 'r2')
+  const visivel = estadoDaContaAtual(deA, 'aluno-a', CARREGANDO)
+
+  assert.equal(visivel.status, 'pronto')
+  assert.equal(visivel.feedbacks.length, 2)
+})
+
+test('sem conta autenticada os feedbacks somem', () => {
+  const deA = prontoDe('aluno-a', 'r1')
+
+  assert.deepEqual(estadoDaContaAtual(deA, null, CARREGANDO).feedbacks, [])
 })
