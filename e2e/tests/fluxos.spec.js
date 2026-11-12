@@ -1,12 +1,19 @@
 import { test, expect, entrar, texto } from '../fixtures.js'
 
-test.beforeEach(async ({ context }) => {
+// Só o servidor local de teste (API 3100 e Vite 5180) é acessível. Cada contexto do navegador é
+// isolado e não herda o bloqueio de outro: todo contexto criado aqui precisa passar por esta função
+// antes de abrir qualquer página.
+async function bloquearRedeExterna(context) {
   await context.route('**/*', (route) => {
     const url = new URL(route.request().url())
     return url.hostname === '127.0.0.1' && ['3100', '5180'].includes(url.port)
       ? route.continue()
       : route.abort('blockedbyclient')
   })
+}
+
+test.beforeEach(async ({ context }) => {
+  await bloquearRedeExterna(context)
 })
 
 test('sessão real restaura após reload, respeita papel e é encerrada no logout', async ({ page, context, cenario }) => {
@@ -93,6 +100,8 @@ test('OCR exige revisão; professor publica feedback humano e só o aluno respon
   const professorContext = await browser.newContext()
   const outroContext = await browser.newContext()
   try {
+    await bloquearRedeExterna(professorContext)
+    await bloquearRedeExterna(outroContext)
     const professorPage = await professorContext.newPage()
     await entrar(professorPage, cenario.professor)
     await professorPage.goto('/professor/redacoes/' + redacao.id)
