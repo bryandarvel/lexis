@@ -9,10 +9,10 @@ import {
   marcarNotificacaoProfessorLida,
 } from '../../services/notificacoes-professor.js'
 import { notificarContagemAtualizada } from '../../services/notification-events.js'
-import { atualizarNotificacaoComoLida } from '../../utils/notifications.js'
 import {
   descreverAvisoProfessor,
   mensagemDeFalha,
+  registrarLeitura,
 } from '../../utils/notificacoes-professor.js'
 import {
   estadoDaContaAtual,
@@ -53,6 +53,10 @@ export default function ProfessorNotificacoesPage() {
   const contaAtual = useRef(usuarioId)
   contaAtual.current = usuarioId
   const [estado, setEstado] = useState(INICIAL)
+  // Último estado renderizado: a contagem do sino sai dele, e não de dentro de um updater do setState,
+  // que o React executa depois (foi isso que deixava o sino em 0 com 1 aviso ainda não lido).
+  const estadoAtual = useRef(estado)
+  estadoAtual.current = estado
   const [tentativa, setTentativa] = useState(0)
 
   useEffect(() => {
@@ -118,16 +122,15 @@ export default function ProfessorNotificacoesPage() {
         if (!montado.current) return
         if (!mesmaConta(contaDaAcao, contaAtual.current)) return
 
-        let total = 0
+        // Uma única contagem, derivada da lista, para a lista e para o sino.
+        const proximo = marcarConta(
+          registrarLeitura(estadoAtual.current, atualizada),
+          contaDaAcao,
+        )
 
-        setEstado((atual) => {
-          const proximo = atualizarNotificacaoComoLida(atual, atualizada)
-
-          total = proximo.totalNaoLidas
-
-          return marcarConta({ ...proximo, processandoId: null }, contaDaAcao)
-        })
-        notificarContagemAtualizada(total)
+        estadoAtual.current = proximo
+        setEstado(proximo)
+        notificarContagemAtualizada(proximo.totalNaoLidas)
 
         if (destino) navigate(destino)
       } catch (erro) {
@@ -242,6 +245,10 @@ export default function ProfessorNotificacoesPage() {
                       <span className="avisos-mensagem">
                         {notificacao.mensagem}
                       </span>
+
+                      {aviso.orientacao && (
+                        <span className="avisos-origem">{aviso.orientacao}</span>
+                      )}
 
                       {(aviso.proposta || aviso.turma) && (
                         <span className="avisos-origem">

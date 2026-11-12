@@ -4,6 +4,7 @@ import test from 'node:test'
 import {
   descreverAvisoProfessor,
   mensagemDeFalha,
+  registrarLeitura,
 } from '../src/utils/notificacoes-professor.js'
 import {
   estadoDaContaAtual,
@@ -38,27 +39,41 @@ test('redação enviada leva à correção da redação', () => {
   assert.equal(aviso.acionavel, true)
 })
 
-test('aluno que saiu leva à turma', () => {
+// O aviso ALUNO_SAIU_TURMA chega sem redacaoId e sem o id da turma (backend/turmas.repository.js): não há
+// para onde levar. A tela só permite marcar como lido e explica onde achar a turma. Mesmo que um payload
+// futuro traga uma turma, a interface não oferece o botão de abrir.
+test('aluno que saiu só permite marcar como lido e não oferece abrir a turma', () => {
   const aviso = descreverAvisoProfessor({
     id: 'n2',
     tipo: 'ALUNO_SAIU_TURMA',
     lidaEm: null,
-    turma: { id: 'turma-9', nome: 'Turma Fictícia' },
   })
 
-  assert.equal(aviso.destino, '/professor/turmas/turma-9')
-  assert.equal(aviso.rotulo, 'Ver turma →')
+  assert.equal(aviso.destino, null)
+  assert.equal(aviso.rotulo, 'Marcar como lido')
+  assert.equal(aviso.acionavel, true)
+  assert.match(aviso.orientacao, /Turmas/)
+  assert.doesNotMatch(aviso.rotulo, /turma/i)
 })
 
-// O backend manda a turma dentro da redação nos eventos de envio; se um aviso
-// de saída vier nesse formato, o destino continua sendo a turma.
-test('a turma pode vir aninhada na redação', () => {
-  const aviso = descreverAvisoProfessor({
-    tipo: 'ALUNO_SAIU_TURMA',
-    redacao: { tema: { turma: { id: 'turma-5' } } },
-  })
+test('aluno que saiu não ganha destino nem com turma presente no payload', () => {
+  for (const extra of [
+    { turma: { id: 'turma-9', nome: 'Turma Fictícia' } },
+    { redacao: { tema: { turma: { id: 'turma-5' } } } },
+  ]) {
+    const aviso = descreverAvisoProfessor({ tipo: 'ALUNO_SAIU_TURMA', lidaEm: null, ...extra })
 
-  assert.equal(aviso.destino, '/professor/turmas/turma-5')
+    assert.equal(aviso.destino, null)
+    assert.equal(aviso.rotulo, 'Marcar como lido')
+  }
+})
+
+test('aviso de saída já lido fica como Lido e sem ação', () => {
+  const aviso = descreverAvisoProfessor({ tipo: 'ALUNO_SAIU_TURMA', lidaEm: '2026-11-10T12:00:00Z' })
+
+  assert.equal(aviso.rotulo, 'Lido')
+  assert.equal(aviso.acionavel, false)
+  assert.equal(aviso.destino, null)
 })
 
 test('sem o id necessário o aviso só é marcado como lido', () => {
@@ -79,6 +94,7 @@ test('sem o id necessário o aviso só é marcado como lido', () => {
   })
 
   assert.equal(semTurma.destino, null)
+  assert.equal(semTurma.rotulo, 'Marcar como lido')
 })
 
 test('tipo desconhecido não quebra nem promete destino', () => {
@@ -121,10 +137,6 @@ test('ids são codificados na URL', () => {
   assert.equal(
     descreverAvisoProfessor(redacaoEnviada({ redacaoId: 'red/1', redacao: null })).destino,
     '/professor/redacoes/red%2F1',
-  )
-  assert.equal(
-    descreverAvisoProfessor({ tipo: 'ALUNO_SAIU_TURMA', turma: { id: 't/9' } }).destino,
-    '/professor/turmas/t%2F9',
   )
 })
 
@@ -234,4 +246,56 @@ test('a contagem do sino também não herda a conta anterior', () => {
 
   assert.equal(estadoDaContaAtual(sinoDeA, 'prof-b', INICIAL_SINO).totalNaoLidas, 0)
   assert.equal(estadoDaContaAtual(sinoDeA, 'prof-a', INICIAL_SINO).totalNaoLidas, 5)
+})
+
+// Contador (revisão do PR #123): com 2 avisos sem destino, ler 1 deixava a lista em 1 e o sino em 0, porque a
+// página lia o total de dentro do updater do setState, que ainda não tinha rodado. A contagem agora sai de
+// uma função pura sobre a lista, e é essa a única fonte da lista e do sino.
+const lista = (...lidas) => ({
+  status: 'pronto',
+  notificacoes: lidas.map((lida, i) => ({ id: 'n' + (i + 1), tipo: 'ALUNO_SAIU_TURMA', lidaEm: lida ? '2026-11-10T12:00:00Z' : null })),
+  totalNaoLidas: lidas.filter((lida) => !lida).length,
+  processandoId: 'n1',
+  mensagem: '',
+})
+const lidaAgora = (id) => ({ id, tipo: 'ALUNO_SAIU_TURMA', lidaEm: '2026-11-10T13:00:00Z' })
+
+test('ler os avisos um a um leva a contagem de 2 para 1 e para 0, na lista e no sino', () => {
+  const inicial = lista(false, false)
+  const aposUm = registrarLeitura(inicial, lidaAgora('n1'))
+
+  assert.equal(aposUm.totalNaoLidas, 1)
+  assert.equal(aposUm.notificacoes.filter((n) => !n.lidaEm).length, 1)
+  assert.equal(aposUm.processandoId, null)
+
+  const aposDois = registrarLeitura(aposUm, lidaAgora('n2'))
+
+  assert.equal(aposDois.totalNaoLidas, 0)
+  assert.equal(aposDois.notificacoes.every((n) => n.lidaEm), true)
+  // a entrada não é alterada
+  assert.equal(inicial.totalNaoLidas, 2)
+})
+
+test('marcar como lido algo que já estava lido não decrementa de novo', () => {
+  const estado = lista(true, false)
+  const repetido = registrarLeitura(estado, lidaAgora('n1'))
+
+  assert.equal(repetido.totalNaoLidas, 1)
+  assert.equal(registrarLeitura(repetido, lidaAgora('n1')).totalNaoLidas, 1)
+})
+
+test('um aviso que não está na lista não altera a contagem', () => {
+  assert.equal(registrarLeitura(lista(false, false), lidaAgora('outro')).totalNaoLidas, 2)
+})
+
+test('na troca de conta a lista e a contagem de A somem e uma nova consulta começa', () => {
+  const deA = marcarConta(lista(false, false), 'prof-a')
+  const inicial = { usuarioId: null, status: 'carregando', notificacoes: [], totalNaoLidas: 0, processandoId: null, mensagem: '' }
+
+  assert.equal(estadoDaContaAtual(deA, 'prof-a', inicial).totalNaoLidas, 2)
+  const paraB = estadoDaContaAtual(deA, 'prof-b', inicial)
+
+  assert.equal(paraB.totalNaoLidas, 0)
+  assert.equal(paraB.status, 'carregando')
+  assert.deepEqual(paraB.notificacoes, [])
 })
