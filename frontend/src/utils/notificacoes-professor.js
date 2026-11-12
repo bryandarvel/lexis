@@ -8,7 +8,7 @@
  */
 
 import { interpretarErroApi } from './api-error.js'
-import { atualizarNotificacaoComoLida } from './notifications.js'
+import { aplicarLeitura } from './notificacoes-sequencia.js'
 
 function texto(valor) {
   const limpo = typeof valor === 'string' ? valor.trim() : ''
@@ -81,8 +81,8 @@ export function mensagemDeFalha(erro, padrao) {
 }
 
 // Marca o aviso como lido e refaz a contagem a partir da lista: lista e sino usam este mesmo
-// número, e ler de novo um aviso já lido não decrementa. Função pura, sem depender de quando o
-// React executa os updaters.
+// número, e ler de novo um aviso já lido não decrementa. A regra é a de aplicarLeitura, comum às
+// duas centrais, que também avança a geração e descarta consultas em voo.
 export function registrarLeitura(estado, notificacaoAtualizada) {
-  return { ...atualizarNotificacaoComoLida(estado, notificacaoAtualizada), processandoId: null }
+  return aplicarLeitura(estado, notificacaoAtualizada)
 }

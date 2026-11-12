@@ -12,13 +12,18 @@ import { notificarContagemAtualizada } from '../../services/notification-events.
 import {
   descreverAvisoProfessor,
   mensagemDeFalha,
-  registrarLeitura,
 } from '../../utils/notificacoes-professor.js'
 import {
   estadoDaContaAtual,
   marcarConta,
   mesmaConta,
 } from '../../utils/identidade-sessao.js'
+import {
+  aplicarConsulta,
+  aplicarFalhaDaConsulta,
+  aplicarLeitura,
+  iniciarConsulta,
+} from '../../utils/notificacoes-sequencia.js'
 import './professor-notificacoes.css'
 
 function formatarDataHora(valor) {
@@ -36,6 +41,7 @@ function formatarDataHora(valor) {
 
 const INICIAL = {
   usuarioId: null,
+  geracao: 0,
   status: 'carregando',
   notificacoes: [],
   totalNaoLidas: 0,
@@ -64,30 +70,40 @@ export default function ProfessorNotificacoesPage() {
 
     const controlador = new AbortController()
 
-    setEstado((atual) => ({ ...atual, status: 'carregando', mensagem: '' }))
+    // Esta consulta recebe um número. Se uma leitura local ou outra consulta acontecer antes da
+    // resposta, ela deixa de ser a vigente e o resultado é descartado.
+    const consulta = iniciarConsulta(marcarConta(INICIAL, usuarioId))
+
+    estadoAtual.current = consulta.estado
+    setEstado(consulta.estado)
 
     listarNotificacoesProfessor({ signal: controlador.signal })
       .then((resultado) => {
         if (!montado.current) return
 
-        setEstado(marcarConta({
-          ...INICIAL,
-          status: 'pronto',
-          notificacoes: resultado.notificacoes ?? [],
-          totalNaoLidas: resultado.totalNaoLidas ?? 0,
-        }, usuarioId))
+        const proximo = marcarConta(
+          aplicarConsulta(estadoAtual.current, resultado, consulta.geracao),
+          usuarioId,
+        )
+
+        estadoAtual.current = proximo
+        setEstado(proximo)
+        notificarContagemAtualizada(proximo.totalNaoLidas)
       })
       .catch((erro) => {
         if (!montado.current || controlador.signal.aborted) return
 
-        setEstado(marcarConta({
-          ...INICIAL,
-          status: 'erro',
-          mensagem: mensagemDeFalha(
-            erro,
-            'Não foi possível carregar seus avisos.',
+        const proximo = marcarConta(
+          aplicarFalhaDaConsulta(
+            estadoAtual.current,
+            mensagemDeFalha(erro, 'Não foi possível carregar seus avisos.'),
+            consulta.geracao,
           ),
-        }, usuarioId))
+          usuarioId,
+        )
+
+        estadoAtual.current = proximo
+        setEstado(proximo)
       })
 
     return () => {
@@ -124,7 +140,7 @@ export default function ProfessorNotificacoesPage() {
 
         // Uma única contagem, derivada da lista, para a lista e para o sino.
         const proximo = marcarConta(
-          registrarLeitura(estadoAtual.current, atualizada),
+          aplicarLeitura(estadoAtual.current, atualizada),
           contaDaAcao,
         )
 
