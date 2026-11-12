@@ -16,6 +16,13 @@ export function segundosRestantesAnalise(ate, agora = Date.now()) {
   return Number.isFinite(ate) ? Math.max(0, Math.ceil((ate - agora) / 1000)) : 0
 }
 
+export function obterFalhaAnteriorPublicacao(analises, ...publicacoes) {
+  const publicadaEm = Math.max(0, ...publicacoes.map((data) => Date.parse(data) || 0))
+  if (!publicadaEm) return null
+  return analises.find((analise) => analise.status === 'ERRO' &&
+    Date.parse(analise.concluidaEm ?? analise.solicitadaEm) <= publicadaEm) ?? null
+}
+
 export function avisoAnaliseDuplicado(analise, aviso) {
   if (analise?.status !== 'ERRO' || aviso?.type !== 'error' || typeof analise.mensagemErro !== 'string') return false
   return mensagemErroAnalise(analise) === mensagemErroAnalise({ mensagemErro: aviso.message })
@@ -29,7 +36,7 @@ export function avisoEstadoAnalise(analise, { nova = false } = {}) {
       ? 'Nova análise concluída e salva. Revise as sugestões; nenhuma nota foi atribuída pela IA.'
       : 'Resultado salvo consultado. Esta consulta não solicitou uma nova análise à IA.',
   }
-  if (analise?.status === 'ERRO') return { type: 'error', message: mensagemErroAnalise(analise) }
+  if (analise?.status === 'ERRO') return { type: 'error', analiseId: analise.id, message: mensagemErroAnalise(analise) }
   return { type: 'info', message: analise ? 'Análise ainda em processamento. Consulte o resultado novamente em instantes.' : 'Nenhuma análise disponível.' }
 }
 

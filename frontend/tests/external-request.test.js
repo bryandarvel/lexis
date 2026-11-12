@@ -1,6 +1,22 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { avisoEstadoAnalise, avisoAtualDaAnalise, mensagemErroAnalise, TIMEOUT_ANALISE_IA_MS, TIMEOUT_OCR_MS, obterEsperaMinimaAnalise, segundosRestantesAnalise, avisoAnaliseDuplicado } from '../src/utils/external-request.js'
+import { avisoEstadoAnalise, avisoAtualDaAnalise, mensagemErroAnalise, TIMEOUT_ANALISE_IA_MS, TIMEOUT_OCR_MS, obterEsperaMinimaAnalise, obterFalhaAnteriorPublicacao, segundosRestantesAnalise, avisoAnaliseDuplicado } from '../src/utils/external-request.js'
+
+test('só arquiva falhas finalizadas até uma publicação confirmada', () => {
+  const publicadoEm = '2026-11-12T12:00:00Z'
+  const recente = { id: 'nova', status: 'ERRO', solicitadaEm: '2026-11-12T11:59:00Z', concluidaEm: '2026-11-12T12:01:00Z' }
+  const antiga = { id: 'antiga', status: 'ERRO', concluidaEm: '2026-11-12T11:58:00Z' }
+  assert.equal(obterFalhaAnteriorPublicacao([recente, antiga]), null)
+  assert.equal(obterFalhaAnteriorPublicacao([recente, antiga], 'inválido'), null)
+  assert.equal(obterFalhaAnteriorPublicacao([recente, antiga], publicadoEm), antiga)
+  assert.equal(obterFalhaAnteriorPublicacao([recente, antiga], publicadoEm, '2026-11-12T12:02:00Z'), recente)
+  assert.equal(obterFalhaAnteriorPublicacao([{ status: 'ERRO' }, { ...antiga, status: 'CONCLUIDA' }], publicadoEm), null)
+})
+
+test('falha legada sem data de conclusão usa a data da solicitação', () => {
+  const falha = { status: 'ERRO', solicitadaEm: '2026-11-12T12:00:00Z' }
+  assert.equal(obterFalhaAnteriorPublicacao([falha], '2026-11-12T12:01:00Z'), falha)
+})
 
 test('chamadas externas têm margem sobre os limites máximos do servidor', () => {
   assert.equal(TIMEOUT_ANALISE_IA_MS, 200000)

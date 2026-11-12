@@ -36,6 +36,50 @@ test('painel mostra a falha recente e a conclusão anterior datada, sem sucesso 
   assert.doesNotMatch(html, /SUCESSO_ANTIGO_NAO_EXIBIR|GEMINI_SERVICE_UNAVAILABLE:/)
 })
 
+const falhaPublicada = { id: 'falha-anterior', status: 'ERRO', concluidaEm: '2026-11-12T14:00:00Z', mensagemErro: 'Falha fictícia antes da publicação.' }
+
+test('publicação confirmada rebaixa a falha antiga a histórico consultável, sem reiniciar a espera', () => {
+  const html = renderToStaticMarkup(createElement(AnalysisPanel, {
+    analysis: falhaPublicada, falhaAnterior: falhaPublicada,
+    notice: { type: 'error', analiseId: falhaPublicada.id, message: falhaPublicada.mensagemErro },
+    avisoAnterior: { type: 'error', message: falhaPublicada.mensagemErro },
+    retryAt: Date.now() + 30000,
+  }))
+  assert.match(html, /<summary>Falha de IA anterior à publicação<\/summary>/)
+  assert.match(html, /12\/11\/2026/)
+  assert.equal(html.match(/Falha fictícia antes da publicação\./g).length, 1)
+  assert.doesNotMatch(html, /role="alert"|Consultar resultado existente|Nenhuma análise solicitada/)
+  assert.match(html, /<button[^>]*disabled[^>]*>Analisar novamente com IA/)
+})
+
+test('falha nova é ativa mesmo quando sua mensagem coincide com a do histórico', () => {
+  const html = renderToStaticMarkup(createElement(AnalysisPanel, {
+    analysis: falhaPublicada, falhaAnterior: falhaPublicada,
+    notice: { type: 'error', message: falhaPublicada.mensagemErro },
+  }))
+  assert.match(html, /role="alert"/)
+  assert.match(html, /Consultar resultado existente/)
+  assert.match(html, /<summary>Falha de IA anterior à publicação<\/summary>/)
+})
+
+test('falha persistida depois da publicação mantém alerta e não remove a falha anterior', () => {
+  const html = renderToStaticMarkup(createElement(AnalysisPanel, {
+    analysis: { ...falhaPublicada, id: 'nova', mensagemErro: 'Falha fictícia nova.' },
+    falhaAnterior: falhaPublicada,
+  }))
+  assert.match(html, /role="alert"[^>]*>Falha fictícia nova\./)
+  assert.match(html, /Falha fictícia antes da publicação\./)
+})
+
+test('aviso de transporte sem análise persistida fica consultável depois da publicação', () => {
+  const html = renderToStaticMarkup(createElement(AnalysisPanel, {
+    avisoAnterior: { type: 'error', ocorridaEm: Date.parse('2026-11-12T14:00:00Z'), message: 'Falha transitória anterior.' },
+  }))
+  assert.match(html, /<summary>Falha de IA anterior à publicação<\/summary>/)
+  assert.match(html, /Falha transitória anterior\./)
+  assert.doesNotMatch(html, /role="alert"/)
+})
+
 test('trecho comum aos três critérios conserva vínculos e exibe as três cores', () => {
   const texto = 'Direito à educação.'
   const criterios = ['Legitimação', 'Pertinência', 'Uso produtivo'].map((nome, i) => ({ nome, ordem: i + 1 }))
