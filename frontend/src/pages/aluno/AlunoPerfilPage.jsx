@@ -11,13 +11,13 @@ import {
   NOTA_DESEMPENHO,
   descreverConta,
   descreverTurma,
+  aplicarBlocosDaConta,
   resolverBloco,
   resumirDesempenho,
 } from '../../utils/aluno-perfil.js'
 import {
   estadoDaContaAtual,
   marcarConta,
-  mesmaConta,
 } from '../../utils/identidade-sessao.js'
 import { indicaSemMatricula } from '../../utils/minha-turma.js'
 import './aluno-perfil.css'
@@ -201,15 +201,9 @@ export default function AlunoPerfilPage() {
   const [estado, setEstado] = useState(ESTADO_INICIAL)
   const [saindo, setSaindo] = useState(false)
 
-  // Conferir a conta no próprio setter distingue gerações concorrentes: um
-  // sinalizador de montagem não separa a resposta pedida por quem saiu da
-  // resposta pedida por quem entrou.
+  // A regra está em aplicarBlocosDaConta, com testes: a resposta de outra conta é ignorada.
   const aplicarSeForDaConta = useCallback((conta, atualizar) => {
-    setEstado((atual) =>
-      mesmaConta(atual.usuarioId, conta)
-        ? marcarConta({ blocos: atualizar(atual.blocos) }, conta)
-        : atual,
-    )
+    setEstado((atual) => aplicarBlocosDaConta(atual, conta, atualizar))
   }, [])
 
   useEffect(() => {

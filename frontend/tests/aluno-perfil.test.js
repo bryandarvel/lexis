@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
+  aplicarBlocosDaConta,
   descreverConta,
   descreverTurma,
   formatarMembroDesde,
@@ -10,6 +11,10 @@ import {
   resumirDesempenho,
   rotularPapel,
 } from '../src/utils/aluno-perfil.js'
+import {
+  estadoDaContaAtual,
+  marcarConta,
+} from '../src/utils/identidade-sessao.js'
 
 test('rotula o papel e não inventa um para valores desconhecidos', () => {
   assert.equal(rotularPapel('ALUNO'), 'Aluno')
@@ -137,4 +142,71 @@ test('resolverBloco aceita uma rejeição tratada como estado próprio', () => {
     ).status,
     'erro',
   )
+})
+
+// Isolamento por conta no Perfil (revisão do PR #85). Cada bloco (conta, turma, desempenho) é
+// carregado por conta, e a resposta pertence a quem a pediu.
+const ESTADO_INICIAL = marcarConta({ blocos: { conta: 'carregando', turma: 'carregando' } }, null)
+
+const prontoDe = (usuarioId, blocos) => marcarConta({ blocos }, usuarioId)
+
+test('ao trocar de conta, os blocos de A não aparecem para B', () => {
+  const deA = prontoDe('aluno-a', { conta: { nome: 'Aluno A' }, turma: { nome: 'Turma de A' } })
+
+  assert.equal(estadoDaContaAtual(deA, 'aluno-a', ESTADO_INICIAL).blocos.conta.nome, 'Aluno A')
+
+  const paraB = estadoDaContaAtual(deA, 'aluno-b', ESTADO_INICIAL)
+
+  assert.deepEqual(paraB, ESTADO_INICIAL)
+  assert.equal(paraB.blocos.conta, 'carregando')
+  assert.equal(paraB.blocos.turma, 'carregando')
+})
+
+test('a resposta da consulta de A que chega depois da troca não preenche a tela de B', () => {
+  const deB = prontoDe('aluno-b', { conta: { nome: 'Aluno B' }, turma: { nome: 'Turma de B' } })
+
+  const depois = aplicarBlocosDaConta(deB, 'aluno-a', () => ({
+    conta: { nome: 'Aluno A' },
+    turma: { nome: 'Turma de A' },
+  }))
+
+  assert.equal(depois, deB, 'o estado de B precisa ficar intacto')
+  assert.equal(estadoDaContaAtual(depois, 'aluno-b', ESTADO_INICIAL).blocos.conta.nome, 'Aluno B')
+})
+
+test('a falha de um bloco pedido por A não apaga a tela de B', () => {
+  const deB = prontoDe('aluno-b', { conta: { nome: 'Aluno B' }, turma: { nome: 'Turma de B' } })
+
+  const depois = aplicarBlocosDaConta(deB, 'aluno-a', (blocos) => ({ ...blocos, turma: 'erro' }))
+
+  assert.equal(depois.blocos.turma.nome, 'Turma de B')
+})
+
+test('a resposta da própria conta é aplicada e preserva a identidade', () => {
+  const deA = prontoDe('aluno-a', { conta: 'carregando', turma: 'carregando' })
+
+  const depois = aplicarBlocosDaConta(deA, 'aluno-a', (blocos) => ({
+    ...blocos,
+    conta: { nome: 'Aluno A' },
+  }))
+
+  assert.equal(depois.usuarioId, 'aluno-a')
+  assert.equal(depois.blocos.conta.nome, 'Aluno A')
+  assert.equal(depois.blocos.turma, 'carregando')
+})
+
+test('reautenticar na mesma conta preserva os blocos já carregados', () => {
+  const deA = prontoDe('aluno-a', { conta: { nome: 'Aluno A' }, turma: { nome: 'Turma de A' } })
+  const visivel = estadoDaContaAtual(deA, 'aluno-a', ESTADO_INICIAL)
+
+  assert.equal(visivel.blocos.conta.nome, 'Aluno A')
+  assert.equal(visivel.blocos.turma.nome, 'Turma de A')
+})
+
+test('sem conta autenticada os blocos voltam ao carregando', () => {
+  const deA = prontoDe('aluno-a', { conta: { nome: 'Aluno A' }, turma: { nome: 'Turma de A' } })
+
+  assert.deepEqual(estadoDaContaAtual(deA, null, ESTADO_INICIAL), ESTADO_INICIAL)
+  // E uma resposta tardia sem conta também não entra.
+  assert.equal(aplicarBlocosDaConta(deA, null, () => ({ conta: 'erro' })), deA)
 })

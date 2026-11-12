@@ -7,6 +7,7 @@
 // Os rótulos abaixo dizem exatamente isso, sem sugerir evolução.
 
 import { descreverMatricula } from './minha-turma.js'
+import { marcarConta, mesmaConta } from './identidade-sessao.js'
 
 export const NOTA_DESEMPENHO =
   'Considera todas as suas turmas, inclusive as que você já deixou. Médias e última nota usam apenas correções publicadas.'
@@ -109,4 +110,15 @@ export function resolverBloco(resultado, { aceitarRejeicao } = {}) {
   }
 
   return { status: 'erro', dados: null }
+}
+
+// Cada resposta pertence à conta que a pediu. Conferir a conta no próprio estado distingue
+// gerações concorrentes: um sinalizador de montagem não separa a resposta pedida por quem saiu
+// da resposta pedida por quem entrou. O que chega de outra conta é ignorado, inclusive as falhas.
+export function aplicarBlocosDaConta(estadoAtual, contaDaResposta, atualizar) {
+  if (!mesmaConta(estadoAtual?.usuarioId, contaDaResposta)) {
+    return estadoAtual
+  }
+
+  return marcarConta({ blocos: atualizar(estadoAtual.blocos) }, contaDaResposta)
 }
