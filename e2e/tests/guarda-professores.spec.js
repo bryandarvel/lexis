@@ -16,6 +16,8 @@ test('um professor não vê nem altera a turma e a proposta de outro, na interfa
   const criterios = await criteriosDoModelo()
 
   // API: leitura e todas as ações do professor recebem 404, sem revelar que existem.
+  // A lista só tem rotas que existem no backend; as de leitura são conferidas abaixo com o dono (200),
+  // para o 404 de uma rota inexistente nunca passar por acesso negado.
   const rotas = [
     ['get', `/api/turmas/${turma.id}`],
     ['get', `/api/turmas/${turma.id}/alunos`],
@@ -29,8 +31,16 @@ test('um professor não vê nem altera a turma e a proposta de outro, na interfa
     ['put', `/api/temas/${proposta.id}/criterios`, { criterios }],
     ['post', `/api/temas/${proposta.id}/arquivar`],
     ['post', `/api/temas/${proposta.id}/reabrir`],
-    ['get', `/api/professor/redacoes/${redacao.id}`],
+    ['get', `/api/redacoes/${redacao.id}`],
   ]
+  for (const [metodo, rota] of rotas.filter(([metodo]) => metodo === 'get')) {
+    const doDono = await cenario.chamada(cenario.professor, metodo, rota)
+    expect(doDono, 'o dono deve receber 200 em ' + rota).toBeTruthy()
+  }
+  // O autor da redação (aluno) e um visitante também não a abrem pela rota do professor.
+  await cenario.chamada(aluno, 'get', `/api/redacoes/${redacao.id}`, undefined, 403)
+  await cenario.chamada(null, 'get', `/api/redacoes/${redacao.id}`, undefined, 401)
+
   for (const [metodo, rota, dados] of rotas) {
     const resposta = await cenario.chamada(intruso, metodo, rota, dados, 404).catch((erro) => {
       throw new Error(`${metodo.toUpperCase()} ${rota} não respondeu 404 ao outro professor: ${erro.message}`)
