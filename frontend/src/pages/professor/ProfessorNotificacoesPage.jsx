@@ -22,8 +22,10 @@ import {
   aplicarConsulta,
   aplicarFalhaDaConsulta,
   aplicarLeitura,
+  geracaoDe,
   iniciarConsulta,
 } from '../../utils/notificacoes-sequencia.js'
+import { respostaDeveSerAplicada } from '../../utils/resposta-notificacoes.js'
 import './professor-notificacoes.css'
 
 function formatarDataHora(valor) {
@@ -70,20 +72,35 @@ export default function ProfessorNotificacoesPage() {
 
     const controlador = new AbortController()
 
-    // Esta consulta recebe um número. Se uma leitura local ou outra consulta acontecer antes da
-    // resposta, ela deixa de ser a vigente e o resultado é descartado.
-    const consulta = iniciarConsulta(marcarConta(INICIAL, usuarioId))
+    // Esta consulta recebe um número que continua de onde o anterior parou: duas consultas
+    // seguidas, ou de contas diferentes, nunca recebem o mesmo. Se uma leitura local ou outra
+    // consulta acontecer antes da resposta, ela deixa de ser a vigente e o resultado é descartado.
+    const consulta = iniciarConsulta({
+      ...marcarConta(INICIAL, usuarioId),
+      geracao: geracaoDe(estadoAtual.current),
+    })
+    // A conta que pediu esta consulta, conferida quando a resposta chegar.
+    const contaDaConsulta = usuarioId
+    const podeAplicar = () => respostaDeveSerAplicada({
+      montado: montado.current,
+      cancelada: controlador.signal.aborted,
+      contaDaConsulta,
+      contaAtual: contaAtual.current,
+      estadoAtual: estadoAtual.current,
+      geracao: consulta.geracao,
+    })
 
     estadoAtual.current = consulta.estado
     setEstado(consulta.estado)
 
     listarNotificacoesProfessor({ signal: controlador.signal })
       .then((resultado) => {
-        if (!montado.current) return
+        // Cancelada, substituída ou de outra conta: não entra na lista nem avisa o sino.
+        if (!podeAplicar()) return
 
         const proximo = marcarConta(
           aplicarConsulta(estadoAtual.current, resultado, consulta.geracao),
-          usuarioId,
+          contaDaConsulta,
         )
 
         estadoAtual.current = proximo
@@ -91,7 +108,8 @@ export default function ProfessorNotificacoesPage() {
         notificarContagemAtualizada(proximo.totalNaoLidas)
       })
       .catch((erro) => {
-        if (!montado.current || controlador.signal.aborted) return
+        // A falha segue a mesma regra: uma consulta vencida não escreve erro na tela de ninguém.
+        if (!podeAplicar()) return
 
         const proximo = marcarConta(
           aplicarFalhaDaConsulta(
@@ -99,7 +117,7 @@ export default function ProfessorNotificacoesPage() {
             mensagemDeFalha(erro, 'Não foi possível carregar seus avisos.'),
             consulta.geracao,
           ),
-          usuarioId,
+          contaDaConsulta,
         )
 
         estadoAtual.current = proximo
