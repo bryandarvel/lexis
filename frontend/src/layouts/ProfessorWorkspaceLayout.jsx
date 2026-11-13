@@ -8,7 +8,7 @@ import { obterIniciais } from '../utils/professor-dashboard.js'
 import '../pages/professor/professor-dashboard.css'
 
 // turmas tem padrão porque nem toda tela do painel carrega a lista.
-function WorkspaceDialog({ tipo, usuario, turmas = [], onClose, onLogout, saindo }) {
+function WorkspaceDialog({ tipo, turmas = [], onClose }) {
   const dialogRef = useRef(null)
   useEffect(() => {
     if (!tipo) return undefined
@@ -23,37 +23,25 @@ function WorkspaceDialog({ tipo, usuario, turmas = [], onClose, onLogout, saindo
 
   return (
     <dialog ref={dialogRef} className="professor-panel-dialog" aria-labelledby="panel-dialog-title"
-      onCancel={(event) => { event.preventDefault(); if (!saindo) onClose() }}>
-      <h2 id="panel-dialog-title">{tipo === 'perfil' ? 'Seu perfil' : 'Propostas por turma'}</h2>
-      {tipo === 'perfil' ? (
-        <dl>
-          <dt>Nome</dt><dd>{usuario?.nome}</dd>
-          <dt>E-mail</dt><dd>{usuario?.email}</dd>
-          <dt>Perfil</dt><dd>Professor</dd>
-        </dl>
-      ) : (
-        <>
-          <p>Escolha uma turma para consultar suas propostas e critérios.</p>
-          {turmas.length ? (
-            <ul className="panel-dialog-classes">
-              {turmas.map((turma) => <li key={turma.id}><Link to={`/professor/turmas/${turma.id}`}>{turma.nome}</Link></li>)}
-            </ul>
-          ) : <p>Nenhuma turma disponível. Acesse Turmas para começar.</p>}
-        </>
-      )}
+      onCancel={(event) => { event.preventDefault(); onClose() }}>
+      <h2 id="panel-dialog-title">Propostas por turma</h2>
+      <p>Escolha uma turma para consultar suas propostas e critérios.</p>
+      {turmas.length ? (
+        <ul className="panel-dialog-classes">
+          {turmas.map((turma) => <li key={turma.id}><Link to={`/professor/turmas/${turma.id}`}>{turma.nome}</Link></li>)}
+        </ul>
+      ) : <p>Nenhuma turma disponível. Acesse Turmas para começar.</p>}
       <div className="panel-dialog-actions">
-        <button type="button" onClick={onClose} disabled={saindo} className="panel-soft-button">Fechar</button>
-        {tipo === 'perfil' && <button type="button" onClick={onLogout} disabled={saindo} className="panel-primary-button">{saindo ? 'Saindo...' : 'Sair da conta'}</button>}
+        <button type="button" onClick={onClose} className="panel-soft-button">Fechar</button>
       </div>
     </dialog>
   )
 }
 
 export default function ProfessorWorkspaceLayout({ secao, cabecalho, turmas, pronto, onRedacoes, imersivo = false, indicador, children }) {
-  const { usuario, sair } = useAuth()
+  const { usuario } = useAuth()
   const navigate = useNavigate()
   const [dialogo, setDialogo] = useState(null)
-  const [saindo, setSaindo] = useState(false)
   const iniciais = obterIniciais(usuario?.nome)
   const totalNaoLidas = useNotificacoesNaoLidas({
     habilitado: usuario?.papel === 'PROFESSOR',
@@ -66,15 +54,6 @@ export default function ProfessorWorkspaceLayout({ secao, cabecalho, turmas, pro
       : totalNaoLidas === 1
         ? 'Notificações: 1 aviso não lido'
         : `Notificações: ${totalNaoLidas} avisos não lidos`
-
-  async function encerrarSessao() {
-    if (saindo) return
-    setSaindo(true)
-    try { await sair() } catch {
-      // AuthProvider limpa a sessão local mesmo quando o servidor não responde.
-    }
-    navigate('/login', { replace: true })
-  }
 
   return (
     <div className={`professor-panel${imersivo ? ' professor-panel-immersive' : ''}`}>
@@ -90,7 +69,7 @@ export default function ProfessorWorkspaceLayout({ secao, cabecalho, turmas, pro
             {totalNaoLidas > 0 && <span className="panel-sino-contagem" aria-hidden="true">{totalNaoLidas > 99 ? '99+' : totalNaoLidas}</span>}
           </Link>
           <ThemeToggle compacto />
-          <button type="button" className="panel-avatar" onClick={() => setDialogo('perfil')} aria-label="Abrir seu perfil">{iniciais}</button>
+          <Link to="/professor/perfil" className="panel-avatar" aria-label="Abrir seu perfil">{iniciais}</Link>
         </div>
       </header>
       {!imersivo && <aside className="panel-sidebar" aria-label="Área do professor">
@@ -100,15 +79,15 @@ export default function ProfessorWorkspaceLayout({ secao, cabecalho, turmas, pro
           <Link to="/professor/notificacoes" aria-current={secao === 'Notificações' ? 'page' : undefined}><span className="panel-nav-icon" aria-hidden="true" />Notificações</Link>
           <button type="button" aria-current={secao === 'Propostas' ? 'page' : undefined} onClick={() => setDialogo('propostas')} disabled={!pronto}><span className="panel-nav-icon" aria-hidden="true" />Propostas</button>
           <button type="button" onClick={onRedacoes ?? (() => navigate('/professor'))}><span className="panel-nav-icon" aria-hidden="true" />Redações</button>
-          <button type="button" onClick={() => setDialogo('perfil')}><span className="panel-nav-icon" aria-hidden="true" />Perfil</button>
+          <Link to="/professor/perfil" aria-current={secao === 'Perfil' ? 'page' : undefined}><span className="panel-nav-icon" aria-hidden="true" />Perfil</Link>
         </nav>
-        <button type="button" className="panel-sidebar-profile" onClick={() => setDialogo('perfil')}>
+        <Link to="/professor/perfil" className="panel-sidebar-profile">
           <span className="panel-avatar" aria-hidden="true">{iniciais}</span>
           <span><strong>{usuario?.nome ?? 'Professor'}</strong><small>Professor</small></span>
-        </button>
+        </Link>
       </aside>}
       {children}
-      <WorkspaceDialog tipo={dialogo} usuario={usuario} turmas={turmas} onClose={() => setDialogo(null)} onLogout={encerrarSessao} saindo={saindo} />
+      <WorkspaceDialog tipo={dialogo} turmas={turmas} onClose={() => setDialogo(null)} />
     </div>
   )
 }
