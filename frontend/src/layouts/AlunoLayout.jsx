@@ -346,6 +346,9 @@ export default function AlunoLayout({
   const navigate = useNavigate()
   const totalNaoLidas = useNotificacoesNaoLidas({
     habilitado: usuario?.papel === 'ALUNO',
+    // A contagem é da conta que a carregou: na troca de pessoa pela reautenticação ela some e é
+    // consultada de novo; na mesma conta, é preservada.
+    usuarioId: usuario?.id,
   })
   const [saindo, setSaindo] = useState(false)
   const [navegacaoAberta, setNavegacaoAberta] =

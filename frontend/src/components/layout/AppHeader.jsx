@@ -1,7 +1,4 @@
-import {
-  useEffect,
-  useState,
-} from 'react'
+import { useState } from 'react'
 import { motion } from 'motion/react'
 import {
   Link,
@@ -10,12 +7,7 @@ import {
 } from 'react-router'
 
 import { useAuth } from '../../hooks/useAuth.js'
-import {
-  listarNotificacoes,
-} from '../../services/notificacoes.js'
-import {
-  observarContagemNotificacoes,
-} from '../../services/notification-events.js'
+import { useNotificacoesNaoLidas } from '../../hooks/useNotificacoesNaoLidas.js'
 import ThemeToggle from './ThemeToggle.jsx'
 
 function obterRotaInicial(papel) {
@@ -32,35 +24,12 @@ export default function AppHeader() {
 
   const navigate = useNavigate()
   const [saindo, setSaindo] = useState(false)
-  const [totalNaoLidas, setTotalNaoLidas] = useState(0)
-
-  useEffect(() => {
-    if (usuario?.papel !== 'ALUNO') return undefined
-
-    let ativo = true
-    const controlador = new AbortController()
-    const pararObservacao = observarContagemNotificacoes(
-      (total) => {
-        if (ativo && Number.isInteger(total)) {
-          setTotalNaoLidas(Math.max(0, total))
-        }
-      },
-    )
-
-    listarNotificacoes({ signal: controlador.signal })
-      .then((resultado) => {
-        if (ativo) setTotalNaoLidas(resultado.totalNaoLidas)
-      })
-      .catch(() => {
-        // A página de notificações oferece o tratamento de erro completo.
-      })
-
-    return () => {
-      ativo = false
-      controlador.abort()
-      pararObservacao()
-    }
-  }, [usuario?.papel])
+  // Mesmo hook do AlunoLayout: a contagem é da conta que a carregou. Na troca de pessoa pela
+  // reautenticação ela some e é consultada de novo; na mesma conta, é preservada.
+  const totalNaoLidas = useNotificacoesNaoLidas({
+    habilitado: usuario?.papel === 'ALUNO',
+    usuarioId: usuario?.id,
+  })
 
   const rotaInicial = obterRotaInicial(
     usuario?.papel,
