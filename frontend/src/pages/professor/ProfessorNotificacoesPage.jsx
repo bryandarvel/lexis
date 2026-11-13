@@ -9,7 +9,6 @@ import {
   marcarNotificacaoProfessorLida,
 } from '../../services/notificacoes-professor.js'
 import { notificarContagemAtualizada } from '../../services/notification-events.js'
-import { atualizarNotificacaoComoLida } from '../../utils/notifications.js'
 import {
   descreverAvisoProfessor,
   mensagemDeFalha,
@@ -19,6 +18,14 @@ import {
   marcarConta,
   mesmaConta,
 } from '../../utils/identidade-sessao.js'
+import {
+  aplicarConsulta,
+  aplicarFalhaDaConsulta,
+  aplicarLeitura,
+  geracaoDe,
+  iniciarConsulta,
+} from '../../utils/notificacoes-sequencia.js'
+import { respostaDeveSerAplicada } from '../../utils/resposta-notificacoes.js'
 import './professor-notificacoes.css'
 
 function formatarDataHora(valor) {
@@ -36,6 +43,7 @@ function formatarDataHora(valor) {
 
 const INICIAL = {
   usuarioId: null,
+  geracao: 0,
   status: 'carregando',
   notificacoes: [],
   totalNaoLidas: 0,
@@ -53,6 +61,10 @@ export default function ProfessorNotificacoesPage() {
   const contaAtual = useRef(usuarioId)
   contaAtual.current = usuarioId
   const [estado, setEstado] = useState(INICIAL)
+  // Último estado renderizado: a contagem do sino sai dele, e não de dentro de um updater do setState,
+  // que o React executa depois (foi isso que deixava o sino em 0 com 1 aviso ainda não lido).
+  const estadoAtual = useRef(estado)
+  estadoAtual.current = estado
   const [tentativa, setTentativa] = useState(0)
 
   useEffect(() => {
@@ -60,30 +72,56 @@ export default function ProfessorNotificacoesPage() {
 
     const controlador = new AbortController()
 
-    setEstado((atual) => ({ ...atual, status: 'carregando', mensagem: '' }))
+    // Esta consulta recebe um número que continua de onde o anterior parou: duas consultas
+    // seguidas, ou de contas diferentes, nunca recebem o mesmo. Se uma leitura local ou outra
+    // consulta acontecer antes da resposta, ela deixa de ser a vigente e o resultado é descartado.
+    const consulta = iniciarConsulta({
+      ...marcarConta(INICIAL, usuarioId),
+      geracao: geracaoDe(estadoAtual.current),
+    })
+    // A conta que pediu esta consulta, conferida quando a resposta chegar.
+    const contaDaConsulta = usuarioId
+    const podeAplicar = () => respostaDeveSerAplicada({
+      montado: montado.current,
+      cancelada: controlador.signal.aborted,
+      contaDaConsulta,
+      contaAtual: contaAtual.current,
+      estadoAtual: estadoAtual.current,
+      geracao: consulta.geracao,
+    })
+
+    estadoAtual.current = consulta.estado
+    setEstado(consulta.estado)
 
     listarNotificacoesProfessor({ signal: controlador.signal })
       .then((resultado) => {
-        if (!montado.current) return
+        // Cancelada, substituída ou de outra conta: não entra na lista nem avisa o sino.
+        if (!podeAplicar()) return
 
-        setEstado(marcarConta({
-          ...INICIAL,
-          status: 'pronto',
-          notificacoes: resultado.notificacoes ?? [],
-          totalNaoLidas: resultado.totalNaoLidas ?? 0,
-        }, usuarioId))
+        const proximo = marcarConta(
+          aplicarConsulta(estadoAtual.current, resultado, consulta.geracao),
+          contaDaConsulta,
+        )
+
+        estadoAtual.current = proximo
+        setEstado(proximo)
+        notificarContagemAtualizada(proximo.totalNaoLidas)
       })
       .catch((erro) => {
-        if (!montado.current || controlador.signal.aborted) return
+        // A falha segue a mesma regra: uma consulta vencida não escreve erro na tela de ninguém.
+        if (!podeAplicar()) return
 
-        setEstado(marcarConta({
-          ...INICIAL,
-          status: 'erro',
-          mensagem: mensagemDeFalha(
-            erro,
-            'Não foi possível carregar seus avisos.',
+        const proximo = marcarConta(
+          aplicarFalhaDaConsulta(
+            estadoAtual.current,
+            mensagemDeFalha(erro, 'Não foi possível carregar seus avisos.'),
+            consulta.geracao,
           ),
-        }, usuarioId))
+          contaDaConsulta,
+        )
+
+        estadoAtual.current = proximo
+        setEstado(proximo)
       })
 
     return () => {
@@ -118,16 +156,15 @@ export default function ProfessorNotificacoesPage() {
         if (!montado.current) return
         if (!mesmaConta(contaDaAcao, contaAtual.current)) return
 
-        let total = 0
+        // Uma única contagem, derivada da lista, para a lista e para o sino.
+        const proximo = marcarConta(
+          aplicarLeitura(estadoAtual.current, atualizada),
+          contaDaAcao,
+        )
 
-        setEstado((atual) => {
-          const proximo = atualizarNotificacaoComoLida(atual, atualizada)
-
-          total = proximo.totalNaoLidas
-
-          return marcarConta({ ...proximo, processandoId: null }, contaDaAcao)
-        })
-        notificarContagemAtualizada(total)
+        estadoAtual.current = proximo
+        setEstado(proximo)
+        notificarContagemAtualizada(proximo.totalNaoLidas)
 
         if (destino) navigate(destino)
       } catch (erro) {
@@ -242,6 +279,10 @@ export default function ProfessorNotificacoesPage() {
                       <span className="avisos-mensagem">
                         {notificacao.mensagem}
                       </span>
+
+                      {aviso.orientacao && (
+                        <span className="avisos-origem">{aviso.orientacao}</span>
+                      )}
 
                       {(aviso.proposta || aviso.turma) && (
                         <span className="avisos-origem">

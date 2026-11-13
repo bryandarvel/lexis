@@ -1,12 +1,14 @@
 /*
  * Avisos do professor (#72).
  *
- * REDACAO_ENVIADA e ALUNO_SAIU_TURMA chegam com feedbackVersao nulo: o destino
- * sai de redacaoId e da turma, nunca do feedback. Um tipo que o backend venha
- * a acrescentar cai no caminho seguro, só marcando como lido.
+ * REDACAO_ENVIADA chega com feedbackVersao nulo: o destino sai de redacaoId, nunca do
+ * feedback. ALUNO_SAIU_TURMA chega sem redacaoId e sem o id da turma (o backend só grava
+ * título e mensagem), então não há para onde levar: só pode ser marcado como lido. Um tipo
+ * que o backend venha a acrescentar cai no mesmo caminho seguro.
  */
 
 import { interpretarErroApi } from './api-error.js'
+import { aplicarLeitura } from './notificacoes-sequencia.js'
 
 function texto(valor) {
   const limpo = typeof valor === 'string' ? valor.trim() : ''
@@ -17,13 +19,6 @@ function texto(valor) {
 function obterIdRedacao(notificacao) {
   return (
     texto(notificacao?.redacaoId) ?? texto(notificacao?.redacao?.id)
-  )
-}
-
-function obterIdTurma(notificacao) {
-  return (
-    texto(notificacao?.turma?.id) ??
-    texto(notificacao?.redacao?.tema?.turma?.id)
   )
 }
 
@@ -60,16 +55,11 @@ export function descreverAvisoProfessor(notificacao) {
   }
 
   if (notificacao?.tipo === 'ALUNO_SAIU_TURMA') {
-    const turmaId = obterIdTurma(notificacao)
-
-    if (turmaId) {
-      return {
-        ...contexto,
-        destino: `/professor/turmas/${encodeURIComponent(turmaId)}`,
-        rotulo: 'Ver turma →',
-        rotuloProcessando: 'Abrindo turma...',
-        acionavel: true,
-      }
+    // Nunca oferece abrir a turma: o payload não traz o id dela.
+    return {
+      ...contexto,
+      ...semDestino(notificacao),
+      orientacao: 'Este aviso só informa a saída. Para ver a turma, abra Turmas no menu.',
     }
   }
 
@@ -88,4 +78,11 @@ export function mensagemDeFalha(erro, padrao) {
   return typeof mensagem === 'string' && mensagem.trim() !== ''
     ? mensagem
     : padrao
+}
+
+// Marca o aviso como lido e refaz a contagem a partir da lista: lista e sino usam este mesmo
+// número, e ler de novo um aviso já lido não decrementa. A regra é a de aplicarLeitura, comum às
+// duas centrais, que também avança a geração e descarta consultas em voo.
+export function registrarLeitura(estado, notificacaoAtualizada) {
+  return aplicarLeitura(estado, notificacaoAtualizada)
 }
