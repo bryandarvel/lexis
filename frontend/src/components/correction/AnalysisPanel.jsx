@@ -2,8 +2,16 @@ import { useEffect, useState } from 'react'
 import { classificarEvidencia } from '../../utils/ai-evidence.js'
 import { avisoAnaliseDuplicado, avisoAtualDaAnalise, mensagemErroAnalise, segundosRestantesAnalise } from '../../utils/external-request.js'
 
-export default function AnalysisPanel({ analysis, resultAnalysis = analysis, retryAt = 0, isRequesting, notice, onRequest, onRefresh, disabled }) {
-  const aviso = avisoAtualDaAnalise(analysis, notice)
+function dataAnalise(instante) {
+  const data = new Date(instante)
+  return instante && !Number.isNaN(data.getTime())
+    ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(data) : null
+}
+
+export default function AnalysisPanel({ analysis, resultAnalysis = analysis, falhaAnterior, avisoAnterior, retryAt = 0, isRequesting, notice, onRequest, onRefresh, disabled }) {
+  const falhaAtual = analysis?.status === 'ERRO' && (!falhaAnterior || analysis.id !== falhaAnterior.id)
+  const aviso = falhaAnterior && notice?.type === 'error' && notice.analiseId === falhaAnterior.id
+    ? null : avisoAtualDaAnalise(analysis, notice)
   const [agora, setAgora] = useState(() => Date.now())
   useEffect(() => {
     setAgora(Date.now())
@@ -19,11 +27,10 @@ export default function AnalysisPanel({ analysis, resultAnalysis = analysis, ret
   const pendente = ['PENDENTE', 'PROCESSANDO'].includes(analysis?.status)
   const result = resultAnalysis?.status === 'CONCLUIDA' ? resultAnalysis.resultadoEstruturado : null
   const anterior = result && resultAnalysis.id !== analysis?.id
-  const instante = resultAnalysis?.concluidaEm ?? resultAnalysis?.solicitadaEm
-  const dataResultado = instante && !Number.isNaN(new Date(instante).getTime())
-    ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(instante)) : null
-  const dataTentativa = analysis?.solicitadaEm && !Number.isNaN(new Date(analysis.solicitadaEm).getTime())
-    ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(analysis.solicitadaEm)) : null
+  const dataResultado = dataAnalise(resultAnalysis?.concluidaEm ?? resultAnalysis?.solicitadaEm)
+  const dataTentativa = dataAnalise(analysis?.solicitadaEm)
+  const dataFalhaAnterior = dataAnalise(falhaAnterior?.concluidaEm ?? falhaAnterior?.solicitadaEm)
+  const dataAvisoAnterior = dataAnalise(avisoAnterior?.ocorridaEm)
   return <section className="review-analysis" aria-label="Análise consultiva por IA" aria-busy={isRequesting || pendente}>
     <button type="button" className="review-outline-button" disabled={disabled || isRequesting || pendente || espera > 0} onClick={onRequest}>
       {isRequesting ? 'Analisando…' : analysis ? 'Analisar novamente com IA' : 'Analisar com IA'}
@@ -32,9 +39,14 @@ export default function AnalysisPanel({ analysis, resultAnalysis = analysis, ret
     {espera > 0 && <p className="review-notice">Nova solicitação disponível em pelo menos {espera} s. A disponibilidade e os limites do serviço de IA ainda podem impedir a análise; não haverá nova tentativa automática.</p>}
     {(isRequesting || pendente) && <div role="status" className="review-notice"><progress aria-label="Análise por IA em andamento" /><p>Análise em andamento. A conclusão depende do serviço de IA.</p>{!isRequesting && <button type="button" className="panel-soft-button" onClick={onRefresh}>Atualizar análise</button>}</div>}
     {!analysis && !isRequesting && <p className="review-caption">Nenhuma análise solicitada para esta redação.</p>}
-    {analysis?.status === 'ERRO' && !isRequesting && <p role="alert" className="review-notice error">{dataTentativa && <><strong>Última tentativa: {dataTentativa}</strong><br /></>}{mensagemErroAnalise(analysis)}</p>}
-    {aviso && !avisoAnaliseDuplicado(analysis, aviso) && <p role={aviso.type === 'error' ? 'alert' : 'status'} className={`review-notice ${aviso.type}`}>{aviso.message}</p>}
+    {falhaAtual && !isRequesting && <p role="alert" className="review-notice error">{dataTentativa && <><strong>Última tentativa: {dataTentativa}</strong><br /></>}{mensagemErroAnalise(analysis)}</p>}
+    {aviso && !(falhaAtual && !isRequesting && avisoAnaliseDuplicado(analysis, aviso)) && <p role={aviso.type === 'error' ? 'alert' : 'status'} className={`review-notice ${aviso.type}`}>{aviso.message}</p>}
     {!isRequesting && !pendente && aviso?.type === 'error' && <button type="button" className="panel-soft-button" disabled={disabled} onClick={onRefresh}>Consultar resultado existente</button>}
+    {(falhaAnterior || avisoAnterior) && <details className="review-card review-analysis-details">
+      <summary>Falha de IA anterior à publicação</summary>
+      {falhaAnterior && <p>{dataFalhaAnterior && <><strong>{dataFalhaAnterior}</strong><br /></>}{mensagemErroAnalise(falhaAnterior)}</p>}
+      {avisoAnterior && !avisoAnaliseDuplicado(falhaAnterior, avisoAnterior) && <p>{dataAvisoAnterior && <><strong>{dataAvisoAnterior}</strong><br /></>}{avisoAnterior.message}</p>}
+    </details>}
     {anterior && <p role="status" className="review-notice">Exibindo a última análise concluída{dataResultado ? `, de ${dataResultado}` : ''}. A tentativa mais recente não substituiu esse resultado. Revise as sugestões antes de usá-las.</p>}
     {result && <details className="review-card review-analysis-details"><summary>Detalhes da análise{dataResultado ? ` salva em ${dataResultado}` : ''}</summary>
       <h3>Resumo geral</h3><p>{result.resumoGeral}</p>
