@@ -115,7 +115,7 @@
 .panel-skip:focus { transform: none; }
 .panel-publication-warning { color: var(--panel-muted); font-size: 13px; }
 .panel-publication-warning button { margin-left: 8px; color: var(--panel-action); text-decoration: underline; cursor: pointer; }
-.professor-panel-dialog { width: min(432px, calc(100% - 32px)); max-height: calc(100svh - 48px); overflow-y: auto; padding: 28px; border: 1px solid var(--panel-border); border-radius: 20px; background: var(--panel-surface); color: var(--panel-text); }
+.professor-panel-dialog { margin: auto; width: min(432px, calc(100% - 32px)); max-height: calc(100svh - 48px); overflow-y: auto; padding: 28px; border: 1px solid var(--panel-border); border-radius: 20px; background: var(--panel-surface); color: var(--panel-text); }
 .professor-panel-dialog::backdrop { background: rgb(0 16 35 / 65%); }
 .professor-panel-dialog h2 { margin: 0; font-family: var(--font-interface); font-size: 20px; font-weight: 600; line-height: 26px; }
 .professor-panel-dialog p { color: var(--panel-muted); font-size: 14px; line-height: 22px; }

@@ -34,6 +34,7 @@
   --surface-shell-3: #0d3567;
   --surface-shell-4: #143f76;
   --color-brand-accent: #1c6eba;
+  --text-on-action-blue: #fff;
   --surface-border: #c8d4e0;
   --surface-highlight: rgba(255, 255, 255, 0);
   --page-background: #f4f7fb;
@@ -68,6 +69,7 @@
   --surface-shell-3: #0d3567;
   --surface-shell-4: #143f76;
   --color-brand-accent: #1c6eba;
+  --text-on-action-blue: var(--color-lexis-950);
   --surface-border: #2a3a4f;
   --surface-highlight: rgba(255, 255, 255, 0.12);
   --page-background: #06101f;

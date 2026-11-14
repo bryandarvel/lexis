@@ -200,7 +200,7 @@ export default function ProfessorNovoTemaPage() {
           <button
             type="button"
             onClick={() => setTentativa((valor) => valor + 1)}
-            className="mt-5 min-h-11 rounded-[10px] bg-lexis-400 px-5 font-bold text-white"
+            className="mt-5 min-h-11 rounded-[10px] bg-lexis-400 px-5 font-bold text-[color:var(--text-on-action-blue)]"
           >
             Tentar novamente
           </button>
@@ -419,7 +419,7 @@ export default function ProfessorNovoTemaPage() {
           <button
             type="submit"
             disabled={status === 'salvando'}
-            className="min-h-12 rounded-[10px] bg-lexis-400 px-6 font-bold text-white disabled:opacity-55"
+            className="min-h-12 rounded-[10px] bg-lexis-400 px-6 font-bold text-[color:var(--text-on-action-blue)] disabled:opacity-55"
           >
             {status === 'salvando'
               ? 'Criando tema...'
