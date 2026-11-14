@@ -81,7 +81,7 @@ export default function ConfirmarEnvioDialogo({
         <button
           type="button"
           onClick={onConfirmar}
-          className="h-11 rounded-lg bg-[var(--color-brand-accent)] px-5 text-[13px] font-semibold leading-[18px] text-[#ffffff] transition hover:brightness-110"
+          className="h-11 rounded-lg bg-[var(--color-brand-accent)] px-5 text-[13px] font-semibold leading-[18px] text-[#ffffff] transition-[filter,opacity] hover:brightness-110"
         >
           Enviar definitivamente
         </button>

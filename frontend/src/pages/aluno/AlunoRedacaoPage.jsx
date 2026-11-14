@@ -846,7 +846,7 @@ export default function AlunoRedacaoPage() {
       {redacao.status === 'AVALIADA' ? (
         <Link
           to={`/aluno/redacoes/${encodeURIComponent(redacao.id)}/feedback`}
-          className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-[var(--color-brand-accent)] px-5 text-[13px] font-semibold leading-[18px] text-[#ffffff] transition hover:brightness-110 sm:w-[160px]"
+          className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-[var(--color-brand-accent)] px-5 text-[13px] font-semibold leading-[18px] text-[#ffffff] transition-[filter,opacity] hover:brightness-110 sm:w-[160px]"
         >
           Ver feedback
         </Link>
@@ -875,7 +875,7 @@ export default function AlunoRedacaoPage() {
           ocupado ||
           !texto.trim()
         }
-        className="h-11 w-full rounded-lg bg-[var(--color-brand-accent)] px-5 text-[13px] font-semibold leading-[18px] text-[#ffffff] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-55 sm:w-[160px]"
+        className="h-11 w-full rounded-lg bg-[var(--color-brand-accent)] px-5 text-[13px] font-semibold leading-[18px] text-[#ffffff] transition-[filter,opacity] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-55 sm:w-[160px]"
       >
         {acao === 'enviar'
           ? 'Enviando...'
