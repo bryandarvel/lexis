@@ -243,12 +243,12 @@ export default function CadastroPage() {
         <button
           type="submit"
           disabled={enviando}
-          className="flex w-full items-center justify-center gap-3 rounded-[10px] bg-lexis-400 px-5 py-3.5 font-bold text-white transition hover:bg-lexis-500 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-lexis-300/35 disabled:cursor-not-allowed disabled:opacity-65"
+          className="flex w-full items-center justify-center gap-3 rounded-[10px] bg-lexis-400 px-5 py-3.5 font-bold text-[color:var(--text-on-action-blue)] transition-colors hover:bg-lexis-500 disabled:cursor-not-allowed disabled:opacity-65"
         >
           {enviando && (
             <span
               aria-hidden="true"
-              className="h-4 w-4 animate-spin rounded-full border-2 border-lexis-950/25 border-t-lexis-950 motion-reduce:animate-none"
+              className="h-4 w-4 animate-spin rounded-full border-2 border-current/25 border-t-current motion-reduce:animate-none"
             />
           )}
           {enviando ? 'Criando conta...' : 'Criar conta'}
