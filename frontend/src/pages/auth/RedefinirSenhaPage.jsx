@@ -8,6 +8,7 @@ import { useAuth } from '../../hooks/useAuth.js'
 import { redefinirSenha } from '../../services/password-recovery.js'
 import { interpretarErroApi } from '../../utils/api-error.js'
 import { obterTokenRecuperacao, validarNovaSenha } from '../../utils/password-recovery.js'
+import { REGRA_SENHA } from '../../utils/senha.js'
 import './login.css'
 
 export default function RedefinirSenhaPage() {
@@ -54,7 +55,7 @@ export default function RedefinirSenhaPage() {
         <p className="login-description">Após a redefinição, entre novamente com sua nova senha.</p>
         {concluido ? <AuthNotice tipo="sucesso" mensagem="Senha redefinida. As sessões anteriores foram encerradas." /> : !token ? <AuthNotice mensagem="Link inválido ou ausente. Volte ao login e solicite uma nova recuperação." /> :
           <form className="login-form" onSubmit={enviar} aria-busy={enviando}>
-            <p id="reset-rules" className="login-description">Use de 10 a 72 caracteres, com maiúscula, minúscula e número.</p>
+            <p id="reset-rules" className="login-description">{REGRA_SENHA}</p>
             <AuthField id="reset-password" label="Nova senha" type="password" autoComplete="new-password" value={senha} onChange={e => setSenha(e.target.value)} minLength={10} maxLength={72} aria-describedby="reset-rules" disabled={enviando} required />
             <AuthField id="reset-confirmation" label="Confirmar nova senha" type="password" autoComplete="new-password" value={confirmacao} onChange={e => setConfirmacao(e.target.value)} minLength={10} maxLength={72} disabled={enviando} required />
             <AuthNotice mensagem={erro} />
