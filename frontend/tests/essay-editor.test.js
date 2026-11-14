@@ -111,11 +111,11 @@ test('conta palavras e linhas não vazias do texto', () => {
   assert.equal(contarLinhas(''), 0)
   assert.equal(
     descreverExtensao(texto),
-    '6 palavras · 2 linhas',
+    '6 palavras · 2 parágrafos',
   )
   assert.equal(
     descreverExtensao('Uma'),
-    '1 palavra · 1 linha',
+    '1 palavra · 1 parágrafo',
   )
 })
 
