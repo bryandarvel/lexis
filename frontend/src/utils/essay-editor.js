@@ -136,9 +136,11 @@ export function contarPalavras(texto) {
     .filter(Boolean).length
 }
 
-// Parágrafos do aluno: linhas não vazias separadas por quebra de linha. Não
-// equivalem às linhas da folha oficial, que dependem da caligrafia — por isso o
-// contador mostra "parágrafos". O nome da função é mantido por compatibilidade.
+// Parágrafos do aluno: as quebras de linha explícitas (Enter) são os
+// separadores, e só contam os trechos que não são vazios. A quebra automática
+// do campo de texto não conta, então o número não equivale às linhas da folha
+// oficial, que dependem da caligrafia — por isso o contador mostra
+// "parágrafos". O nome da função é mantido por compatibilidade.
 export function contarLinhas(texto) {
   return String(texto ?? '')
     .split(/\r?\n/)
