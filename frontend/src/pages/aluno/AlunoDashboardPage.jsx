@@ -237,8 +237,14 @@ function CartaoProposta({
       className="min-h-[236px] rounded-xl border-2 border-[var(--color-brand-accent)] bg-lexis-900 px-[22px] pb-[11px] pt-[22px]"
     >
       <div className="flex flex-wrap gap-3">
-        <span className="inline-flex h-6 min-w-[150px] items-center justify-center rounded-full bg-[var(--aluno-sucesso-fundo)] px-4 text-xs font-medium uppercase leading-[17px] text-[var(--aluno-sucesso)]">
-          {descricao.prazoVencido ? 'Prazo vencido' : 'Proposta aberta'}
+        <span
+          className={`inline-flex h-6 min-w-[150px] items-center justify-center rounded-full px-4 text-xs font-medium uppercase leading-[17px] ${
+            descricao.prazoVencido
+              ? 'bg-[var(--aluno-atencao-fundo)] text-[var(--aluno-atencao)]'
+              : 'bg-[var(--aluno-sucesso-fundo)] text-[var(--aluno-sucesso)]'
+          }`}
+        >
+          {descricao.prazoVencido ? 'Entrega com atraso' : 'Proposta aberta'}
         </span>
         {turma && (
           <span className="inline-block min-h-6 max-w-full rounded-full bg-[var(--aluno-acao-suave)] px-[22px] py-1 text-xs font-medium leading-4 text-[var(--aluno-acao-suave-texto)] [overflow-wrap:anywhere]">
@@ -255,7 +261,8 @@ function CartaoProposta({
       </h2>
 
       <p className="mt-3 text-sm leading-[22px] text-lexis-200">
-        Entrega até {formatarPrazoEntrega(proposta.prazoEntrega)}
+        {descricao.prazoVencido ? 'Prazo vencido em ' : 'Entrega até '}
+        {formatarPrazoEntrega(proposta.prazoEntrega)}
       </p>
       <p className="mt-2 text-sm leading-[22px] text-lexis-200">
         {descricao.orientacao}
