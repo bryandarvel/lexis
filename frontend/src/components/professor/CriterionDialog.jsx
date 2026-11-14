@@ -30,7 +30,6 @@ export default function CriterionDialog({ inicial, proposta, salvando, erro, onS
         <textarea id="criterion-description" name="descricao" required minLength={5} maxLength={2000} rows={2}
           value={descricao} disabled={salvando} onChange={(event) => setDescricao(event.target.value)} />
         <p className="criterion-dialog-note">Este critério orienta a análise do repertório pela IA. Não possui peso e não calcula a nota.</p>
-        <p className="criterion-dialog-note">Critério personalizado · aprovação administrativa prevista para uma etapa futura.</p>
         {erro && <p ref={erroRef} tabIndex={-1} role="alert" className="criterion-dialog-error">{erro}</p>}
         <div className="criterion-dialog-actions">
           <button type="button" className="panel-soft-button criterion-cancel" disabled={salvando} onClick={onCancel}>Cancelar</button>

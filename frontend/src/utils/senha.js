@@ -5,6 +5,9 @@
 export const REGRA_SENHA =
   'Use de 10 a 72 caracteres, com letra maiúscula, minúscula e número.'
 
+// Erro de campo da redefinição: a regra já está na dica acima do campo.
+export const ERRO_SENHA_REQUISITOS = 'A senha não atende aos requisitos acima.'
+
 // Erros de campo do cadastro. Apontam a regra que falhou sem contradizer
 // REGRA_SENHA, que continua visível como dica do campo.
 export const ERRO_SENHA_TAMANHO = 'A senha deve ter de 10 a 72 caracteres.'
