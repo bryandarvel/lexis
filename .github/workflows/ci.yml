@@ -112,3 +112,73 @@ jobs:
 
       - name: Gerar build de produção
         run: npm run build
+
+  e2e:
+    name: E2E — fluxos no navegador
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: lexis_ci_root
+          MYSQL_DATABASE: lexis_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -u root --password=lexis_ci_root"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      # e2e/runtime.js exige MySQL em loopback e banco lexis_test; as demais variáveis
+      # de ambiente são montadas por ele, com provedores externos desligados.
+      TEST_DATABASE_URL: mysql://root:lexis_ci_root@127.0.0.1:3306/lexis_test
+
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v6
+
+      - name: Configurar o Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+            e2e/package-lock.json
+
+      - name: Instalar dependências do backend
+        run: npm ci
+        working-directory: backend
+
+      - name: Instalar dependências do frontend
+        run: npm ci
+        working-directory: frontend
+
+      - name: Instalar dependências do E2E
+        run: npm ci
+        working-directory: e2e
+
+      - name: Instalar o Chromium do Playwright
+        run: npx playwright install --with-deps chromium
+        working-directory: e2e
+
+      - name: Preparar o banco de teste
+        run: npm run db:prepare
+        working-directory: e2e
+
+      - name: Executar lint
+        run: npm run lint
+        working-directory: e2e
+
+      - name: Conferir as guardas do banco de teste
+        run: npm run test:guards
+        working-directory: e2e
+
+      - name: Executar os fluxos no navegador
+        run: npm test
+        working-directory: e2e

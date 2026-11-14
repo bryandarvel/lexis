@@ -1,7 +1,8 @@
 # LÉXIS — E2E local (B34 / Issue #31)
 
 Pacote independente: Playwright **1.64.0** e Chromium. Não altera
-`frontend/package.json` nem o CI. Node 24 e MySQL 8.4 são a linha de base.
+`frontend/package.json`; o CI executa estes cenários no job "E2E — fluxos no
+navegador". Node 24 e MySQL 8.4 são a linha de base.
 
 ## Preparação no PowerShell
 
