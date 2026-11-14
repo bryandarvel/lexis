@@ -241,7 +241,7 @@ function CartaoProposta({
           {descricao.prazoVencido ? 'Prazo vencido' : 'Proposta aberta'}
         </span>
         {turma && (
-          <span className="inline-block h-6 max-w-full truncate rounded-full bg-[var(--aluno-acao-suave)] px-[22px] text-xs font-medium leading-6 text-[var(--aluno-acao-suave-texto)]">
+          <span className="inline-block min-h-6 max-w-full rounded-full bg-[var(--aluno-acao-suave)] px-[22px] py-1 text-xs font-medium leading-4 text-[var(--aluno-acao-suave-texto)] [overflow-wrap:anywhere]">
             {turma}
           </span>
         )}
@@ -249,7 +249,7 @@ function CartaoProposta({
 
       <h2
         id="titulo-proposta"
-        className="mt-3.5 text-2xl font-semibold leading-[30px] tracking-[-0.29px] text-lexis-50"
+        className="mt-3.5 text-2xl font-semibold leading-[30px] tracking-[-0.29px] text-lexis-50 [overflow-wrap:anywhere]"
       >
         {proposta.enunciado}
       </h2>
@@ -890,7 +890,7 @@ export default function AlunoDashboardPage() {
         <h1 className="text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-lexis-50">
           Início
         </h1>
-        <p className="mt-[11px] min-h-[25px] text-base leading-[25px] text-lexis-200">
+        <p className="mt-[11px] min-h-[25px] text-base leading-[25px] text-lexis-200 [overflow-wrap:anywhere]">
           <SubtituloTurma bloco={painel.matricula} />
         </p>
       </header>
@@ -921,7 +921,7 @@ export default function AlunoDashboardPage() {
         </>
       ) : (
         <>
-          <div className="mt-[25px] grid gap-6 xl:grid-cols-[minmax(0,1fr)_404px]">
+          <div className="mt-[25px] grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_404px]">
             <CartaoProposta
               status={statusProposta}
               proposta={proposta}
