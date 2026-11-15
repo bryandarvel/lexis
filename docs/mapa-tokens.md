@@ -6,7 +6,7 @@ Liga cada token por função (`frontend/src/styles/tokens.css`) ao token antigo 
 
 - **Lote 3a (este):** os tokens e os componentes base existem; nada do antigo foi removido. As telas atuais continuam usando `lexis-50…950` e as variáveis `--panel-*`, `--login-*` e `--aluno-*`.
 - **Lote 3b:** migra os usos, apaga o antigo e o código morto.
-- **Marca (D1) sem conferência.** Não houve acesso ao arquivo do Figma. Famílias Newsreader e Inter, navy `#002049` e azul `#1c6eba` seguem como estão no código e no protótipo. Se o material oficial divergir, os valores mudam em `tokens.css` e este mapa é atualizado; os nomes não mudam.
+- **D1 confirmada pelo Bryan no Figma.** Famílias Newsreader e Inter, navy `#002049` e azul `#1c6eba`, como no código e no protótipo.
 - **Fonte dos valores:** `output/prototipo-correcao/index.html`, bloco "Tokens por função" (e `NOTA-PARA-CODEX.md`, tabela "Bloco → componente → token"). Essa pasta é ignorada pelo Git: a coluna "Protótipo" cita o nome da variável no arquivo, não um link. Onde o protótipo não define o token, a coluna diz "sem equivalente".
 
 ## Como ler
@@ -121,9 +121,9 @@ No Tailwind: `rounded-marca`, `rounded-controle`, `rounded-cartao`, `rounded-dia
 
 **Decisão:** não entra terceira família. O código de turma fica em Inter com `font-variant-numeric: tabular-nums` e tracking aberto (`letter-spacing: 0.08em`), pela classe `.codigo-turma`. Notas, contagens, datas e tamanhos de arquivo usam `.numeros-tabulares` (equivalente ao `tabular-nums` do Tailwind).
 
-**Motivo:** uma terceira família é decisão de marca, e a marca ainda não foi conferida (D1). Inter tem algarismos tabulares. O tracking aberto separa caracteres parecidos (0/O, 1/I) o bastante para o código ser lido um a um.
+**Motivo:** segue o padrão do plano (N1): uma terceira família é decisão de marca, e a conferência da D1 no Figma não informou nenhuma monoespaçada oficial. Inter tem algarismos tabulares. O tracking aberto separa caracteres parecidos (0/O, 1/I) o bastante para o código ser lido um a um.
 
-**Reabrir se:** a conferência de marca (D1) trouxer uma família monoespaçada oficial.
+**Reabrir se:** a marca passar a ter uma família monoespaçada oficial.
 
 ## Utilitários do Tailwind gerados dos tokens
 
