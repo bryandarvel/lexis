@@ -1,0 +1,232 @@
+/*
+ * Tokens por função do LÉXIS (Lote 3a, UX-019 e UX-031).
+ *
+ * Cada token descreve o que a cor FAZ, não onde ela fica numa escala: o nome
+ * não muda entre o tema claro e o escuro, só o valor. Os valores vêm do
+ * protótipo da correção (output/prototipo-correcao/index.html, bloco "Tokens
+ * por função"). A ligação de cada token com o token antigo e com o protótipo
+ * está em docs/mapa-tokens.md.
+ *
+ * Nesta etapa os tokens só são criados: a escala antiga lexis-50…950 e os
+ * tokens --surface-*, --radius-* e --font-* continuam valendo até a migração
+ * dos usos (Lote 3b).
+ *
+ * Marca ainda sem conferência contra o material oficial (decisão D1): famílias
+ * Newsreader e Inter, navy #002049 e azul #1c6eba seguem como estão no código.
+ */
+
+:root,
+:root[data-theme="light"] {
+  --fonte-titulo: Newsreader, Georgia, "Times New Roman", serif;
+  --fonte-interface: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --superficie-pagina: #f4f7fb;
+  --superficie-conteudo: #ffffff;
+  --superficie-rebaixada: #e9eff6;
+  --superficie-campo: #ffffff;
+  --superficie-flutuante: #ffffff;
+  --superficie-shell: #002049;
+
+  --texto: #0b1f33;
+  --texto-suave: #34495f;
+  --texto-fraco: #516075;
+  --texto-sobre-acao: #ffffff;
+  --texto-sobre-shell: #f7fbff;
+
+  --acao: #1c6eba;
+  --acao-hover: #175f9f;
+  --acao-texto: #175795;
+  --acao-suave: #e3effa;
+  --perigo: #b42318;
+  --perigo-hover: #8f1c12;
+
+  --borda: #d3dde8;
+  --borda-forte: #b3c1d1;
+  --borda-campo: #7f91a4;
+
+  --sucesso: #166534;
+  --sucesso-fundo: #e8f5ec;
+  --atencao: #8a4b08;
+  --atencao-fundo: #fdf3e1;
+  --erro: #b42318;
+  --erro-fundo: #fdecea;
+  --info: #175795;
+  --info-fundo: #e3effa;
+
+  /*
+   * Cor de critério. A cor vem da ORDEM do critério (utils/criterio-cores.js),
+   * nunca da posição na lista nem do nome: critério de ordem 1 usa --criterio-0
+   * e assim por diante; sem ordem válida, --criterio-neutro.
+   */
+  --criterio-0: #7c3aed;
+  --criterio-0-fundo: #ede4fb;
+  --criterio-1: #0f766e;
+  --criterio-1-fundo: #d0efeb;
+  --criterio-2: #a16207;
+  --criterio-2-fundo: #faedc4;
+  --criterio-3: #be185d;
+  --criterio-3-fundo: #fbe0ed;
+  --criterio-4: #4d7c0f;
+  --criterio-4-fundo: #e9f2d6;
+  --criterio-neutro: #516075;
+  --criterio-neutro-fundo: #e4e9ef;
+
+  --foco: #1674bd;
+  --foco-contraste: #ffffff;
+  --foco-sobre-shell: #7dccff;
+
+  /* Raio por tamanho e função. A folha da redação não é cartão: raio zero. */
+  --raio-folha: 0;
+  --raio-marca: 4px;
+  --raio-controle: 6px;
+  --raio-cartao: 10px;
+  --raio-dialogo: 14px;
+  --raio-pilula: 999px;
+
+  --sombra-flutuante: 0 1px 2px rgba(0, 32, 73, 0.14), 0 12px 32px rgba(0, 32, 73, 0.18);
+  --sombra-dialogo: 0 2px 4px rgba(0, 20, 50, 0.12), 0 24px 64px rgba(0, 20, 50, 0.3);
+  --contorno-flutuante: 0 solid transparent;
+  --veu: rgba(3, 12, 24, 0.62);
+
+  /* Movimento: dois tempos e uma curva. */
+  --rapido: 120ms;
+  --painel: 200ms;
+  --curva: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:root[data-theme="dark"] {
+  --superficie-pagina: #06101f;
+  --superficie-conteudo: #111d2e;
+  --superficie-rebaixada: #0d1a2b;
+  --superficie-campo: #0f1b2c;
+  --superficie-flutuante: #18273b;
+
+  --texto: #f2f7fc;
+  --texto-suave: #b4c6d8;
+  --texto-fraco: #93a8bd;
+
+  --acao-hover: #2478c8;
+  --acao-texto: #93c4f7;
+  --acao-suave: #10294a;
+  --perigo: #fca5a5;
+  --perigo-hover: #fecaca;
+
+  --borda: #24344a;
+  --borda-forte: #3a4c63;
+  --borda-campo: #62788f;
+
+  --sucesso: #7ddba3;
+  --sucesso-fundo: #0f2a1c;
+  --atencao: #f0bb64;
+  --atencao-fundo: #33270d;
+  --erro: #fca5a5;
+  --erro-fundo: #3d1717;
+  --info: #93c4f7;
+  --info-fundo: #10294a;
+
+  --criterio-0: #c4a1fa;
+  --criterio-0-fundo: #362748;
+  --criterio-1: #66ddd2;
+  --criterio-1-fundo: #113d3a;
+  --criterio-2: #f0bb64;
+  --criterio-2-fundo: #453512;
+  --criterio-3: #ff9cc5;
+  --criterio-3-fundo: #4b2238;
+  --criterio-4: #b8d98c;
+  --criterio-4-fundo: #293c18;
+  --criterio-neutro: #a9bed1;
+  --criterio-neutro-fundo: #1b2a3c;
+
+  --foco: #7dccff;
+  --foco-contraste: #06101f;
+
+  --sombra-flutuante: none;
+  --sombra-dialogo: none;
+  --contorno-flutuante: 1px solid var(--borda-forte);
+  --veu: rgba(2, 8, 16, 0.72);
+}
+
+/*
+ * Tokens como utilitários do Tailwind (bg-superficie, text-texto-suave,
+ * rounded-controle…). "inline" mantém a referência à variável, então a troca
+ * de tema continua funcionando sem recompilar.
+ */
+@theme inline {
+  --color-pagina: var(--superficie-pagina);
+  --color-superficie: var(--superficie-conteudo);
+  --color-superficie-rebaixada: var(--superficie-rebaixada);
+  --color-superficie-campo: var(--superficie-campo);
+  --color-superficie-flutuante: var(--superficie-flutuante);
+  --color-shell: var(--superficie-shell);
+
+  --color-texto: var(--texto);
+  --color-texto-suave: var(--texto-suave);
+  --color-texto-fraco: var(--texto-fraco);
+  --color-texto-sobre-acao: var(--texto-sobre-acao);
+  --color-texto-sobre-shell: var(--texto-sobre-shell);
+
+  --color-acao: var(--acao);
+  --color-acao-hover: var(--acao-hover);
+  --color-acao-texto: var(--acao-texto);
+  --color-acao-suave: var(--acao-suave);
+  --color-perigo: var(--perigo);
+  --color-perigo-hover: var(--perigo-hover);
+
+  --color-borda: var(--borda);
+  --color-borda-forte: var(--borda-forte);
+  --color-borda-campo: var(--borda-campo);
+
+  --color-sucesso: var(--sucesso);
+  --color-sucesso-fundo: var(--sucesso-fundo);
+  --color-atencao: var(--atencao);
+  --color-atencao-fundo: var(--atencao-fundo);
+  --color-erro: var(--erro);
+  --color-erro-fundo: var(--erro-fundo);
+  --color-info: var(--info);
+  --color-info-fundo: var(--info-fundo);
+
+  --color-foco: var(--foco);
+
+  --radius-marca: var(--raio-marca);
+  --radius-controle: var(--raio-controle);
+  --radius-cartao: var(--raio-cartao);
+  --radius-dialogo: var(--raio-dialogo);
+  --radius-pilula: var(--raio-pilula);
+}
+
+/*
+ * Regra de títulos (decisão D2). Newsreader aparece só em três lugares:
+ * título de página, texto da redação e nota. Todo o resto é Inter.
+ */
+.fonte-titulo-pagina,
+.fonte-redacao,
+.fonte-nota {
+  font-family: var(--fonte-titulo);
+}
+
+.fonte-interface {
+  font-family: var(--fonte-interface);
+}
+
+/*
+ * Algarismos tabulares (decisão N1 e REV-014): notas, contagens, datas e o
+ * código de turma ficam em Inter com dígitos de largura fixa. Não há terceira
+ * família monoespaçada. O código de turma ganha tracking aberto para que
+ * caracteres parecidos (0/O, 1/I) sejam lidos um a um.
+ */
+.numeros-tabulares {
+  font-variant-numeric: tabular-nums;
+}
+
+.codigo-turma {
+  font-family: var(--fonte-interface);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+/* Superfície da redação: a única folha de papel da interface, sem cartão. */
+.superficie-folha {
+  border-radius: var(--raio-folha);
+  box-shadow: none;
+}
