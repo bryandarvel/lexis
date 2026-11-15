@@ -397,7 +397,7 @@ export default function ProfessorNovoTemaPage() {
           >
             + Adicionar critério personalizado
           </button>
-          <p className="mt-3 text-sm text-lexis-200">Até dois personalizados. Aprovação administrativa prevista para uma etapa futura.</p>
+          <p className="mt-3 text-sm text-lexis-200">Até dois personalizados.</p>
         </fieldset>
 
         {aviso && (

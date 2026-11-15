@@ -107,11 +107,6 @@
   gap: 12px 24px;
 }
 
-.aluno-pf-sessao .aluno-pf-texto {
-  flex: 1 1 280px;
-  margin: 0;
-}
-
 .aluno-pf-botao {
   display: inline-flex;
   align-items: center;

@@ -314,10 +314,6 @@ export default function AlunoPerfilPage() {
         >
           <h2 id="perfil-sessao">Sessão</h2>
           <div className="aluno-pf-sessao">
-            <p className="aluno-pf-texto">
-              A edição de nome e senha ainda não está disponível e chega
-              em uma próxima etapa.
-            </p>
             <button
               type="button"
               onClick={handleSair}

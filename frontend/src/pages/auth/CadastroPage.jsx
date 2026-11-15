@@ -6,6 +6,11 @@ import AuthNotice from '../../components/auth/AuthNotice.jsx'
 import AuthShell from '../../components/auth/AuthShell.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
 import { interpretarErroApi } from '../../utils/api-error.js'
+import {
+  ERRO_SENHA_COMPOSICAO,
+  ERRO_SENHA_TAMANHO,
+  REGRA_SENHA,
+} from '../../utils/senha.js'
 
 const dadosIniciais = {
   nome: '',
@@ -27,13 +32,13 @@ function validarFormulario(dados) {
   }
 
   if (dados.senha.length < 10) {
-    erros.senha = 'A senha deve possuir pelo menos 10 caracteres.'
+    erros.senha = ERRO_SENHA_TAMANHO
   } else if (
     !/[a-z]/.test(dados.senha) ||
     !/[A-Z]/.test(dados.senha) ||
     !/\d/.test(dados.senha)
   ) {
-    erros.senha = 'Use ao menos uma letra maiúscula, uma minúscula e um número.'
+    erros.senha = ERRO_SENHA_COMPOSICAO
   }
 
   if (!dados.confirmarSenha) {
@@ -220,7 +225,7 @@ export default function CadastroPage() {
           autoComplete="new-password"
           placeholder="Crie uma senha segura"
           error={errosCampos.senha}
-          hint="Mínimo de 10 caracteres, com letra maiúscula, minúscula e número."
+          hint={REGRA_SENHA}
           required
           minLength={10}
           maxLength={72}

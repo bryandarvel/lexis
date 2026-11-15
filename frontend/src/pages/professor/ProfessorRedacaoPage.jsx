@@ -227,7 +227,7 @@ function Correcao({ redacaoId, usuarioId }) {
         <input type="checkbox" checked disabled aria-label={`Critério definido na proposta: ${c.nome}`} /><span className="review-color" aria-hidden="true" /><span>{c.nome}</span>
       </label>)}
       {!extras.length && <p className="review-caption">Nenhum critério personalizado nesta proposta.</p>}
-      <p className="review-caption">Critérios definidos na proposta. A seleção individual por redação ainda não está disponível.</p>
+      <p className="review-caption">Critérios definidos na proposta.</p>
       <Link className="review-text-link" to={pronto ? `/professor/temas/${redacao.tema.id}` : '/professor/turmas'}>Consultar proposta e critérios</Link>
     </section>
     <AnalysisPanel analysis={ultimaAnalise} resultAnalysis={analise} falhaAnterior={falhaAnteriorPublicacao} avisoAnterior={avisoAnteriorPublicacao} retryAt={analysisRetryAt} isRequesting={analysisBusy} notice={analysisNotice} disabled={Boolean(feedbackAction)} onRequest={() => analisar()} onRefresh={() => analisar(true)} />

@@ -16,6 +16,7 @@ import {
   respostaAindaVale,
   SENHA_VAZIA,
 } from '../../utils/conta-formulario.js'
+import { REGRA_SENHA } from '../../utils/senha.js'
 import './professor-perfil.css'
 
 const PAPEIS = {
@@ -312,7 +313,7 @@ export default function ProfessorPerfilPage() {
         <section className="perfil-cartao" aria-labelledby="perfil-senha-titulo">
           <h2 id="perfil-senha-titulo">Trocar senha</h2>
           <p className="perfil-nota">
-            Use de 10 a 72 caracteres, com letra maiúscula, minúscula e número.
+            {REGRA_SENHA}{' '}
             As outras sessões são encerradas; esta continua aberta.
           </p>
 
