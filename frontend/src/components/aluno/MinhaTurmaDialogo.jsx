@@ -24,7 +24,7 @@ const classeBotaoContorno =
   'inline-flex h-11 items-center justify-center rounded-lg border border-[var(--aluno-borda-campo)] px-5 text-[13px] font-semibold leading-[18px] text-lexis-100 transition-colors hover:bg-[var(--aluno-neutro-fundo)] disabled:cursor-not-allowed disabled:opacity-60'
 
 const classeBotaoSair =
-  'inline-flex h-11 items-center justify-center rounded-lg bg-[var(--aluno-erro-solido)] px-5 text-[13px] font-semibold leading-[18px] text-[#ffffff] transition hover:brightness-110 disabled:cursor-wait disabled:opacity-60'
+  'inline-flex h-11 items-center justify-center rounded-lg bg-[var(--aluno-erro-solido)] px-5 text-[13px] font-semibold leading-[18px] text-[#ffffff] transition-[filter,opacity] hover:brightness-110 disabled:cursor-wait disabled:opacity-60'
 
 const ESTADO_INICIAL = {
   status: 'carregando',

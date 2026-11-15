@@ -474,7 +474,7 @@ export default function AlunoRevisaoOcrPage() {
               type="button"
               onClick={handleAceitar}
               disabled={salvando}
-              className="h-[42px] w-full rounded-lg bg-[var(--color-brand-accent)] text-[13px] font-semibold leading-[18px] text-[#ffffff] transition hover:brightness-110 disabled:cursor-wait disabled:opacity-55 sm:w-[200px]"
+              className="h-[42px] w-full rounded-lg bg-[var(--color-brand-accent)] text-[13px] font-semibold leading-[18px] text-[#ffffff] transition-[filter,opacity] hover:brightness-110 disabled:cursor-wait disabled:opacity-55 sm:w-[200px]"
             >
               {salvando
                 ? 'Salvando...'
