@@ -1,3 +1,5 @@
+import { resolverPropsBotao } from '../../utils/botao-props.js'
+
 /*
  * Botão base (Lote 3a). Quatro variantes, dois tamanhos, estado de carregamento.
  *
@@ -37,10 +39,17 @@ export default function Botao({
   children,
   type,
   disabled,
+  onClick,
   ...resto
 }) {
-  const ehBotaoNativo = Elemento === 'button'
-  const desabilitado = Boolean(disabled) || carregando
+  const propsDeEstado = resolverPropsBotao({
+    nativo: Elemento === 'button',
+    desabilitado: disabled,
+    carregando,
+    type,
+    onClick,
+    resto,
+  })
   const classes = [
     BASE,
     VARIANTES[variante] ?? VARIANTES.primario,
@@ -48,13 +57,8 @@ export default function Botao({
     className,
   ].join(' ')
 
-  const propsDeEstado = ehBotaoNativo
-    ? { type: type ?? 'button', disabled: desabilitado }
-    : { 'aria-disabled': desabilitado || undefined }
-
   return (
     <Elemento
-      {...resto}
       {...propsDeEstado}
       aria-busy={carregando || undefined}
       className={classes}
