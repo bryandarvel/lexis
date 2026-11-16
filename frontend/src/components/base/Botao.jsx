@@ -9,7 +9,7 @@ import { resolverPropsBotao } from '../../utils/botao-props.js'
  */
 
 const BASE =
-  'inline-flex items-center justify-center gap-2 rounded-controle border font-semibold leading-[18px] ' +
+  'botao-base inline-flex items-center justify-center gap-2 rounded-controle border ' +
   'transition-[background-color,border-color,filter,opacity] duration-[var(--rapido)] ' +
   'disabled:cursor-not-allowed disabled:opacity-60 aria-disabled:cursor-not-allowed aria-disabled:opacity-60'
 
@@ -25,8 +25,8 @@ const VARIANTES = {
 }
 
 const TAMANHOS = {
-  padrao: 'min-h-11 px-5 text-[13px]',
-  compacto: 'min-h-9 px-3 text-[13px]',
+  padrao: 'min-h-11 px-5',
+  compacto: 'min-h-9 px-3',
 }
 
 export default function Botao({

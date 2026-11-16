@@ -70,3 +70,15 @@
     opacity: 0;
   }
 }
+
+/*
+ * Tipografia do botão. A regra global "button { font: inherit }" do index.css
+ * fica fora de camada e vence os utilitários do Tailwind, então o tamanho do
+ * texto precisa vir de uma classe (não de text-[13px]); sem isso o botão herda o
+ * tamanho do elemento em volta (por exemplo, os 36 px de um indicador).
+ */
+.botao-base {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.125rem;
+}
