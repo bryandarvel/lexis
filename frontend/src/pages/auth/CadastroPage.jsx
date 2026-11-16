@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 
 import Campo from '../../components/base/Campo.jsx'
-import AuthNotice from '../../components/auth/AuthNotice.jsx'
+import Aviso from '../../components/base/Aviso.jsx'
 import AuthShell from '../../components/auth/AuthShell.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
 import { interpretarErroApi } from '../../utils/api-error.js'
@@ -153,7 +153,7 @@ export default function CadastroPage() {
         noValidate
         aria-busy={enviando}
       >
-        <AuthNotice mensagem={erroGeral} />
+        {erroGeral && <Aviso tipo="erro">{erroGeral}</Aviso>}
 
         <Campo
           id="nome"

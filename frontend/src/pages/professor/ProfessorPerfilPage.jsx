@@ -1,3 +1,4 @@
+import Aviso from '../../components/base/Aviso.jsx'
 import { useEffect, useRef, useState } from 'react'
 import Botao from '../../components/base/Botao.jsx'
 import { motion } from 'motion/react'
@@ -269,14 +270,10 @@ export default function ProfessorPerfilPage() {
             />
 
             {nomeEstado.mensagem && (
-              <p className="perfil-erro" role="alert">
-                {nomeEstado.mensagem}
-              </p>
+              <Aviso tipo="erro" className="mt-4">{nomeEstado.mensagem}</Aviso>
             )}
             {nomeEstado.sucesso && (
-              <p className="perfil-sucesso" role="status">
-                {nomeEstado.sucesso}
-              </p>
+              <Aviso tipo="sucesso" className="mt-4">{nomeEstado.sucesso}</Aviso>
             )}
 
             <Botao
@@ -321,14 +318,10 @@ export default function ProfessorPerfilPage() {
             />
 
             {senhaEstado.mensagem && (
-              <p className="perfil-erro" role="alert">
-                {senhaEstado.mensagem}
-              </p>
+              <Aviso tipo="erro" className="mt-4">{senhaEstado.mensagem}</Aviso>
             )}
             {senhaEstado.sucesso && (
-              <p className="perfil-sucesso" role="status">
-                {senhaEstado.sucesso}
-              </p>
+              <Aviso tipo="sucesso" className="mt-4">{senhaEstado.sucesso}</Aviso>
             )}
 
             <Botao

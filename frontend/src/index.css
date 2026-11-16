@@ -136,10 +136,6 @@ h2,
   line-height: 1.9;
 }
 
-.auth-notice-erro { color: #991b1b; background: #fef2f2; border-color: #dc2626; }
-.auth-notice-sucesso { color: #166534; background: #f0fdf4; border-color: #15803d; }
-[data-theme="dark"] .auth-notice-erro { color: #fecaca; background: #451a1a; border-color: #f87171; }
-[data-theme="dark"] .auth-notice-sucesso { color: #bbf7d0; background: #052e16; border-color: #4ade80; }
 
 .brand-wordmark,
 .panel-wordmark {

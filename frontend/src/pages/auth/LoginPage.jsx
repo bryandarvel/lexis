@@ -8,7 +8,7 @@ import {
 } from 'react-router'
 
 import Campo from '../../components/base/Campo.jsx'
-import AuthNotice from '../../components/auth/AuthNotice.jsx'
+import Aviso from '../../components/base/Aviso.jsx'
 import PasswordRecoveryDialog from '../../components/auth/PasswordRecoveryDialog.jsx'
 import { solicitarRecuperacaoSenha } from '../../services/password-recovery.js'
 import ThemeToggle from '../../components/layout/ThemeToggle.jsx'
@@ -123,15 +123,10 @@ export default function LoginPage() {
             ))}
           </div>
         </fieldset>
-        <AuthNotice
-          tipo="sucesso"
-          mensagem={
-            cadastroConcluido
-              ? 'Conta criada com sucesso. Agora você já pode entrar.'
-              : ''
-          }
-        />
-        <AuthNotice mensagem={erro} />
+        {cadastroConcluido && (
+          <Aviso tipo="sucesso">Conta criada com sucesso. Agora você já pode entrar.</Aviso>
+        )}
+        {erro && <Aviso tipo="erro">{erro}</Aviso>}
 
         <Campo
           id="email"
