@@ -26,7 +26,6 @@
 .class-partial-warning { color: var(--panel-muted); font-size: 13px; }
 .class-partial-warning button { color: var(--panel-action); text-decoration: underline; cursor: pointer; }
 .classes-main button:disabled, .classes-main input:disabled { opacity: .6; cursor: not-allowed; }
-.classes-main .panel-empty h2 { font-family: var(--fonte-interface); font-size: 18px; line-height: 24px; }
 [data-theme="dark"] .class-card { box-shadow: inset 0 1px rgb(255 255 255 / 12%); }
 [data-theme="dark"] .classes-success { background: #0e3022; color: #5bda91; }
 [data-theme="dark"] .classes-filters, [data-theme="dark"] .class-progress { background: #252d37; }
