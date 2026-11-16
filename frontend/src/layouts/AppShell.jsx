@@ -156,6 +156,8 @@ export default function AppShell({
   const [minhaTurmaAberta, setMinhaTurmaAberta] = useState(false)
   const [propostasAbertas, setPropostasAbertas] = useState(false)
   const botaoGavetaRef = useRef(null)
+  // Para onde o foco volta quando o diálogo de Propostas fecha (ver executarAcao).
+  const propostasFocoRetornoRef = useRef(null)
   const navegacaoRef = useRef(null)
   const botaoAvatarRef = useRef(null)
 
@@ -205,9 +207,18 @@ export default function AppShell({
   }
 
   function executarAcao(acao) {
+    // O elemento de origem e o estado da gaveta precisam ser lidos antes de
+    // fechá-la: o botão clicado dentro da gaveta fica oculto antes de o
+    // diálogo fechar e já não poderia receber o foco de volta.
+    const origem = document.activeElement
+    const veioDaGaveta = gavetaAberta
+
     fecharGaveta()
 
     if (acao === 'propostas') {
+      propostasFocoRetornoRef.current = veioDaGaveta
+        ? botaoGavetaRef.current
+        : origem
       setPropostasAbertas(true)
       return
     }
@@ -366,6 +377,7 @@ export default function AppShell({
         <DialogoPropostasPorTurma
           aberto={propostasAbertas}
           turmas={turmas}
+          retornoFocoRef={propostasFocoRetornoRef}
           onFechar={() => setPropostasAbertas(false)}
         />
       )}

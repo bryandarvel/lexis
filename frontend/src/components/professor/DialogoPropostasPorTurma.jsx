@@ -8,11 +8,13 @@ export default function DialogoPropostasPorTurma({
   aberto,
   turmas = [],
   onFechar,
+  retornoFocoRef,
 }) {
   return (
     <Dialogo
       aberto={aberto}
       onFechar={onFechar}
+      retornoFocoRef={retornoFocoRef}
       titulo="Propostas por turma"
       descricao="Escolha uma turma para consultar suas propostas e critérios."
       rodape={

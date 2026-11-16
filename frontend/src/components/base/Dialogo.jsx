@@ -3,7 +3,9 @@ import { useEffect, useId, useRef } from 'react'
 /*
  * Diálogo base sobre o <dialog> nativo (Lote 3a). Abre centralizado e dentro da
  * área visível, prende o foco (showModal), fecha com Escape e devolve o foco a
- * quem o abriu. Escape e clique fora chamam `onFechar`; quem decide se o
+ * quem o abriu (ou a `retornoFocoRef`, quando a tela informa um destino: use
+ * quando o controle que abriu o diálogo deixa de existir ou de ser focável
+ * antes de ele fechar, como um botão dentro de uma gaveta). Escape e clique fora chamam `onFechar`; quem decide se o
  * diálogo de fato fecha é a tela, mudando `aberto`.
  *
  * O título é um h2 em Inter (regra de títulos, D2). Ações vão em `rodape`.
@@ -18,6 +20,7 @@ export default function Dialogo({
   largo = false,
   fecharAoClicarFora = false,
   ocupado = false,
+  retornoFocoRef,
   className = '',
 }) {
   const dialogoRef = useRef(null)
@@ -32,6 +35,8 @@ export default function Dialogo({
     }
 
     const focoAnterior = document.activeElement
+    // A tela define o destino antes de abrir o diálogo, então ele já está no ref aqui.
+    const destinoInformado = retornoFocoRef?.current
 
     if (!dialogo.open) {
       dialogo.showModal()
@@ -42,9 +47,12 @@ export default function Dialogo({
         dialogo.close()
       }
 
-      focoAnterior?.focus?.()
+      // Sem destino informado, o comportamento é o de sempre.
+      const destino = destinoInformado ?? focoAnterior
+
+      destino?.focus?.()
     }
-  }, [aberto])
+  }, [aberto, retornoFocoRef])
 
   return (
     <dialog
