@@ -8,9 +8,28 @@ import {
   montarTrechosParaEnvio,
   podeAcrescentarTrecho,
   validarTrechosRecebidos,
+  numerarTrechos,
+  limitesDeGrafemas,
+  moverGrafema,
 } from '../src/utils/trechos-feedback.js'
 
 const TEXTO = 'A educação midiática exige repertório. Veja o caso de 2019.'
+
+test('números seguem o início e o maior intervalo vem primeiro no empate', () => {
+  const dados = [[3, 8], [0, 3], [0, 9], [0, 3], [8, 9]].map(([inicio, fim]) => ({ inicio, fim }))
+  assert.deepEqual(numerarTrechos(dados).map(({ inicio, fim, numero }) => [inicio, fim, numero]), [
+    [0, 9, '01'], [0, 3, '02'], [3, 8, '03'], [8, 9, '04'],
+  ])
+})
+
+test('ajuste de bordas avança grafemas sem dividir acentos, emoji, quebras ou aspas', () => {
+  const texto = ' e\u0301👩🏽‍🏫\r\n“fim”'
+  const limites = limitesDeGrafemas(texto)
+  assert.deepEqual(limites.slice(0, 5), [0, 1, 3, 10, 12])
+  assert.equal(moverGrafema(limites, 3, 1), 10)
+  assert.equal(moverGrafema(limites, 10, -1), 3)
+  assert.equal(texto.slice(1, moverGrafema(limites, 10, 1)), 'e\u0301👩🏽‍🏫\r\n')
+})
 
 test('a seleção vira um trecho com os offsets e o texto literal', () => {
   const { trecho, erro } = criarTrechoDaSelecao(TEXTO, 2, 20)

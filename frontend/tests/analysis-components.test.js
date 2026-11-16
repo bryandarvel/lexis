@@ -8,6 +8,7 @@ import { createServer } from 'vite'
 import react from '@vitejs/plugin-react'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { prepararMarcacoes } from '../src/utils/professor-correction.js'
 
 let servidor, cache, AnalysisPanel, EssayEvidenceText
 before(async () => {
@@ -82,33 +83,37 @@ test('aviso de transporte sem análise persistida fica consultável depois da pu
 
 test('trecho comum aos três critérios conserva vínculos e exibe as três cores', () => {
   const texto = 'Direito à educação.'
-  const criterios = ['Legitimação', 'Pertinência', 'Uso produtivo'].map((nome, i) => ({ nome, ordem: i + 1 }))
-  const analise = { status: 'CONCLUIDA', resultadoEstruturado: { analisePorCriterio: criterios.map(c => ({
-    criterio: c.nome, ordem: c.ordem, evidencias: [{ trecho: texto, inicio: 0, fim: texto.length, statusLocalizacao: 'LOCALIZADA' }],
-  })) } }
-  const html = renderToStaticMarkup(createElement(EssayEvidenceText, { texto, analise, criterios }))
+  const criterios = ['Legitimação', 'Pertinência', 'Uso produtivo'].map((nome, i) => ({ id: `c-${i}`, nome, ordem: i + 1 }))
+  const form = { criterionTrechos: Object.fromEntries(criterios.map((c) => [c.id, [{ inicio: 0, fim: texto.length }]])) }
+  const marcacoes = prepararMarcacoes(texto, criterios, form, null, new Set())
+  const html = renderToStaticMarkup(createElement(EssayEvidenceText, { texto, marcacoes, criterios }))
   for (const i of [0, 1, 2]) assert.match(html, new RegExp(`linear-gradient\\(var\\(--review-color-${i}\\)`))
-  assert.match(html, /Comentários: Legitimação, Pertinência, Uso produtivo/)
+  assert.match(html, /Trecho 01: Legitimação, Pertinência, Uso produtivo/)
   for (const c of criterios) assert.ok(html.includes(`${c.nome}: 1 trecho marcado`))
   assert.match(html, /Os números identificam trechos, não critérios/)
   assert.match(html, /Um mesmo trecho pode apoiar mais de um critério/)
-  const divergente = renderToStaticMarkup(createElement(EssayEvidenceText, { texto: 'Outro texto.', analise, criterios }))
-  assert.doesNotMatch(divergente, /class="review-mark/)
+  const divergente = renderToStaticMarkup(createElement(EssayEvidenceText, {
+    texto: 'Outro texto.', marcacoes: prepararMarcacoes('Outro texto.', criterios, form, null, new Set()), criterios,
+  }))
+  assert.doesNotMatch(divergente, /class="review-seal/)
   assert.ok(divergente.includes('Uso produtivo: 0 trechos marcados'))
 })
 
 test('legenda distingue evidências de critérios e não esconde referências do desenvolvimento', () => {
   const referencias = ['Bauman.', 'Constituição.', 'Hannah Arendt.', 'Marco Civil.', 'Black Mirror.']
   const texto = referencias.join('\n\n')
-  const criterios = ['Legitimação', 'Pertinência', 'Uso produtivo'].map((nome, i) => ({ nome, ordem: i + 1 }))
+  const criterios = ['Legitimação', 'Pertinência', 'Uso produtivo'].map((nome, i) => ({ id: `c-${i}`, nome, ordem: i + 1 }))
   const evidencias = referencias.map(trecho => ({ trecho, inicio: texto.indexOf(trecho), fim: texto.indexOf(trecho) + trecho.length, statusLocalizacao: 'LOCALIZADA' }))
-  const analise = { status: 'CONCLUIDA', resultadoEstruturado: { analisePorCriterio: criterios.map(c => ({
+  const analise = { id: 'concluida', status: 'CONCLUIDA', resultadoEstruturado: { analisePorCriterio: criterios.map(c => ({
     criterio: c.nome, ordem: c.ordem, evidencias: c.ordem === 3 ? [] : evidencias,
   })) } }
-  const html = renderToStaticMarkup(createElement(EssayEvidenceText, { texto, analise, criterios }))
+  const form = { criterionTrechos: { 'c-0': evidencias } }
+  const marcacoes = prepararMarcacoes(texto, criterios, form, analise, new Set())
+  const html = renderToStaticMarkup(createElement(EssayEvidenceText, { texto, marcacoes, criterios }))
   assert.ok(html.includes('Legitimação: 5 trechos marcados'))
-  assert.ok(html.includes('Pertinência: 5 trechos marcados'))
+  assert.ok(html.includes('Pertinência: 0 trechos marcados'))
   assert.ok(html.includes('Uso produtivo: 0 trechos marcados'))
-  assert.equal((html.match(/class="review-mark /g) ?? []).length, 5)
+  assert.equal((html.match(/data-numero="0[1-5]"/g) ?? []).length, 5)
+  assert.equal((html.match(/data-numero="IA"/g) ?? []).length, 5)
   for (const referencia of referencias) assert.ok(html.includes(referencia))
 })
