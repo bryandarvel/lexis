@@ -207,7 +207,7 @@ export default function MinhaTurmaDialogo({
           Você vai sair de <strong className="font-semibold text-texto">{matricula.turma}</strong>.
         </p>
         <p>
-          Suas redações e correções continuam visíveis. Rascunhos ficam salvos, mas só voltam a ser editáveis se você voltar a esta mesma turma. Redações já enviadas continuam sendo
+          Suas redações e correções continuam visíveis. Rascunhos ficam salvos, mas só voltam a ser editáveis se você voltar a esta mesma turma. Redações já enviadas continuam sendo corrigidas pelo professor, e você continua recebendo as notificações.
         </p>
       </div>
     )
