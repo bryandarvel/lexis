@@ -57,8 +57,14 @@ export default function Botao({
     className,
   ].join(' ')
 
+  // Link bloqueado não pode chegar a renderizar: o Link do React Router gera um
+  // href para a própria rota mesmo sem `to`, e o menu de contexto ("abrir em
+  // nova guia") ainda funcionaria. Nesse caso o elemento vira um <span>.
+  const bloqueadoNaoNativo = Elemento !== 'button' && (Boolean(disabled) || carregando)
+  const ElementoFinal = bloqueadoNaoNativo ? 'span' : Elemento
+
   return (
-    <Elemento
+    <ElementoFinal
       {...propsDeEstado}
       aria-busy={carregando || undefined}
       className={classes}
@@ -70,6 +76,6 @@ export default function Botao({
         />
       )}
       {carregando && rotuloCarregando ? rotuloCarregando : children}
-    </Elemento>
+    </ElementoFinal>
   )
 }
