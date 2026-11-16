@@ -3,7 +3,6 @@ import assert from 'node:assert/strict'
 import {
   descreverSituacaoAluno,
   descreverSituacaoTurma,
-  formatarDataEntrada,
   ordenarAlunosDaTurma,
   resumirAlunosDaTurma,
 } from '../src/utils/professor-turma.js'
@@ -60,12 +59,6 @@ test('resumo da lista conta alunos e contas desativadas', () => {
     total: 0, desativados: 0, rotulo: '0 alunos ativos',
   })
   assert.equal(resumirAlunosDaTurma(undefined).total, 0)
-})
-
-test('data de entrada é formatada e tolera valor ausente ou inválido', () => {
-  assert.equal(formatarDataEntrada('2026-03-09T12:00:00.000Z'), '09/03/2026')
-  assert.equal(formatarDataEntrada(null), 'Data indisponível')
-  assert.equal(formatarDataEntrada('não é data'), 'Data indisponível')
 })
 
 test('renomear usa a mesma validação de nome da criação', () => {

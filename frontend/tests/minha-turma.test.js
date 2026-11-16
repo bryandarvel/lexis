@@ -3,7 +3,6 @@ import { test } from 'node:test'
 
 import {
   descreverMatricula,
-  formatarDataEntrada,
   indicaSemMatricula,
   listarPendenciasDaSaida,
   mensagemErroMinhaTurma,
@@ -65,8 +64,6 @@ test('não oferece a saída de turma arquivada e tolera dados ausentes', () => {
     descreverMatricula({ turma: { id: 't1' } }).professor,
     null,
   )
-  assert.equal(formatarDataEntrada('inválida'), null)
-  assert.equal(formatarDataEntrada(undefined), null)
 })
 
 test('lista só os rascunhos e as enviadas da turma que o aluno deixa', () => {

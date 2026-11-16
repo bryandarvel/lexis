@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import Botao from '../base/Botao.jsx'
 import { COMPETENCIAS_ENEM, calcularNotaTotalCompetencias } from '../../constants/competencias-enem.js'
 import { montarDadosFeedback } from '../../utils/professor-correction.js'
 
@@ -29,7 +30,7 @@ export default function FeedbackEditor({ action, currentFeedback, form, notice, 
           onChange={(event) => onFieldChange('generalComment', event.target.value)} placeholder="Escreva um comentário geral sobre a redação..." />
         <span className="review-counter">{form.generalComment.length}/10000</span>
         <div className="review-publish-row"><p className="review-caption">{currentFeedback ? `Versão ${currentFeedback.numero} · ${currentFeedback.status === 'PUBLICADA' ? 'Publicada' : 'Rascunho'}. ` : ''}Salvar não publica para o aluno.</p>
-          <button type="button" className="panel-primary-button" disabled={Boolean(action)} onClick={onPublish}>{action === 'publishing' ? 'Publicando…' : 'Publicar correção'}</button>
+          <Botao type="button" disabled={Boolean(action)} onClick={onPublish}>{action === 'publishing' ? 'Publicando…' : 'Publicar correção'}</Botao>
         </div>
         {notice && <p ref={noticeRef} tabIndex={-1} role={notice.type === 'error' ? 'alert' : 'status'} className={`review-notice ${notice.type}`}>{notice.message}</p>}
       </section>

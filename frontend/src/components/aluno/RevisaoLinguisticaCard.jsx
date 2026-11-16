@@ -1,4 +1,5 @@
 import { descreverSugestao } from '../../utils/essay-editor.js'
+import Botao from '../base/Botao.jsx'
 
 const CORES_PONTO = {
   erro: 'bg-[var(--aluno-erro)]',
@@ -11,14 +12,13 @@ function BotaoRevisar({
   onRevisar,
 }) {
   return (
-    <button
+    <Botao
       type="button"
       onClick={onRevisar}
       disabled={desabilitado}
-      className="mt-4 h-10 rounded-lg border border-[var(--aluno-borda-campo)] px-4 text-[13px] font-semibold leading-[18px] text-lexis-100 transition-colors hover:bg-[var(--aluno-neutro-fundo)] disabled:cursor-not-allowed disabled:opacity-55"
-    >
+      variante="secundario" tamanho="compacto" className="mt-4">
       {children}
-    </button>
+    </Botao>
   )
 }
 
@@ -34,7 +34,7 @@ function ItemSugestao({
   return (
     <li
       title={sugestao.mensagem}
-      className="flex items-center gap-2.5 rounded-lg bg-[var(--aluno-neutro-fundo)] py-[5px] pl-3 pr-2"
+      className="flex items-center gap-2.5 rounded-controle bg-[var(--aluno-neutro-fundo)] py-[5px] pl-3 pr-2"
     >
       <span
         aria-hidden="true"
@@ -42,10 +42,10 @@ function ItemSugestao({
       />
 
       <div className="min-w-0 flex-1">
-        <p className="break-words text-sm leading-[22px] text-lexis-100">
+        <p className="break-words text-sm leading-[22px] text-texto">
           {descricao.texto}
         </p>
-        <p className="text-xs font-medium leading-[17px] text-lexis-200">
+        <p className="text-xs font-medium leading-[17px] text-texto-suave">
           {descricao.categoria}
         </p>
         {sugestao.mensagem &&
@@ -62,17 +62,16 @@ function ItemSugestao({
             </summary>
             <div className="mt-1.5 flex flex-wrap gap-1.5 pb-1">
               {alternativas.map((substituicao) => (
-                <button
+                <Botao
                   key={substituicao}
                   type="button"
                   disabled={desabilitado}
                   onClick={() =>
                     onAplicar(sugestao, substituicao)
                   }
-                  className="min-h-8 rounded-md border border-[var(--aluno-borda-campo)] px-2.5 text-xs font-semibold text-lexis-100 disabled:opacity-55"
-                >
+                  variante="secundario" tamanho="compacto">
                   Aplicar “{substituicao}”
-                </button>
+                </Botao>
               ))}
             </div>
           </details>
@@ -84,7 +83,7 @@ function ItemSugestao({
           type="button"
           disabled={desabilitado}
           onClick={() => onAplicar(sugestao, principal)}
-          className="h-8 shrink-0 self-start rounded-md px-2.5 text-xs font-semibold text-[var(--aluno-acao-suave-texto)] transition-colors hover:bg-[var(--aluno-acao-suave)] disabled:opacity-55"
+          className="h-8 shrink-0 self-start rounded-controle px-2.5 text-xs font-semibold text-[var(--aluno-acao-suave-texto)] transition-colors hover:bg-[var(--aluno-acao-suave)] disabled:opacity-55"
         >
           Aplicar
           <span className="sr-only">
@@ -112,26 +111,26 @@ export default function RevisaoLinguisticaCard({
     <section
       aria-labelledby="titulo-revisao-linguistica"
       aria-busy={carregando}
-      className="aluno-elevacao-1 min-h-[232px] rounded-xl border border-[var(--surface-border)] bg-lexis-900 px-5 pb-4 pt-4"
+      className="aluno-elevacao-1 min-h-[232px] rounded-cartao border border-[var(--surface-border)] bg-superficie px-5 pb-4 pt-4"
     >
       <div className="flex items-start justify-between gap-3">
         <h2
           id="titulo-revisao-linguistica"
-          className="aluno-titulo-interface text-lg font-semibold leading-6 tracking-[-0.09px] text-lexis-50"
+          className="text-lg font-semibold leading-6 tracking-[-0.09px] text-texto"
         >
           Revisão linguística
         </h2>
-        <span className="inline-flex h-6 w-[84px] shrink-0 items-center justify-center rounded-full bg-[var(--aluno-trilho)] text-xs font-medium leading-[17px] text-lexis-200">
+        <span className="inline-flex h-6 w-[84px] shrink-0 items-center justify-center rounded-full bg-[var(--aluno-trilho)] text-xs font-medium leading-[17px] text-texto-suave">
           opcional
         </span>
       </div>
-      <p className="mt-0.5 text-xs font-medium leading-[17px] text-lexis-200">
+      <p className="mt-0.5 text-xs font-medium leading-[17px] text-texto-suave">
         Sugestões do LanguageTool. Você decide se aplica.
       </p>
 
       {estado.status === 'inicial' && (
         <>
-          <p className="mt-4 text-xs leading-[17px] text-lexis-200">
+          <p className="mt-4 text-xs leading-[17px] text-texto-suave">
             Ao revisar, o texto atual é enviado ao serviço LanguageTool configurado. As sugestões nunca bloqueiam o salvamento nem o envio.
           </p>
           <BotaoRevisar
@@ -146,7 +145,7 @@ export default function RevisaoLinguisticaCard({
       {carregando && (
         <p
           role="status"
-          className="mt-4 animate-pulse text-sm leading-[22px] text-lexis-100"
+          className="mt-4 animate-pulse text-sm leading-[22px] text-texto"
         >
           Consultando o LanguageTool...
         </p>
@@ -160,7 +159,7 @@ export default function RevisaoLinguisticaCard({
                 ? 'alert'
                 : 'status'
             }
-            className="mt-4 text-sm leading-[22px] text-lexis-100"
+            className="mt-4 text-sm leading-[22px] text-texto"
           >
             {estado.mensagem}
           </p>
@@ -177,7 +176,7 @@ export default function RevisaoLinguisticaCard({
         <>
           <p
             role="status"
-            className="mt-4 text-sm leading-[22px] text-lexis-100"
+            className="mt-4 text-sm leading-[22px] text-texto"
           >
             {estado.mensagem}
           </p>

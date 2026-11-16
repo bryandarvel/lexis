@@ -14,13 +14,13 @@
 .aluno-redacoes-resumo > div {
   padding: 14px 18px;
   border: 1px solid var(--surface-border);
-  border-radius: 14px;
-  background: var(--color-lexis-900);
+  border-radius: var(--raio-cartao);
+  background: var(--superficie-conteudo);
   box-shadow: var(--aluno-elevacao-1);
 }
 
 .aluno-redacoes-resumo dt {
-  color: var(--color-lexis-200);
+  color: var(--texto-suave);
   font-size: 12px;
   font-weight: 500;
   line-height: 17px;
@@ -28,8 +28,9 @@
 
 .aluno-redacoes-resumo dd {
   margin: 4px 0 0;
-  color: var(--color-lexis-50);
-  font-family: var(--font-display);
+  color: var(--texto);
+  font-family: var(--fonte-interface);
+  font-variant-numeric: tabular-nums;
   font-size: 28px;
   font-weight: 600;
   line-height: 32px;
@@ -49,7 +50,7 @@
 }
 
 .aluno-controle label {
-  color: var(--color-lexis-100);
+  color: var(--texto);
   font-size: 13px;
   font-weight: 600;
   line-height: 18px;
@@ -59,17 +60,17 @@
   min-height: 44px;
   padding: 10px 12px;
   border: 1px solid var(--aluno-borda-campo);
-  border-radius: 10px;
-  background: var(--color-lexis-900);
-  color: var(--color-lexis-50);
-  font-family: var(--font-interface);
+  border-radius: var(--raio-cartao);
+  background: var(--superficie-conteudo);
+  color: var(--texto);
+  font-family: var(--fonte-interface);
   font-size: 14px;
   line-height: 22px;
 }
 
 .aluno-redacoes-contagem {
   margin: 16px 0 0;
-  color: var(--color-lexis-200);
+  color: var(--texto-suave);
   font-size: 13px;
   line-height: 18px;
 }
@@ -90,8 +91,8 @@
   min-height: 92px;
   padding: 18px 22px;
   border: 1px solid var(--surface-border);
-  border-radius: 14px;
-  background: var(--color-lexis-900);
+  border-radius: var(--raio-cartao);
+  background: var(--superficie-conteudo);
   box-shadow: var(--aluno-elevacao-1);
 }
 
@@ -107,34 +108,12 @@
   gap: 8px 12px;
 }
 
-.aluno-selo {
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 17px;
-}
 
-.aluno-selo-neutro {
-  background: var(--aluno-trilho);
-  color: var(--color-lexis-100);
-}
 
-.aluno-selo-atencao {
-  background: var(--aluno-atencao-fundo);
-  color: var(--aluno-atencao);
-}
 
-.aluno-selo-sucesso {
-  background: var(--aluno-sucesso-fundo);
-  color: var(--aluno-sucesso);
-}
 
 .aluno-redacao-data {
-  color: var(--color-lexis-200);
+  color: var(--texto-suave);
   font-size: 12px;
   font-weight: 500;
   line-height: 17px;
@@ -142,8 +121,8 @@
 
 .aluno-redacao-titulo {
   margin: 8px 0 0;
-  color: var(--color-lexis-50);
-  font-family: var(--font-interface);
+  color: var(--texto);
+  font-family: var(--fonte-interface);
   font-size: 16px;
   font-weight: 600;
   line-height: 22px;
@@ -153,7 +132,7 @@
 .aluno-redacao-turma,
 .aluno-redacao-motivo {
   margin: 2px 0 0;
-  color: var(--color-lexis-200);
+  color: var(--texto-suave);
   font-size: 12px;
   line-height: 17px;
   overflow-wrap: anywhere;
@@ -173,55 +152,21 @@
 
 .aluno-redacao-nota {
   margin: 0;
-  color: var(--color-lexis-200);
+  color: var(--texto-suave);
   font-size: 13px;
   line-height: 18px;
 }
 
 .aluno-redacao-nota-valor {
-  color: var(--color-lexis-50);
-  font-family: var(--font-display);
+  color: var(--texto);
+  font-family: var(--fonte-titulo);
   font-size: 26px;
   font-weight: 600;
   line-height: 30px;
 }
 
-.aluno-botao-primario,
-.aluno-botao-secundario,
-.aluno-redacao-acao {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 10px 18px;
-  border-radius: 10px;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 18px;
-  text-decoration: none;
-  cursor: pointer;
-}
 
-.aluno-botao-primario {
-  background: #1c6eba;
-  color: #ffffff;
-}
 
-.aluno-botao-primario:hover {
-  background: #175795;
-}
-
-.aluno-botao-secundario,
-.aluno-redacao-acao {
-  border: 1px solid var(--aluno-borda-campo);
-  background: transparent;
-  color: var(--aluno-acao-suave-texto);
-}
-
-.aluno-botao-secundario:hover,
-.aluno-redacao-acao:hover {
-  background: var(--aluno-acao-suave);
-}
 
 .aluno-esqueleto {
   background: var(--aluno-trilho);

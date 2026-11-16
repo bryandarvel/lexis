@@ -22,37 +22,16 @@
   margin-top: 16px;
   padding: 12px 16px;
   border-left: 3px solid var(--panel-error);
-  border-radius: 8px;
+  border-radius: var(--raio-controle);
   background: var(--panel-soft);
   color: var(--panel-error);
   font-size: 13px;
   line-height: 20px;
 }
 
-.avisos-vazio {
-  max-width: 620px;
-  margin-top: 20px;
-  padding: 24px;
-  border: 1px dashed var(--panel-border);
-  border-radius: 12px;
-}
 
-.avisos-vazio h2 {
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 22px;
-}
 
-.avisos-vazio p {
-  margin-top: 8px;
-  color: var(--panel-muted);
-  font-size: 13px;
-  line-height: 20px;
-}
 
-.avisos-vazio .panel-primary-button {
-  margin-top: 16px;
-}
 
 .avisos-lista {
   display: grid;
@@ -70,7 +49,7 @@
   min-height: 44px;
   padding: 16px 20px;
   border: 1px solid var(--panel-border);
-  border-radius: 12px;
+  border-radius: var(--raio-cartao);
   background: var(--panel-surface);
   color: inherit;
   text-align: left;
@@ -113,7 +92,7 @@
 .avisos-marca {
   justify-self: start;
   padding: 2px 10px;
-  border-radius: 999px;
+  border-radius: var(--raio-pilula);
   background: var(--panel-soft);
   color: var(--panel-action);
   font-size: 11px;

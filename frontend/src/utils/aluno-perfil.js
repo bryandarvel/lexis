@@ -1,3 +1,6 @@
+import { formatarData } from './formatar-data.js'
+import { formatarNumero } from './formatar-numero.js'
+
 // Perfil do aluno (somente leitura): conta, turma e desempenho.
 //
 // GET /api/aluno/desempenho não filtra por turma nem por matrícula: soma tudo o
@@ -21,18 +24,6 @@ export function rotularPapel(papel) {
   return ROTULOS_PAPEL[papel] ?? 'Não informado'
 }
 
-export function formatarMembroDesde(valor) {
-  const data = valor ? new Date(valor) : null
-
-  if (!data || Number.isNaN(data.getTime())) {
-    return null
-  }
-
-  return new Intl.DateTimeFormat('pt-BR', {
-    dateStyle: 'long',
-  }).format(data)
-}
-
 export function descreverConta(usuario) {
   if (!usuario) {
     return null
@@ -42,7 +33,7 @@ export function descreverConta(usuario) {
     nome: usuario.nome?.trim() || 'Não informado',
     email: usuario.email?.trim() || 'Não informado',
     papel: rotularPapel(usuario.papel),
-    membroDesde: formatarMembroDesde(usuario.criadoEm),
+    membroDesde: formatarData(usuario.criadoEm, 'data'),
   }
 }
 
@@ -53,13 +44,13 @@ export function descreverTurma(matricula) {
 // O backend devolve médias com até uma casa decimal.
 export function formatarNota(valor) {
   return Number.isFinite(valor)
-    ? valor.toLocaleString('pt-BR', { maximumFractionDigits: 1 })
+    ? formatarNumero(valor, { casas: 1 })
     : null
 }
 
 function formatarContagem(valor) {
   return Number.isInteger(valor) && valor >= 0
-    ? valor.toLocaleString('pt-BR')
+    ? formatarNumero(valor)
     : null
 }
 

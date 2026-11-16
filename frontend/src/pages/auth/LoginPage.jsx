@@ -1,3 +1,4 @@
+import Botao from '../../components/base/Botao.jsx'
 import { useState } from 'react'
 import { motion } from 'motion/react'
 import {
@@ -6,8 +7,8 @@ import {
   useNavigate,
 } from 'react-router'
 
-import AuthField from '../../components/auth/AuthField.jsx'
-import AuthNotice from '../../components/auth/AuthNotice.jsx'
+import Campo from '../../components/base/Campo.jsx'
+import Aviso from '../../components/base/Aviso.jsx'
 import PasswordRecoveryDialog from '../../components/auth/PasswordRecoveryDialog.jsx'
 import { solicitarRecuperacaoSenha } from '../../services/password-recovery.js'
 import ThemeToggle from '../../components/layout/ThemeToggle.jsx'
@@ -122,17 +123,12 @@ export default function LoginPage() {
             ))}
           </div>
         </fieldset>
-        <AuthNotice
-          tipo="sucesso"
-          mensagem={
-            cadastroConcluido
-              ? 'Conta criada com sucesso. Agora você já pode entrar.'
-              : ''
-          }
-        />
-        <AuthNotice mensagem={erro} />
+        {cadastroConcluido && (
+          <Aviso tipo="sucesso">Conta criada com sucesso. Agora você já pode entrar.</Aviso>
+        )}
+        {erro && <Aviso tipo="erro">{erro}</Aviso>}
 
-        <AuthField
+        <Campo
           id="email"
           name="email"
           label="E-mail institucional"
@@ -156,7 +152,7 @@ export default function LoginPage() {
           >
             Esqueci minha senha
           </button>
-        <AuthField
+        <Campo
           id="senha"
           name="senha"
           label="Senha"
@@ -170,19 +166,14 @@ export default function LoginPage() {
         />
         </div>
 
-        <button
+        <Botao
           type="submit"
-          disabled={enviando}
-          className="login-submit"
+          className="min-h-12 w-full"
+          carregando={enviando}
+          rotuloCarregando="Entrando..."
         >
-          {enviando && (
-            <span
-              aria-hidden="true"
-              className="h-4 w-4 animate-spin rounded-full border-2 border-lexis-950/25 border-t-lexis-950 motion-reduce:animate-none"
-            />
-          )}
-          {enviando ? 'Entrando...' : 'Entrar'}
-        </button>
+          Entrar
+        </Botao>
       </form>
         </motion.div>
       </section>

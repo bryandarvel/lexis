@@ -121,3 +121,16 @@ export function formatarData(
       throw new RangeError(`Forma de data desconhecida: ${String(forma)}`)
   }
 }
+
+/*
+ * Saudação do painel do professor ("segunda-feira, 16 de novembro"). Não é a
+ * data de um registro: fica aqui só para as opções de Intl ficarem em um lugar.
+ */
+export function formatarSaudacaoData(agora = new Date()) {
+  return new Intl.DateTimeFormat(LOCALE, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    timeZone: 'America/Sao_Paulo',
+  }).format(agora)
+}

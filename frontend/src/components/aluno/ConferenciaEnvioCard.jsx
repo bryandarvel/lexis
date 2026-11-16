@@ -13,7 +13,7 @@ function ItemConferencia({
             type="checkbox"
             checked={marcado}
             onChange={() => onAlternar(item.id)}
-            className="peer size-[18px] cursor-pointer appearance-none rounded-md border-[1.5px] border-[var(--aluno-borda-campo)] bg-lexis-900 checked:border-[var(--color-brand-accent)] checked:bg-[var(--color-brand-accent)]"
+            className="peer size-[18px] cursor-pointer appearance-none rounded-controle border-[1.5px] border-[var(--aluno-borda-campo)] bg-superficie checked:border-[var(--color-brand-accent)] checked:bg-[var(--color-brand-accent)]"
           />
           <svg
             aria-hidden="true"
@@ -31,8 +31,8 @@ function ItemConferencia({
         <span
           className={`text-sm leading-[22px] ${
             marcado
-              ? 'text-lexis-100'
-              : 'text-lexis-200'
+              ? 'text-texto'
+              : 'text-texto-suave'
           }`}
         >
           {item.rotulo}
@@ -49,11 +49,11 @@ export default function ConferenciaEnvioCard({
   return (
     <section
       aria-labelledby="titulo-conferencia-envio"
-      className="aluno-elevacao-1 min-h-[252px] rounded-xl border border-[var(--surface-border)] bg-lexis-900 px-5 pb-4 pt-4"
+      className="aluno-elevacao-1 min-h-[252px] rounded-cartao border border-[var(--surface-border)] bg-superficie px-5 pb-4 pt-4"
     >
       <h2
         id="titulo-conferencia-envio"
-        className="aluno-titulo-interface text-lg font-semibold leading-6 tracking-[-0.09px] text-lexis-50"
+        className="text-lg font-semibold leading-6 tracking-[-0.09px] text-texto"
       >
         Antes de enviar
       </h2>
@@ -83,7 +83,7 @@ export default function ConferenciaEnvioCard({
 
       <div
         role="note"
-        className="relative mt-5 overflow-hidden rounded-lg bg-[var(--aluno-atencao-fundo)] py-2.5 pl-3.5 pr-3.5"
+        className="relative mt-5 overflow-hidden rounded-controle bg-[var(--aluno-atencao-fundo)] py-2.5 pl-3.5 pr-3.5"
       >
         <span
           aria-hidden="true"
@@ -92,7 +92,7 @@ export default function ConferenciaEnvioCard({
         <p className="text-[13px] font-semibold leading-[18px] text-[var(--aluno-atencao)]">
           O envio é definitivo
         </p>
-        <p className="mt-0.5 text-xs font-medium leading-[17px] text-lexis-100">
+        <p className="mt-0.5 text-xs font-medium leading-[17px] text-texto">
           Depois de entregar, o texto não pode mais ser editado.
         </p>
       </div>

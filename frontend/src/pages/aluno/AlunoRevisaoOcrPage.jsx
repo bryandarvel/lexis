@@ -1,3 +1,4 @@
+import Botao from '../../components/base/Botao.jsx'
 import {
   useEffect,
   useReducer,
@@ -30,9 +31,6 @@ import {
 } from '../../utils/ocr-revisao.js'
 
 const etapaAtual = descreverEtapaAtual(PASSOS_ENVIO_FOTO)
-
-const classeBotaoContorno =
-  'rounded-lg border border-[var(--aluno-borda-campo)] bg-lexis-900 text-[13px] font-semibold leading-[18px] text-lexis-100 transition-colors hover:bg-[var(--aluno-neutro-fundo)] disabled:cursor-not-allowed disabled:opacity-55'
 
 function IconeConcluido() {
   return (
@@ -75,7 +73,7 @@ function EtapasEnvioFoto() {
       aria-label="Etapas do envio por foto"
       className="mt-[23px]"
     >
-      <ol className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg border border-[var(--surface-border)] bg-lexis-900 px-[18px] py-[14px] sm:flex sm:flex-wrap sm:gap-x-0 sm:gap-y-2">
+      <ol className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-controle border border-[var(--surface-border)] bg-superficie px-[18px] py-[14px] sm:flex sm:flex-wrap sm:gap-x-0 sm:gap-y-2">
         {PASSOS_ENVIO_FOTO.map((passo, indice) => {
           const concluido = passo.estado === 'concluido'
           const situacao = {
@@ -98,8 +96,8 @@ function EtapasEnvioFoto() {
                 aria-hidden="true"
                 className={`flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-medium leading-[17px] ${
                   concluido
-                    ? 'bg-[var(--aluno-sucesso)] text-lexis-900'
-                    : 'bg-[var(--aluno-trilho)] text-lexis-200'
+                    ? 'bg-[var(--aluno-sucesso)] text-superficie'
+                    : 'bg-[var(--aluno-trilho)] text-texto-suave'
                 }`}
               >
                 {concluido ? (
@@ -111,8 +109,8 @@ function EtapasEnvioFoto() {
               <span
                 className={`text-sm leading-[22px] ${
                   concluido
-                    ? 'text-lexis-100'
-                    : 'text-lexis-200'
+                    ? 'text-texto'
+                    : 'text-texto-suave'
                 }`}
               >
                 {passo.rotulo}
@@ -156,23 +154,23 @@ function FotoEnviada({
   return (
     <section
       aria-labelledby="titulo-foto-enviada"
-      className="aluno-elevacao-1 flex flex-col rounded-xl border border-[var(--surface-border)] bg-lexis-900 pb-8 pl-[18px] pr-5 pt-[14px]"
+      className="aluno-elevacao-1 flex flex-col rounded-cartao border border-[var(--surface-border)] bg-superficie pb-8 pl-[18px] pr-5 pt-[14px]"
     >
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h2
           id="titulo-foto-enviada"
-          className="aluno-titulo-interface text-lg font-semibold leading-6 tracking-[-0.09px] text-lexis-50"
+          className="text-lg font-semibold leading-6 tracking-[-0.09px] text-texto"
         >
           Foto enviada
         </h2>
         {imagem && (
-          <p className="min-w-0 truncate text-xs font-medium leading-[17px] text-lexis-200">
+          <p className="min-w-0 truncate text-xs font-medium leading-[17px] text-texto-suave">
             {descreverArquivo(imagem)}
           </p>
         )}
       </div>
 
-      <div className="relative mt-2 flex h-[260px] items-center justify-center overflow-hidden rounded-lg bg-[var(--aluno-trilho)] sm:h-[360px]">
+      <div className="relative mt-2 flex h-[260px] items-center justify-center overflow-hidden rounded-controle bg-[var(--aluno-trilho)] sm:h-[360px]">
         {foto.url && !indisponivel && (
           <img
             src={foto.url}
@@ -207,27 +205,26 @@ function FotoEnviada({
         {indisponivel && (
           <div className="flex flex-col items-center gap-2 px-8 text-center">
             <IconeFoto />
-            <p className="text-sm font-semibold leading-[22px] text-lexis-50">
+            <p className="text-sm font-semibold leading-[22px] text-texto">
               Foto indisponível
             </p>
-            <p className="max-w-[360px] text-xs font-medium leading-[17px] text-lexis-200">
+            <p className="max-w-[360px] text-xs font-medium leading-[17px] text-texto-suave">
               A foto fica só na memória do navegador e não pôde ser exibida. O texto transcrito continua ao lado; se precisar conferir a imagem, envie outra foto.
             </p>
           </div>
         )}
       </div>
 
-      <p className="mt-3 text-xs font-medium leading-[17px] text-lexis-200">
+      <p className="mt-3 text-xs font-medium leading-[17px] text-texto-suave">
         A imagem nunca é recortada. Se faltar linha, envie outra foto.
       </p>
-      <button
+      <Botao
         type="button"
         onClick={onEnviarOutra}
         disabled={desabilitado}
-        className={`mt-[5px] h-9 w-full sm:w-[160px] ${classeBotaoContorno}`}
-      >
+        variante="secundario" tamanho="compacto" className="mt-[5px] w-full sm:w-[160px]">
         Enviar outra foto
-      </button>
+      </Botao>
     </section>
   )
 }
@@ -383,11 +380,11 @@ export default function AlunoRevisaoOcrPage() {
       <h1
         ref={tituloRef}
         tabIndex={-1}
-        className="text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-lexis-50 outline-none"
+        className="text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-texto outline-none"
       >
         Revise a transcrição
       </h1>
-      <p className="mt-[11px] text-base leading-[25px] text-lexis-200">
+      <p className="mt-[11px] text-base leading-[25px] text-texto-suave">
         {etapaAtual} — o texto abaixo foi extraído da sua foto. Corrija o que estiver errado antes de enviar.
       </p>
 
@@ -407,18 +404,18 @@ export default function AlunoRevisaoOcrPage() {
         <section
           aria-labelledby="titulo-texto-extraido"
           aria-busy={salvando}
-          className="flex flex-col rounded-xl border-2 border-[var(--color-brand-accent)] bg-lexis-900 pb-4 pl-4 pr-5 pt-3"
+          className="flex flex-col rounded-cartao border-2 border-[var(--color-brand-accent)] bg-superficie pb-4 pl-4 pr-5 pt-3"
         >
           <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
             <h2
               id="titulo-texto-extraido"
-              className="aluno-titulo-interface text-lg font-semibold leading-6 tracking-[-0.09px] text-lexis-50"
+              className="text-lg font-semibold leading-6 tracking-[-0.09px] text-texto"
             >
               Texto extraído — editável
             </h2>
             <p
               id="extensao-transcricao"
-              className="text-xs font-medium leading-[17px] text-lexis-200"
+              className="text-xs font-medium leading-[17px] text-texto-suave"
             >
               {descreverExtensao(texto)}
             </p>
@@ -433,12 +430,12 @@ export default function AlunoRevisaoOcrPage() {
             aria-labelledby="titulo-texto-extraido"
             aria-describedby="extensao-transcricao orientacao-transcricao"
             aria-invalid={Boolean(erro)}
-            className="font-editorial mt-2.5 h-[360px] w-full resize-none rounded-lg border border-[var(--aluno-borda-campo)] bg-[var(--aluno-neutro-fundo)] p-3 text-[17px] leading-8 text-lexis-100 outline-none read-only:cursor-wait"
+            className="fonte-redacao mt-2.5 h-[360px] w-full resize-none rounded-controle border border-[var(--aluno-borda-campo)] bg-[var(--aluno-neutro-fundo)] p-3 text-[17px] leading-8 text-texto outline-none read-only:cursor-wait"
           />
 
           <p
             id="orientacao-transcricao"
-            className="mt-3.5 text-xs font-medium leading-[17px] text-lexis-200"
+            className="mt-3.5 text-xs font-medium leading-[17px] text-texto-suave"
           >
             A transcrição automática pode conter erros. Nada é salvo até você aceitar.
             {substituiRascunho &&
@@ -454,32 +451,30 @@ export default function AlunoRevisaoOcrPage() {
           {erro && (
             <p
               role="alert"
-              className="mt-3 rounded-lg bg-[var(--aluno-neutro-fundo)] px-3.5 py-2.5 text-sm font-medium leading-[22px] text-[var(--aluno-erro)]"
+              className="mt-3 rounded-controle bg-[var(--aluno-neutro-fundo)] px-3.5 py-2.5 text-sm font-medium leading-[22px] text-[var(--aluno-erro)]"
             >
               {erro}
             </p>
           )}
 
           <div className="mt-[11px] flex flex-wrap items-center justify-between gap-3">
-            <button
+            <Botao
               type="button"
               onClick={() => voltarAoEditor()}
               disabled={salvando}
               aria-describedby="ajuda-voltar"
-              className={`h-[42px] w-full sm:w-[160px] ${classeBotaoContorno}`}
-            >
+              variante="secundario" className="w-full sm:w-[160px]">
               Voltar
-            </button>
-            <button
+            </Botao>
+            <Botao
               type="button"
               onClick={handleAceitar}
               disabled={salvando}
-              className="h-[42px] w-full rounded-lg bg-[var(--color-brand-accent)] text-[13px] font-semibold leading-[18px] text-[#ffffff] transition-[filter,opacity] hover:brightness-110 disabled:cursor-wait disabled:opacity-55 sm:w-[200px]"
-            >
+              className="w-full sm:w-[200px]">
               {salvando
                 ? 'Salvando...'
                 : 'Aceitar e continuar'}
-            </button>
+            </Botao>
           </div>
         </section>
       </div>

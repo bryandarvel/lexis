@@ -17,7 +17,7 @@ export default function AuthShell({
   footer,
 }) {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-lexis-950 px-4 py-6 text-lexis-50 sm:px-6 lg:px-8">
+    <main className="relative min-h-screen overflow-hidden bg-pagina px-4 py-6 text-texto sm:px-6 lg:px-8">
       <div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6">
         <ThemeToggle />
       </div>
@@ -26,13 +26,13 @@ export default function AuthShell({
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: 'easeOut' }}
-        className="surface-card relative mx-auto grid min-h-[calc(100vh-3rem)] w-full max-w-6xl overflow-hidden rounded-[18px] lg:grid-cols-[1.05fr_0.95fr]"
+        className="surface-card relative mx-auto grid min-h-[calc(100vh-3rem)] w-full max-w-6xl overflow-hidden rounded-dialogo lg:grid-cols-[1.05fr_0.95fr]"
       >
         <section className="surface-shell relative flex flex-col justify-between overflow-hidden border-b p-7 sm:p-10 lg:border-b-0 lg:border-r lg:p-14">
           <div className="relative">
             <Link
               to="/login"
-              className="brand-wordmark inline-flex rounded-lg text-3xl text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--surface-shell-1)]"
+              className="brand-wordmark inline-flex rounded-controle text-3xl text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--surface-shell-1)]"
               aria-label="LÉXIS — página de login"
             >
               LÉXIS
@@ -59,7 +59,7 @@ export default function AuthShell({
               >
                 <span
                   aria-hidden="true"
-                  className="h-2 w-2 shrink-0 rounded-full bg-lexis-300"
+                  className="h-2 w-2 shrink-0 rounded-full bg-[var(--foco-sobre-shell)]"
                 />
                 {recurso}
               </li>
@@ -69,19 +69,19 @@ export default function AuthShell({
 
         <section className="flex items-center p-7 sm:p-10 lg:p-14">
           <div className="w-full">
-            <span className="inline-flex rounded-full border border-lexis-300/20 bg-lexis-400/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-lexis-200">
+            <span className="inline-flex rounded-full border border-borda-forte bg-acao-suave px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-texto-suave">
               {eyebrow}
             </span>
             <h1 className="mt-5 text-3xl font-bold tracking-tight sm:text-4xl">
               {title}
             </h1>
-            <p className="mt-3 max-w-md leading-7 text-lexis-200/80">
+            <p className="mt-3 max-w-md leading-7 text-texto-suave">
               {description}
             </p>
 
             <div className="mt-8">{children}</div>
 
-            <div className="mt-7 border-t border-lexis-200/10 pt-6 text-sm text-lexis-200/80">
+            <div className="mt-7 border-t border-borda pt-6 text-sm text-texto-suave">
               {footer}
             </div>
           </div>

@@ -151,8 +151,8 @@ test('o subtítulo usa tema, datas e o nome do professor, sem prefixo de tratame
 
   assert.deepEqual(descreverOrigemFeedback({ redacao, feedback }), [
     'Desafios para a inclusão digital no Brasil',
-    'enviada em 02/08',
-    'publicada em 03/08 por Ana Lima',
+    'enviada em 02/08/2026',
+    'publicada em 03/08/2026 por Ana Lima',
   ])
   assert.deepEqual(
     descreverOrigemFeedback({
@@ -166,7 +166,7 @@ test('o subtítulo usa tema, datas e o nome do professor, sem prefixo de tratame
       redacao: { tema: { enunciado: 'Tema', turma: {} } },
       feedback,
     }),
-    ['Tema', 'publicada em 03/08'],
+    ['Tema', 'publicada em 03/08/2026'],
   )
 })
 

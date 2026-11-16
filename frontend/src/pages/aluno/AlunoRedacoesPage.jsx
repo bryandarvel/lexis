@@ -1,4 +1,6 @@
+import Etiqueta from '../../components/base/Etiqueta.jsx'
 import { useEffect, useId, useState } from 'react'
+import Botao from '../../components/base/Botao.jsx'
 import { Link } from 'react-router'
 
 import AlunoLayout from '../../layouts/AlunoLayout.jsx'
@@ -37,9 +39,7 @@ function ItemRedacao({ redacao, turmaAtualId }) {
     <li className="aluno-redacao">
       <div className="aluno-redacao-info">
         <div className="aluno-redacao-topo">
-          <span className={`aluno-selo aluno-selo-${situacao.tom}`}>
-            {situacao.rotulo}
-          </span>
+          <Etiqueta tom={situacao.tom}>{situacao.rotulo}</Etiqueta>
           {data && <span className="aluno-redacao-data">{data}</span>}
         </div>
 
@@ -174,10 +174,10 @@ export default function AlunoRedacoesPage() {
       trilha={['Minhas redações']}
     >
       <header>
-        <h1 className="text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-lexis-50">
+        <h1 className="text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-texto">
           Minhas redações
         </h1>
-        <p className="mt-[11px] text-base leading-[25px] text-lexis-200">
+        <p className="mt-[11px] text-base leading-[25px] text-texto-suave">
           Acompanhe tudo o que você escreveu, com a situação de cada texto.
         </p>
       </header>
@@ -199,39 +199,38 @@ export default function AlunoRedacoesPage() {
       {status === 'erro' && (
         <section
           role="alert"
-          className="aluno-elevacao-1 mt-[25px] max-w-[720px] rounded-[14px] border border-[var(--surface-border)] border-l-[3px] border-l-[var(--aluno-erro)] bg-lexis-900 px-6 py-5"
+          className="aluno-elevacao-1 mt-[25px] max-w-[720px] rounded-cartao border border-[var(--surface-border)] border-l-[3px] border-l-[var(--aluno-erro)] bg-superficie px-6 py-5"
         >
-          <h2 className="aluno-titulo-interface text-lg font-semibold leading-6 text-lexis-50">
+          <h2 className="text-lg font-semibold leading-6 text-texto">
             Não foi possível carregar suas redações
           </h2>
-          <p className="mt-2 text-sm leading-[22px] text-lexis-200">
+          <p className="mt-2 text-sm leading-[22px] text-texto-suave">
             Verifique sua conexão e tente novamente em instantes.
           </p>
-          <button
+          <Botao
             type="button"
             onClick={() => setTentativa((valor) => valor + 1)}
-            className="aluno-botao-primario mt-4"
-          >
+            className="mt-4">
             Tentar novamente
-          </button>
+          </Botao>
         </section>
       )}
 
       {status === 'pronto' && redacoes.length === 0 && (
-        <section className="aluno-elevacao-1 mt-[25px] max-w-[720px] rounded-[14px] border border-[var(--surface-border)] bg-lexis-900 px-6 py-6">
-          <h2 className="aluno-titulo-interface text-lg font-semibold leading-6 text-lexis-50">
+        <section className="aluno-elevacao-1 mt-[25px] max-w-[720px] rounded-cartao border border-[var(--surface-border)] bg-superficie px-6 py-6">
+          <h2 className="text-lg font-semibold leading-6 text-texto">
             Você ainda não escreveu nenhuma redação
           </h2>
-          <p className="mt-2 text-sm leading-[22px] text-lexis-200">
+          <p className="mt-2 text-sm leading-[22px] text-texto-suave">
             Quando você começar um rascunho ou enviar uma redação, ela
             aparece aqui.
           </p>
-          <Link
+          <Botao as={Link}
             to="/aluno"
-            className="aluno-botao-secundario mt-4"
+            variante="secundario" className="mt-4"
           >
             Ver propostas no painel
-          </Link>
+          </Botao>
         </section>
       )}
 
@@ -290,17 +289,16 @@ export default function AlunoRedacoesPage() {
               ))}
             </ul>
           ) : (
-            <section className="aluno-elevacao-1 mt-4 max-w-[720px] rounded-[14px] border border-[var(--surface-border)] bg-lexis-900 px-6 py-5">
-              <h2 className="aluno-titulo-interface text-base font-semibold leading-6 text-lexis-50">
+            <section className="aluno-elevacao-1 mt-4 max-w-[720px] rounded-cartao border border-[var(--surface-border)] bg-superficie px-6 py-5">
+              <h2 className="text-base font-semibold leading-6 text-texto">
                 Nenhuma redação nesta situação
               </h2>
-              <button
+              <Botao
                 type="button"
                 onClick={() => setFiltro('todas')}
-                className="aluno-botao-secundario mt-3"
-              >
+                variante="secundario" className="mt-3">
                 Mostrar todas
-              </button>
+              </Botao>
             </section>
           )}
         </>

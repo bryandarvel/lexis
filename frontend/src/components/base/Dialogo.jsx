@@ -17,6 +17,7 @@ export default function Dialogo({
   rodape,
   largo = false,
   fecharAoClicarFora = false,
+  ocupado = false,
   className = '',
 }) {
   const dialogoRef = useRef(null)
@@ -50,6 +51,7 @@ export default function Dialogo({
       ref={dialogoRef}
       aria-labelledby={idTitulo}
       aria-describedby={descricao ? idDescricao : undefined}
+      aria-busy={ocupado || undefined}
       className={`dialogo-base ${largo ? 'dialogo-base--largo' : ''} ${className}`}
       onCancel={(evento) => {
         evento.preventDefault()
@@ -67,9 +69,9 @@ export default function Dialogo({
             {titulo}
           </h2>
           {descricao && (
-            <p id={idDescricao} className="dialogo-base__descricao">
+            <div id={idDescricao} className="dialogo-base__descricao">
               {descricao}
-            </p>
+            </div>
           )}
           {children && <div className="dialogo-base__corpo">{children}</div>}
           {rodape && <div className="dialogo-base__rodape">{rodape}</div>}

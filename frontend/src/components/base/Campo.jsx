@@ -69,7 +69,7 @@ export default function Campo({
       </label>
       {controle}
       {error ? (
-        <p id={idErro} className="text-sm leading-5 text-erro">
+        <p id={idErro} role="alert" className="text-sm leading-5 text-erro">
           {error}
         </p>
       ) : hint ? (

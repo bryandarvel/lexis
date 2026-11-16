@@ -1,8 +1,9 @@
+import Botao from '../../components/base/Botao.jsx'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 
-import AuthField from '../../components/auth/AuthField.jsx'
-import AuthNotice from '../../components/auth/AuthNotice.jsx'
+import Campo from '../../components/base/Campo.jsx'
+import Aviso from '../../components/base/Aviso.jsx'
 import AuthShell from '../../components/auth/AuthShell.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
 import { interpretarErroApi } from '../../utils/api-error.js'
@@ -139,7 +140,7 @@ export default function CadastroPage() {
           Já possui uma conta?{' '}
           <Link
             to="/login"
-            className="font-bold text-lexis-200 underline decoration-lexis-400/60 underline-offset-4 transition hover:text-lexis-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lexis-300"
+            className="font-bold text-texto-suave underline decoration-acao/60 underline-offset-4 transition hover:text-texto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foco"
           >
             Voltar para o login
           </Link>
@@ -152,9 +153,9 @@ export default function CadastroPage() {
         noValidate
         aria-busy={enviando}
       >
-        <AuthNotice mensagem={erroGeral} />
+        {erroGeral && <Aviso tipo="erro">{erroGeral}</Aviso>}
 
-        <AuthField
+        <Campo
           id="nome"
           name="nome"
           label="Nome completo"
@@ -168,7 +169,7 @@ export default function CadastroPage() {
           maxLength={120}
         />
 
-        <AuthField
+        <Campo
           id="email"
           name="email"
           label="E-mail"
@@ -185,7 +186,7 @@ export default function CadastroPage() {
         />
 
         <fieldset className="space-y-3">
-          <legend className="text-sm font-semibold text-lexis-100">
+          <legend className="text-sm font-semibold text-texto">
             Seu perfil
           </legend>
           <div className="grid grid-cols-2 gap-3">
@@ -195,10 +196,10 @@ export default function CadastroPage() {
             ].map(([valor, rotulo]) => (
               <label
                 key={valor}
-                className={`cursor-pointer rounded-xl border px-4 py-3 text-center text-sm font-bold transition focus-within:ring-4 focus-within:ring-lexis-300/15 ${
+                className={`cursor-pointer rounded-cartao border px-4 py-3 text-center text-sm font-bold transition focus-within:ring-4 focus-within:ring-foco/20 ${
                   dados.papel === valor
-                    ? 'border-lexis-300 bg-lexis-400/15 text-lexis-50'
-                    : 'border-lexis-300/20 bg-lexis-950/40 text-lexis-200 hover:border-lexis-300/45'
+                    ? 'border-acao bg-acao-suave text-texto'
+                    : 'border-borda-forte bg-pagina/40 text-texto-suave hover:border-borda-forte'
                 }`}
               >
                 <input
@@ -215,7 +216,7 @@ export default function CadastroPage() {
           </div>
         </fieldset>
 
-        <AuthField
+        <Campo
           id="senha"
           name="senha"
           label="Senha"
@@ -231,7 +232,7 @@ export default function CadastroPage() {
           maxLength={72}
         />
 
-        <AuthField
+        <Campo
           id="confirmarSenha"
           name="confirmarSenha"
           label="Confirme sua senha"
@@ -245,19 +246,14 @@ export default function CadastroPage() {
           maxLength={72}
         />
 
-        <button
+        <Botao
           type="submit"
-          disabled={enviando}
-          className="flex w-full items-center justify-center gap-3 rounded-[10px] bg-lexis-400 px-5 py-3.5 font-bold text-[color:var(--text-on-action-blue)] transition-colors hover:bg-lexis-500 disabled:cursor-not-allowed disabled:opacity-65"
+          className="min-h-12 w-full"
+          carregando={enviando}
+          rotuloCarregando="Criando conta..."
         >
-          {enviando && (
-            <span
-              aria-hidden="true"
-              className="h-4 w-4 animate-spin rounded-full border-2 border-current/25 border-t-current motion-reduce:animate-none"
-            />
-          )}
-          {enviando ? 'Criando conta...' : 'Criar conta'}
-        </button>
+          Criar conta
+        </Botao>
       </form>
     </AuthShell>
   )

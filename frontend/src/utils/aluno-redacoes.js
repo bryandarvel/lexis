@@ -1,3 +1,5 @@
+import { converterData, formatarData } from './formatar-data.js'
+
 // Situação, filtro, ordenação e resumo da lista "Minhas redações". O contrato
 // vem de GET /api/aluno/redacoes: status RASCUNHO, ENVIADA ou AVALIADA, mais
 // notaPublicada e publicadoEm (null enquanto não há correção publicada).
@@ -20,16 +22,6 @@ const SITUACOES = {
   RASCUNHO: { rotulo: 'Rascunho', tom: 'neutro' },
   ENVIADA: { rotulo: 'Aguardando correção', tom: 'atencao' },
   AVALIADA: { rotulo: 'Corrigida', tom: 'sucesso' },
-}
-
-function converterData(valor) {
-  if (!valor) {
-    return null
-  }
-
-  const data = new Date(valor)
-
-  return Number.isNaN(data.getTime()) ? null : data
 }
 
 // AVALIADA sem nota publicada é possível no contrato: a correção existe, mas a
@@ -198,9 +190,7 @@ export function formatarDataRedacao(redacao) {
     return null
   }
 
-  const texto = new Intl.DateTimeFormat('pt-BR', {
-    dateStyle: 'short',
-  }).format(data)
+  const texto = formatarData(data, 'data')
 
   return redacao?.enviadaEm
     ? `Enviada em ${texto}`

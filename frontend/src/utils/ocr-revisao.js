@@ -1,3 +1,5 @@
+import { formatarNumero } from './formatar-numero.js'
+
 export const PASSOS_ENVIO_FOTO = [
   {
     rotulo: 'Foto enviada',
@@ -50,12 +52,10 @@ export function formatarTamanhoArquivo(bytes) {
   }
 
   if (bytes >= 1024 * 1024) {
-    return `${(bytes / (1024 * 1024)).toLocaleString('pt-BR', {
-      maximumFractionDigits: 1,
-    })} MB`
+    return `${formatarNumero(bytes / (1024 * 1024), { casas: 1 })} MB`
   }
 
-  return `${Math.max(1, Math.round(bytes / 1024)).toLocaleString('pt-BR')} KB`
+  return `${formatarNumero(Math.max(1, Math.round(bytes / 1024)))} KB`
 }
 
 export function descreverArquivo(arquivo) {

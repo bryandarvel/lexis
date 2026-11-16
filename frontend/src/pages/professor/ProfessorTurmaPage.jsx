@@ -1,6 +1,14 @@
+import { formatarData } from '../../utils/formatar-data.js'
+import Etiqueta from '../../components/base/Etiqueta.jsx'
+import EstadoVazio from '../../components/base/EstadoVazio.jsx'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import { Link, useParams } from 'react-router'
+import Aviso from '../../components/base/Aviso.jsx'
+import Botao from '../../components/base/Botao.jsx'
+import Campo from '../../components/base/Campo.jsx'
+import Dialogo from '../../components/base/Dialogo.jsx'
+import DialogoConfirmacao from '../../components/base/DialogoConfirmacao.jsx'
 import ProfessorWorkspaceLayout from '../../layouts/ProfessorWorkspaceLayout.jsx'
 import { listarTemasDaTurma } from '../../services/temas.js'
 import {
@@ -22,26 +30,11 @@ import {
 import {
   descreverSituacaoAluno,
   descreverSituacaoTurma,
-  formatarDataEntrada,
   ordenarAlunosDaTurma,
   resumirAlunosDaTurma,
 } from '../../utils/professor-turma.js'
 import './professor-turmas.css'
 import './professor-turma.css'
-
-function formatarPrazo(valor) {
-  if (!valor) {
-    return 'Prazo indisponível'
-  }
-
-  const data = new Date(valor)
-
-  if (Number.isNaN(data.getTime())) {
-    return 'Prazo indisponível'
-  }
-
-  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium', timeStyle: 'short' }).format(data)
-}
 
 function obterStatusTema(tema) {
   if (!tema.ativo) {
@@ -57,38 +50,10 @@ function obterStatusTema(tema) {
   return 'Recebendo redações'
 }
 
-// Mesmo padrão do NovaTurmaDialog: dialog nativo, Esc tratado e foco devolvido
-// a quem abriu.
-function useDialogoModal(onClose, enviandoRef) {
-  const dialogRef = useRef(null)
-
-  useEffect(() => {
-    const focoAnterior = document.activeElement
-    const dialog = dialogRef.current
-    dialog.showModal()
-
-    return () => {
-      dialog.close()
-      focoAnterior?.focus?.()
-    }
-  }, [])
-
-  const cancelar = (event) => {
-    event.preventDefault()
-    if (!enviandoRef.current) onClose()
-  }
-
-  return { dialogRef, cancelar }
-}
-
 function RenomearTurmaDialog({ nomeAtual, enviando, erro, onSave, onClose }) {
-  const enviandoRef = useRef(false)
   const nomeRef = useRef(null)
   const [nome, setNome] = useState(nomeAtual)
   const [erroCampo, setErroCampo] = useState('')
-  const { dialogRef, cancelar } = useDialogoModal(onClose, enviandoRef)
-
-  enviandoRef.current = enviando
 
   useEffect(() => {
     if (!enviando && (erro || erroCampo)) nomeRef.current?.focus()
@@ -108,66 +73,59 @@ function RenomearTurmaDialog({ nomeAtual, enviando, erro, onSave, onClose }) {
   }
 
   return (
-    <dialog ref={dialogRef} className="professor-panel-dialog turma-dialogo class-create-dialog" aria-labelledby="turma-renomear-title" onCancel={cancelar}>
-      <h2 id="turma-renomear-title">Renomear turma</h2>
-      <p>O código de acesso, os alunos e os temas não mudam.</p>
-      <form onSubmit={enviar} noValidate aria-busy={enviando}>
-        <label htmlFor="turma-nome">Nome da turma</label>
-        <input
+    <Dialogo
+      aberto
+      onFechar={() => { if (!enviando) onClose() }}
+      titulo="Renomear turma"
+      descricao="O código de acesso, os alunos e os temas não mudam."
+    >
+      <form onSubmit={enviar} noValidate aria-busy={enviando} className="space-y-4">
+        <Campo
           ref={nomeRef}
           id="turma-nome"
-          className="class-input"
+          label="Nome da turma"
           value={nome}
           maxLength={100}
           autoComplete="off"
           disabled={enviando}
           required
-          aria-invalid={Boolean(erroCampo)}
-          aria-describedby={erroCampo ? 'turma-nome-error' : 'turma-nome-hint'}
+          error={erroCampo}
+          hint="Entre 2 e 100 caracteres."
           onChange={(event) => { setNome(event.target.value); setErroCampo('') }}
         />
-        {erroCampo
-          ? <p id="turma-nome-error" className="class-field-error">{erroCampo}</p>
-          : <p id="turma-nome-hint">Entre 2 e 100 caracteres.</p>}
-        {erro && <p className="class-field-error" role="alert">{erro}</p>}
-        <div className="panel-dialog-actions">
-          <button type="button" className="panel-soft-button" disabled={enviando} onClick={onClose}>Cancelar</button>
-          <button type="submit" className="panel-primary-button" disabled={enviando}>{enviando ? 'Salvando...' : 'Salvar nome'}</button>
+        {erro && <Aviso tipo="erro">{erro}</Aviso>}
+        <div className="dialogo-base__rodape">
+          <Botao variante="secundario" disabled={enviando} onClick={onClose}>Cancelar</Botao>
+          <Botao type="submit" carregando={enviando} rotuloCarregando="Salvando...">Salvar nome</Botao>
         </div>
       </form>
-    </dialog>
+    </Dialogo>
   )
 }
 
 function ConfirmarAcaoDialog({ titulo, efeitos, rotulo, rotuloEnviando, enviando, erro, onConfirm, onClose, perigo = true }) {
-  const enviandoRef = useRef(false)
-  const { dialogRef, cancelar } = useDialogoModal(onClose, enviandoRef)
-
-  enviandoRef.current = enviando
-
   return (
-    <dialog ref={dialogRef} className="professor-panel-dialog turma-dialogo" aria-labelledby="turma-confirmar-title" aria-describedby="turma-confirmar-efeitos" onCancel={cancelar}>
-      <h2 id="turma-confirmar-title">{titulo}</h2>
-      <ul id="turma-confirmar-efeitos" className="turma-efeitos">
-        {efeitos.map((efeito) => <li key={efeito}>{efeito}</li>)}
-      </ul>
-      {erro && <p className="class-field-error" role="alert">{erro}</p>}
-      <div className="panel-dialog-actions">
-        <button type="button" className="panel-soft-button" disabled={enviando} onClick={onClose}>Cancelar</button>
-        <button type="button" className={`panel-primary-button${perigo ? ' turma-botao-perigo' : ''}`} disabled={enviando} onClick={onConfirm}>
-          {enviando ? rotuloEnviando : rotulo}
-        </button>
-      </div>
-    </dialog>
+    <DialogoConfirmacao
+      aberto
+      titulo={titulo}
+      efeitos={efeitos}
+      confirmarRotulo={enviando ? rotuloEnviando : rotulo}
+      perigo={perigo}
+      ocupado={enviando}
+      onConfirmar={onConfirm}
+      onCancelar={onClose}
+    >
+      {erro && <Aviso tipo="erro">{erro}</Aviso>}
+    </DialogoConfirmacao>
   )
 }
 
-function TemaCard({ tema, indice }) {
+function TemaCard({ tema }) {
   const redacoes = tema.quantidadeRedacoes ?? 0
   const criterios = tema.criterios?.length ?? 0
 
   return (
-    <li className={`class-card class-accent-${tema.ativo ? indice % 3 : 'archived'}`}>
+    <li className="class-card">
       <Link to={`/professor/temas/${tema.id}`} className="class-card-link" aria-label={`Abrir tema ${tema.enunciado}`}>
         <div className="class-card-info">
           <h3>{tema.enunciado}</h3>
@@ -177,11 +135,11 @@ function TemaCard({ tema, indice }) {
             <span aria-hidden="true"> · </span>
             {criterios} {criterios === 1 ? 'critério' : 'critérios'}
             <span aria-hidden="true"> · </span>
-            Prazo: {formatarPrazo(tema.prazoEntrega)}
+            Prazo: {formatarData(tema.prazoEntrega, 'dataHora', { vazio: 'Prazo indisponível' })}
           </p>
         </div>
         <div className="class-card-actions">
-          <span className="class-badge">{obterStatusTema(tema)}</span>
+          <Etiqueta className="min-w-[120px] justify-center">{obterStatusTema(tema)}</Etiqueta>
           <span className="class-open" aria-hidden="true">Abrir ›</span>
         </div>
       </Link>
@@ -387,9 +345,9 @@ export default function ProfessorTurmaPage() {
         transition={{ duration: .22 }}
         aria-busy={pagina.status === 'carregando'}
       >
-        <Link to="/professor/turmas" className="panel-soft-button turma-back">
+        <Botao as={Link} to="/professor/turmas" variante="secundario" className="turma-back">
           <span aria-hidden="true">←</span>&nbsp;Voltar às turmas
-        </Link>
+        </Botao>
 
         {pagina.status === 'carregando' && (
           <>
@@ -411,8 +369,8 @@ export default function ProfessorTurmaPage() {
               <h2>Não foi possível abrir a turma</h2>
               <p>{pagina.mensagem}</p>
               <div className="turma-acoes">
-                <button type="button" className="panel-primary-button" onClick={() => setTentativa((valor) => valor + 1)}>Tentar novamente</button>
-                <Link className="panel-soft-button" to="/professor/turmas">Voltar às turmas</Link>
+                <Botao type="button" onClick={() => setTentativa((valor) => valor + 1)}>Tentar novamente</Botao>
+                <Botao as={Link} variante="secundario" to="/professor/turmas">Voltar às turmas</Botao>
               </div>
             </section>
           </>
@@ -429,9 +387,9 @@ export default function ProfessorTurmaPage() {
                 </p>
               </div>
               {situacao.ativa && (
-                <Link to={`/professor/turmas/${turmaId}/temas/novo`} className="panel-primary-button turma-create">
+                <Botao as={Link} to={`/professor/turmas/${turmaId}/temas/novo`} className="turma-create">
                   Criar tema de redação
-                </Link>
+                </Botao>
               )}
             </div>
 
@@ -442,9 +400,9 @@ export default function ProfessorTurmaPage() {
                 <dt>Código de acesso</dt>
                 <dd>
                   <span className="turma-codigo">{turma.codigoAcesso}</span>
-                  <button type="button" className="panel-soft-button turma-copiar" onClick={copiarCodigo}>
+                  <Botao type="button" variante="secundario" className="turma-copiar" onClick={copiarCodigo}>
                     Copiar
-                  </button>
+                  </Botao>
                 </dd>
               </div>
               <div className="panel-stat">
@@ -463,20 +421,20 @@ export default function ProfessorTurmaPage() {
                 <>
                   <p>Renomear a turma, gerar um novo código de acesso ou arquivar a turma.</p>
                   <div className="turma-acoes">
-                    <button type="button" className="panel-soft-button" onClick={() => setDialogo({ tipo: 'renomear' })}>Renomear turma</button>
-                    <button type="button" className="panel-soft-button" onClick={() => setDialogo({ tipo: 'regenerar' })}>Gerar novo código</button>
-                    <button type="button" className="panel-soft-button turma-botao-perigo" onClick={() => setDialogo({ tipo: 'arquivar' })}>Arquivar turma</button>
+                    <Botao type="button" variante="secundario" onClick={() => setDialogo({ tipo: 'renomear' })}>Renomear turma</Botao>
+                    <Botao type="button" variante="secundario" onClick={() => setDialogo({ tipo: 'regenerar' })}>Gerar novo código</Botao>
+                    <Botao type="button" variante="perigo" onClick={() => setDialogo({ tipo: 'arquivar' })}>Arquivar turma</Botao>
                   </div>
                 </>
               ) : (
                 <>
                   <p>
-                    Esta turma está arquivada desde {formatarDataEntrada(turma.arquivadaEm)}. As matrículas
+                    Esta turma está arquivada desde {formatarData(turma.arquivadaEm, 'data', { vazio: 'Data indisponível' })}. As matrículas
                     foram encerradas e a turma não pode ser alterada enquanto estiver arquivada. As redações
                     e as correções continuam disponíveis.
                   </p>
                   <div className="turma-acoes">
-                    <button type="button" className="panel-primary-button" onClick={() => setDialogo({ tipo: 'reabrir' })}>Reabrir turma</button>
+                    <Botao type="button" onClick={() => setDialogo({ tipo: 'reabrir' })}>Reabrir turma</Botao>
                   </div>
                 </>
               )}
@@ -500,15 +458,16 @@ export default function ProfessorTurmaPage() {
                 <div className="panel-error" role="alert">
                   <h3>Não foi possível carregar os alunos</h3>
                   <p>{alunos.mensagem}</p>
-                  <button type="button" className="panel-primary-button" onClick={carregarAlunos}>Tentar novamente</button>
+                  <Botao type="button" onClick={carregarAlunos}>Tentar novamente</Botao>
                 </div>
               )}
 
               {alunos.status === 'indisponivel' && (
-                <div className="panel-empty">
-                  <h3>Lista indisponível em turma arquivada</h3>
-                  <p>As matrículas foram encerradas no arquivamento.</p>
-                </div>
+                <EstadoVazio
+                  nivel={3}
+                  titulo="Lista indisponível em turma arquivada"
+                  descricao="As matrículas foram encerradas no arquivamento."
+                />
               )}
 
               {alunos.status === 'pronto' && (alunos.lista.length ? (
@@ -521,28 +480,29 @@ export default function ProfessorTurmaPage() {
                           <strong>{matricula.aluno?.nome ?? 'Aluno'}</strong>
                           <span>{matricula.aluno?.email}</span>
                           <span>
-                            Entrou em {formatarDataEntrada(matricula.iniciadaEm)}
+                            Entrou em {formatarData(matricula.iniciadaEm, 'data', { vazio: 'Data indisponível' })}
                             <span aria-hidden="true"> · </span>
                             <span className={estado.atencao ? 'attention' : undefined}>{estado.rotulo}</span>
                           </span>
                         </div>
-                        <button
+                        <Botao
                           type="button"
-                          className="panel-soft-button turma-botao-perigo"
+                          variante="perigo"
                           onClick={() => setDialogo({ tipo: 'desvincular', matricula })}
                           aria-label={`Desvincular ${matricula.aluno?.nome ?? 'aluno'} da turma`}
                         >
                           Desvincular
-                        </button>
+                        </Botao>
                       </li>
                     )
                   })}
                 </ul>
               ) : (
-                <div className="panel-empty">
-                  <h3>Nenhum aluno nesta turma</h3>
-                  <p>Compartilhe o código <strong>{turma.codigoAcesso}</strong> para os alunos entrarem.</p>
-                </div>
+                <EstadoVazio
+                  nivel={3}
+                  titulo="Nenhum aluno nesta turma"
+                  descricao={<>Compartilhe o código <strong className="codigo-turma">{turma.codigoAcesso}</strong> para os alunos entrarem.</>}
+                />
               ))}
             </section>
 
@@ -551,12 +511,10 @@ export default function ProfessorTurmaPage() {
               <p>Acompanhe os prazos e a quantidade de redações recebidas em cada proposta.</p>
               {pagina.temas.length ? (
                 <ul className="classes-grid">
-                  {pagina.temas.map((tema, indice) => <TemaCard key={tema.id} tema={tema} indice={indice} />)}
+                  {pagina.temas.map((tema) => <TemaCard key={tema.id} tema={tema} />)}
                 </ul>
               ) : (
-                <div className="panel-empty">
-                  <h3>Esta turma ainda não possui temas de redação.</h3>
-                </div>
+                <EstadoVazio nivel={3} titulo="Esta turma ainda não possui temas de redação." />
               )}
             </section>
 

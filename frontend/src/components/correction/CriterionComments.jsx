@@ -1,3 +1,4 @@
+import Etiqueta from '../base/Etiqueta.jsx'
 import { comentarioEditavel, tomCriterio } from '../../utils/professor-correction.js'
 
 export default function CriterionComments({ criterios, analise, form, disabled, onChange }) {
@@ -10,7 +11,7 @@ export default function CriterionComments({ criterios, analise, form, disabled, 
       const { texto, sugerido } = comentarioEditavel(form, analise, c)
       return <article key={c.id} id={`review-criterion-${c.ordem}`} tabIndex={-1} className={`review-card review-comment review-tone-${tomCriterio(c, indice)}`}>
         <div className="review-comment-heading"><h3>{c.nome}</h3>
-          <span className={`review-badge ${!sugerido && texto ? 'human' : ''}`}>{sugerido ? 'Sugestão da IA' : texto ? 'Texto do professor' : 'Sem comentário'}</span>
+          <Etiqueta tom={!sugerido && texto ? 'sucesso' : 'acao'}>{sugerido ? 'Sugestão da IA' : texto ? 'Texto do professor' : 'Sem comentário'}</Etiqueta>
         </div>
         <textarea id={`review-comment-${c.id}`} aria-label={`Comentário: ${c.nome}`} aria-describedby={`review-comment-hint-${c.id}`} rows={5} maxLength={5000} value={texto} disabled={disabled}
           className={sugerido ? 'review-suggestion' : undefined}

@@ -5,11 +5,11 @@ export default function RouteLoading() {
     <main
       role="status"
       aria-live="polite"
-      className="flex min-h-screen items-center justify-center bg-lexis-950 text-lexis-50"
+      className="flex min-h-screen items-center justify-center bg-pagina text-texto"
     >
       <div className="flex flex-col items-center gap-5">
         <motion.div
-          className="h-12 w-12 rounded-full border-4 border-lexis-700 border-t-lexis-300"
+          className="h-12 w-12 rounded-full border-4 border-borda border-t-acao"
           animate={{ rotate: 360 }}
           transition={{
             duration: 0.9,
@@ -18,7 +18,7 @@ export default function RouteLoading() {
           }}
         />
 
-        <p className="text-sm font-medium text-lexis-200">
+        <p className="text-sm font-medium text-texto-suave">
           Verificando sua sessão...
         </p>
       </div>

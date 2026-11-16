@@ -1,3 +1,6 @@
+import { formatarData } from '../../utils/formatar-data.js'
+import { formatarNumero } from '../../utils/formatar-numero.js'
+import Botao from '../../components/base/Botao.jsx'
 import {
   useCallback,
   useEffect,
@@ -26,17 +29,12 @@ import {
 } from '../../services/redacoes.js'
 import { guardarRevisaoOcr } from '../../services/revisao-ocr-pendente.js'
 import { obterTemaDoAluno } from '../../services/temas.js'
-import {
-  descreverPrazoDoEditor,
-  formatarDiaMes,
-} from '../../utils/aluno-painel.js'
+import { descreverPrazoDoEditor } from '../../utils/aluno-painel.js'
 import { interpretarErroApi } from '../../utils/api-error.js'
 import {
   aplicarSugestaoLinguistica,
   descreverExtensao,
   encontrarRedacaoPorTema,
-  formatarHorario,
-  formatarPrazoCurto,
   ITENS_CONFERENCIA_ENVIO,
   LIMITE_CARACTERES_REDACAO,
   mensagemRevisaoLinguistica,
@@ -65,14 +63,13 @@ const REVISAO_LINGUISTICA_INICIAL = {
 }
 
 const classeCartao =
-  'aluno-elevacao-1 rounded-xl border border-[var(--surface-border)] bg-lexis-900'
+  'aluno-elevacao-1 rounded-cartao border border-[var(--surface-border)] bg-superficie'
 
 function descreverEntrega(redacao) {
-  const dia = formatarDiaMes(redacao?.enviadaEm)
-  const horario = formatarHorario(redacao?.enviadaEm)
+  const quando = formatarData(redacao?.enviadaEm, 'dataHora')
 
-  return dia && horario
-    ? `Enviada em ${dia} às ${horario}`
+  return quando
+    ? `Enviada em ${quando}`
     : 'Redação enviada'
 }
 
@@ -102,7 +99,7 @@ function AbasModoEnvio({
     <div
       role="tablist"
       aria-label="Forma de envio da redação"
-      className="flex w-full rounded-lg bg-[var(--aluno-trilho)] p-1 sm:w-auto"
+      className="flex w-full rounded-controle bg-[var(--aluno-trilho)] p-1 sm:w-auto"
     >
       {ABAS.map((aba, indice) => {
         const ativa = aba.id === abaAtiva
@@ -123,10 +120,10 @@ function AbasModoEnvio({
             onKeyDown={(evento) =>
               handleKeyDown(evento, indice)
             }
-            className={`h-9 flex-1 rounded-md px-3 text-[13px] font-semibold leading-[18px] transition-colors sm:w-[164px] sm:flex-none ${
+            className={`h-9 flex-1 rounded-controle px-3 text-[13px] font-semibold leading-[18px] transition-colors sm:w-[164px] sm:flex-none ${
               ativa
-                ? 'bg-lexis-900 text-[var(--aluno-acao-suave-texto)] shadow-[0_1px_2px_rgba(0,32,73,0.08)]'
-                : 'text-lexis-200 hover:text-lexis-50'
+                ? 'bg-superficie text-[var(--aluno-acao-suave-texto)] shadow-[0_1px_2px_rgba(0,32,73,0.08)]'
+                : 'text-texto-suave hover:text-texto'
             }`}
           >
             {aba.rotulo}
@@ -142,17 +139,17 @@ function IndicadorSalvamento({
   podeSalvar,
   onSalvarAgora,
 }) {
-  const horario = formatarHorario(salvamento.salvoEm)
+  const quando = formatarData(salvamento.salvoEm, 'dataHora')
   const estados = {
     salvando: {
       texto: 'Salvando...',
       classe:
-        'bg-[var(--aluno-neutro-fundo)] text-lexis-200',
+        'bg-[var(--aluno-neutro-fundo)] text-texto-suave',
     },
     alterado: {
       texto: 'Alterações ainda não salvas',
       classe:
-        'bg-[var(--aluno-neutro-fundo)] text-lexis-200',
+        'bg-[var(--aluno-neutro-fundo)] text-texto-suave',
     },
     erro: {
       texto: 'Não foi possível salvar',
@@ -162,16 +159,16 @@ function IndicadorSalvamento({
   }
   const estado =
     estados[salvamento.status] ??
-    (horario
+    (quando
       ? {
-          texto: `Salvo no servidor às ${horario}`,
+          texto: `Salvo no servidor em ${quando}`,
           classe:
             'bg-[var(--aluno-sucesso-fundo)] text-[var(--aluno-sucesso)]',
         }
       : {
           texto: 'Salvamento automático ativo',
           classe:
-            'bg-[var(--aluno-neutro-fundo)] text-lexis-200',
+            'bg-[var(--aluno-neutro-fundo)] text-texto-suave',
         })
 
   return (
@@ -215,22 +212,22 @@ function EditorCard({
   return (
     <section
       aria-labelledby="titulo-editor"
-      className={`${classeCartao} flex min-h-[500px] flex-col px-6 pb-[14px] pt-4`}
+      className={`${classeCartao} superficie-folha flex min-h-[500px] flex-col px-6 pb-[14px] pt-4`}
     >
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-[var(--surface-border)] pb-2">
         <h2
           id="titulo-editor"
-          className="aluno-titulo-interface text-lg font-semibold leading-6 tracking-[-0.09px] text-lexis-50"
+          className="text-lg font-semibold leading-6 tracking-[-0.09px] text-texto"
         >
           Sua redação
         </h2>
         <p
           id="contagem-redacao"
-          className="text-xs font-medium leading-[17px] text-lexis-200"
+          className="text-xs font-medium leading-[17px] text-texto-suave"
         >
           {extensao}
           {proximoDoLimite &&
-            ` · ${texto.length.toLocaleString('pt-BR')}/${LIMITE_CARACTERES_REDACAO.toLocaleString('pt-BR')} caracteres`}
+            ` · ${formatarNumero(texto.length)}/${formatarNumero(LIMITE_CARACTERES_REDACAO)} caracteres`}
         </p>
       </div>
 
@@ -251,7 +248,7 @@ function EditorCard({
         readOnly={somenteLeitura}
         aria-describedby="contagem-redacao status-salvamento"
         placeholder="Comece a desenvolver sua redação..."
-        className="font-editorial mt-[17px] min-h-[348px] w-full flex-1 resize-none bg-transparent text-[17px] leading-8 text-lexis-100 outline-none placeholder:text-lexis-200 read-only:cursor-default"
+        className="fonte-redacao mt-[17px] min-h-[348px] w-full flex-1 resize-none bg-transparent text-[17px] leading-8 text-texto outline-none placeholder:text-texto-fraco read-only:cursor-default"
       />
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--surface-border)] pt-[9px]">
@@ -271,33 +268,33 @@ function CartaoEntrega({ redacao }) {
     >
       <h2
         id="titulo-entrega"
-        className="aluno-titulo-interface text-lg font-semibold leading-6 tracking-[-0.09px] text-lexis-50"
+        className="text-lg font-semibold leading-6 tracking-[-0.09px] text-texto"
       >
         Entrega
       </h2>
       <dl className="mt-3 space-y-3 text-sm leading-[22px]">
         <div>
-          <dt className="text-xs font-medium leading-[17px] text-lexis-200">
+          <dt className="text-xs font-medium leading-[17px] text-texto-suave">
             Situação
           </dt>
-          <dd className="text-lexis-100">
+          <dd className="text-texto">
             {avaliada
               ? 'Corrigida pelo professor'
               : 'Em correção'}
           </dd>
         </div>
         <div>
-          <dt className="text-xs font-medium leading-[17px] text-lexis-200">
+          <dt className="text-xs font-medium leading-[17px] text-texto-suave">
             Formato
           </dt>
-          <dd className="text-lexis-100">
+          <dd className="text-texto">
             {redacao.origemTexto === 'OCR'
               ? 'Foto transcrita e revisada'
               : 'Texto digitado'}
           </dd>
         </div>
       </dl>
-      <p className="mt-4 text-xs font-medium leading-[17px] text-lexis-200">
+      <p className="mt-4 text-xs font-medium leading-[17px] text-texto-suave">
         O texto entregue não pode mais ser editado.
       </p>
     </section>
@@ -313,14 +310,14 @@ function EsqueletoEditor() {
       <span className="sr-only">
         Carregando o tema e o rascunho...
       </span>
-      <div className="h-[41px] w-72 max-w-full rounded bg-lexis-800" />
-      <div className="mt-[19px] h-16 rounded-lg bg-lexis-800" />
-      <div className="mt-5 h-11 w-[340px] max-w-full rounded-lg bg-lexis-800" />
+      <div className="h-[41px] w-72 max-w-full rounded-marca bg-superficie-rebaixada" />
+      <div className="mt-[19px] h-16 rounded-controle bg-superficie-rebaixada" />
+      <div className="mt-5 h-11 w-[340px] max-w-full rounded-controle bg-superficie-rebaixada" />
       <div className="mt-4 grid gap-6 xl:grid-cols-[minmax(0,1fr)_404px]">
-        <div className="h-[500px] rounded-xl bg-lexis-800" />
+        <div className="h-[500px] rounded-cartao bg-superficie-rebaixada" />
         <div className="flex flex-col gap-4">
-          <div className="h-[232px] rounded-xl bg-lexis-800" />
-          <div className="h-[252px] rounded-xl bg-lexis-800" />
+          <div className="h-[232px] rounded-cartao bg-superficie-rebaixada" />
+          <div className="h-[252px] rounded-cartao bg-superficie-rebaixada" />
         </div>
       </div>
     </div>
@@ -804,25 +801,25 @@ export default function AlunoRedacaoPage() {
         rotaEnviarRedacao={rotaEditor}
         trilha={['Enviar redação']}
       >
-        <h1 className="text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-lexis-50">
+        <h1 className="text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-texto">
           Escrever redação
         </h1>
         <div
           role="alert"
           className={`${classeCartao} mt-[19px] max-w-[700px] p-6`}
         >
-          <h2 className="aluno-titulo-interface text-lg font-semibold leading-6 text-lexis-50">
+          <h2 className="text-lg font-semibold leading-6 text-texto">
             Não foi possível abrir o editor
           </h2>
-          <p className="mt-2 text-sm leading-[22px] text-lexis-200">
+          <p className="mt-2 text-sm leading-[22px] text-texto-suave">
             {aviso?.mensagem}
           </p>
-          <Link
+          <Botao as={Link}
             to="/aluno"
-            className="mt-4 inline-flex h-10 items-center rounded-lg border border-[var(--aluno-borda-campo)] px-4 text-[13px] font-semibold text-lexis-100"
+            variante="secundario" tamanho="compacto" className="mt-4"
           >
             Voltar ao início
-          </Link>
+          </Botao>
         </div>
       </AlunoLayout>
     )
@@ -839,19 +836,19 @@ export default function AlunoRedacaoPage() {
     <>
       <p
         id="status-salvamento"
-        className="inline-flex h-6 items-center rounded-full bg-[var(--aluno-neutro-fundo)] px-3 text-xs font-medium leading-[17px] text-lexis-200"
+        className="inline-flex h-6 items-center rounded-full bg-[var(--aluno-neutro-fundo)] px-3 text-xs font-medium leading-[17px] text-texto-suave"
       >
         {descreverEntrega(redacao)}
       </p>
       {redacao.status === 'AVALIADA' ? (
-        <Link
+        <Botao as={Link}
           to={`/aluno/redacoes/${encodeURIComponent(redacao.id)}/feedback`}
-          className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-[var(--color-brand-accent)] px-5 text-[13px] font-semibold leading-[18px] text-[#ffffff] transition-[filter,opacity] hover:brightness-110 sm:w-[160px]"
+          className="w-full sm:w-[160px]"
         >
           Ver feedback
-        </Link>
+        </Botao>
       ) : (
-        <p className="text-xs font-medium leading-[17px] text-lexis-200">
+        <p className="text-xs font-medium leading-[17px] text-texto-suave">
           Aguardando a correção do professor.
         </p>
       )}
@@ -867,7 +864,7 @@ export default function AlunoRedacaoPage() {
         }
         onSalvarAgora={handleSalvar}
       />
-      <button
+      <Botao
         ref={botaoEnviarRef}
         type="button"
         onClick={handleRevisarEEnviar}
@@ -875,12 +872,11 @@ export default function AlunoRedacaoPage() {
           ocupado ||
           !texto.trim()
         }
-        className="h-11 w-full rounded-lg bg-[var(--color-brand-accent)] px-5 text-[13px] font-semibold leading-[18px] text-[#ffffff] transition-[filter,opacity] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-55 sm:w-[160px]"
-      >
+        className="w-full sm:w-[160px]">
         {acao === 'enviar'
           ? 'Enviando...'
           : 'Revisar e enviar'}
-      </button>
+      </Botao>
     </>
   )
 
@@ -905,7 +901,7 @@ export default function AlunoRedacaoPage() {
       rotaEnviarRedacao={rotaEditor}
       trilha={['Enviar redação', tema.enunciado]}
     >
-      <h1 className="text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-lexis-50">
+      <h1 className="text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-texto">
         {redacaoImutavel
           ? 'Redação entregue'
           : 'Escrever redação'}
@@ -913,7 +909,7 @@ export default function AlunoRedacaoPage() {
 
       <section
         aria-labelledby="rotulo-tema"
-        className="mt-[19px] rounded-lg border border-[var(--color-brand-accent)] bg-[var(--aluno-acao-suave)] px-[19px] pb-2 pt-2.5"
+        className="mt-[19px] rounded-controle border border-[var(--color-brand-accent)] bg-[var(--aluno-acao-suave)] px-[19px] pb-2 pt-2.5"
       >
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1">
           <div className="min-w-0">
@@ -923,19 +919,19 @@ export default function AlunoRedacaoPage() {
             >
               Tema da proposta
             </p>
-            <p className="mt-1.5 text-lg font-semibold leading-6 tracking-[-0.09px] text-lexis-50">
+            <p className="mt-1.5 text-lg font-semibold leading-6 tracking-[-0.09px] text-texto">
               {tema.enunciado}
             </p>
           </div>
           <div className="flex flex-col items-start gap-1 sm:items-end">
-            <p className="text-[13px] font-semibold leading-[18px] text-lexis-100">
+            <p className="text-[13px] font-semibold leading-[18px] text-texto">
               {avisoPrazo.rotulo ??
-                `Entrega até ${formatarPrazoCurto(tema.prazoEntrega)}`}
+                `Entrega até ${formatarData(tema.prazoEntrega, 'dataHora', { vazio: 'Prazo indisponível' })}`}
             </p>
             {avisoPrazo.aviso && (
               <p
                 role="note"
-                className="max-w-[34ch] text-xs leading-[17px] text-lexis-100 sm:text-right"
+                className="max-w-[34ch] text-xs leading-[17px] text-texto sm:text-right"
               >
                 <strong className="font-semibold">Entrega com atraso.</strong>{' '}
                 {avisoPrazo.aviso}
@@ -960,23 +956,23 @@ export default function AlunoRedacaoPage() {
         {propostaAberta && (
           <div
             id="proposta-completa"
-            className="mt-2 space-y-3 border-t border-[var(--color-brand-accent)]/30 pb-2 pt-3 text-sm leading-[22px] text-lexis-100"
+            className="mt-2 space-y-3 border-t border-[var(--color-brand-accent)]/30 pb-2 pt-3 text-sm leading-[22px] text-texto"
           >
             <p>{tema.descricao}</p>
             {tema.instrucoes && (
-              <p className="text-lexis-200">
+              <p className="text-texto-suave">
                 {tema.instrucoes}
               </p>
             )}
             {tema.criterios?.length > 0 && (
               <div>
-                <p className="text-xs font-semibold leading-[17px] text-lexis-50">
+                <p className="text-xs font-semibold leading-[17px] text-texto">
                   Critérios da Competência II
                 </p>
-                <ol className="mt-1 list-decimal space-y-1 pl-5 text-xs leading-[17px] text-lexis-200">
+                <ol className="mt-1 list-decimal space-y-1 pl-5 text-xs leading-[17px] text-texto-suave">
                   {tema.criterios.map((criterio) => (
                     <li key={criterio.id}>
-                      <span className="font-semibold text-lexis-100">
+                      <span className="font-semibold text-texto">
                         {criterio.nome}:
                       </span>{' '}
                       {criterio.descricao}
@@ -995,7 +991,7 @@ export default function AlunoRedacaoPage() {
             abaAtiva={abaAtiva}
             onSelecionar={setAbaAtiva}
           />
-          <p className="text-xs font-medium leading-[17px] text-lexis-200">
+          <p className="text-xs font-medium leading-[17px] text-texto-suave">
             Fotografou a redação no papel? Use a segunda aba — o LÉXIS transcreve.
           </p>
         </div>
@@ -1010,10 +1006,10 @@ export default function AlunoRedacaoPage() {
               ? 'alert'
               : 'status'
           }
-          className={`mt-4 rounded-lg px-4 py-3 text-sm font-medium leading-[22px] outline-none ${
+          className={`mt-4 rounded-controle px-4 py-3 text-sm font-medium leading-[22px] outline-none ${
             {
               erro: 'bg-[var(--aluno-neutro-fundo)] text-[var(--aluno-erro)]',
-              info: 'bg-[var(--aluno-neutro-fundo)] text-lexis-100',
+              info: 'bg-[var(--aluno-neutro-fundo)] text-texto',
             }[aviso.tipo] ??
             'bg-[var(--aluno-sucesso-fundo)] text-[var(--aluno-sucesso)]'
           }`}

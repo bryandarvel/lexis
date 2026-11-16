@@ -46,7 +46,6 @@ export default function DialogoConfirmacao({
         </>
       }
     >
-      {children}
       {efeitos.length > 0 && (
         <ul className="dialogo-base__efeitos">
           {efeitos.map((efeito) => (
@@ -54,6 +53,7 @@ export default function DialogoConfirmacao({
           ))}
         </ul>
       )}
+      {children && <div className="mt-4">{children}</div>}
     </Dialogo>
   )
 }

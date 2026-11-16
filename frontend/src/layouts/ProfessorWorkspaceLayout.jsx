@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
+import Botao from '../components/base/Botao.jsx'
+import Dialogo from '../components/base/Dialogo.jsx'
 import ThemeToggle from '../components/layout/ThemeToggle.jsx'
 import { useAuth } from '../hooks/useAuth.js'
 import { useNotificacoesNaoLidas } from '../hooks/useNotificacoesNaoLidas.js'
@@ -9,34 +11,23 @@ import '../pages/professor/professor-dashboard.css'
 
 // turmas tem padrão porque nem toda tela do painel carrega a lista.
 function WorkspaceDialog({ tipo, turmas = [], onClose }) {
-  const dialogRef = useRef(null)
-  useEffect(() => {
-    if (!tipo) return undefined
-    const focoAnterior = document.activeElement
-    const dialog = dialogRef.current
-    dialog.showModal()
-    return () => {
-      dialog.close()
-      focoAnterior?.focus?.()
-    }
-  }, [tipo])
-
   return (
-    <dialog ref={dialogRef} className="professor-panel-dialog" aria-labelledby="panel-dialog-title"
-      onCancel={(event) => { event.preventDefault(); onClose() }}>
-      <h2 id="panel-dialog-title">Propostas por turma</h2>
-      <p>Escolha uma turma para consultar suas propostas e critérios.</p>
+    <Dialogo
+      aberto={Boolean(tipo)}
+      onFechar={onClose}
+      titulo="Propostas por turma"
+      descricao="Escolha uma turma para consultar suas propostas e critérios."
+      rodape={<Botao variante="secundario" onClick={onClose}>Fechar</Botao>}
+    >
       {turmas.length ? (
         <ul className="panel-dialog-classes">
           {turmas.map((turma) => <li key={turma.id}><Link to={`/professor/turmas/${turma.id}`}>{turma.nome}</Link></li>)}
         </ul>
-      ) : <p>Nenhuma turma disponível. Acesse Turmas para começar.</p>}
-      <div className="panel-dialog-actions">
-        <button type="button" onClick={onClose} className="panel-soft-button">Fechar</button>
-      </div>
-    </dialog>
+      ) : <p className="text-sm text-texto-suave">Nenhuma turma disponível. Acesse Turmas para começar.</p>}
+    </Dialogo>
   )
 }
+
 
 export default function ProfessorWorkspaceLayout({ secao, cabecalho, turmas, pronto, onRedacoes, imersivo = false, indicador, children }) {
   const { usuario } = useAuth()

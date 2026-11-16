@@ -1,14 +1,14 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-} from 'react'
+import { useEffect, useState } from 'react'
 
 import { interpretarErroApi } from '../../utils/api-error.js'
 import { MENSAGEM_REAUTENTICACAO } from '../../utils/reautenticacao.js'
-import AuthField from './AuthField.jsx'
-import AuthNotice from './AuthNotice.jsx'
+import Aviso from '../base/Aviso.jsx'
+import Botao from '../base/Botao.jsx'
+import Dialogo from '../base/Dialogo.jsx'
+import Campo from '../base/Campo.jsx'
 
+// Sessão expirada: o diálogo não tem como ser dispensado (sem onFechar, o
+// Escape não faz nada). Só dá para entrar de novo ou sair da conta.
 export default function ReauthenticationDialog({
   aberto,
   emailInicial = '',
@@ -21,68 +21,18 @@ export default function ReauthenticationDialog({
   })
   const [erro, setErro] = useState('')
   const [enviando, setEnviando] = useState(false)
-  const dialogRef = useRef(null)
-  const tituloRef = useRef(null)
 
   useEffect(() => {
     if (!aberto) {
-      return undefined
+      return
     }
 
-    const focoAnterior = document.activeElement
     setDados((estadoAtual) => ({
       email: estadoAtual.email || emailInicial,
       senha: '',
     }))
     setErro('')
-    tituloRef.current?.focus()
-
-    function manterFoco(event) {
-      if (event.key !== 'Tab') {
-        return
-      }
-
-      const focaveis = Array.from(
-        dialogRef.current?.querySelectorAll(
-          'button:not([disabled]), input:not([disabled])',
-        ) ?? [],
-      )
-
-      if (focaveis.length === 0) {
-        event.preventDefault()
-        tituloRef.current?.focus()
-        return
-      }
-
-      const primeiro = focaveis[0]
-      const ultimo = focaveis[focaveis.length - 1]
-
-      if (
-        event.shiftKey &&
-        document.activeElement === primeiro
-      ) {
-        event.preventDefault()
-        ultimo.focus()
-      } else if (
-        !event.shiftKey &&
-        document.activeElement === ultimo
-      ) {
-        event.preventDefault()
-        primeiro.focus()
-      }
-    }
-
-    document.addEventListener('keydown', manterFoco)
-
-    return () => {
-      document.removeEventListener('keydown', manterFoco)
-      focoAnterior?.focus?.()
-    }
   }, [aberto, emailInicial])
-
-  if (!aberto) {
-    return null
-  }
 
   function atualizarCampo(event) {
     const { name, value } = event.target
@@ -133,77 +83,46 @@ export default function ReauthenticationDialog({
   }
 
   return (
-    <div className="reauth-backdrop">
-      <section
-        ref={dialogRef}
-        role="alertdialog"
-        aria-modal="true"
-        aria-labelledby="titulo-reauth"
-        aria-describedby="descricao-reauth"
-        className="reauth-dialog surface-card"
-      >
-        <p className="text-xs font-bold uppercase tracking-[0.12em] text-lexis-300">
-          Segurança da sessão
-        </p>
-        <h2
-          id="titulo-reauth"
-          ref={tituloRef}
-          tabIndex={-1}
-          className="mt-3 text-2xl font-semibold text-lexis-50"
-        >
-          Sua sessão expirou
-        </h2>
-        <p
-          id="descricao-reauth"
-          className="mt-3 leading-7 text-lexis-200"
-        >
-          {MENSAGEM_REAUTENTICACAO}
-        </p>
+    <Dialogo
+      aberto={aberto}
+      ocupado={enviando}
+      titulo="Sua sessão expirou"
+      descricao={MENSAGEM_REAUTENTICACAO}
+    >
+      <form onSubmit={autenticar} className="space-y-4">
+        {erro && <Aviso tipo="erro">{erro}</Aviso>}
+        <Campo
+          id="reauth-email"
+          name="email"
+          label="E-mail"
+          type="email"
+          value={dados.email}
+          onChange={atualizarCampo}
+          autoComplete="username"
+          autoCapitalize="none"
+          spellCheck={false}
+          required
+        />
+        <Campo
+          id="reauth-senha"
+          name="senha"
+          label="Senha"
+          type="password"
+          value={dados.senha}
+          onChange={atualizarCampo}
+          autoComplete="current-password"
+          required
+        />
 
-        <form onSubmit={autenticar} className="mt-6 space-y-4">
-          <AuthNotice mensagem={erro} />
-          <AuthField
-            id="reauth-email"
-            name="email"
-            label="E-mail"
-            type="email"
-            value={dados.email}
-            onChange={atualizarCampo}
-            autoComplete="username"
-            autoCapitalize="none"
-            spellCheck={false}
-            required
-          />
-          <AuthField
-            id="reauth-senha"
-            name="senha"
-            label="Senha"
-            type="password"
-            value={dados.senha}
-            onChange={atualizarCampo}
-            autoComplete="current-password"
-            required
-          />
-
-          <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              onClick={encerrarSessao}
-              disabled={enviando}
-              className="rounded-[10px] border border-lexis-300/35 px-4 py-3 font-bold text-lexis-100"
-            >
-              Sair da conta
-            </button>
-            <button
-              type="submit"
-              disabled={enviando}
-              className="rounded-[10px] bg-lexis-400 px-4 py-3 font-bold text-white disabled:opacity-60"
-            >
-              {enviando ? 'Entrando...' : 'Entrar e continuar'}
-            </button>
-          </div>
-        </form>
-      </section>
-    </div>
+        <div className="dialogo-base__rodape">
+          <Botao variante="secundario" onClick={encerrarSessao} disabled={enviando}>
+            Sair da conta
+          </Botao>
+          <Botao type="submit" disabled={enviando}>
+            {enviando ? 'Entrando...' : 'Entrar e continuar'}
+          </Botao>
+        </div>
+      </form>
+    </Dialogo>
   )
 }

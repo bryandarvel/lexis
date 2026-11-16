@@ -1,3 +1,5 @@
+import { converterData, formatarData } from './formatar-data.js'
+
 import {
   marcarConta,
   mesmaConta,
@@ -12,16 +14,6 @@ export const ORDENACOES_FEEDBACK = [
   { valor: 'maior-nota', rotulo: 'Maior nota' },
   { valor: 'menor-nota', rotulo: 'Menor nota' },
 ]
-
-function converterData(valor) {
-  if (!valor) {
-    return null
-  }
-
-  const data = new Date(valor)
-
-  return Number.isNaN(data.getTime()) ? null : data
-}
 
 export function temFeedbackPublicado(redacao) {
   return (
@@ -120,9 +112,7 @@ export function formatarPublicacao(redacao) {
     return null
   }
 
-  return `Publicado em ${new Intl.DateTimeFormat('pt-BR', {
-    dateStyle: 'short',
-  }).format(data)}`
+  return `Publicado em ${formatarData(data, 'data')}`
 }
 
 export function caminhoDoFeedback(redacao) {

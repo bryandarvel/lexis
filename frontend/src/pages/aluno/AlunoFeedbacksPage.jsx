@@ -1,4 +1,5 @@
 import { useEffect, useId, useState } from 'react'
+import Botao from '../../components/base/Botao.jsx'
 import { Link } from 'react-router'
 
 import AlunoLayout from '../../layouts/AlunoLayout.jsx'
@@ -53,13 +54,13 @@ function ItemFeedback({ redacao }) {
           <span className="sr-only"> de 1000 pontos</span>
         </p>
 
-        <Link
+        <Botao as={Link}
           to={caminhoDoFeedback(redacao)}
-          className="aluno-fb-botao"
+          variante="secundario"
           aria-label={`Ver feedback: ${tema}`}
         >
           Ver feedback
-        </Link>
+        </Botao>
       </div>
     </li>
   )
@@ -153,10 +154,10 @@ export default function AlunoFeedbacksPage() {
   return (
     <AlunoLayout rotaEnviarRedacao={rotaEnviar} trilha={['Feedbacks']}>
       <header>
-        <h1 className="text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-lexis-50">
+        <h1 className="text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-texto">
           Feedbacks
         </h1>
-        <p className="mt-[11px] text-base leading-[25px] text-lexis-200">
+        <p className="mt-[11px] text-base leading-[25px] text-texto-suave">
           Veja as correções que seus professores já publicaram.
         </p>
       </header>
@@ -178,37 +179,36 @@ export default function AlunoFeedbacksPage() {
       {status === 'erro' && (
         <section
           role="alert"
-          className="aluno-elevacao-1 mt-[25px] max-w-[720px] rounded-[14px] border border-[var(--surface-border)] border-l-[3px] border-l-[var(--aluno-erro)] bg-lexis-900 px-6 py-5"
+          className="aluno-elevacao-1 mt-[25px] max-w-[720px] rounded-cartao border border-[var(--surface-border)] border-l-[3px] border-l-[var(--aluno-erro)] bg-superficie px-6 py-5"
         >
-          <h2 className="aluno-titulo-interface text-lg font-semibold leading-6 text-lexis-50">
+          <h2 className="text-lg font-semibold leading-6 text-texto">
             Não foi possível carregar seus feedbacks
           </h2>
-          <p className="mt-2 text-sm leading-[22px] text-lexis-200">
+          <p className="mt-2 text-sm leading-[22px] text-texto-suave">
             Verifique sua conexão e tente novamente em instantes.
           </p>
-          <button
+          <Botao
             type="button"
             onClick={() => setTentativa((valor) => valor + 1)}
-            className="aluno-fb-botao aluno-fb-botao-primario mt-4"
-          >
+            className="mt-4">
             Tentar novamente
-          </button>
+          </Botao>
         </section>
       )}
 
       {status === 'pronto' && feedbacks.length === 0 && (
-        <section className="aluno-elevacao-1 mt-[25px] max-w-[720px] rounded-[14px] border border-[var(--surface-border)] bg-lexis-900 px-6 py-6">
-          <h2 className="aluno-titulo-interface text-lg font-semibold leading-6 text-lexis-50">
+        <section className="aluno-elevacao-1 mt-[25px] max-w-[720px] rounded-cartao border border-[var(--surface-border)] bg-superficie px-6 py-6">
+          <h2 className="text-lg font-semibold leading-6 text-texto">
             Você ainda não recebeu nenhum feedback
           </h2>
-          <p className="mt-2 text-sm leading-[22px] text-lexis-200">
+          <p className="mt-2 text-sm leading-[22px] text-texto-suave">
             O feedback aparece aqui depois que o professor corrige e
             publica a nota da sua redação. Acompanhe o andamento de
             cada texto em Minhas redações.
           </p>
-          <Link to="/aluno/redacoes" className="aluno-fb-botao mt-4">
+          <Botao as={Link} to="/aluno/redacoes" variante="secundario" className="mt-4">
             Ir para Minhas redações
-          </Link>
+          </Botao>
         </section>
       )}
 

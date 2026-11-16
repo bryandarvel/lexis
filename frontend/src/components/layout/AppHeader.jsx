@@ -66,7 +66,7 @@ export default function AppHeader() {
       >
         <Link
           to={rotaInicial}
-          className="brand-wordmark text-2xl text-white transition-colors hover:text-lexis-300"
+          className="brand-wordmark text-2xl text-white transition-colors hover:text-[var(--foco-sobre-shell)]"
         >
           LÉXIS
         </Link>
@@ -110,7 +110,7 @@ export default function AppHeader() {
                   ? 'Notificações: 1 aviso não lido'
                   : `Notificações: ${totalNaoLidas} avisos não lidos`
               }
-              className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-[var(--surface-shell-2)] text-white transition hover:border-white/50 hover:bg-[var(--surface-shell-3)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lexis-300"
+              className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-[var(--surface-shell-2)] text-white transition hover:border-white/50 hover:bg-[var(--surface-shell-3)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foco"
             >
               <svg
                 aria-hidden="true"

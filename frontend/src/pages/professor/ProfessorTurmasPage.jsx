@@ -1,6 +1,12 @@
+import Etiqueta from '../../components/base/Etiqueta.jsx'
+import EstadoVazio from '../../components/base/EstadoVazio.jsx'
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import { Link } from 'react-router'
+import Aviso from '../../components/base/Aviso.jsx'
+import Botao from '../../components/base/Botao.jsx'
+import Campo from '../../components/base/Campo.jsx'
+import Dialogo from '../../components/base/Dialogo.jsx'
 import ProfessorWorkspaceLayout from '../../layouts/ProfessorWorkspaceLayout.jsx'
 import { carregarTurmasProfessor } from '../../services/professor-classes.js'
 import { criarTurma } from '../../services/turmas.js'
@@ -9,19 +15,11 @@ import { filtrarTurmas, prepararNomeTurma, resumirRedacoesTurma } from '../../ut
 import './professor-turmas.css'
 
 function NovaTurmaDialog({ onClose, onCreated }) {
-  const dialogRef = useRef(null)
   const nomeRef = useRef(null)
   const enviandoRef = useRef(false)
   const [nome, setNome] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState({ mensagem: '', campo: '' })
-
-  useEffect(() => {
-    const focoAnterior = document.activeElement
-    const dialog = dialogRef.current
-    dialog.showModal()
-    return () => { dialog.close(); focoAnterior?.focus?.() }
-  }, [])
 
   useEffect(() => {
     if (!enviando && (erro.campo || erro.mensagem)) nomeRef.current?.focus()
@@ -53,32 +51,42 @@ function NovaTurmaDialog({ onClose, onCreated }) {
   }
 
   return (
-    <dialog ref={dialogRef} className="professor-panel-dialog class-create-dialog" aria-labelledby="class-create-title"
-      onCancel={(event) => { event.preventDefault(); if (!enviandoRef.current) onClose() }}>
-      <h2 id="class-create-title">Nova turma</h2>
-      <p>Defina o nome da turma. O código de acesso será gerado automaticamente.</p>
-      <form onSubmit={enviar} noValidate aria-busy={enviando}>
-        <label htmlFor="class-name">Nome da turma</label>
-        <input ref={nomeRef} id="class-name" className="class-input" value={nome} maxLength={100} autoComplete="off"
-          disabled={enviando} required aria-invalid={Boolean(erro.campo)} aria-describedby={erro.campo ? 'class-name-error' : 'class-name-hint'}
-          onChange={(event) => { setNome(event.target.value); setErro({ mensagem: '', campo: '' }) }} />
-        {erro.campo ? <p id="class-name-error" className="class-field-error">{erro.campo}</p> : <p id="class-name-hint">Entre 2 e 100 caracteres.</p>}
-        {erro.mensagem && <p className="class-field-error" role="alert">{erro.mensagem}</p>}
-        <div className="panel-dialog-actions">
-          <button type="button" className="panel-soft-button" disabled={enviando} onClick={onClose}>Cancelar</button>
-          <button type="submit" className="panel-primary-button" disabled={enviando}>{enviando ? 'Criando...' : 'Criar turma'}</button>
+    <Dialogo
+      aberto
+      onFechar={() => { if (!enviandoRef.current) onClose() }}
+      titulo="Nova turma"
+      descricao="Defina o nome da turma. O código de acesso será gerado automaticamente."
+    >
+      <form onSubmit={enviar} noValidate aria-busy={enviando} className="space-y-4">
+        <Campo
+          ref={nomeRef}
+          id="class-name"
+          label="Nome da turma"
+          value={nome}
+          maxLength={100}
+          autoComplete="off"
+          disabled={enviando}
+          required
+          error={erro.campo}
+          hint="Entre 2 e 100 caracteres."
+          onChange={(event) => { setNome(event.target.value); setErro({ mensagem: '', campo: '' }) }}
+        />
+        {erro.mensagem && <Aviso tipo="erro">{erro.mensagem}</Aviso>}
+        <div className="dialogo-base__rodape">
+          <Botao variante="secundario" disabled={enviando} onClick={onClose}>Cancelar</Botao>
+          <Botao type="submit" carregando={enviando} rotuloCarregando="Criando...">Criar turma</Botao>
         </div>
       </form>
-    </dialog>
+    </Dialogo>
   )
 }
 
-function TurmaCard({ turma, indice }) {
+function TurmaCard({ turma }) {
   const resumo = turma.resumo
   const estado = !turma.ativa ? 'Arquivada' : !resumo ? 'Dados indisponíveis' : resumo.pendentes ? `${resumo.pendentes} ${resumo.pendentes === 1 ? 'pendente' : 'pendentes'}` : 'Em dia'
   const alunos = turma.quantidadeAlunosAtivos ?? 0
   return (
-    <li className={`class-card class-accent-${turma.ativa ? indice % 3 : 'archived'}`}>
+    <li className="class-card">
       <Link to={`/professor/turmas/${turma.id}`} className="class-card-link" aria-label={`Abrir turma ${turma.nome}`}>
         <div className="class-card-info">
           <h2>{turma.nome}</h2>
@@ -91,7 +99,7 @@ function TurmaCard({ turma, indice }) {
           ) : <span className="class-metrics-unavailable">Indicadores indisponíveis</span>}
         </div>
         <div className="class-card-actions">
-          <span className={`class-badge ${turma.ativa && resumo?.pendentes ? 'pending' : ''}`}>{estado}</span>
+          <Etiqueta tom={turma.ativa && resumo?.pendentes ? 'atencao' : 'neutro'} className="min-w-[120px] justify-center">{estado}</Etiqueta>
           <span className="class-open" aria-hidden="true">Abrir ›</span>
         </div>
       </Link>
@@ -134,7 +142,7 @@ export default function ProfessorTurmasPage() {
       <motion.main id="panel-main" tabIndex={-1} className="panel-main classes-main" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .22 }}>
         <div className="classes-heading">
           <div><h1>Turmas</h1><p className="panel-subtitle">Gerencie turmas, códigos de acesso e propostas.</p></div>
-          <button type="button" className="panel-primary-button classes-create" disabled={!pronto} onClick={() => { setSucesso(''); setCriando(true) }}>+ Nova turma</button>
+          <Botao type="button" className="classes-create" disabled={!pronto} onClick={() => { setSucesso(''); setCriando(true) }}>+ Nova turma</Botao>
         </div>
         <div className="classes-toolbar">
           <label className="classes-search"><span className="sr-only">Buscar turma ou código de acesso</span>
@@ -150,17 +158,17 @@ export default function ProfessorTurmasPage() {
         {pagina.status === 'carregando' ? (
           <div className="classes-grid" role="status" aria-label="Carregando turmas">{[0, 1, 2, 3].map((item) => <div key={item} className="class-card skeleton-block" aria-hidden="true" />)}</div>
         ) : pagina.status === 'erro' ? (
-          <section className="panel-error" role="alert"><h2>Não foi possível carregar as turmas</h2><p>{pagina.mensagem}</p><button className="panel-primary-button" type="button" onClick={() => setTentativa((valor) => valor + 1)}>Tentar novamente</button></section>
+          <section className="panel-error" role="alert"><h2>Não foi possível carregar as turmas</h2><p>{pagina.mensagem}</p><Botao type="button" onClick={() => setTentativa((valor) => valor + 1)}>Tentar novamente</Botao></section>
         ) : (
           <>
             {pagina.turmas.some((turma) => !turma.resumo) && <p className="class-partial-warning" role="status">Alguns indicadores não responderam. As turmas continuam disponíveis. <button type="button" onClick={() => setTentativa((valor) => valor + 1)}>Atualizar indicadores</button></p>}
             <span className="sr-only" role="status">{filtradas.length} {filtradas.length === 1 ? 'turma encontrada' : 'turmas encontradas'}</span>
-            {filtradas.length ? <ul className="classes-grid">{filtradas.map((turma) => <TurmaCard key={turma.id} turma={turma} indice={pagina.turmas.findIndex((item) => item.id === turma.id)} />)}</ul> : (
-              <section className="panel-empty">
-                <h2>{pagina.turmas.length ? 'Nenhuma turma encontrada' : 'Você ainda não tem turmas'}</h2>
-                <p>{pagina.turmas.length ? 'Tente outro nome, código ou filtro.' : 'Crie sua primeira turma e compartilhe o código de acesso com os alunos.'}</p>
-                {pagina.turmas.length ? <button type="button" className="panel-soft-button" onClick={() => { setBusca(''); setFiltro('todas') }}>Limpar filtros</button> : <button type="button" className="panel-primary-button" onClick={() => setCriando(true)}>Criar primeira turma</button>}
-              </section>
+            {filtradas.length ? <ul className="classes-grid">{filtradas.map((turma) => <TurmaCard key={turma.id} turma={turma} />)}</ul> : (
+              <EstadoVazio
+                titulo={pagina.turmas.length ? 'Nenhuma turma encontrada' : 'Você ainda não tem turmas'}
+                descricao={pagina.turmas.length ? 'Tente outro nome, código ou filtro.' : 'Crie sua primeira turma e compartilhe o código de acesso com os alunos.'}
+                acao={pagina.turmas.length ? <Botao type="button" variante="secundario" onClick={() => { setBusca(''); setFiltro('todas') }}>Limpar filtros</Botao> : <Botao type="button" onClick={() => setCriando(true)}>Criar primeira turma</Botao>}
+              />
             )}
           </>
         )}

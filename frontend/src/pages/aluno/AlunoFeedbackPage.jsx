@@ -1,3 +1,5 @@
+import { formatarData } from '../../utils/formatar-data.js'
+import Botao from '../../components/base/Botao.jsx'
 import {
   useEffect,
   useId,
@@ -35,16 +37,12 @@ import {
   possuiNotasCompetencias,
   selecionarNotificacoesNaoLidasDaRedacao,
 } from '../../utils/aluno-feedback.js'
-import { formatarDiaMes } from '../../utils/aluno-painel.js'
 import './aluno-feedback.css'
 
 const TRILHA = ['Início', 'Feedback']
 
 const classeCartao =
-  'rounded-xl border border-[var(--surface-border)] bg-lexis-900 aluno-elevacao-1'
-
-const classeBotaoContorno =
-  'inline-flex items-center justify-center rounded-lg border border-[var(--aluno-borda-campo)] bg-lexis-900 text-[13px] font-semibold leading-[18px] text-lexis-100 transition-colors hover:bg-[var(--aluno-neutro-fundo)]'
+  'rounded-cartao border border-[var(--surface-border)] bg-superficie aluno-elevacao-1'
 
 const classeSobretitulo =
   'text-[11px] font-bold uppercase leading-[14px] tracking-[1.32px]'
@@ -79,12 +77,12 @@ function Cabecalho({ origem = [], acao = null }) {
   return (
     <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0">
-        <h1 className="text-[32px] font-semibold leading-[38px] tracking-[-0.65px] text-lexis-50 sm:text-[36px] sm:leading-[41px]">
+        <h1 className="text-[32px] font-semibold leading-[38px] tracking-[-0.65px] text-texto sm:text-[36px] sm:leading-[41px]">
           Feedback da sua redação
         </h1>
 
         {origem.length > 0 && (
-          <p className="mt-[19px] text-base leading-[25px] text-lexis-200">
+          <p className="mt-[19px] text-base leading-[25px] text-texto-suave">
             {origem.map((trecho, indice) => (
               <span key={`${indice}-${trecho}`}>
                 {indice > 0 && (
@@ -115,14 +113,13 @@ function BotaoImprimir() {
 
   return (
     <>
-      <button
+      <Botao
         type="button"
         aria-describedby={idDescricao}
         onClick={() => window.print()}
-        className={`${classeBotaoContorno} h-11 w-40 shrink-0 sm:mt-1 print:hidden`}
-      >
+        variante="secundario" className="w-40 shrink-0 sm:mt-1 print:hidden">
         Baixar em PDF
-      </button>
+      </Botao>
       <span
         id={idDescricao}
         className="sr-only"
@@ -173,10 +170,10 @@ function CartaoAviso({
       role={tom === 'erro' ? 'alert' : undefined}
       className={`${classeCartao} mt-[23px] max-w-[720px] border-l-[3px] px-6 py-5 ${classeTom}`}
     >
-      <h2 className="aluno-titulo-interface text-lg font-semibold leading-6 text-lexis-50">
+      <h2 className="text-lg font-semibold leading-6 text-texto">
         {titulo}
       </h2>
-      <p className="mt-2 text-sm leading-[22px] text-lexis-200">
+      <p className="mt-2 text-sm leading-[22px] text-texto-suave">
         {mensagem}
       </p>
       <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -187,10 +184,10 @@ function CartaoAviso({
 }
 
 function AvisoCorrecaoAtualizada({ feedback }) {
-  const publicadaEm = formatarDiaMes(feedback.publicadoEm)
+  const publicadaEm = formatarData(feedback.publicadoEm, 'data')
 
   return (
-    <p className="mt-[23px] rounded-lg border-l-[3px] border-l-[var(--color-brand-accent)] bg-[var(--aluno-acao-suave)] px-4 py-3 text-sm leading-[22px] text-lexis-100">
+    <p className="mt-[23px] rounded-controle border-l-[3px] border-l-[var(--color-brand-accent)] bg-[var(--aluno-acao-suave)] px-4 py-3 text-sm leading-[22px] text-texto">
       <strong className="font-semibold text-[var(--aluno-acao-suave-texto)]">
         Correção atualizada.
       </strong>{' '}
@@ -219,19 +216,19 @@ function NotaGeral({ feedback }) {
         <div className="flex shrink-0 flex-col xl:w-[193px] xl:border-r xl:border-[var(--surface-border)] xl:pr-6">
           <h2
             id="feedback-titulo-nota"
-            className={`aluno-titulo-interface ${classeSobretitulo} text-lexis-200`}
+            className={`${classeSobretitulo} text-texto-suave`}
           >
             Nota final
           </h2>
           <p className="mt-1.5 flex items-baseline gap-3">
-            <span className="font-display text-[48px] font-bold leading-[53px] tracking-[-1.06px] text-lexis-50">
+            <span className="fonte-nota text-[48px] font-bold leading-[53px] tracking-[-1.06px] text-texto">
               {notaTotal ?? '—'}
             </span>
-            <span className="text-xl font-semibold leading-[26px] tracking-[-0.16px] text-lexis-200">
+            <span className="text-xl font-semibold leading-[26px] tracking-[-0.16px] text-texto-suave">
               / {NOTA_MAXIMA_TOTAL}
             </span>
           </p>
-          <p className="mt-3 text-xs font-medium leading-[17px] text-lexis-200 xl:mt-auto">
+          <p className="mt-3 text-xs font-medium leading-[17px] text-texto-suave xl:mt-auto">
             {versao.rotulo}
           </p>
         </div>
@@ -250,7 +247,7 @@ function NotaGeral({ feedback }) {
               ))}
             </ul>
           ) : (
-            <p className="text-sm leading-[22px] text-lexis-200">
+            <p className="text-sm leading-[22px] text-texto-suave">
               Esta correção registrou apenas a nota total, sem as
               notas por competência.
             </p>
@@ -276,7 +273,7 @@ function ItemCompetencia({ competencia }) {
         className={`text-xs font-medium leading-[17px] ${
           destaque
             ? 'text-[var(--aluno-acao-suave-texto)]'
-            : 'text-lexis-200'
+            : 'text-texto-suave'
         }`}
       >
         Competência {numero}
@@ -290,7 +287,7 @@ function ItemCompetencia({ competencia }) {
         className={`mt-px text-xl font-semibold leading-[26px] tracking-[-0.16px] ${
           destaque
             ? 'text-[var(--feedback-destaque)]'
-            : 'text-lexis-50'
+            : 'text-texto'
         }`}
       >
         {nota === null ? (
@@ -323,7 +320,7 @@ function ItemCompetencia({ competencia }) {
           }}
         />
       </div>
-      <p className="mt-2 text-xs font-medium leading-[17px] text-lexis-200">
+      <p className="mt-2 text-xs font-medium leading-[17px] text-texto-suave">
         {titulo}
       </p>
     </li>
@@ -339,11 +336,11 @@ function ComentarioGeral({ comentario }) {
       <div className="border-l-[3px] border-l-[var(--color-brand-accent)] px-6 py-5">
         <h2
           id="feedback-titulo-comentario"
-          className={`aluno-titulo-interface ${classeSobretitulo} text-[var(--aluno-acao-suave-texto)]`}
+          className={`${classeSobretitulo} text-[var(--aluno-acao-suave-texto)]`}
         >
           Comentário geral
         </h2>
-        <p className="mt-3 max-w-[72ch] whitespace-pre-wrap break-words text-base leading-[26px] text-lexis-100">
+        <p className="mt-3 max-w-[72ch] whitespace-pre-wrap break-words text-base leading-[26px] text-texto">
           {comentario?.trim() ||
             'A correção foi publicada sem comentário geral.'}
         </p>
@@ -363,7 +360,7 @@ function CompetenciaDois({ feedback }) {
   return (
     <section
       aria-labelledby="feedback-titulo-competencia-2"
-      className="overflow-hidden rounded-xl border-2 border-[var(--color-brand-accent)] bg-lexis-900"
+      className="overflow-hidden rounded-cartao border-2 border-[var(--color-brand-accent)] bg-superficie"
     >
       <div className="flex items-start justify-between gap-4 bg-[var(--aluno-acao-suave)] px-[22px] pb-3 pt-[14px]">
         <div className="min-w-0">
@@ -372,12 +369,12 @@ function CompetenciaDois({ feedback }) {
           </p>
           <h2
             id="feedback-titulo-competencia-2"
-            className="aluno-titulo-interface mt-1 text-xl font-semibold leading-[26px] tracking-[-0.16px] text-lexis-50"
+            className="mt-1 text-xl font-semibold leading-[26px] tracking-[-0.16px] text-texto"
           >
             Repertório sociocultural
           </h2>
         </div>
-        <p className="mt-[14px] shrink-0 font-display text-2xl font-semibold leading-[30px] tracking-[-0.29px] text-[var(--feedback-destaque)]">
+        <p className="mt-[14px] shrink-0 fonte-nota text-2xl font-semibold leading-[30px] tracking-[-0.29px] text-[var(--feedback-destaque)]">
           {nota === null ? (
             <>
               <span aria-hidden="true">—</span>
@@ -395,7 +392,7 @@ function CompetenciaDois({ feedback }) {
       </div>
 
       <div className="px-[22px] pb-6 pt-4">
-        <h3 className="aluno-titulo-interface text-[13px] font-semibold leading-[18px] text-lexis-50">
+        <h3 className="text-[13px] font-semibold leading-[18px] text-texto">
           Comentários por critério
         </h3>
 
@@ -404,7 +401,7 @@ function CompetenciaDois({ feedback }) {
             {criterios.map((criterio) => (
               <li
                 key={criterio.id}
-                className={`feedback-tom-${criterio.tom} relative overflow-hidden rounded-lg bg-[var(--aluno-neutro-fundo)] py-3 pl-[18px] pr-[18px]`}
+                className={`feedback-tom-${criterio.tom} relative overflow-hidden rounded-controle bg-[var(--aluno-neutro-fundo)] py-3 pl-[18px] pr-[18px]`}
               >
                 <span
                   aria-hidden="true"
@@ -417,14 +414,14 @@ function CompetenciaDois({ feedback }) {
                   />
                   {criterio.nome}
                 </h4>
-                <p className="mt-2 whitespace-pre-wrap break-words text-[13px] leading-5 text-lexis-100">
+                <p className="mt-2 whitespace-pre-wrap break-words text-[13px] leading-5 text-texto">
                   {criterio.comentario}
                 </p>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="mt-2.5 rounded-lg bg-[var(--aluno-neutro-fundo)] px-4 py-3 text-[13px] leading-5 text-lexis-200">
+          <p className="mt-2.5 rounded-controle bg-[var(--aluno-neutro-fundo)] px-4 py-3 text-[13px] leading-5 text-texto-suave">
             Esta correção não tem comentários específicos por
             critério. O comentário geral traz o retorno sobre a
             sua redação.
@@ -445,16 +442,16 @@ function TextoRedacao({ redacao, criterios }) {
   return (
     <section
       aria-labelledby="feedback-titulo-redacao"
-      className={`${classeCartao} px-[23px] pb-7 pt-[19px]`}
+      className={`${classeCartao} superficie-folha px-[23px] pb-7 pt-[19px]`}
     >
       <div className="feedback-cabecalho-cartao flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h2
           id="feedback-titulo-redacao"
-          className="aluno-titulo-interface text-lg font-semibold leading-6 tracking-[-0.09px] text-lexis-50"
+          className="text-lg font-semibold leading-6 tracking-[-0.09px] text-texto"
         >
           Sua redação
         </h2>
-        <p className="text-xs font-medium leading-[17px] text-lexis-200">
+        <p className="text-xs font-medium leading-[17px] text-texto-suave">
           {redacao.origemTexto === 'OCR'
             ? 'Imagem digitalizada'
             : 'Texto digitado'}
@@ -487,7 +484,7 @@ function TextoRedacao({ redacao, criterios }) {
       )}
 
       {texto ? (
-        <div className="feedback-texto-redacao mt-2.5 whitespace-pre-wrap break-words font-display text-[17px] leading-8 text-lexis-100">
+        <div className="feedback-texto-redacao mt-2.5 whitespace-pre-wrap break-words fonte-redacao text-[17px] leading-8 text-texto">
           {total > 0
             ? segmentos.map((segmento, indice) => {
                 if (!segmento.criterios.length) {
@@ -527,7 +524,7 @@ function TextoRedacao({ redacao, criterios }) {
             : redacao.texto}
         </div>
       ) : (
-        <p className="mt-2.5 text-sm leading-[22px] text-lexis-200">
+        <p className="mt-2.5 text-sm leading-[22px] text-texto-suave">
           O texto desta redação não está disponível.
         </p>
       )}
@@ -661,12 +658,12 @@ export default function AlunoFeedbackPage() {
           titulo={indisponivel.titulo}
           mensagem={indisponivel.mensagem}
         >
-          <Link
+          <Botao as={Link}
             to={indisponivel.acao.destino}
-            className={`${classeBotaoContorno} h-10 px-4`}
+            variante="secundario" tamanho="compacto"
           >
             {indisponivel.acao.rotulo}
-          </Link>
+          </Botao>
         </CartaoAviso>
       </>
     )
@@ -691,22 +688,21 @@ export default function AlunoFeedbackPage() {
           }
         >
           {!naoEncontrada && (
-            <button
+            <Botao
               type="button"
               onClick={() =>
                 setTentativa((atual) => atual + 1)
               }
-              className="inline-flex h-10 items-center justify-center rounded-lg bg-[var(--color-brand-accent)] px-4 text-[13px] font-semibold leading-[18px] text-white transition hover:brightness-110"
-            >
+              tamanho="compacto">
               Tentar novamente
-            </button>
+            </Botao>
           )}
-          <Link
+          <Botao as={Link}
             to="/aluno"
-            className={`${classeBotaoContorno} h-10 px-4`}
+            variante="secundario" tamanho="compacto"
           >
             Voltar ao início
-          </Link>
+          </Botao>
         </CartaoAviso>
       </>
     )

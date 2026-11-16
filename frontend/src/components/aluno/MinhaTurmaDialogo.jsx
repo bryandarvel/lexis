@@ -4,6 +4,9 @@ import {
   useState,
 } from 'react'
 
+import Aviso from '../base/Aviso.jsx'
+import Botao from '../base/Botao.jsx'
+import Dialogo from '../base/Dialogo.jsx'
 import { notificarMatriculaAtualizada } from '../../services/matricula-events.js'
 import { listarMinhasRedacoes } from '../../services/redacoes.js'
 import {
@@ -19,12 +22,6 @@ import {
   CODIGO_SEM_MATRICULA,
   CODIGO_MATRICULA_ALTERADA,
 } from '../../utils/minha-turma.js'
-
-const classeBotaoContorno =
-  'inline-flex h-11 items-center justify-center rounded-lg border border-[var(--aluno-borda-campo)] px-5 text-[13px] font-semibold leading-[18px] text-lexis-100 transition-colors hover:bg-[var(--aluno-neutro-fundo)] disabled:cursor-not-allowed disabled:opacity-60'
-
-const classeBotaoSair =
-  'inline-flex h-11 items-center justify-center rounded-lg bg-[var(--aluno-erro-solido)] px-5 text-[13px] font-semibold leading-[18px] text-[#ffffff] transition-[filter,opacity] hover:brightness-110 disabled:cursor-wait disabled:opacity-60'
 
 const ESTADO_INICIAL = {
   status: 'carregando',
@@ -76,10 +73,10 @@ function ListaPendencias({ titulo, itens }) {
 
   return (
     <div className="mt-3">
-      <p className="text-xs font-semibold leading-[17px] text-lexis-100">
+      <p className="text-xs font-semibold leading-[17px] text-texto">
         {titulo}
       </p>
-      <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs leading-[17px] text-lexis-200">
+      <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs leading-[17px] text-texto-suave">
         {itens.map((item) => (
           <li key={item.id}>{item.enunciado}</li>
         ))}
@@ -94,7 +91,6 @@ export default function MinhaTurmaDialogo({
   onSaiu,
   retornoFocoRef,
 }) {
-  const dialogoRef = useRef(null)
   const voltarRef = useRef(null)
   const fecharRef = useRef(null)
   const saidaEmAndamentoRef = useRef(false)
@@ -103,20 +99,12 @@ export default function MinhaTurmaDialogo({
   const [saindo, setSaindo] = useState(false)
   const [erroSaida, setErroSaida] = useState('')
 
+  // O item do menu que abriu o diálogo já não existe; o foco volta ao avatar,
+  // mas só na transição de aberto para fechado (não na montagem com o diálogo fechado).
+  const estavaAbertoRef = useRef(false)
   useEffect(() => {
-    const dialogo = dialogoRef.current
-
-    if (!dialogo) return
-
-    if (aberto && !dialogo.open) {
-      dialogo.showModal()
-    }
-
-    if (!aberto && dialogo.open) {
-      dialogo.close()
-      // O item do menu que abriu o diálogo já não existe; o foco volta ao avatar.
-      retornoFocoRef?.current?.focus()
-    }
+    if (estavaAbertoRef.current && !aberto) retornoFocoRef?.current?.focus()
+    estavaAbertoRef.current = aberto
   }, [aberto, retornoFocoRef])
 
   useEffect(() => {
@@ -200,188 +188,117 @@ export default function MinhaTurmaDialogo({
     pendencias.rascunhos.length === 0 &&
     pendencias.aguardandoCorrecao.length === 0
 
+  let descricao = null
+
+  if (estado.status === 'carregando') {
+    descricao = <p role="status">Carregando sua turma…</p>
+  } else if (estado.status === 'erro') {
+    descricao = <p role="alert" className="text-erro">{estado.mensagem}</p>
+  } else if (estado.status === 'sem-turma') {
+    descricao = (
+      <p>
+        Você não participa de uma turma no momento. Para entrar em uma, use o código de acesso no painel.
+      </p>
+    )
+  } else if (confirmando) {
+    descricao = (
+      <div className="space-y-2">
+        <p>
+          Você vai sair de <strong className="font-semibold text-texto">{matricula.turma}</strong>.
+        </p>
+        <p>
+          Suas redações e correções continuam visíveis. Rascunhos ficam salvos, mas só voltam a ser editáveis se você voltar a esta mesma turma. Redações já enviadas continuam sendo corrigidas pelo professor, e você continua recebendo as notificações.
+        </p>
+      </div>
+    )
+  } else {
+    descricao = <p className="sr-only">Dados da turma em que você está matriculado.</p>
+  }
+
   return (
-    <dialog
-      ref={dialogoRef}
-      aria-labelledby="titulo-minha-turma"
-      aria-describedby="descricao-minha-turma"
-      aria-busy={estado.status === 'carregando' || saindo}
-      onCancel={(evento) => {
-        evento.preventDefault()
-        fechar()
-      }}
-      onClose={() => {
-        if (aberto) onFechar()
-      }}
-      className="m-auto w-[calc(100%-2rem)] max-w-md rounded-xl border border-[var(--surface-border)] bg-lexis-900 p-6 text-lexis-50 backdrop:bg-[rgba(3,12,24,0.6)]"
+    <Dialogo
+      aberto={aberto}
+      ocupado={estado.status === 'carregando' || saindo}
+      onFechar={fechar}
+      titulo={confirmando ? 'Sair da turma?' : 'Minha turma'}
+      descricao={descricao}
     >
-      {aberto && (
+      {estado.status === 'pronto' && !confirmando && (
         <>
-          <h2
-            id="titulo-minha-turma"
-            className="aluno-titulo-interface text-xl font-semibold leading-[26px] tracking-[-0.16px]"
-          >
-            {confirmando ? 'Sair da turma?' : 'Minha turma'}
-          </h2>
-
-          {estado.status === 'carregando' && (
-            <p
-              id="descricao-minha-turma"
-              role="status"
-              className="mt-2 text-sm leading-[22px] text-lexis-200"
-            >
-              Carregando sua turma…
+          <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2 text-sm leading-[22px]">
+            <dt className="text-texto-suave">Turma</dt>
+            <dd className="font-semibold text-texto">{matricula.turma}</dd>
+            <dt className="text-texto-suave">Professor</dt>
+            <dd className="text-texto">{matricula.professor ?? 'Não informado'}</dd>
+            <dt className="text-texto-suave">Na turma desde</dt>
+            <dd className="text-texto">{matricula.desde ?? 'Data indisponível'}</dd>
+          </dl>
+          {!matricula.podeSair && (
+            <p className="mt-4 text-xs leading-[17px] text-texto-suave">
+              Esta turma foi arquivada pelo professor.
             </p>
           )}
-
-          {estado.status === 'erro' && (
-            <p
-              id="descricao-minha-turma"
-              role="alert"
-              className="mt-2 text-sm leading-[22px] text-[var(--aluno-erro)]"
-            >
-              {estado.mensagem}
-            </p>
-          )}
-
-          {estado.status === 'sem-turma' && (
-            <p
-              id="descricao-minha-turma"
-              className="mt-2 text-sm leading-[22px] text-lexis-200"
-            >
-              Você não participa de uma turma no momento. Para entrar em uma, use o código de acesso no painel.
-            </p>
-          )}
-
-          {estado.status === 'pronto' && !confirmando && (
-            <>
-              <p
-                id="descricao-minha-turma"
-                className="sr-only"
-              >
-                Dados da turma em que você está matriculado.
-              </p>
-              <dl className="mt-4 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2 text-sm leading-[22px]">
-                <dt className="text-lexis-200">Turma</dt>
-                <dd className="font-semibold text-lexis-50">
-                  {matricula.turma}
-                </dd>
-                <dt className="text-lexis-200">Professor</dt>
-                <dd className="text-lexis-100">
-                  {matricula.professor ?? 'Não informado'}
-                </dd>
-                <dt className="text-lexis-200">Na turma desde</dt>
-                <dd className="text-lexis-100">
-                  {matricula.desde ?? 'Data indisponível'}
-                </dd>
-              </dl>
-              {!matricula.podeSair && (
-                <p className="mt-4 text-xs leading-[17px] text-lexis-200">
-                  Esta turma foi arquivada pelo professor.
-                </p>
-              )}
-            </>
-          )}
-
-          {confirmando && (
-            <>
-              <div
-                id="descricao-minha-turma"
-                className="mt-2 space-y-2 text-sm leading-[22px] text-lexis-200"
-              >
-                <p>
-                  Você vai sair de <strong className="font-semibold text-lexis-50">{matricula.turma}</strong>.
-                </p>
-                <p>
-                  Suas redações e correções continuam visíveis. Rascunhos ficam salvos, mas só voltam a ser editáveis se você voltar a esta mesma turma. Redações já enviadas continuam sendo corrigidas pelo professor, e você continua recebendo as notificações.
-                </p>
-              </div>
-
-              <div className="mt-4 rounded-lg bg-[var(--aluno-neutro-fundo)] p-3">
-                {pendencias === null ? (
-                  <p className="text-xs leading-[17px] text-lexis-200">
-                    Não foi possível conferir seus rascunhos nesta turma. Eles continuam salvos no servidor.
-                  </p>
-                ) : semPendencias ? (
-                  <p className="text-xs leading-[17px] text-lexis-200">
-                    Você não tem rascunhos nem redações aguardando correção nesta turma.
-                  </p>
-                ) : (
-                  <>
-                    <ListaPendencias
-                      titulo="Rascunhos que ficam salvos:"
-                      itens={pendencias.rascunhos}
-                    />
-                    <ListaPendencias
-                      titulo="Redações aguardando correção:"
-                      itens={pendencias.aguardandoCorrecao}
-                    />
-                  </>
-                )}
-              </div>
-            </>
-          )}
-
-          {erroSaida && (
-            <p
-              role="alert"
-              className="mt-4 rounded-lg bg-[var(--aluno-neutro-fundo)] px-3.5 py-2.5 text-sm font-medium leading-[22px] text-[var(--aluno-erro)]"
-            >
-              {erroSaida}
-            </p>
-          )}
-
-          <div className="mt-6 flex flex-wrap justify-end gap-3">
-            {confirmando ? (
-              <>
-                <button
-                  ref={voltarRef}
-                  type="button"
-                  disabled={saindo}
-                  onClick={() => {
-                    setErroSaida('')
-                    setEtapa('detalhes')
-                  }}
-                  className={classeBotaoContorno}
-                >
-                  Voltar
-                </button>
-                <button
-                  type="button"
-                  disabled={saindo}
-                  onClick={confirmarSaida}
-                  className={classeBotaoSair}
-                >
-                  {saindo ? 'Saindo da turma…' : 'Sair da turma'}
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  ref={fecharRef}
-                  type="button"
-                  onClick={fechar}
-                  className={classeBotaoContorno}
-                >
-                  Fechar
-                </button>
-                {estado.status === 'pronto' && matricula.podeSair && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setErroSaida('')
-                      setEtapa('confirmar')
-                    }}
-                    className="inline-flex h-11 items-center justify-center rounded-lg border border-[var(--aluno-erro)] px-5 text-[13px] font-semibold leading-[18px] text-[var(--aluno-erro)] transition-colors hover:bg-[var(--aluno-neutro-fundo)]"
-                  >
-                    Sair da turma
-                  </button>
-                )}
-              </>
-            )}
-          </div>
         </>
       )}
-    </dialog>
+
+      {confirmando && (
+        <div className="rounded-controle bg-superficie-rebaixada p-3">
+          {pendencias === null ? (
+            <p className="text-xs leading-[17px] text-texto-suave">
+              Não foi possível conferir seus rascunhos nesta turma. Eles continuam salvos no servidor.
+            </p>
+          ) : semPendencias ? (
+            <p className="text-xs leading-[17px] text-texto-suave">
+              Você não tem rascunhos nem redações aguardando correção nesta turma.
+            </p>
+          ) : (
+            <>
+              <ListaPendencias titulo="Rascunhos que ficam salvos:" itens={pendencias.rascunhos} />
+              <ListaPendencias titulo="Redações aguardando correção:" itens={pendencias.aguardandoCorrecao} />
+            </>
+          )}
+        </div>
+      )}
+
+      {erroSaida && <Aviso tipo="erro" className="mt-4">{erroSaida}</Aviso>}
+
+      <div className="dialogo-base__rodape">
+        {confirmando ? (
+          <>
+            <Botao
+              ref={voltarRef}
+              variante="secundario"
+              disabled={saindo}
+              onClick={() => {
+                setErroSaida('')
+                setEtapa('detalhes')
+              }}
+            >
+              Voltar
+            </Botao>
+            <Botao variante="perigo" disabled={saindo} onClick={confirmarSaida}>
+              {saindo ? 'Saindo da turma…' : 'Sair da turma'}
+            </Botao>
+          </>
+        ) : (
+          <>
+            <Botao ref={fecharRef} variante="secundario" onClick={fechar}>
+              Fechar
+            </Botao>
+            {estado.status === 'pronto' && matricula.podeSair && (
+              <Botao
+                variante="perigo"
+                onClick={() => {
+                  setErroSaida('')
+                  setEtapa('confirmar')
+                }}
+              >
+                Sair da turma
+              </Botao>
+            )}
+          </>
+        )}
+      </div>
+    </Dialogo>
   )
 }

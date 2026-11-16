@@ -12,7 +12,7 @@
   margin-top: 20px;
   padding: 20px 24px 24px;
   border: 1px solid var(--panel-border);
-  border-radius: 12px;
+  border-radius: var(--raio-cartao);
   background: var(--panel-surface);
 }
 
@@ -50,68 +50,8 @@
   line-height: 20px;
 }
 
-.perfil-campo {
-  display: grid;
-  gap: 6px;
-  margin: 16px 0 0;
-}
-
-.perfil-campo label {
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 18px;
-}
-
-.perfil-campo input {
-  width: 100%;
-  min-height: 44px;
-  padding: 10px 12px;
-  border: 1px solid var(--panel-border);
-  border-radius: 10px;
-  background: var(--panel-bg);
-  color: inherit;
-  font-family: inherit;
-  font-size: 14px;
-  line-height: 22px;
-}
-
-.perfil-campo input:disabled {
-  cursor: wait;
-  opacity: 0.7;
-}
-
-.perfil-campo input[aria-invalid='true'] {
-  border-color: var(--panel-error);
-}
-
-.perfil-campo-erro,
-.perfil-erro {
-  color: var(--panel-error);
-  font-size: 13px;
-  line-height: 20px;
-}
-
-.perfil-erro {
-  margin-top: 14px;
-  padding: 10px 14px;
-  border-left: 3px solid var(--panel-error);
-  border-radius: 8px;
-  background: var(--panel-soft);
-}
-
-.perfil-sucesso {
-  margin-top: 14px;
-  padding: 10px 14px;
-  border-left: 3px solid var(--panel-action);
-  border-radius: 8px;
-  background: var(--panel-soft);
-  color: var(--panel-action);
-  font-size: 13px;
-  line-height: 20px;
-}
-
 /* O botão base do painel tem 40 px; aqui o alvo mínimo é 44 px. */
-.perfil-cartao form .panel-primary-button,
+.perfil-cartao form button[type="submit"],
 .perfil-sair {
   margin-top: 18px;
   min-height: 44px;

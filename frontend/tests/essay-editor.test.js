@@ -9,8 +9,6 @@ import {
   descreverExtensao,
   descreverSugestao,
   encontrarRedacaoPorTema,
-  formatarHorario,
-  formatarPrazoCurto,
   LIMITE_IMAGEM_REDACAO_BYTES,
   mensagemRevisaoLinguistica,
   validarImagemRedacao,
@@ -116,23 +114,6 @@ test('conta palavras e linhas não vazias do texto', () => {
   assert.equal(
     descreverExtensao('Uma'),
     '1 palavra · 1 parágrafo',
-  )
-})
-
-test('formata o horário do salvamento e o prazo curto', () => {
-  const data = new Date(2026, 7, 10, 9, 5).toISOString()
-
-  assert.equal(formatarHorario(data), '09:05')
-  assert.equal(formatarHorario(null), null)
-  assert.equal(
-    formatarPrazoCurto(
-      new Date(2026, 7, 10, 23, 59).toISOString(),
-    ),
-    '10/08, 23h59',
-  )
-  assert.equal(
-    formatarPrazoCurto('inválido'),
-    'Prazo indisponível',
   )
 })
 

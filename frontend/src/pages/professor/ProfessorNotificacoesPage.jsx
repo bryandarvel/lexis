@@ -1,4 +1,7 @@
+import { formatarData } from '../../utils/formatar-data.js'
+import EstadoVazio from '../../components/base/EstadoVazio.jsx'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import Botao from '../../components/base/Botao.jsx'
 import { motion } from 'motion/react'
 import { useNavigate } from 'react-router'
 
@@ -27,19 +30,6 @@ import {
 } from '../../utils/notificacoes-sequencia.js'
 import { respostaDeveSerAplicada } from '../../utils/resposta-notificacoes.js'
 import './professor-notificacoes.css'
-
-function formatarDataHora(valor) {
-  const data = new Date(valor)
-
-  if (Number.isNaN(data.getTime())) {
-    return ''
-  }
-
-  return new Intl.DateTimeFormat('pt-BR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  }).format(data)
-}
 
 const INICIAL = {
   usuarioId: null,
@@ -216,26 +206,18 @@ export default function ProfessorNotificacoesPage() {
         )}
 
         {visivel.status === 'erro' && (
-          <section className="avisos-vazio" aria-labelledby="avisos-erro-titulo">
-            <h2 id="avisos-erro-titulo">Avisos indisponíveis</h2>
-            <p>Verifique sua conexão e tente novamente.</p>
-            <button
-              type="button"
-              className="panel-primary-button"
-              onClick={() => setTentativa((valor) => valor + 1)}
-            >
-              Tentar novamente
-            </button>
-          </section>
+          <EstadoVazio
+            titulo="Avisos indisponíveis"
+            descricao="Verifique sua conexão e tente novamente."
+            acao={<Botao type="button" onClick={() => setTentativa((valor) => valor + 1)}>Tentar novamente</Botao>}
+          />
         )}
 
         {visivel.status === 'pronto' && visivel.notificacoes.length === 0 && (
-          <section className="avisos-vazio" aria-labelledby="avisos-vazio-titulo">
-            <h2 id="avisos-vazio-titulo">Nenhum aviso por enquanto</h2>
-            <p>
-              Quando um aluno enviar uma redação, o aviso aparece aqui.
-            </p>
-          </section>
+          <EstadoVazio
+            titulo="Nenhum aviso por enquanto"
+            descricao="Quando um aluno enviar uma redação, o aviso aparece aqui."
+          />
         )}
 
         {visivel.status === 'pronto' && visivel.notificacoes.length > 0 && (
@@ -267,7 +249,7 @@ export default function ProfessorNotificacoesPage() {
                       <span className="avisos-item-topo">
                         <strong>{notificacao.titulo}</strong>
                         <span className="avisos-data">
-                          {formatarDataHora(notificacao.criadaEm)}
+                          {formatarData(notificacao.criadaEm, 'dataHora', { vazio: '' })}
                         </span>
                       </span>
 

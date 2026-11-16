@@ -43,7 +43,7 @@ test('propostas abertas e vencidas aparecem; rascunho digitado persiste e envio 
   await item.getByRole('link', { name: /Escrever redação/ }).click()
   await page.getByLabel('Texto da redação', { exact: true }).fill(texto)
   await page.getByRole('button', { name: 'Salvar agora', exact: true }).click()
-  await expect(page.getByRole('status').filter({ hasText: 'Salvo no servidor às' })).toBeVisible()
+  await expect(page.getByRole('status').filter({ hasText: 'Salvo no servidor em' })).toBeVisible()
   await page.reload()
   await expect(page.getByLabel('Texto da redação', { exact: true })).toHaveValue(texto)
   const dados = await cenario.chamada(cenario.aluno, 'get', '/api/aluno/redacoes')

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import Botao from '../../components/base/Botao.jsx'
 import { Link, useNavigate } from 'react-router'
 
 import AlunoLayout from '../../layouts/AlunoLayout.jsx'
@@ -74,13 +75,11 @@ function Bloco({ chave, estado, onTentar, largo = false, children }) {
       {estado.status === 'erro' && (
         <div role="alert">
           <p className="aluno-pf-texto">{erro}</p>
-          <button
+          <Botao
             type="button"
-            onClick={onTentar}
-            className="aluno-pf-botao aluno-pf-botao-primario"
-          >
+            onClick={onTentar}>
             Tentar novamente
-          </button>
+          </Botao>
         </div>
       )}
 
@@ -134,9 +133,9 @@ function BlocoTurma({ estado, onTentar }) {
             uma, use o código de acesso que seu professor passou, no
             painel.
           </p>
-          <Link to="/aluno" className="aluno-pf-botao">
+          <Botao as={Link} to="/aluno" variante="secundario">
             Ir para o painel
-          </Link>
+          </Botao>
         </>
       ) : (
         <Campos
@@ -286,10 +285,10 @@ export default function AlunoPerfilPage() {
   return (
     <AlunoLayout rotaEnviarRedacao={rotaEnviarRedacao} trilha={['Perfil']}>
       <header>
-        <h1 className="text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-lexis-50">
+        <h1 className="text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-texto">
           Perfil
         </h1>
-        <p className="mt-[11px] text-base leading-[25px] text-lexis-200">
+        <p className="mt-[11px] text-base leading-[25px] text-texto-suave">
           Seus dados de conta, sua turma e o resumo das suas correções.
         </p>
       </header>
@@ -314,14 +313,13 @@ export default function AlunoPerfilPage() {
         >
           <h2 id="perfil-sessao">Sessão</h2>
           <div className="aluno-pf-sessao">
-            <button
+            <Botao
               type="button"
               onClick={handleSair}
               disabled={saindo}
-              className="aluno-pf-botao"
-            >
+              variante="secundario">
               {saindo ? 'Saindo…' : 'Sair da conta'}
-            </button>
+            </Botao>
           </div>
         </section>
       </div>
