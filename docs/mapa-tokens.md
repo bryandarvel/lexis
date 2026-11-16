@@ -6,7 +6,8 @@ Liga cada token por função (`frontend/src/styles/tokens.css`) ao token antigo 
 
 - **Lote 3a (PR #147):** criou os tokens e os componentes base, sem usá-los.
 - **Lote 3b (Issue #148):** migrou os usos e removeu o antigo. A escala `lexis-50…950` (classes e variáveis `--color-lexis-*`), o truque que trocava `text-white` por navy no tema claro e `--text-on-action-blue` não existem mais. As páginas usam os tokens por função. Os componentes sem uso (UX-028) e o CSS dos botões, campos, diálogos, avisos, etiquetas e estados vazios antigos também saíram.
-- **O que ainda existe por tela:** as variáveis `--panel-*` (painel do professor), `--login-*` (entrada) e `--aluno-*` (telas do aluno), mais `--surface-*`, `--page-background` e `--focus-color` em `index.css`. Elas guardam valores próprios de cada tela e dependem da reorganização das telas (Lotes 2 e 3 do plano); as colunas "Antigo" abaixo descrevem esse legado. Valores arbitrários de tamanho e hexadecimais soltos nas páginas (UX-031) também ficam para esse momento.
+- **Lote 4 (Issue #150):** casca única. `AlunoLayout`, `ProfessorWorkspaceLayout`, `DashboardLayout`, `AppHeader` e `AuthShell` saíram; as telas autenticadas usam `AppShell` (`layouts/app-shell.css`) e as de entrada usam `CascaEntrada`. As variáveis que só a casca usava (`--aluno-shell-*`, `--aluno-avatar`, `--aluno-erro-solido`) e as classes `.panel-header`, `.panel-sidebar`, `.panel-sino`, `.panel-avatar`, `.panel-skip`, `.surface-shell` e `.app-header` não existem mais. Ver "Casca" abaixo.
+- **O que ainda existe por tela:** as variáveis `--panel-*` (telas do professor, em `professor-dashboard.css`), `--login-*` (entrada, em `casca-entrada.css`) e `--aluno-*` (telas do aluno, em `layouts/escopo-aluno.css`), mais `--surface-*`, `--page-background` e `--focus-color` em `index.css`. Elas guardam valores próprios de cada tela e dependem da reorganização das telas; as colunas "Antigo" abaixo descrevem esse legado. O `AppShell` aplica a classe `.aluno-shell` ou `.professor-panel` conforme o papel só para que essas variáveis valham: nenhuma das duas traz regra de casca. Valores arbitrários de tamanho e hexadecimais soltos nas páginas (UX-031) também ficam para esse momento.
 - **D1 confirmada pelo Bryan no Figma.** Famílias Newsreader e Inter, navy `#002049` e azul `#1c6eba`, como no código e no protótipo.
 - **Fonte dos valores:** `output/prototipo-correcao/index.html`, bloco "Tokens por função" (e `NOTA-PARA-CODEX.md`, tabela "Bloco → componente → token"). Essa pasta é ignorada pelo Git: a coluna "Protótipo" cita o nome da variável no arquivo, não um link. Onde o protótipo não define o token, a coluna diz "sem equivalente".
 
@@ -49,6 +50,21 @@ Liga cada token por função (`frontend/src/styles/tokens.css`) ao token antigo 
 | `--foco` | `#1674bd` | `#7dccff` | `--focus-color` | `--foco` | igual |
 | `--foco-contraste` | `#ffffff` | `#06101f` | sem equivalente | `--foco-contraste` | novo |
 | `--foco-sobre-shell` | `#7dccff` | `#7dccff` | foco próprio do shell | `--foco-sobre-shell` | igual |
+
+## Casca
+
+A casca (`AppShell`) é navy nos dois temas. Usa `--superficie-shell`, `--texto-sobre-shell`, `--foco-sobre-shell`, `--veu`, `--sombra-flutuante`, `--painel`, `--curva` e `--rapido`, mais os degraus `--surface-shell-2…4` de `index.css`. Os tons abaixo só existem sobre o navy e ficam locais em `layouts/app-shell.css` (classe `.casca`), com o mesmo valor nos dois temas. Vêm da casca do aluno (Figma, nó `16:2`).
+
+| Variável | Valor | Uso | Antigo |
+|---|---|---|---|
+| `--casca-texto-suave` | `#93c4f7` | Trilha, item de menu em repouso, marcador do item ativo | `--aluno-shell-texto-suave`; `#93c4f7` solto em `.panel-sidebar` e `.panel-header-label` |
+| `--casca-icone` | `#3d72b0` | Ícone do menu em repouso, borda do botão de tema | `--aluno-shell-icone`; `.panel-nav-icon` |
+| `--casca-borda` | `#1e4a80` | Divisor entre a marca e a trilha | `--aluno-shell-borda`; `.panel-header-divider` |
+| `--casca-avatar` | `#6b7a90` | Fundo do avatar | `--aluno-avatar`. O avatar do professor era `#1c6eba`; o contraste das iniciais segue em aberto (#80) |
+| `--casca-contagem` | `#c42626` | Contagem do sino | `--aluno-erro-solido`; `#b91c1c` em `.panel-sino-contagem` |
+| `--casca-barra` / `--casca-trilho` | `3.5rem` / `15rem` | Altura da barra e largura do menu lateral | 56 px e 240 px nas duas cascas antigas |
+
+Texto da casca: `--aluno-shell-texto` (`#ffffff`) e o `white` do professor passam a `--texto-sobre-shell` (`#f7fbff`), tom. Foco sobre o navy: `--foco-sobre-shell` no lugar de `.aluno-foco-shell`.
 
 ## Bordas
 

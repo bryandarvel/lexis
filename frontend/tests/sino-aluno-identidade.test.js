@@ -6,7 +6,7 @@ import {
   marcarConta,
 } from '../src/utils/identidade-sessao.js'
 
-// Sino de notificações do aluno (AlunoLayout + useNotificacoesNaoLidas). O hook guarda a contagem com o
+// Sino de notificações do aluno (AppShell + useNotificacoesNaoLidas). O hook guarda a contagem com o
 // id de quem a carregou e, no render, só mostra a contagem da conta autenticada agora. O efeito do hook
 // depende do id, então uma conta nova dispara nova consulta (conferido no navegador com API fictícia).
 const INICIAL = { totalNaoLidas: 0, usuarioId: null }

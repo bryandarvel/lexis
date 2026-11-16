@@ -1,0 +1,49 @@
+/*
+ * Variáveis próprias das telas do aluno, extraídas do protótipo no Figma
+ * (nó 16:2). A casca não usa nada daqui: ela tem o CSS dela em app-shell.css.
+ * Estas variáveis continuam por tela até a reorganização das telas
+ * (docs/mapa-tokens.md); o AppShell aplica a classe .aluno-shell na sessão de
+ * aluno só para que elas valham.
+ */
+.aluno-shell {
+  --aluno-sucesso: #15803d;
+  --aluno-sucesso-fundo: #dcfce7;
+  --aluno-atencao: #a65a08;
+  --aluno-atencao-fundo: #fef3c7;
+  --aluno-erro: #b42318;
+  --aluno-neutro-fundo: #f6f8fb;
+  --aluno-acao-suave: #eff6ff;
+  --aluno-acao-suave-texto: #175795;
+  --aluno-borda-campo: #8895ab;
+  --aluno-trilho: #edf1f7;
+  --aluno-elevacao-1: 0 1px 2px rgba(0, 32, 73, 0.06);
+}
+
+:root[data-theme="dark"] .aluno-shell {
+  --aluno-sucesso: #4ade80;
+  --aluno-sucesso-fundo: rgba(74, 222, 128, 0.14);
+  --aluno-atencao: #fbbf24;
+  --aluno-atencao-fundo: rgba(251, 191, 36, 0.14);
+  --aluno-erro: #f87171;
+  --aluno-neutro-fundo: #1a2638;
+  --aluno-acao-suave: rgba(125, 204, 255, 0.12);
+  --aluno-acao-suave-texto: #7dccff;
+  --aluno-borda-campo: #4f6079;
+  --aluno-trilho: #1d2b40;
+  --aluno-elevacao-1: none;
+}
+
+/*
+ * O reset de button, input e select no index.css fica fora de camada e vence
+ * os utilitários de fonte do Tailwind. Nas telas do aluno, revert-layer
+ * devolve a tipografia às camadas (preflight + utilitários) sem alterar as
+ * demais telas. O :where mantém a especificidade igual à do reset, para que
+ * classes próprias, como .theme-toggle, continuem valendo.
+ */
+:where(.aluno-shell) :is(button, input, select) {
+  font: revert-layer;
+}
+
+.aluno-elevacao-1 {
+  box-shadow: var(--aluno-elevacao-1);
+}

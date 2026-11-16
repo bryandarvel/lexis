@@ -9,7 +9,7 @@ import Botao from '../../components/base/Botao.jsx'
 import Campo from '../../components/base/Campo.jsx'
 import Dialogo from '../../components/base/Dialogo.jsx'
 import DialogoConfirmacao from '../../components/base/DialogoConfirmacao.jsx'
-import ProfessorWorkspaceLayout from '../../layouts/ProfessorWorkspaceLayout.jsx'
+import AppShell from '../../layouts/AppShell.jsx'
 import { listarTemasDaTurma } from '../../services/temas.js'
 import {
   arquivarTurma,
@@ -335,10 +335,8 @@ export default function ProfessorTurmaPage() {
   const resumo = resumirAlunosDaTurma(alunos.lista)
 
   return (
-    <ProfessorWorkspaceLayout secao="Turmas" turmas={pronto ? [turma] : []} pronto={pronto}>
-      <motion.main
-        id="panel-main"
-        tabIndex={-1}
+    <AppShell conteudo="amplo" trilha={['Turmas']} turmas={pronto ? [turma] : []} pronto={pronto}>
+      <motion.div
         className="panel-main turma-main"
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -594,7 +592,7 @@ export default function ProfessorTurmaPage() {
             )}
           </>
         )}
-      </motion.main>
-    </ProfessorWorkspaceLayout>
+      </motion.div>
+    </AppShell>
   )
 }

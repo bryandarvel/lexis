@@ -11,7 +11,7 @@ import {
   useParams,
 } from 'react-router'
 
-import DashboardLayout from '../../layouts/DashboardLayout.jsx'
+import AppShell from '../../layouts/AppShell.jsx'
 import {
   criarTema,
   obterModeloCompetenciaDois,
@@ -24,6 +24,11 @@ import {
   validarCriteriosNovaProposta,
   validarFormularioTema,
 } from '../../utils/topic-form.js'
+
+const TRILHA = [
+  { rotulo: 'Turmas', para: '/professor/turmas' },
+  'Nova proposta',
+]
 
 function criarFormulario(criterios) {
   return {
@@ -168,7 +173,7 @@ export default function ProfessorNovoTemaPage() {
 
   if (status === 'carregando') {
     return (
-      <DashboardLayout>
+      <AppShell conteudo="livre" trilha={TRILHA}>
         <div
           className="mx-auto max-w-5xl px-6 py-16"
           role="status"
@@ -179,13 +184,13 @@ export default function ProfessorNovoTemaPage() {
             Carregando modelo de critérios...
           </span>
         </div>
-      </DashboardLayout>
+      </AppShell>
     )
   }
 
   if (status === 'erro') {
     return (
-      <DashboardLayout>
+      <AppShell conteudo="livre" trilha={TRILHA}>
         <section className="mx-auto max-w-3xl px-6 py-16">
           <Link
             to={`/professor/turmas/${turmaId}`}
@@ -207,12 +212,12 @@ export default function ProfessorNovoTemaPage() {
             Tentar novamente
           </Botao>
         </section>
-      </DashboardLayout>
+      </AppShell>
     )
   }
 
   return (
-    <DashboardLayout>
+    <AppShell conteudo="livre" trilha={TRILHA}>
       <header className="border-b border-borda px-6 py-10 sm:px-10">
         <div className="mx-auto max-w-5xl">
           <Link
@@ -419,6 +424,6 @@ export default function ProfessorNovoTemaPage() {
           </Link>
         </div>
       </form>
-    </DashboardLayout>
+    </AppShell>
   )
 }

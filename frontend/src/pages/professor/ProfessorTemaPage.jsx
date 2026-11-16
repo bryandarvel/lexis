@@ -8,7 +8,7 @@ import Botao from '../../components/base/Botao.jsx'
 import Campo from '../../components/base/Campo.jsx'
 import Dialogo from '../../components/base/Dialogo.jsx'
 import DialogoConfirmacao from '../../components/base/DialogoConfirmacao.jsx'
-import ProfessorWorkspaceLayout from '../../layouts/ProfessorWorkspaceLayout.jsx'
+import AppShell from '../../layouts/AppShell.jsx'
 import CriterionDialog from '../../components/professor/CriterionDialog.jsx'
 import { carregarPropostaProfessor } from '../../services/professor-topic.js'
 import { arquivarTema, atualizarTema, reabrirTema, substituirCriterios } from '../../services/temas.js'
@@ -307,9 +307,11 @@ export default function ProfessorTemaPage() {
   }
 
   return (
-    <ProfessorWorkspaceLayout secao="Propostas" pronto={pronto} turmas={pronto ? [pagina.turma] : []} onRedacoes={irParaRedacoes}
-      cabecalho={pronto ? <nav className="topic-breadcrumb" aria-label="Caminho da proposta"><Link to="/professor/turmas">Turmas</Link><span aria-hidden="true">›</span><Link to={`/professor/turmas/${turmaId}`} title={pagina.turma.nome}>{pagina.turma.nome}</Link><span aria-hidden="true">›</span><span>Proposta</span></nav> : undefined}>
-      <motion.main id="panel-main" className="panel-main topic-main" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .2 }} aria-busy={pagina.status === 'carregando'}>
+    <AppShell conteudo="amplo" pronto={pronto} turmas={pronto ? [pagina.turma] : []} onRedacoes={irParaRedacoes}
+      trilha={pronto
+        ? [{ rotulo: 'Turmas', para: '/professor/turmas' }, { rotulo: pagina.turma.nome, para: `/professor/turmas/${turmaId}` }, 'Proposta']
+        : ['Propostas']}>
+      <motion.div className="panel-main topic-main" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .2 }} aria-busy={pagina.status === 'carregando'}>
         {pagina.status === 'carregando' && <><h1>Proposta e critérios</h1><p role="status" className="panel-subtitle">Carregando proposta…</p><div className="topic-loading" aria-hidden="true"><div className="skeleton-block" /><div className="skeleton-block" /><div className="skeleton-block" /></div></>}
         {pagina.status === 'erro' && <><h1>Proposta e critérios</h1><section className="panel-error" role="alert"><h2>Não foi possível abrir a proposta</h2><p>{pagina.mensagem}</p><Botao onClick={() => setTentativa((atual) => atual + 1)}>Tentar novamente</Botao><Botao as={Link} variante="secundario" to="/professor/turmas">Voltar às turmas</Botao></section></>}
         {pronto && <>
@@ -397,7 +399,7 @@ export default function ProfessorTemaPage() {
             />
           )}
         </>}
-      </motion.main>
-    </ProfessorWorkspaceLayout>
+      </motion.div>
+    </AppShell>
   )
 }

@@ -84,8 +84,7 @@ h1 {
   font-family: var(--fonte-titulo);
 }
 
-.brand-wordmark,
-.panel-wordmark {
+.brand-wordmark {
   font-family: var(--fonte-titulo);
   font-weight: 400;
   font-optical-sizing: auto;
@@ -99,17 +98,6 @@ h1 {
   box-shadow:
     inset 0 1px var(--surface-highlight),
     var(--shadow-card);
-}
-
-.surface-shell {
-  border-color: rgba(255, 255, 255, 0.14);
-  background: var(--surface-shell-1);
-  color: #f7fbff;
-  box-shadow: inset 0 1px rgba(255, 255, 255, 0.12);
-}
-
-.app-header {
-  background: var(--surface-shell-1);
 }
 
 .theme-toggle {

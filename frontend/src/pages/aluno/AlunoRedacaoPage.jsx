@@ -19,7 +19,7 @@ import ConfirmarEnvioDialogo from '../../components/aluno/ConfirmarEnvioDialogo.
 import EnvioFotoPainel from '../../components/aluno/EnvioFotoPainel.jsx'
 import RevisaoLinguisticaCard from '../../components/aluno/RevisaoLinguisticaCard.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
-import AlunoLayout from '../../layouts/AlunoLayout.jsx'
+import AppShell from '../../layouts/AppShell.jsx'
 import {
   enviarRedacao,
   listarMinhasRedacoes,
@@ -786,18 +786,18 @@ export default function AlunoRedacaoPage() {
 
   if (pagina.status === 'carregando') {
     return (
-      <AlunoLayout
+      <AppShell
         rotaEnviarRedacao={rotaEditor}
         trilha={['Enviar redação']}
       >
         <EsqueletoEditor />
-      </AlunoLayout>
+      </AppShell>
     )
   }
 
   if (pagina.status === 'erro') {
     return (
-      <AlunoLayout
+      <AppShell
         rotaEnviarRedacao={rotaEditor}
         trilha={['Enviar redação']}
       >
@@ -821,7 +821,7 @@ export default function AlunoRedacaoPage() {
             Voltar ao início
           </Botao>
         </div>
-      </AlunoLayout>
+      </AppShell>
     )
   }
 
@@ -897,7 +897,7 @@ export default function AlunoRedacaoPage() {
   )
 
   return (
-    <AlunoLayout
+    <AppShell
       rotaEnviarRedacao={rotaEditor}
       trilha={['Enviar redação', tema.enunciado]}
     >
@@ -1089,6 +1089,6 @@ export default function AlunoRedacaoPage() {
           onConfirmar={handleConfirmarEnvio}
         />
       )}
-    </AlunoLayout>
+    </AppShell>
   )
 }

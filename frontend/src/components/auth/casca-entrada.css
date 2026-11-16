@@ -4,9 +4,7 @@
   --login-muted: #516075;
   --login-text: #18212f;
   --login-border: #dce4ee;
-  --login-input-border: #8895ab;
   --login-soft: #edf1f7;
-  --login-selected: #eff6ff;
   --login-action: #1c6eba;
   display: grid;
   grid-template-columns: 7fr 11fr;
@@ -20,9 +18,7 @@
   --login-muted: #a9bed1;
   --login-text: #f7fbff;
   --login-border: #3a4654;
-  --login-input-border: #78869a;
   --login-soft: #252c36;
-  --login-selected: #102d4c;
   --login-action: #7dccff;
 }
 .login-brand {
@@ -79,14 +75,6 @@
 .login-tabs > * { display: grid; place-items: center; border-radius: var(--raio-controle); font-size: 13px; font-weight: 600; text-decoration: none; color: var(--login-muted); }
 .login-tabs [aria-current] { background: var(--login-surface); color: var(--login-action); }
 .login-form { display: grid; gap: 20px; margin-top: 24px; }
-.login-roles { min-width: 0; margin: 0; padding: 0; border: 0; }
-.login-roles legend { margin-bottom: 4px; font-size: 13px; font-weight: 600; line-height: 18px; }
-.login-roles > div { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.login-roles label { position: relative; display: grid; place-items: center; height: 66px; border: 1px solid var(--login-input-border); border-radius: var(--raio-cartao); font-size: 13px; font-weight: 600; cursor: pointer; }
-.login-roles .is-selected { border: 2px solid var(--login-action); background: var(--login-selected); }
-.login-roles input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-.login-roles label:has(:focus-visible) { outline: 2px solid var(--focus-color); outline-offset: 3px; }
-.login-roles:disabled label { cursor: wait; opacity: .7; }
 .login-password { position: relative; }
 .login-forgot { position: absolute; top: 0; right: 0; z-index: 1; font-size: 12px; line-height: 18px; color: var(--login-action); cursor: pointer; }
 .login-forgot:hover { text-decoration: underline; }

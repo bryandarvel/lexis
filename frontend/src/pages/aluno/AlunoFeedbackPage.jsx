@@ -10,7 +10,7 @@ import {
   useParams,
 } from 'react-router'
 
-import AlunoLayout from '../../layouts/AlunoLayout.jsx'
+import AppShell from '../../layouts/AppShell.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
 import { chaveTrecho } from '../../utils/trechos-feedback.js'
 import { obterFeedbackAluno } from '../../services/feedbacks.js'
@@ -728,13 +728,13 @@ function FeedbackDaRedacao({ redacaoId }) {
   }
 
   return (
-    <AlunoLayout
+    <AppShell
       rotaEnviarRedacao={rotaEnviarRedacao}
       trilha={TRILHA}
     >
       <div className="aluno-feedback">
         {conteudo}
       </div>
-    </AlunoLayout>
+    </AppShell>
   )
 }

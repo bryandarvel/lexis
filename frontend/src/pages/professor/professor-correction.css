@@ -1,10 +1,5 @@
 .review-main { max-width: 1600px; margin: 0 auto; padding: 18px 16px 36px; }
 .review-main h1, .review-main h2, .review-sheet h2 { margin: 0; font-family: var(--fonte-interface); font-size: 18px; line-height: 24px; font-weight: 600; letter-spacing: -.09px; }
-.review-breadcrumb { display: flex; gap: 8px; align-items: center; min-width: 0; }
-.review-breadcrumb a { color: inherit; text-decoration: none; }
-.review-breadcrumb a:hover { text-decoration: underline; }
-.review-breadcrumb a:nth-of-type(2) { max-width: 36vw; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
-.professor-panel-immersive .panel-header-label { min-width: 0; }
 .review-position { border-radius: var(--raio-pilula); background: var(--surface-shell-3); color: #93c4f7; font-size: 12px; line-height: 17px; padding: 4px 12px; white-space: nowrap; }
 .review-grid { display: grid; gap: 14px; }
 .review-center, .review-tools, .review-evaluation { min-width: 0; display: grid; align-content: start; gap: 14px; }
@@ -123,7 +118,6 @@
   .review-actions { grid-column: 2; }
 }
 @media (max-width: 899px), (max-height: 539px) {
-  .professor-panel-immersive .panel-header { gap: 10px; }
   .review-position { display: none; }
   .review-main { padding: 16px 12px calc(74px + env(safe-area-inset-bottom)); }
   .review-card { padding: 16px; }
@@ -136,7 +130,6 @@
   .review-loading-grid { grid-template-columns: 1fr; }
   .review-loading-grid > div:not(:nth-child(2)) { display: none; }
 }
-@media (max-width: 600px) { .review-breadcrumb a:nth-of-type(2), .review-breadcrumb > span { display: none; } }
 
 /* Folha da redação: a única superfície de papel, sem raio (REV-013). */
 .review-essay { border-radius: var(--raio-folha); box-shadow: none; }

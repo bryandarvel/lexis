@@ -10,8 +10,9 @@ import {
   useNavigate,
 } from 'react-router'
 
-import DashboardLayout from '../../layouts/DashboardLayout.jsx'
+import AppShell from '../../layouts/AppShell.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
+import { useRotaEnviarRedacao } from '../../hooks/useRotaEnviarRedacao.js'
 import {
   listarNotificacoes,
   marcarNotificacaoLida,
@@ -65,6 +66,7 @@ export default function AlunoNotificacoesPage() {
   const navigate = useNavigate()
   const { usuario } = useAuth()
   const usuarioId = usuario?.id
+  const rotaEnviarRedacao = useRotaEnviarRedacao()
   const montado = useRef(true)
   // Lidos no momento da resposta: de quem é a sessão agora e qual geração está valendo.
   const contaAtual = useRef(usuarioId)
@@ -185,7 +187,7 @@ export default function AlunoNotificacoesPage() {
   const visivel = estadoDaContaAtual(estado, usuarioId, INICIAL)
 
   return (
-    <DashboardLayout>
+    <AppShell conteudo="livre" trilha={['Notificações']} rotaEnviarRedacao={rotaEnviarRedacao}>
       <motion.section
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -304,6 +306,6 @@ export default function AlunoNotificacoesPage() {
             )}
         </div>
       </motion.section>
-    </DashboardLayout>
+    </AppShell>
   )
 }
