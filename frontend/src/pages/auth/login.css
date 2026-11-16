@@ -102,7 +102,7 @@
   line-height: 22px;
 }
 .login-form input::placeholder { color: #748298; opacity: 1; }
-.login-form input[type="password"], .login-password input { padding-right: 90px; }
+.login-form input[type="password"], .login-password input { padding-right: 48px; }
 .login-password { position: relative; }
 .login-forgot { position: absolute; top: 0; right: 0; z-index: 1; font-size: 12px; line-height: 18px; color: var(--login-action); cursor: pointer; }
 .login-forgot:hover { text-decoration: underline; }

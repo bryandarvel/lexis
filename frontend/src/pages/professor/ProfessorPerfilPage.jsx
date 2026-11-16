@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import { useNavigate } from 'react-router'
 
+import { CampoSenhaComOlho } from '../../components/base/BotaoSenha.jsx'
 import ProfessorWorkspaceLayout from '../../layouts/ProfessorWorkspaceLayout.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
 import {
@@ -323,7 +324,7 @@ export default function ProfessorPerfilPage() {
               rotulo="Senha atual"
               erro={senhaEstado.erros.senhaAtual}
             >
-              <input ref={senhaAtualRef} {...campoSenha('senhaAtual')} />
+              <CampoSenhaComOlho disabled={senhaEstado.enviando} renderizarCampo={(extras) => <input ref={senhaAtualRef} {...campoSenha('senhaAtual')} {...extras} />} />
             </Campo>
 
             <Campo
@@ -331,7 +332,7 @@ export default function ProfessorPerfilPage() {
               rotulo="Nova senha"
               erro={senhaEstado.erros.novaSenha}
             >
-              <input ref={novaSenhaRef} {...campoSenha('novaSenha')} />
+              <CampoSenhaComOlho disabled={senhaEstado.enviando} renderizarCampo={(extras) => <input ref={novaSenhaRef} {...campoSenha('novaSenha')} {...extras} />} />
             </Campo>
 
             <Campo
@@ -339,7 +340,7 @@ export default function ProfessorPerfilPage() {
               rotulo="Confirme a nova senha"
               erro={senhaEstado.erros.confirmacao}
             >
-              <input {...campoSenha('confirmacao')} />
+              <CampoSenhaComOlho disabled={senhaEstado.enviando} renderizarCampo={(extras) => <input {...campoSenha('confirmacao')} {...extras} />} />
             </Campo>
 
             {senhaEstado.mensagem && (
