@@ -63,8 +63,13 @@ function body(f, trechos) {
     })) }
 }
 const salvar = (f, dados, usuario = professor) => request(app).put(f.raiz).set('Authorization', auth(usuario)).send(dados)
-const publicar = f => request(app).post(`${f.raiz}/publicar`).set('Authorization', auth(professor))
+const publicar = (f, usuario = professor) => request(app).post(`${f.raiz}/publicar`).set('Authorization', auth(usuario))
 const consultarAluno = (f, usuario = aluno) => request(app).get(`/api/aluno/redacoes/${f.redacao.id}/feedback`).set('Authorization', auth(usuario))
+const consultarProfessor = f => request(app).get(f.raiz).set('Authorization', auth(professor))
+const notificacoesDaRedacao = f => prisma.notificacao.findMany({
+  where: { feedbackVersao: { feedback: { redacaoId: f.redacao.id } } },
+  orderBy: { id: 'asc' },
+})
 async function analise(f, overrides = {}) {
   return prisma.analiseIA.create({ data: {
     redacaoId: f.redacao.id, solicitadaPorId: professor.id, status: 'CONCLUIDA', modelo: 'fixture-sem-provedor', versaoPrompt: 'fixture-42',
@@ -190,4 +195,118 @@ test('publicação concorrente mantém uma única versão com trechos e uma úni
   const r = (await consultarAluno(f).expect(200)).body.data.feedback
   assert.equal(r.criterios[0].trechos.length, 1)
   assert.equal(await prisma.notificacao.count({ where: { feedbackVersaoId: r.id } }), 1)
+})
+
+test('UX-040: recusa republicação idêntica sem alterar rascunho, histórico ou fila de e-mail', async () => {
+  const f = await fixture()
+  const dados = body(f, [trecho()])
+  await salvar(f, dados).expect(200)
+  const publicada = (await publicar(f).expect(200)).body.data.feedback
+  const semRascunho = await publicar(f).expect(409)
+  assert.equal(semRascunho.body.error.code, 'FEEDBACK_DRAFT_REQUIRED')
+
+  const rascunho = (await salvar(f, dados).expect(200)).body.data.feedback
+  const antes = (await consultarProfessor(f).expect(200)).body.data.feedback
+  const avisos = await notificacoesDaRedacao(f)
+  assert.equal(avisos.length, 1)
+  assert.equal(avisos[0].statusEmail, 'PENDENTE')
+  assert.equal(avisos[0].feedbackVersaoId, publicada.id)
+  assert.equal((await publicar(f, outroProfessor).expect(404)).body.error.code, 'ESSAY_NOT_FOUND')
+  await publicar(f, aluno).expect(403)
+
+  const recusada = await publicar(f).expect(409)
+  assert.equal(recusada.body.error.code, 'FEEDBACK_UNCHANGED')
+  assert.match(recusada.body.error.message, /idêntico à versão publicada/)
+  const depois = (await consultarProfessor(f).expect(200)).body.data.feedback
+  assert.deepEqual(depois, antes)
+  assert.deepEqual(depois.historico.map(v => [v.id, v.status]), [
+    [rascunho.id, 'RASCUNHO'], [publicada.id, 'PUBLICADA'],
+  ])
+  assert.equal((await consultarAluno(f).expect(200)).body.data.feedback.id, publicada.id)
+  assert.deepEqual(await notificacoesDaRedacao(f), avisos)
+
+  dados.comentarioGeral += '!'
+  const alterado = (await salvar(f, dados).expect(200)).body.data.feedback
+  assert.equal(alterado.id, rascunho.id)
+  assert.equal((await publicar(f).expect(200)).body.data.feedback.id, rascunho.id)
+  assert.equal((await consultarAluno(f).expect(200)).body.data.feedback.comentarioGeral, dados.comentarioGeral)
+  assert.equal((await notificacoesDaRedacao(f)).length, 2)
+})
+
+test('UX-040: reordenação e alterações só na origem por IA não justificam republicação', async () => {
+  const f = await fixture()
+  const a = await analise(f), b = await analise(f)
+  const dados = body(f, [
+    { ...trecho(), analiseIaId: a.id },
+    trecho(3, 35),
+  ])
+  dados.criterios[1].trechos = [{ ...trecho(), analiseIaId: a.id }]
+  await salvar(f, dados).expect(200)
+  await publicar(f).expect(200)
+  const reenviado = body(f, [trecho(3, 35), { ...trecho(), analiseIaId: b.id }])
+  reenviado.criterios[1].trechos = [trecho()]
+  reenviado.criterios.reverse()
+  const rascunho = (await salvar(f, reenviado).expect(200)).body.data.feedback
+  const criterio0 = rascunho.criterios.find(c => c.criterioId === f.proposta.criterios[0].id)
+  const criterio1 = rascunho.criterios.find(c => c.criterioId === f.proposta.criterios[1].id)
+  assert.equal(criterio0.trechos.find(t => t.inicio === trecho().inicio).analiseIaId, b.id)
+  assert.equal(criterio1.trechos[0].sugeridoPorIa, false)
+  assert.equal((await publicar(f).expect(409)).body.error.code, 'FEEDBACK_UNCHANGED')
+  assert.equal((await notificacoesDaRedacao(f)).length, 1)
+})
+
+for (const [campo, editar] of [
+  ['nota', (dados) => { dados.competencia1 += 1 }],
+  ['comentário de critério', (dados) => { dados.criterios[0].comentario += '!' }],
+  ['conjunto de critérios', (dados) => { dados.criterios.pop() }],
+  ['borda de trecho', (dados) => { dados.criterios[0].trechos = [trecho(trecho().inicio, trecho().fim + 1)] }],
+]) {
+  test(`UX-040: permite republicar com uma alteração em ${campo}`, async () => {
+    const f = await fixture()
+    const dados = body(f, [trecho()])
+    await salvar(f, dados).expect(200)
+    await publicar(f).expect(200)
+    editar(dados)
+    await salvar(f, dados).expect(200)
+    assert.equal((await publicar(f).expect(200)).body.data.feedback.numero, 2)
+    const historico = (await consultarProfessor(f).expect(200)).body.data.feedback.historico
+    assert.deepEqual(historico.map(v => v.status), ['PUBLICADA', 'SUBSTITUIDA'])
+    assert.equal((await notificacoesDaRedacao(f)).length, 2)
+  })
+}
+
+test('UX-040: compara apenas com a publicação vigente, não com uma versão substituída', async () => {
+  const f = await fixture()
+  const dados = body(f, [trecho()])
+  for (const comentarioGeral of ['Versão fictícia A.', 'Versão fictícia B.', 'Versão fictícia A.']) {
+    await salvar(f, { ...dados, comentarioGeral }).expect(200)
+    await publicar(f).expect(200)
+  }
+  const { historico } = (await consultarProfessor(f).expect(200)).body.data.feedback
+  assert.deepEqual(historico.map(v => [v.numero, v.status]), [
+    [3, 'PUBLICADA'], [2, 'SUBSTITUIDA'], [1, 'SUBSTITUIDA'],
+  ])
+  assert.equal((await notificacoesDaRedacao(f)).length, 3)
+})
+
+test('UX-040: POSTs concorrentes bloqueiam o rascunho idêntico e publicam uma única vez após edição', async () => {
+  const f = await fixture()
+  const dados = body(f, [trecho()])
+  await salvar(f, dados).expect(200)
+  await publicar(f).expect(200)
+  await salvar(f, dados).expect(200)
+  const iguais = await Promise.all([publicar(f), publicar(f)])
+  assert.deepEqual(iguais.map(r => [r.status, r.body.error?.code]), [
+    [409, 'FEEDBACK_UNCHANGED'], [409, 'FEEDBACK_UNCHANGED'],
+  ])
+  assert.equal((await notificacoesDaRedacao(f)).length, 1)
+
+  dados.comentarioGeral += '!'
+  await salvar(f, dados).expect(200)
+  const diferentes = await Promise.all([publicar(f), publicar(f)])
+  assert.deepEqual(diferentes.map(r => r.status).sort(), [200, 409])
+  assert.equal(diferentes.find(r => r.status === 409).body.error.code, 'FEEDBACK_DRAFT_REQUIRED')
+  const { historico } = (await consultarProfessor(f).expect(200)).body.data.feedback
+  assert.deepEqual(historico.map(v => [v.numero, v.status]), [[2, 'PUBLICADA'], [1, 'SUBSTITUIDA']])
+  assert.equal((await notificacoesDaRedacao(f)).length, 2)
 })
