@@ -1,19 +1,15 @@
 import Botao from '../../components/base/Botao.jsx'
 import { useState } from 'react'
-import { motion } from 'motion/react'
 import {
-  Link,
   useLocation,
   useNavigate,
 } from 'react-router'
 
 import Campo from '../../components/base/Campo.jsx'
 import Aviso from '../../components/base/Aviso.jsx'
+import CascaEntrada from '../../components/auth/CascaEntrada.jsx'
 import PasswordRecoveryDialog from '../../components/auth/PasswordRecoveryDialog.jsx'
 import { solicitarRecuperacaoSenha } from '../../services/password-recovery.js'
-import ThemeToggle from '../../components/layout/ThemeToggle.jsx'
-import logo from '../../assets/lexis-logo-login.svg'
-import './login.css'
 import { useAuth } from '../../hooks/useAuth.js'
 import { interpretarErroApi } from '../../utils/api-error.js'
 
@@ -34,7 +30,6 @@ export default function LoginPage() {
   })
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState('')
-  const [papel, setPapel] = useState('PROFESSOR')
   const [recuperacaoAberta, setRecuperacaoAberta] = useState(false)
 
   const cadastroConcluido = Boolean(
@@ -80,49 +75,16 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="login-page">
-      <section className="login-brand" aria-label="LÉXIS">
-        <img src={logo} alt="LÉXIS" className="login-logo" />
-      </section>
-      <section className="login-access" aria-label="Acesso à plataforma">
-        <div className="login-theme"><ThemeToggle compacto /></div>
-        <motion.div
-          className="login-card"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, ease: 'easeOut' }}
-        >
-          <h1>Bem-vindo(a) ao LÉXIS</h1>
-          <p className="login-description">Acesse sua conta para continuar</p>
-          <nav className="login-tabs" aria-label="Acesso à conta">
-            <span aria-current="page">Entrar</span>
-            <Link to="/cadastro" state={{ papel }}>Criar conta</Link>
-          </nav>
+    <CascaEntrada
+      titulo="Bem-vindo(a) ao LÉXIS"
+      descricao="Acesse sua conta para continuar"
+      aba="entrar"
+    >
       <form
         onSubmit={enviarFormulario}
         className="login-form"
         aria-busy={enviando}
       >
-        <fieldset className="login-roles" disabled={enviando}>
-          <legend>Você acessa como</legend>
-          <div>
-            {[
-              ['PROFESSOR', 'Professor'],
-              ['ALUNO', 'Aluno'],
-            ].map(([valor, rotulo]) => (
-              <label key={valor} className={papel === valor ? 'is-selected' : ''}>
-                <input
-                  type="radio"
-                  name="perfil"
-                  value={valor}
-                  checked={papel === valor}
-                  onChange={() => setPapel(valor)}
-                />
-                <span>{rotulo}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
         {cadastroConcluido && (
           <Aviso tipo="sucesso">Conta criada com sucesso. Agora você já pode entrar.</Aviso>
         )}
@@ -175,14 +137,12 @@ export default function LoginPage() {
           Entrar
         </Botao>
       </form>
-        </motion.div>
-      </section>
       <PasswordRecoveryDialog
         onRequestRecovery={solicitarRecuperacaoSenha}
         aberto={recuperacaoAberta}
         emailInicial={dados.email}
         onClose={() => setRecuperacaoAberta(false)}
       />
-    </main>
+    </CascaEntrada>
   )
 }

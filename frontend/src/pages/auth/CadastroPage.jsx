@@ -1,10 +1,10 @@
 import Botao from '../../components/base/Botao.jsx'
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { useNavigate } from 'react-router'
 
 import Campo from '../../components/base/Campo.jsx'
 import Aviso from '../../components/base/Aviso.jsx'
-import AuthShell from '../../components/auth/AuthShell.jsx'
+import CascaEntrada from '../../components/auth/CascaEntrada.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
 import { interpretarErroApi } from '../../utils/api-error.js'
 import {
@@ -131,25 +131,14 @@ export default function CadastroPage() {
   }
 
   return (
-    <AuthShell
-      eyebrow="Primeiro acesso"
-      title="Crie sua conta"
-      description="Escolha seu perfil e comece a usar o LÉXIS."
-      footer={
-        <p>
-          Já possui uma conta?{' '}
-          <Link
-            to="/login"
-            className="font-bold text-texto-suave underline decoration-acao/60 underline-offset-4 transition hover:text-texto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foco"
-          >
-            Voltar para o login
-          </Link>
-        </p>
-      }
+    <CascaEntrada
+      titulo="Crie sua conta"
+      descricao="Escolha seu perfil e comece a usar o LÉXIS."
+      aba="cadastro"
     >
       <form
         onSubmit={enviarFormulario}
-        className="space-y-5"
+        className="login-form"
         noValidate
         aria-busy={enviando}
       >
@@ -255,6 +244,6 @@ export default function CadastroPage() {
           Criar conta
         </Botao>
       </form>
-    </AuthShell>
+    </CascaEntrada>
   )
 }

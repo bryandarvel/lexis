@@ -88,7 +88,6 @@ test.afterAll(async () => { await prisma.$disconnect() })
 
 export async function entrar(page, pessoa) {
   await page.goto('/login')
-  await page.getByRole('radio', { name: pessoa.papel === 'ALUNO' ? 'Aluno' : 'Professor', exact: true }).check()
   await page.getByRole('textbox', { name: 'E-mail institucional', exact: true }).fill(pessoa.email)
   await page.getByLabel('Senha', { exact: true }).fill(pessoa.senha)
   await page.getByRole('button', { name: 'Entrar', exact: true }).click()
