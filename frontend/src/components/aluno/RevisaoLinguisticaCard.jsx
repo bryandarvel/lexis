@@ -116,7 +116,7 @@ export default function RevisaoLinguisticaCard({
       <div className="flex items-start justify-between gap-3">
         <h2
           id="titulo-revisao-linguistica"
-          className="aluno-titulo-interface text-lg font-semibold leading-6 tracking-[-0.09px] text-texto"
+          className="text-lg font-semibold leading-6 tracking-[-0.09px] text-texto"
         >
           Revisão linguística
         </h2>

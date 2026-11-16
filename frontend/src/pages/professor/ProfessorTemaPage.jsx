@@ -1,3 +1,4 @@
+import { obterTomCriterio } from '../../utils/criterio-cores.js'
 import { formatarData } from '../../utils/formatar-data.js'
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
@@ -353,9 +354,9 @@ export default function ProfessorTemaPage() {
             <aside className="topic-card topic-criteria" aria-labelledby="topic-criteria-title">
               <h2 ref={criteriosRef} tabIndex={-1} id="topic-criteria-title">Critérios da Competência II</h2>
               <h3 className="topic-eyebrow">Base · fixos do LÉXIS</h3>
-              <ul className="topic-criteria-list">{grupos.base.map((criterio, indice) => <li key={criterio.nome} className={`topic-criterion tone-${indice}`}><div><h4>{criterio.nome}</h4><span>fixo{!criterio.sincronizado && ' · não cadastrado'}</span></div><p>{criterio.descricao}</p></li>)}</ul>
+              <ul className="topic-criteria-list">{grupos.base.map((criterio) => <li key={criterio.nome} className={`topic-criterion tone-${obterTomCriterio(criterio)}`}><div><h4>{criterio.nome}</h4><span>fixo{!criterio.sincronizado && ' · não cadastrado'}</span></div><p>{criterio.descricao}</p></li>)}</ul>
               <h3 className="topic-eyebrow">Personalizados desta proposta</h3>
-              {grupos.personalizados.length ? <ul className="topic-criteria-list">{grupos.personalizados.map((criterio, indice) => <li key={criterio.id ?? criterio.nome} className={`topic-criterion custom tone-${3 + indice % 2}`}><div><h4>{criterio.nome}</h4><button type="button" disabled={!podeEditar || salvando || Boolean(editor)} onClick={(event) => abrirEditor(indice, event)} aria-label={`Editar critério ${criterio.nome}`}>Editar</button></div><p>{criterio.descricao}</p></li>)}</ul> : <p className="topic-empty-text">Nenhum critério personalizado adicionado.</p>}
+              {grupos.personalizados.length ? <ul className="topic-criteria-list">{grupos.personalizados.map((criterio, indice) => <li key={criterio.id ?? criterio.nome} className={`topic-criterion custom tone-${obterTomCriterio(criterio)}`}><div><h4>{criterio.nome}</h4><button type="button" disabled={!podeEditar || salvando || Boolean(editor)} onClick={(event) => abrirEditor(indice, event)} aria-label={`Editar critério ${criterio.nome}`}>Editar</button></div><p>{criterio.descricao}</p></li>)}</ul> : <p className="topic-empty-text">Nenhum critério personalizado adicionado.</p>}
               <Botao type="button" variante="secundario" className="topic-add" disabled={!podeEditar || grupos.personalizados.length >= 2 || salvando || Boolean(editor)} onClick={(event) => abrirEditor(null, event)}>+ Adicionar critério personalizado</Botao>
               <p className="topic-limit">Até dois critérios personalizados nesta proposta.</p>
               {pagina.tema.criteriosBloqueados && <p className="topic-rule">Critérios bloqueados após a primeira entrega, para preservar a avaliação da turma.</p>}

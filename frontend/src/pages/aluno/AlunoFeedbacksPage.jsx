@@ -181,7 +181,7 @@ export default function AlunoFeedbacksPage() {
           role="alert"
           className="aluno-elevacao-1 mt-[25px] max-w-[720px] rounded-[14px] border border-[var(--surface-border)] border-l-[3px] border-l-[var(--aluno-erro)] bg-superficie px-6 py-5"
         >
-          <h2 className="aluno-titulo-interface text-lg font-semibold leading-6 text-texto">
+          <h2 className="text-lg font-semibold leading-6 text-texto">
             Não foi possível carregar seus feedbacks
           </h2>
           <p className="mt-2 text-sm leading-[22px] text-texto-suave">
@@ -198,7 +198,7 @@ export default function AlunoFeedbacksPage() {
 
       {status === 'pronto' && feedbacks.length === 0 && (
         <section className="aluno-elevacao-1 mt-[25px] max-w-[720px] rounded-[14px] border border-[var(--surface-border)] bg-superficie px-6 py-6">
-          <h2 className="aluno-titulo-interface text-lg font-semibold leading-6 text-texto">
+          <h2 className="text-lg font-semibold leading-6 text-texto">
             Você ainda não recebeu nenhum feedback
           </h2>
           <p className="mt-2 text-sm leading-[22px] text-texto-suave">

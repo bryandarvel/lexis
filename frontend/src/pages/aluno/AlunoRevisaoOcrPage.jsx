@@ -159,7 +159,7 @@ function FotoEnviada({
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h2
           id="titulo-foto-enviada"
-          className="aluno-titulo-interface text-lg font-semibold leading-6 tracking-[-0.09px] text-texto"
+          className="text-lg font-semibold leading-6 tracking-[-0.09px] text-texto"
         >
           Foto enviada
         </h2>
@@ -409,7 +409,7 @@ export default function AlunoRevisaoOcrPage() {
           <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
             <h2
               id="titulo-texto-extraido"
-              className="aluno-titulo-interface text-lg font-semibold leading-6 tracking-[-0.09px] text-texto"
+              className="text-lg font-semibold leading-6 tracking-[-0.09px] text-texto"
             >
               Texto extraído — editável
             </h2>
@@ -430,7 +430,7 @@ export default function AlunoRevisaoOcrPage() {
             aria-labelledby="titulo-texto-extraido"
             aria-describedby="extensao-transcricao orientacao-transcricao"
             aria-invalid={Boolean(erro)}
-            className="font-editorial mt-2.5 h-[360px] w-full resize-none rounded-lg border border-[var(--aluno-borda-campo)] bg-[var(--aluno-neutro-fundo)] p-3 text-[17px] leading-8 text-texto outline-none read-only:cursor-wait"
+            className="fonte-redacao mt-2.5 h-[360px] w-full resize-none rounded-lg border border-[var(--aluno-borda-campo)] bg-[var(--aluno-neutro-fundo)] p-3 text-[17px] leading-8 text-texto outline-none read-only:cursor-wait"
           />
 
           <p

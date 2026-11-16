@@ -48,11 +48,6 @@
   font: revert-layer;
 }
 
-/* h2 recebe Newsreader no index.css; títulos de interface usam Inter. */
-.aluno-titulo-interface {
-  font-family: var(--font-interface);
-}
-
 .aluno-elevacao-1 {
   box-shadow: var(--aluno-elevacao-1);
 }

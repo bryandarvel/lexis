@@ -120,12 +120,12 @@ function ConfirmarAcaoDialog({ titulo, efeitos, rotulo, rotuloEnviando, enviando
   )
 }
 
-function TemaCard({ tema, indice }) {
+function TemaCard({ tema }) {
   const redacoes = tema.quantidadeRedacoes ?? 0
   const criterios = tema.criterios?.length ?? 0
 
   return (
-    <li className={`class-card class-accent-${tema.ativo ? indice % 3 : 'archived'}`}>
+    <li className="class-card">
       <Link to={`/professor/temas/${tema.id}`} className="class-card-link" aria-label={`Abrir tema ${tema.enunciado}`}>
         <div className="class-card-info">
           <h3>{tema.enunciado}</h3>
@@ -511,7 +511,7 @@ export default function ProfessorTurmaPage() {
               <p>Acompanhe os prazos e a quantidade de redações recebidas em cada proposta.</p>
               {pagina.temas.length ? (
                 <ul className="classes-grid">
-                  {pagina.temas.map((tema, indice) => <TemaCard key={tema.id} tema={tema} indice={indice} />)}
+                  {pagina.temas.map((tema) => <TemaCard key={tema.id} tema={tema} />)}
                 </ul>
               ) : (
                 <EstadoVazio nivel={3} titulo="Esta turma ainda não possui temas de redação." />

@@ -224,7 +224,7 @@ export default function ProfessorNovoTemaPage() {
           <p className="mt-8 text-xs font-bold uppercase tracking-[0.2em] text-acao-texto">
             Nova proposta
           </p>
-          <h1 className="mt-3 font-editorial text-4xl font-semibold text-texto sm:text-5xl">
+          <h1 className="mt-3 text-4xl font-semibold text-texto sm:text-5xl">
             Criar tema de redação
           </h1>
           <p className="mt-4 max-w-3xl leading-7 text-texto-suave">

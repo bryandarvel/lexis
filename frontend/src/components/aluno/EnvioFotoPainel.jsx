@@ -84,7 +84,7 @@ export default function EnvioFotoPainel({
 
   return (
     <div className="aluno-elevacao-1 flex min-h-[500px] flex-col rounded-xl border border-[var(--surface-border)] bg-superficie px-6 pb-6 pt-4">
-      <h2 className="aluno-titulo-interface text-lg font-semibold leading-6 tracking-[-0.09px] text-texto">
+      <h2 className="text-lg font-semibold leading-6 tracking-[-0.09px] text-texto">
         Enviar foto da redação
       </h2>
       <p

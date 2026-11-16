@@ -81,12 +81,12 @@ function NovaTurmaDialog({ onClose, onCreated }) {
   )
 }
 
-function TurmaCard({ turma, indice }) {
+function TurmaCard({ turma }) {
   const resumo = turma.resumo
   const estado = !turma.ativa ? 'Arquivada' : !resumo ? 'Dados indisponíveis' : resumo.pendentes ? `${resumo.pendentes} ${resumo.pendentes === 1 ? 'pendente' : 'pendentes'}` : 'Em dia'
   const alunos = turma.quantidadeAlunosAtivos ?? 0
   return (
-    <li className={`class-card class-accent-${turma.ativa ? indice % 3 : 'archived'}`}>
+    <li className="class-card">
       <Link to={`/professor/turmas/${turma.id}`} className="class-card-link" aria-label={`Abrir turma ${turma.nome}`}>
         <div className="class-card-info">
           <h2>{turma.nome}</h2>
@@ -163,7 +163,7 @@ export default function ProfessorTurmasPage() {
           <>
             {pagina.turmas.some((turma) => !turma.resumo) && <p className="class-partial-warning" role="status">Alguns indicadores não responderam. As turmas continuam disponíveis. <button type="button" onClick={() => setTentativa((valor) => valor + 1)}>Atualizar indicadores</button></p>}
             <span className="sr-only" role="status">{filtradas.length} {filtradas.length === 1 ? 'turma encontrada' : 'turmas encontradas'}</span>
-            {filtradas.length ? <ul className="classes-grid">{filtradas.map((turma) => <TurmaCard key={turma.id} turma={turma} indice={pagina.turmas.findIndex((item) => item.id === turma.id)} />)}</ul> : (
+            {filtradas.length ? <ul className="classes-grid">{filtradas.map((turma) => <TurmaCard key={turma.id} turma={turma} />)}</ul> : (
               <EstadoVazio
                 titulo={pagina.turmas.length ? 'Nenhuma turma encontrada' : 'Você ainda não tem turmas'}
                 descricao={pagina.turmas.length ? 'Tente outro nome, código ou filtro.' : 'Crie sua primeira turma e compartilhe o código de acesso com os alunos.'}

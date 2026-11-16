@@ -217,7 +217,7 @@ function EditorCard({
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-[var(--surface-border)] pb-2">
         <h2
           id="titulo-editor"
-          className="aluno-titulo-interface text-lg font-semibold leading-6 tracking-[-0.09px] text-texto"
+          className="text-lg font-semibold leading-6 tracking-[-0.09px] text-texto"
         >
           Sua redação
         </h2>
@@ -248,7 +248,7 @@ function EditorCard({
         readOnly={somenteLeitura}
         aria-describedby="contagem-redacao status-salvamento"
         placeholder="Comece a desenvolver sua redação..."
-        className="font-editorial mt-[17px] min-h-[348px] w-full flex-1 resize-none bg-transparent text-[17px] leading-8 text-texto outline-none placeholder:text-texto-fraco read-only:cursor-default"
+        className="fonte-redacao mt-[17px] min-h-[348px] w-full flex-1 resize-none bg-transparent text-[17px] leading-8 text-texto outline-none placeholder:text-texto-fraco read-only:cursor-default"
       />
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--surface-border)] pt-[9px]">
@@ -268,7 +268,7 @@ function CartaoEntrega({ redacao }) {
     >
       <h2
         id="titulo-entrega"
-        className="aluno-titulo-interface text-lg font-semibold leading-6 tracking-[-0.09px] text-texto"
+        className="text-lg font-semibold leading-6 tracking-[-0.09px] text-texto"
       >
         Entrega
       </h2>
@@ -808,7 +808,7 @@ export default function AlunoRedacaoPage() {
           role="alert"
           className={`${classeCartao} mt-[19px] max-w-[700px] p-6`}
         >
-          <h2 className="aluno-titulo-interface text-lg font-semibold leading-6 text-texto">
+          <h2 className="text-lg font-semibold leading-6 text-texto">
             Não foi possível abrir o editor
           </h2>
           <p className="mt-2 text-sm leading-[22px] text-texto-suave">

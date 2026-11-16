@@ -29,7 +29,8 @@
 .aluno-fb-resumo dd {
   margin: 4px 0 0;
   color: var(--texto);
-  font-family: var(--font-display);
+  font-family: var(--fonte-interface);
+  font-variant-numeric: tabular-nums;
   font-size: 28px;
   font-weight: 600;
   line-height: 32px;
@@ -56,7 +57,7 @@
   border-radius: 10px;
   background: var(--superficie-conteudo);
   color: var(--texto);
-  font-family: var(--font-interface);
+  font-family: var(--fonte-interface);
   font-size: 14px;
   line-height: 22px;
 }
@@ -105,7 +106,7 @@
 .aluno-fb-titulo {
   margin: 4px 0 0;
   color: var(--texto);
-  font-family: var(--font-interface);
+  font-family: var(--fonte-interface);
   font-size: 16px;
   font-weight: 600;
   line-height: 22px;
@@ -137,7 +138,7 @@
 
 .aluno-fb-nota-valor {
   color: var(--texto);
-  font-family: var(--font-display);
+  font-family: var(--fonte-titulo);
   font-size: 26px;
   font-weight: 600;
   line-height: 30px;

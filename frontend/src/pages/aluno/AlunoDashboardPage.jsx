@@ -193,7 +193,7 @@ function CartaoProposta({
       >
         <h2
           id="titulo-proposta"
-          className="aluno-titulo-interface text-lg font-semibold leading-6"
+          className="text-lg font-semibold leading-6"
         >
           Proposta indisponível
         </h2>
@@ -215,7 +215,7 @@ function CartaoProposta({
       >
         <h2
           id="titulo-proposta"
-          className="aluno-titulo-interface text-lg font-semibold leading-6"
+          className="text-lg font-semibold leading-6"
         >
           Nenhuma proposta pendente
         </h2>
@@ -287,7 +287,7 @@ function CartaoProposta({
 function ListaPropostas({ status, propostas }) {
   return (
     <section aria-labelledby="titulo-propostas-turma" className="mt-8">
-      <h2 id="titulo-propostas-turma" className="aluno-titulo-interface text-xl font-semibold leading-[26px] text-texto">
+      <h2 id="titulo-propostas-turma" className="text-xl font-semibold leading-[26px] text-texto">
         Propostas da turma
       </h2>
       <p className="mt-2 text-sm leading-[22px] text-texto-suave">
@@ -347,7 +347,7 @@ function Indicador({
           <>
             <span
               aria-hidden="true"
-              className="font-display block text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-texto"
+              className="fonte-nota block text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-texto"
             >
               —
             </span>
@@ -356,7 +356,7 @@ function Indicador({
             </span>
           </>
         ) : (
-          <span className="font-display block text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-texto">
+          <span className="fonte-nota block text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-texto">
             {valor}
           </span>
         )}
@@ -383,7 +383,7 @@ function CartaoDesempenho({ bloco }) {
       >
         <h2
           id="titulo-desempenho"
-          className="aluno-titulo-interface text-lg font-semibold leading-6 tracking-[-0.09px]"
+          className="text-lg font-semibold leading-6 tracking-[-0.09px]"
         >
           Seu desempenho
         </h2>
@@ -417,7 +417,7 @@ function CartaoDesempenho({ bloco }) {
     >
       <h2
         id="titulo-desempenho"
-        className="aluno-titulo-interface text-lg font-semibold leading-6 tracking-[-0.09px]"
+        className="text-lg font-semibold leading-6 tracking-[-0.09px]"
       >
         Seu desempenho
       </h2>
@@ -557,7 +557,7 @@ function ListaRedacoes({
     >
       <h2
         id="titulo-minhas-redacoes"
-        className="aluno-titulo-interface text-xl font-semibold leading-[26px] tracking-[-0.16px] text-texto"
+        className="text-xl font-semibold leading-[26px] tracking-[-0.16px] text-texto"
       >
         Minhas redações
       </h2>
@@ -669,7 +669,7 @@ function FormularioEntrarTurma({ onEntrou }) {
     >
       <h2
         id={`${idCampo}-titulo`}
-        className="aluno-titulo-interface text-xl font-semibold leading-[26px] tracking-[-0.16px] text-texto"
+        className="text-xl font-semibold leading-[26px] tracking-[-0.16px] text-texto"
       >
         Entre na sua turma
       </h2>

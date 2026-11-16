@@ -13,19 +13,12 @@
   --feedback-barra: #6b7a90;
 }
 
-.feedback-tom-0 { --feedback-tom: #7c3aed; }
-.feedback-tom-1 { --feedback-tom: #0f766e; }
-.feedback-tom-2 { --feedback-tom: #a16207; }
-.feedback-tom-3 { --feedback-tom: #be185d; }
-.feedback-tom-4 { --feedback-tom: #4d7c0f; }
-.feedback-tom-neutro { --feedback-tom: #516075; }
-
-:root[data-theme="dark"] .feedback-tom-0 { --feedback-tom: #c4a1fa; }
-:root[data-theme="dark"] .feedback-tom-1 { --feedback-tom: #66ddd2; }
-:root[data-theme="dark"] .feedback-tom-2 { --feedback-tom: #f0bb64; }
-:root[data-theme="dark"] .feedback-tom-3 { --feedback-tom: #ff9cc5; }
-:root[data-theme="dark"] .feedback-tom-4 { --feedback-tom: #b8d98c; }
-:root[data-theme="dark"] .feedback-tom-neutro { --feedback-tom: #a9bed1; }
+.feedback-tom-0 { --feedback-tom: var(--criterio-0); }
+.feedback-tom-1 { --feedback-tom: var(--criterio-1); }
+.feedback-tom-2 { --feedback-tom: var(--criterio-2); }
+.feedback-tom-3 { --feedback-tom: var(--criterio-3); }
+.feedback-tom-4 { --feedback-tom: var(--criterio-4); }
+.feedback-tom-neutro { --feedback-tom: var(--criterio-neutro); }
 
 /*
  * O tamanho mínimo automático de um item de grade é min-content, e uma palavra
@@ -194,7 +187,7 @@
   padding-left: 3px;
   /* Herda a cor do texto: a cor do tom sobre o realce não alcança 4,5:1. */
   color: inherit;
-  font-family: var(--font-interface);
+  font-family: var(--fonte-interface);
   font-size: 10px;
   font-weight: 700;
 }

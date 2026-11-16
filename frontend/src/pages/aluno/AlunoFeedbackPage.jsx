@@ -170,7 +170,7 @@ function CartaoAviso({
       role={tom === 'erro' ? 'alert' : undefined}
       className={`${classeCartao} mt-[23px] max-w-[720px] border-l-[3px] px-6 py-5 ${classeTom}`}
     >
-      <h2 className="aluno-titulo-interface text-lg font-semibold leading-6 text-texto">
+      <h2 className="text-lg font-semibold leading-6 text-texto">
         {titulo}
       </h2>
       <p className="mt-2 text-sm leading-[22px] text-texto-suave">
@@ -216,12 +216,12 @@ function NotaGeral({ feedback }) {
         <div className="flex shrink-0 flex-col xl:w-[193px] xl:border-r xl:border-[var(--surface-border)] xl:pr-6">
           <h2
             id="feedback-titulo-nota"
-            className={`aluno-titulo-interface ${classeSobretitulo} text-texto-suave`}
+            className={`${classeSobretitulo} text-texto-suave`}
           >
             Nota final
           </h2>
           <p className="mt-1.5 flex items-baseline gap-3">
-            <span className="font-display text-[48px] font-bold leading-[53px] tracking-[-1.06px] text-texto">
+            <span className="fonte-nota text-[48px] font-bold leading-[53px] tracking-[-1.06px] text-texto">
               {notaTotal ?? '—'}
             </span>
             <span className="text-xl font-semibold leading-[26px] tracking-[-0.16px] text-texto-suave">
@@ -336,7 +336,7 @@ function ComentarioGeral({ comentario }) {
       <div className="border-l-[3px] border-l-[var(--color-brand-accent)] px-6 py-5">
         <h2
           id="feedback-titulo-comentario"
-          className={`aluno-titulo-interface ${classeSobretitulo} text-[var(--aluno-acao-suave-texto)]`}
+          className={`${classeSobretitulo} text-[var(--aluno-acao-suave-texto)]`}
         >
           Comentário geral
         </h2>
@@ -369,12 +369,12 @@ function CompetenciaDois({ feedback }) {
           </p>
           <h2
             id="feedback-titulo-competencia-2"
-            className="aluno-titulo-interface mt-1 text-xl font-semibold leading-[26px] tracking-[-0.16px] text-texto"
+            className="mt-1 text-xl font-semibold leading-[26px] tracking-[-0.16px] text-texto"
           >
             Repertório sociocultural
           </h2>
         </div>
-        <p className="mt-[14px] shrink-0 font-display text-2xl font-semibold leading-[30px] tracking-[-0.29px] text-[var(--feedback-destaque)]">
+        <p className="mt-[14px] shrink-0 fonte-nota text-2xl font-semibold leading-[30px] tracking-[-0.29px] text-[var(--feedback-destaque)]">
           {nota === null ? (
             <>
               <span aria-hidden="true">—</span>
@@ -392,7 +392,7 @@ function CompetenciaDois({ feedback }) {
       </div>
 
       <div className="px-[22px] pb-6 pt-4">
-        <h3 className="aluno-titulo-interface text-[13px] font-semibold leading-[18px] text-texto">
+        <h3 className="text-[13px] font-semibold leading-[18px] text-texto">
           Comentários por critério
         </h3>
 
@@ -447,7 +447,7 @@ function TextoRedacao({ redacao, criterios }) {
       <div className="feedback-cabecalho-cartao flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h2
           id="feedback-titulo-redacao"
-          className="aluno-titulo-interface text-lg font-semibold leading-6 tracking-[-0.09px] text-texto"
+          className="text-lg font-semibold leading-6 tracking-[-0.09px] text-texto"
         >
           Sua redação
         </h2>
@@ -484,7 +484,7 @@ function TextoRedacao({ redacao, criterios }) {
       )}
 
       {texto ? (
-        <div className="feedback-texto-redacao mt-2.5 whitespace-pre-wrap break-words font-display text-[17px] leading-8 text-texto">
+        <div className="feedback-texto-redacao mt-2.5 whitespace-pre-wrap break-words fonte-redacao text-[17px] leading-8 text-texto">
           {total > 0
             ? segmentos.map((segmento, indice) => {
                 if (!segmento.criterios.length) {

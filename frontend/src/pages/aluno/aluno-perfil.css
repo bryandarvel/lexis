@@ -27,7 +27,7 @@
 .aluno-pf-cartao h2 {
   margin: 0;
   color: var(--texto);
-  font-family: var(--font-interface);
+  font-family: var(--fonte-interface);
   font-size: 18px;
   font-weight: 600;
   line-height: 24px;
@@ -78,7 +78,8 @@
 .aluno-pf-indicadores dd {
   margin: 4px 0 0;
   color: var(--texto);
-  font-family: var(--font-display);
+  font-family: var(--fonte-interface);
+  font-variant-numeric: tabular-nums;
   font-size: 26px;
   font-weight: 600;
   line-height: 30px;
@@ -86,7 +87,7 @@
 
 .aluno-pf-unidade {
   color: var(--texto-suave);
-  font-family: var(--font-interface);
+  font-family: var(--fonte-interface);
   font-size: 12px;
   font-weight: 500;
 }

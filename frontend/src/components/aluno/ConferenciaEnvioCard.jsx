@@ -53,7 +53,7 @@ export default function ConferenciaEnvioCard({
     >
       <h2
         id="titulo-conferencia-envio"
-        className="aluno-titulo-interface text-lg font-semibold leading-6 tracking-[-0.09px] text-texto"
+        className="text-lg font-semibold leading-6 tracking-[-0.09px] text-texto"
       >
         Antes de enviar
       </h2>
