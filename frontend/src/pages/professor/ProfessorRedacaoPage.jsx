@@ -1,3 +1,4 @@
+import Etiqueta from '../../components/base/Etiqueta.jsx'
 import { useEffect, useRef, useState } from 'react'
 import Botao from '../../components/base/Botao.jsx'
 import { motion } from 'motion/react'
@@ -223,7 +224,7 @@ function Correcao({ redacaoId, usuarioId }) {
         <img src={fixedIcon} alt="Fixo" /><span className="review-color" aria-hidden="true" /><span>{c.nome}</span>
       </div>)}
       {!base.length && <p className="review-caption">Esta proposta utiliza critérios anteriores à base atual.</p>}
-      <div className="review-criteria-subheading"><h3>Personalizados</h3><span className="review-badge">{extras.length} {extras.length === 1 ? 'cadastrado' : 'cadastrados'}</span></div>
+      <div className="review-criteria-subheading"><h3>Personalizados</h3><Etiqueta tom="acao">{extras.length} {extras.length === 1 ? 'cadastrado' : 'cadastrados'}</Etiqueta></div>
       {extras.map((c) => <label className={`review-criterion-row review-tone-${tomCriterio(c)}`} key={c.id}>
         <input type="checkbox" checked disabled aria-label={`Critério definido na proposta: ${c.nome}`} /><span className="review-color" aria-hidden="true" /><span>{c.nome}</span>
       </label>)}
@@ -275,7 +276,7 @@ function Correcao({ redacaoId, usuarioId }) {
           {rascunhoDivergente && <section className="review-notice" role="status"><strong>Rascunho local encontrado</strong><p>Há alterações não enviadas salvas neste dispositivo.</p><Botao type="button" variante="secundario" disabled={Boolean(feedbackAction)} onClick={recuperarRascunho}>Recuperar rascunho</Botao> <Botao type="button" variante="secundario" disabled={Boolean(feedbackAction)} onClick={() => rascunho.descartar(formServidor)}>Descartar rascunho local</Botao></section>}
           {!rascunhoDivergente && rascunho.salvoEm && <p className="review-caption" role="status">Alterações locais protegidas em {formatarData(rascunho.salvoEm)}.</p>}
           <article className="review-card review-essay">
-            <div className="review-essay-heading"><h2>Redação do aluno</h2><span className="review-badge">{trechos.length} {trechos.length === 1 ? 'trecho localizado' : 'trechos localizados'} da IA</span><span className="review-caption">{redacao.texto?.trim() ? redacao.texto.trim().split(/\s+/u).length : 0} palavras</span></div>
+            <div className="review-essay-heading"><h2>Redação do aluno</h2><Etiqueta tom="acao">{trechos.length} {trechos.length === 1 ? 'trecho localizado' : 'trechos localizados'} da IA</Etiqueta><span className="review-caption">{redacao.texto?.trim() ? redacao.texto.trim().split(/\s+/u).length : 0} palavras</span></div>
             <EssayEvidenceText texto={redacao.texto} analise={analise} criterios={criterios} onEvidence={abrirComentarios} />
             <details className="review-submission"><summary>Informações da entrega</summary><p>{redacao.origemTexto === 'OCR' ? 'Texto digitalizado por OCR' : 'Texto digitado'} · {redacao.enviadaComAtraso ? 'Enviada com atraso' : 'Enviada no prazo'}</p><p>Enviada em {formatarData(redacao.enviadaEm)}. Prazo: {formatarData(redacao.prazoConsideradoEm)}.</p></details>
           </article>

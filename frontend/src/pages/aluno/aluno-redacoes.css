@@ -107,31 +107,9 @@
   gap: 8px 12px;
 }
 
-.aluno-selo {
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 17px;
-}
 
-.aluno-selo-neutro {
-  background: var(--aluno-trilho);
-  color: var(--color-lexis-100);
-}
 
-.aluno-selo-atencao {
-  background: var(--aluno-atencao-fundo);
-  color: var(--aluno-atencao);
-}
 
-.aluno-selo-sucesso {
-  background: var(--aluno-sucesso-fundo);
-  color: var(--aluno-sucesso);
-}
 
 .aluno-redacao-data {
   color: var(--color-lexis-200);

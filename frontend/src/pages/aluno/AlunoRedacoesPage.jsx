@@ -1,3 +1,4 @@
+import Etiqueta from '../../components/base/Etiqueta.jsx'
 import { useEffect, useId, useState } from 'react'
 import Botao from '../../components/base/Botao.jsx'
 import { Link } from 'react-router'
@@ -38,9 +39,7 @@ function ItemRedacao({ redacao, turmaAtualId }) {
     <li className="aluno-redacao">
       <div className="aluno-redacao-info">
         <div className="aluno-redacao-topo">
-          <span className={`aluno-selo aluno-selo-${situacao.tom}`}>
-            {situacao.rotulo}
-          </span>
+          <Etiqueta tom={situacao.tom}>{situacao.rotulo}</Etiqueta>
           {data && <span className="aluno-redacao-data">{data}</span>}
         </div>
 

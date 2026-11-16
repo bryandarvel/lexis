@@ -1,3 +1,5 @@
+import Etiqueta from '../../components/base/Etiqueta.jsx'
+import EstadoVazio from '../../components/base/EstadoVazio.jsx'
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import { Link } from 'react-router'
@@ -97,7 +99,7 @@ function TurmaCard({ turma, indice }) {
           ) : <span className="class-metrics-unavailable">Indicadores indisponíveis</span>}
         </div>
         <div className="class-card-actions">
-          <span className={`class-badge ${turma.ativa && resumo?.pendentes ? 'pending' : ''}`}>{estado}</span>
+          <Etiqueta tom={turma.ativa && resumo?.pendentes ? 'atencao' : 'neutro'} className="min-w-[120px] justify-center">{estado}</Etiqueta>
           <span className="class-open" aria-hidden="true">Abrir ›</span>
         </div>
       </Link>
@@ -162,11 +164,11 @@ export default function ProfessorTurmasPage() {
             {pagina.turmas.some((turma) => !turma.resumo) && <p className="class-partial-warning" role="status">Alguns indicadores não responderam. As turmas continuam disponíveis. <button type="button" onClick={() => setTentativa((valor) => valor + 1)}>Atualizar indicadores</button></p>}
             <span className="sr-only" role="status">{filtradas.length} {filtradas.length === 1 ? 'turma encontrada' : 'turmas encontradas'}</span>
             {filtradas.length ? <ul className="classes-grid">{filtradas.map((turma) => <TurmaCard key={turma.id} turma={turma} indice={pagina.turmas.findIndex((item) => item.id === turma.id)} />)}</ul> : (
-              <section className="panel-empty">
-                <h2>{pagina.turmas.length ? 'Nenhuma turma encontrada' : 'Você ainda não tem turmas'}</h2>
-                <p>{pagina.turmas.length ? 'Tente outro nome, código ou filtro.' : 'Crie sua primeira turma e compartilhe o código de acesso com os alunos.'}</p>
-                {pagina.turmas.length ? <Botao type="button" variante="secundario" onClick={() => { setBusca(''); setFiltro('todas') }}>Limpar filtros</Botao> : <Botao type="button" onClick={() => setCriando(true)}>Criar primeira turma</Botao>}
-              </section>
+              <EstadoVazio
+                titulo={pagina.turmas.length ? 'Nenhuma turma encontrada' : 'Você ainda não tem turmas'}
+                descricao={pagina.turmas.length ? 'Tente outro nome, código ou filtro.' : 'Crie sua primeira turma e compartilhe o código de acesso com os alunos.'}
+                acao={pagina.turmas.length ? <Botao type="button" variante="secundario" onClick={() => { setBusca(''); setFiltro('todas') }}>Limpar filtros</Botao> : <Botao type="button" onClick={() => setCriando(true)}>Criar primeira turma</Botao>}
+              />
             )}
           </>
         )}

@@ -25,8 +25,8 @@
 .review-main button:disabled, .review-sheet button:disabled { opacity: .55; cursor: not-allowed; }
 .review-essay-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin-bottom: 12px; }
 .review-essay-heading > .review-caption { margin-left: auto; }
-.review-badge { display: inline-block; padding: 3px 8px; border-radius: 999px; background: var(--panel-soft); color: var(--panel-action); font-size: 12px; line-height: 17px; white-space: nowrap; }
-.review-badge.human { background: #dcfce7; color: #166534; }
+
+
 .review-essay figure { margin: 0; }
 .review-evidence-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 12px 0 8px; padding: 0; list-style: none; font-size: 12px; line-height: 19px; color: var(--panel-text); }
 .review-evidence-legend li { display: flex; align-items: center; gap: 6px; }
@@ -51,7 +51,7 @@
 .review-comment-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 12px; }
 .review-comment-heading h3 { display: flex; align-items: baseline; gap: 6px; margin: 0; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--review-tone); }
 .review-comment-heading h3::before { content: ''; width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; background: var(--review-tone); }
-.review-comment-heading .review-badge { padding: 2px 6px; font-size: 11px; }
+
 .review-comment textarea, .review-general textarea { display: block; width: 100%; padding: 10px 12px; border: 1px solid #8895ab; border-radius: 10px; background: var(--panel-surface); color: var(--panel-text); font-size: 14px; line-height: 22px; resize: vertical; }
 .review-comment textarea { min-height: 132px; font-size: 12px; line-height: 19px; }
 .review-general textarea { margin-top: 12px; background: var(--panel-bg); }
@@ -111,7 +111,6 @@
 [data-theme="dark"] .review-tone-3 { --review-tone: #ff9cc5; --review-highlight: #4b2238; }
 [data-theme="dark"] .review-tone-4 { --review-tone: #b8d98c; --review-highlight: #293c18; }
 [data-theme="dark"] .review-tone-neutro { --review-tone: #a9bed1; --review-highlight: #2a3340; }
-[data-theme="dark"] .review-badge.human { background: #0d3022; color: #5bda91; }
 @media (min-width: 1280px) and (max-width: 1450px) {
   .review-student { flex-wrap: wrap; }
   .review-student-actions { margin-left: auto; }

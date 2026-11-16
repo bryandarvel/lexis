@@ -1,3 +1,4 @@
+import EstadoVazio from '../../components/base/EstadoVazio.jsx'
 import { useEffect, useRef, useState } from 'react'
 import Botao from '../../components/base/Botao.jsx'
 import { motion } from 'motion/react'
@@ -125,11 +126,12 @@ export default function ProfessorDashboardPage() {
                   })}
                 </ul>
               ) : (
-                <div className="panel-empty">
-                  <h3>{pagina.turmas.length ? 'Nenhuma redação pendente' : 'Comece pelas suas turmas'}</h3>
-                  <p>{pagina.turmas.length ? 'As redações enviadas pelos alunos aparecerão aqui para correção.' : 'Acesse Turmas para organizar alunos e propostas de redação.'}</p>
-                  <Botao as={Link} to="/professor/turmas" variante="secundario">Ver turmas</Botao>
-                </div>
+                <EstadoVazio
+                  nivel={3}
+                  titulo={pagina.turmas.length ? 'Nenhuma redação pendente' : 'Comece pelas suas turmas'}
+                  descricao={pagina.turmas.length ? 'As redações enviadas pelos alunos aparecerão aqui para correção.' : 'Acesse Turmas para organizar alunos e propostas de redação.'}
+                  acao={<Botao as={Link} to="/professor/turmas" variante="secundario">Ver turmas</Botao>}
+                />
               )}
               {pagina.pendentes.length > 3 && (
                 <button type="button" className="panel-more" onClick={() => setMostrarTodas((valor) => !valor)}>

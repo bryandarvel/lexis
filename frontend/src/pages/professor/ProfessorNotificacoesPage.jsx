@@ -1,3 +1,4 @@
+import EstadoVazio from '../../components/base/EstadoVazio.jsx'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Botao from '../../components/base/Botao.jsx'
 import { motion } from 'motion/react'
@@ -217,26 +218,18 @@ export default function ProfessorNotificacoesPage() {
         )}
 
         {visivel.status === 'erro' && (
-          <section className="avisos-vazio" aria-labelledby="avisos-erro-titulo">
-            <h2 id="avisos-erro-titulo">Avisos indisponíveis</h2>
-            <p>Verifique sua conexão e tente novamente.</p>
-            <Botao
-              type="button"
-             
-              onClick={() => setTentativa((valor) => valor + 1)}
-            >
-              Tentar novamente
-            </Botao>
-          </section>
+          <EstadoVazio
+            titulo="Avisos indisponíveis"
+            descricao="Verifique sua conexão e tente novamente."
+            acao={<Botao type="button" onClick={() => setTentativa((valor) => valor + 1)}>Tentar novamente</Botao>}
+          />
         )}
 
         {visivel.status === 'pronto' && visivel.notificacoes.length === 0 && (
-          <section className="avisos-vazio" aria-labelledby="avisos-vazio-titulo">
-            <h2 id="avisos-vazio-titulo">Nenhum aviso por enquanto</h2>
-            <p>
-              Quando um aluno enviar uma redação, o aviso aparece aqui.
-            </p>
-          </section>
+          <EstadoVazio
+            titulo="Nenhum aviso por enquanto"
+            descricao="Quando um aluno enviar uma redação, o aviso aparece aqui."
+          />
         )}
 
         {visivel.status === 'pronto' && visivel.notificacoes.length > 0 && (

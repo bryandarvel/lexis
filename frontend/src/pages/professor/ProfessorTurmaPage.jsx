@@ -1,3 +1,5 @@
+import Etiqueta from '../../components/base/Etiqueta.jsx'
+import EstadoVazio from '../../components/base/EstadoVazio.jsx'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import { Link, useParams } from 'react-router'
@@ -151,7 +153,7 @@ function TemaCard({ tema, indice }) {
           </p>
         </div>
         <div className="class-card-actions">
-          <span className="class-badge">{obterStatusTema(tema)}</span>
+          <Etiqueta className="min-w-[120px] justify-center">{obterStatusTema(tema)}</Etiqueta>
           <span className="class-open" aria-hidden="true">Abrir ›</span>
         </div>
       </Link>
@@ -475,10 +477,11 @@ export default function ProfessorTurmaPage() {
               )}
 
               {alunos.status === 'indisponivel' && (
-                <div className="panel-empty">
-                  <h3>Lista indisponível em turma arquivada</h3>
-                  <p>As matrículas foram encerradas no arquivamento.</p>
-                </div>
+                <EstadoVazio
+                  nivel={3}
+                  titulo="Lista indisponível em turma arquivada"
+                  descricao="As matrículas foram encerradas no arquivamento."
+                />
               )}
 
               {alunos.status === 'pronto' && (alunos.lista.length ? (
@@ -509,10 +512,11 @@ export default function ProfessorTurmaPage() {
                   })}
                 </ul>
               ) : (
-                <div className="panel-empty">
-                  <h3>Nenhum aluno nesta turma</h3>
-                  <p>Compartilhe o código <strong>{turma.codigoAcesso}</strong> para os alunos entrarem.</p>
-                </div>
+                <EstadoVazio
+                  nivel={3}
+                  titulo="Nenhum aluno nesta turma"
+                  descricao={<>Compartilhe o código <strong className="codigo-turma">{turma.codigoAcesso}</strong> para os alunos entrarem.</>}
+                />
               ))}
             </section>
 
@@ -524,9 +528,7 @@ export default function ProfessorTurmaPage() {
                   {pagina.temas.map((tema, indice) => <TemaCard key={tema.id} tema={tema} indice={indice} />)}
                 </ul>
               ) : (
-                <div className="panel-empty">
-                  <h3>Esta turma ainda não possui temas de redação.</h3>
-                </div>
+                <EstadoVazio nivel={3} titulo="Esta turma ainda não possui temas de redação." />
               )}
             </section>
 
