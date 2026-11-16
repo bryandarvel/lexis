@@ -42,6 +42,9 @@ const LoginPage = lazy(() =>
   import('../pages/auth/LoginPage.jsx'),
 )
 const RedefinirSenhaPage = lazy(() => import('../pages/auth/RedefinirSenhaPage.jsx'))
+const NaoEncontradoPage = lazy(() =>
+  import('../pages/NaoEncontradoPage.jsx'),
+)
 const ProfessorDashboardPage = lazy(() =>
   import('../pages/professor/ProfessorDashboardPage.jsx'),
 )
@@ -189,12 +192,7 @@ export default function AppRoutes() {
 
         <Route
           path="*"
-          element={
-            <Navigate
-              to="/login"
-              replace
-            />
-          }
+          element={<NaoEncontradoPage />}
         />
       </Routes>
     </Suspense>
