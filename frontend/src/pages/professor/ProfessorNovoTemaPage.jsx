@@ -1,3 +1,4 @@
+import Campo from '../../components/base/Campo.jsx'
 import {
   useEffect,
   useRef,
@@ -241,60 +242,51 @@ export default function ProfessorNovoTemaPage() {
             Proposta
           </h2>
           <div className="mt-6 grid gap-6">
-            <label className="text-sm font-semibold text-white">
-              Enunciado
-              <input
-                value={formulario.enunciado}
-                onChange={(evento) =>
-                  atualizarCampo(
-                    'enunciado',
-                    evento.target.value,
-                  )
-                }
-                minLength={5}
-                maxLength={250}
-                required
-                className="mt-2 min-h-12 w-full rounded-[10px] border border-lexis-200/20 bg-lexis-950/70 px-4 text-white outline-none focus:border-lexis-300 focus:ring-4 focus:ring-lexis-300/15"
-              />
-            </label>
+            <Campo
+              label="Enunciado"
+              value={formulario.enunciado}
+              onChange={(evento) =>
+                atualizarCampo(
+                  'enunciado',
+                  evento.target.value,
+                )
+              }
+              minLength={5}
+              maxLength={250}
+              required
+            />
 
-            <label className="text-sm font-semibold text-white">
-              Descrição
-              <textarea
-                value={formulario.descricao}
-                onChange={(evento) =>
-                  atualizarCampo(
-                    'descricao',
-                    evento.target.value,
-                  )
-                }
-                minLength={10}
-                maxLength={10000}
-                rows={5}
-                required
-                className="mt-2 w-full rounded-[10px] border border-lexis-200/20 bg-lexis-950/70 px-4 py-3 text-white outline-none focus:border-lexis-300 focus:ring-4 focus:ring-lexis-300/15"
-              />
-            </label>
+            <Campo
+              label="Descrição" multilinha
+              value={formulario.descricao}
+              onChange={(evento) =>
+                atualizarCampo(
+                  'descricao',
+                  evento.target.value,
+                )
+              }
+              minLength={10}
+              maxLength={10000}
+              rows={5}
+              required
+            />
 
-            <label className="text-sm font-semibold text-white">
-              Instruções adicionais (opcional)
-              <textarea
-                value={formulario.instrucoes}
-                onChange={(evento) =>
-                  atualizarCampo(
-                    'instrucoes',
-                    evento.target.value,
-                  )
-                }
-                maxLength={5000}
-                rows={3}
-                className="mt-2 w-full rounded-[10px] border border-lexis-200/20 bg-lexis-950/70 px-4 py-3 text-white outline-none focus:border-lexis-300 focus:ring-4 focus:ring-lexis-300/15"
-              />
-            </label>
+            <Campo
+              label="Instruções adicionais (opcional)" multilinha
+              value={formulario.instrucoes}
+              onChange={(evento) =>
+                atualizarCampo(
+                  'instrucoes',
+                  evento.target.value,
+                )
+              }
+              maxLength={5000}
+              rows={3}
+            />
 
-            <label className="max-w-sm text-sm font-semibold text-white">
-              Prazo de entrega
-              <input
+            <div className="max-w-sm">
+              <Campo
+                label="Prazo de entrega"
                 type="datetime-local"
                 value={formulario.prazoEntrega}
                 onChange={(evento) =>
@@ -304,9 +296,8 @@ export default function ProfessorNovoTemaPage() {
                   )
                 }
                 required
-                className="mt-2 min-h-12 w-full rounded-[10px] border border-lexis-200/20 bg-lexis-950/70 px-4 text-white outline-none focus:border-lexis-300 focus:ring-4 focus:ring-lexis-300/15"
               />
-            </label>
+            </div>
           </div>
         </section>
 
@@ -341,41 +332,35 @@ export default function ProfessorNovoTemaPage() {
                 </div>
 
                 {indice < 3 ? <p className="mt-4 text-sm leading-6 text-lexis-200">{criterio.descricao}</p> : <div className="mt-4 grid gap-4">
-                  <label className="text-sm font-semibold text-white">
-                    Nome
-                    <input
-                      value={criterio.nome}
-                      onChange={(evento) =>
-                        atualizarCriterio(
-                          criterio.idLocal,
-                          'nome',
-                          evento.target.value,
-                        )
-                      }
-                      minLength={2}
-                      maxLength={120}
-                      required
-                      className="mt-2 min-h-11 w-full rounded-[10px] border border-lexis-200/20 bg-lexis-950/70 px-4 text-white outline-none focus:border-lexis-300 focus:ring-4 focus:ring-lexis-300/15"
-                    />
-                  </label>
-                  <label className="text-sm font-semibold text-white">
-                    Descrição
-                    <textarea
-                      value={criterio.descricao}
-                      onChange={(evento) =>
-                        atualizarCriterio(
-                          criterio.idLocal,
-                          'descricao',
-                          evento.target.value,
-                        )
-                      }
-                      minLength={5}
-                      maxLength={2000}
-                      rows={3}
-                      required
-                      className="mt-2 w-full rounded-[10px] border border-lexis-200/20 bg-lexis-950/70 px-4 py-3 text-white outline-none focus:border-lexis-300 focus:ring-4 focus:ring-lexis-300/15"
-                    />
-                  </label>
+                  <Campo
+                    label="Nome"
+                    value={criterio.nome}
+                    onChange={(evento) =>
+                      atualizarCriterio(
+                        criterio.idLocal,
+                        'nome',
+                        evento.target.value,
+                      )
+                    }
+                    minLength={2}
+                    maxLength={120}
+                    required
+                  />
+                  <Campo
+                    label="Descrição" multilinha
+                    value={criterio.descricao}
+                    onChange={(evento) =>
+                      atualizarCriterio(
+                        criterio.idLocal,
+                        'descricao',
+                        evento.target.value,
+                      )
+                    }
+                    minLength={5}
+                    maxLength={2000}
+                    rows={3}
+                    required
+                  />
                 </div>}
               </li>
             ))}

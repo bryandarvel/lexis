@@ -5,7 +5,7 @@ import { MENSAGEM_REAUTENTICACAO } from '../../utils/reautenticacao.js'
 import Aviso from '../base/Aviso.jsx'
 import Botao from '../base/Botao.jsx'
 import Dialogo from '../base/Dialogo.jsx'
-import AuthField from './AuthField.jsx'
+import Campo from '../base/Campo.jsx'
 
 // Sessão expirada: o diálogo não tem como ser dispensado (sem onFechar, o
 // Escape não faz nada). Só dá para entrar de novo ou sair da conta.
@@ -91,7 +91,7 @@ export default function ReauthenticationDialog({
     >
       <form onSubmit={autenticar} className="space-y-4">
         {erro && <Aviso tipo="erro">{erro}</Aviso>}
-        <AuthField
+        <Campo
           id="reauth-email"
           name="email"
           label="E-mail"
@@ -103,7 +103,7 @@ export default function ReauthenticationDialog({
           spellCheck={false}
           required
         />
-        <AuthField
+        <Campo
           id="reauth-senha"
           name="senha"
           label="Senha"

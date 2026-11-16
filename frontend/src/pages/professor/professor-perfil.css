@@ -50,41 +50,12 @@
   line-height: 20px;
 }
 
-.perfil-campo {
-  display: grid;
-  gap: 6px;
-  margin: 16px 0 0;
-}
 
-.perfil-campo label {
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 18px;
-}
 
-.perfil-campo input {
-  width: 100%;
-  min-height: 44px;
-  padding: 10px 12px;
-  border: 1px solid var(--panel-border);
-  border-radius: 10px;
-  background: var(--panel-bg);
-  color: inherit;
-  font-family: inherit;
-  font-size: 14px;
-  line-height: 22px;
-}
 
-.perfil-campo input:disabled {
-  cursor: wait;
-  opacity: 0.7;
-}
 
-.perfil-campo input[aria-invalid='true'] {
-  border-color: var(--panel-error);
-}
 
-.perfil-campo-erro,
+
 .perfil-erro {
   color: var(--panel-error);
   font-size: 13px;

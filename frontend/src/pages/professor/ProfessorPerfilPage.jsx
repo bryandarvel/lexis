@@ -3,7 +3,7 @@ import Botao from '../../components/base/Botao.jsx'
 import { motion } from 'motion/react'
 import { useNavigate } from 'react-router'
 
-import { CampoSenhaComOlho } from '../../components/base/BotaoSenha.jsx'
+import Campo from '../../components/base/Campo.jsx'
 import ProfessorWorkspaceLayout from '../../layouts/ProfessorWorkspaceLayout.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
 import {
@@ -24,20 +24,6 @@ import './professor-perfil.css'
 const PAPEIS = {
   PROFESSOR: 'Professor',
   ALUNO: 'Aluno',
-}
-
-function Campo({ id, rotulo, erro, children }) {
-  return (
-    <p className="perfil-campo">
-      <label htmlFor={id}>{rotulo}</label>
-      {children}
-      {erro && (
-        <span id={`${id}-erro`} className="perfil-campo-erro" role="alert">
-          {erro}
-        </span>
-      )}
-    </p>
-  )
 }
 
 export default function ProfessorPerfilPage() {
@@ -220,16 +206,11 @@ export default function ProfessorPerfilPage() {
   }
 
   const campoSenha = (chave) => ({
-    id: `perfil-${chave}`,
     type: 'password',
     autoComplete:
       chave === 'senhaAtual' ? 'current-password' : 'new-password',
     value: senha[chave],
     disabled: senhaEstado.enviando,
-    'aria-invalid': senhaEstado.erros[chave] ? 'true' : undefined,
-    'aria-describedby': senhaEstado.erros[chave]
-      ? `perfil-${chave}-erro`
-      : undefined,
     onChange: (evento) =>
       setSenha((atual) => ({ ...atual, [chave]: evento.target.value })),
   })
@@ -274,22 +255,18 @@ export default function ProfessorPerfilPage() {
           <h2 id="perfil-nome-titulo">Editar nome</h2>
 
           <form onSubmit={salvarNome} noValidate>
-            <Campo id="perfil-nome" rotulo="Nome" erro={nomeEstado.erro}>
-              <input
-                ref={nomeRef}
-                id="perfil-nome"
-                type="text"
-                maxLength={120}
-                autoComplete="name"
-                value={nome}
-                disabled={nomeEstado.enviando}
-                aria-invalid={nomeEstado.erro ? 'true' : undefined}
-                aria-describedby={
-                  nomeEstado.erro ? 'perfil-nome-erro' : undefined
-                }
-                onChange={(evento) => setNome(evento.target.value)}
-              />
-            </Campo>
+            <Campo
+              ref={nomeRef}
+              id="perfil-nome"
+              label="Nome"
+              type="text"
+              maxLength={120}
+              autoComplete="name"
+              value={nome}
+              disabled={nomeEstado.enviando}
+              error={nomeEstado.erro}
+              onChange={(evento) => setNome(evento.target.value)}
+            />
 
             {nomeEstado.mensagem && (
               <p className="perfil-erro" role="alert">
@@ -321,28 +298,27 @@ export default function ProfessorPerfilPage() {
 
           <form onSubmit={trocarSenha} noValidate>
             <Campo
+              ref={senhaAtualRef}
               id="perfil-senhaAtual"
-              rotulo="Senha atual"
-              erro={senhaEstado.erros.senhaAtual}
-            >
-              <CampoSenhaComOlho disabled={senhaEstado.enviando} renderizarCampo={(extras) => <input ref={senhaAtualRef} {...campoSenha('senhaAtual')} {...extras} />} />
-            </Campo>
+              label="Senha atual"
+              {...campoSenha('senhaAtual')}
+              error={senhaEstado.erros.senhaAtual}
+            />
 
             <Campo
+              ref={novaSenhaRef}
               id="perfil-novaSenha"
-              rotulo="Nova senha"
-              erro={senhaEstado.erros.novaSenha}
-            >
-              <CampoSenhaComOlho disabled={senhaEstado.enviando} renderizarCampo={(extras) => <input ref={novaSenhaRef} {...campoSenha('novaSenha')} {...extras} />} />
-            </Campo>
+              label="Nova senha"
+              {...campoSenha('novaSenha')}
+              error={senhaEstado.erros.novaSenha}
+            />
 
             <Campo
               id="perfil-confirmacao"
-              rotulo="Confirme a nova senha"
-              erro={senhaEstado.erros.confirmacao}
-            >
-              <CampoSenhaComOlho disabled={senhaEstado.enviando} renderizarCampo={(extras) => <input {...campoSenha('confirmacao')} {...extras} />} />
-            </Campo>
+              label="Confirme a nova senha"
+              {...campoSenha('confirmacao')}
+              error={senhaEstado.erros.confirmacao}
+            />
 
             {senhaEstado.mensagem && (
               <p className="perfil-erro" role="alert">

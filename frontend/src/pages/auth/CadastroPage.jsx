@@ -2,7 +2,7 @@ import Botao from '../../components/base/Botao.jsx'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 
-import AuthField from '../../components/auth/AuthField.jsx'
+import Campo from '../../components/base/Campo.jsx'
 import AuthNotice from '../../components/auth/AuthNotice.jsx'
 import AuthShell from '../../components/auth/AuthShell.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
@@ -155,7 +155,7 @@ export default function CadastroPage() {
       >
         <AuthNotice mensagem={erroGeral} />
 
-        <AuthField
+        <Campo
           id="nome"
           name="nome"
           label="Nome completo"
@@ -169,7 +169,7 @@ export default function CadastroPage() {
           maxLength={120}
         />
 
-        <AuthField
+        <Campo
           id="email"
           name="email"
           label="E-mail"
@@ -216,7 +216,7 @@ export default function CadastroPage() {
           </div>
         </fieldset>
 
-        <AuthField
+        <Campo
           id="senha"
           name="senha"
           label="Senha"
@@ -232,7 +232,7 @@ export default function CadastroPage() {
           maxLength={72}
         />
 
-        <AuthField
+        <Campo
           id="confirmarSenha"
           name="confirmarSenha"
           label="Confirme sua senha"

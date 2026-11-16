@@ -87,22 +87,6 @@
 .login-roles input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .login-roles label:has(:focus-visible) { outline: 2px solid var(--focus-color); outline-offset: 3px; }
 .login-roles:disabled label { cursor: wait; opacity: .7; }
-.login-form label { color: var(--login-text); font-size: 13px; line-height: 18px; }
-.login-form .space-y-2 { display: grid; gap: 4px; }
-.login-form .space-y-2 > * { margin-block: 0; }
-.login-form input:not([type="radio"]) {
-  min-width: 0;
-  height: 44px;
-  border: 1px solid var(--login-input-border);
-  border-radius: 10px;
-  background: var(--login-surface);
-  padding: 10px 14px;
-  color: var(--login-text);
-  font-size: 14px;
-  line-height: 22px;
-}
-.login-form input::placeholder { color: #748298; opacity: 1; }
-.login-form input[type="password"], .login-password input { padding-right: 48px; }
 .login-password { position: relative; }
 .login-forgot { position: absolute; top: 0; right: 0; z-index: 1; font-size: 12px; line-height: 18px; color: var(--login-action); cursor: pointer; }
 .login-forgot:hover { text-decoration: underline; }

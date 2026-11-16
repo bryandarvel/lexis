@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-import AuthField from './AuthField.jsx'
+import Campo from '../base/Campo.jsx'
 import Aviso from '../base/Aviso.jsx'
 import Botao from '../base/Botao.jsx'
 import Dialogo from '../base/Dialogo.jsx'
@@ -48,7 +48,7 @@ export default function PasswordRecoveryDialog({
       descricao="Informe o e-mail da sua conta para solicitar a recuperação."
     >
       <form onSubmit={solicitarRecuperacao} className="login-form space-y-4" aria-busy={enviando}>
-        <AuthField
+        <Campo
           id="recovery-email"
           label="E-mail institucional"
           name="email"

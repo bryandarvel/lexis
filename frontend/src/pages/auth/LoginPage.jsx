@@ -7,7 +7,7 @@ import {
   useNavigate,
 } from 'react-router'
 
-import AuthField from '../../components/auth/AuthField.jsx'
+import Campo from '../../components/base/Campo.jsx'
 import AuthNotice from '../../components/auth/AuthNotice.jsx'
 import PasswordRecoveryDialog from '../../components/auth/PasswordRecoveryDialog.jsx'
 import { solicitarRecuperacaoSenha } from '../../services/password-recovery.js'
@@ -133,7 +133,7 @@ export default function LoginPage() {
         />
         <AuthNotice mensagem={erro} />
 
-        <AuthField
+        <Campo
           id="email"
           name="email"
           label="E-mail institucional"
@@ -157,7 +157,7 @@ export default function LoginPage() {
           >
             Esqueci minha senha
           </button>
-        <AuthField
+        <Campo
           id="senha"
           name="senha"
           label="Senha"

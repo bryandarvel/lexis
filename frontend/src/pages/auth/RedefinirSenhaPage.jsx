@@ -1,7 +1,7 @@
 import Botao from '../../components/base/Botao.jsx'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import AuthField from '../../components/auth/AuthField.jsx'
+import Campo from '../../components/base/Campo.jsx'
 import AuthNotice from '../../components/auth/AuthNotice.jsx'
 import ThemeToggle from '../../components/layout/ThemeToggle.jsx'
 import logo from '../../assets/lexis-logo-login.svg'
@@ -57,8 +57,8 @@ export default function RedefinirSenhaPage() {
         {concluido ? <AuthNotice tipo="sucesso" mensagem="Senha redefinida. As sessões anteriores foram encerradas." /> : !token ? <AuthNotice mensagem="Link inválido ou ausente. Volte ao login e solicite uma nova recuperação." /> :
           <form className="login-form" onSubmit={enviar} aria-busy={enviando}>
             <p id="reset-rules" className="login-description">{REGRA_SENHA}</p>
-            <AuthField id="reset-password" label="Nova senha" type="password" autoComplete="new-password" value={senha} onChange={e => setSenha(e.target.value)} minLength={10} maxLength={72} aria-describedby="reset-rules" disabled={enviando} required />
-            <AuthField id="reset-confirmation" label="Confirmar nova senha" type="password" autoComplete="new-password" value={confirmacao} onChange={e => setConfirmacao(e.target.value)} minLength={10} maxLength={72} disabled={enviando} required />
+            <Campo id="reset-password" label="Nova senha" type="password" autoComplete="new-password" value={senha} onChange={e => setSenha(e.target.value)} minLength={10} maxLength={72} aria-describedby="reset-rules" disabled={enviando} required />
+            <Campo id="reset-confirmation" label="Confirmar nova senha" type="password" autoComplete="new-password" value={confirmacao} onChange={e => setConfirmacao(e.target.value)} minLength={10} maxLength={72} disabled={enviando} required />
             <AuthNotice mensagem={erro} />
             <Botao type="submit" className="min-h-12 w-full" carregando={enviando} rotuloCarregando="Redefinindo...">Redefinir senha</Botao>
           </form>}
