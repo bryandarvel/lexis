@@ -11,6 +11,8 @@ import {
 } from 'react-router'
 
 import AlunoLayout from '../../layouts/AlunoLayout.jsx'
+import { useAuth } from '../../hooks/useAuth.js'
+import { chaveTrecho } from '../../utils/trechos-feedback.js'
 import { obterFeedbackAluno } from '../../services/feedbacks.js'
 import { notificarContagemAtualizada } from '../../services/notification-events.js'
 import {
@@ -49,9 +51,10 @@ const classeSobretitulo =
 
 // Falhas aqui não aparecem para o aluno: o sino continua com a contagem
 // anterior e a leitura pode ser feita depois na página de notificações.
-async function marcarNotificacoesDaRedacaoComoLidas(redacaoId) {
+async function marcarNotificacoesDaRedacaoComoLidas(redacaoId, estaAtivo) {
   const { notificacoes, totalNaoLidas } =
     await listarNotificacoes()
+  if (!estaAtivo()) return
   const ids = selecionarNotificacoesNaoLidasDaRedacao(
     notificacoes,
     redacaoId,
@@ -66,7 +69,7 @@ async function marcarNotificacoesDaRedacaoComoLidas(redacaoId) {
     (resultado) => resultado.status === 'fulfilled',
   ).length
 
-  if (marcadas > 0) {
+  if (marcadas > 0 && estaAtivo()) {
     notificarContagemAtualizada(
       Math.max(0, totalNaoLidas - marcadas),
     )
@@ -349,7 +352,7 @@ function ComentarioGeral({ comentario }) {
   )
 }
 
-function CompetenciaDois({ feedback }) {
+function CompetenciaDois({ feedback, marcacoes }) {
   const criterios = organizarCriteriosComentados(
     feedback.criterios,
   )
@@ -417,6 +420,15 @@ function CompetenciaDois({ feedback }) {
                 <p className="mt-2 whitespace-pre-wrap break-words text-[13px] leading-5 text-texto">
                   {criterio.comentario}
                 </p>
+                <div className="feedback-atalhos-trechos">
+                  {marcacoes.filter((marca) => marca.ordens.includes(criterio.ordem)).map((marca) => (
+                    <a key={chaveTrecho(marca)} href={`#feedback-marca-${chaveTrecho(marca)}`} onClick={(event) => {
+                      event.preventDefault()
+                      const alvo = document.getElementById(`feedback-marca-${chaveTrecho(marca)}`)
+                      alvo?.scrollIntoView({ block: 'nearest' }); alvo?.focus({ preventScroll: true })
+                    }}>Trecho {marca.numero}</a>
+                  ))}
+                </div>
               </li>
             ))}
           </ul>
@@ -432,12 +444,9 @@ function CompetenciaDois({ feedback }) {
   )
 }
 
-function TextoRedacao({ redacao, criterios }) {
+function TextoRedacao({ redacao, textoMarcado }) {
   const texto = redacao.texto?.trim()
-  const { segmentos, legenda, total } = montarTextoComTrechos(
-    redacao.texto,
-    criterios,
-  )
+  const { segmentos, legenda, total, marcacoes = [] } = textoMarcado
 
   return (
     <section
@@ -486,7 +495,7 @@ function TextoRedacao({ redacao, criterios }) {
       {texto ? (
         <div className="feedback-texto-redacao mt-2.5 whitespace-pre-wrap break-words fonte-redacao text-[17px] leading-8 text-texto">
           {total > 0
-            ? segmentos.map((segmento, indice) => {
+            ? segmentos.map((segmento) => {
                 if (!segmento.criterios.length) {
                   return (
                     <span key={`${segmento.inicio}-${segmento.fim}`}>
@@ -495,10 +504,7 @@ function TextoRedacao({ redacao, criterios }) {
                   )
                 }
 
-                const numero =
-                  segmentos
-                    .slice(0, indice + 1)
-                    .filter((item) => item.criterios.length).length
+                const selos = marcacoes.filter((marca) => marca.inicio === segmento.inicio)
                 const tons = [
                   ...new Set(
                     segmento.criterios.map(
@@ -513,11 +519,16 @@ function TextoRedacao({ redacao, criterios }) {
                     key={`${segmento.inicio}-${segmento.fim}`}
                     className={`feedback-trecho feedback-tom-${tons[0]}`}
                     aria-label={descreverSegmentoMarcado(segmento, legenda)}
+                    style={tons.length > 1 ? {
+                      backgroundImage: tons.map((tom) => `linear-gradient(var(--criterio-${tom}),var(--criterio-${tom}))`).join(','),
+                      backgroundRepeat: 'no-repeat', backgroundSize: '100% 1px',
+                      backgroundPosition: tons.map((_, i) => `left bottom ${i * 2}px`).join(','),
+                    } : undefined}
                   >
+                    {selos.map((marca) => <span key={chaveTrecho(marca)} id={`feedback-marca-${chaveTrecho(marca)}`}
+                      tabIndex={-1} className="feedback-selo-trecho" data-numero={marca.numero}
+                      aria-label={`Trecho ${marca.numero}: ${marca.ordens.map((ordem) => legenda.find((c) => c.ordem === ordem)?.nome).join(', ')}`} />)}
                     {segmento.texto}
-                    <sup aria-hidden="true">
-                      {String(numero).padStart(2, '0')}
-                    </sup>
                   </mark>
                 )
               })
@@ -534,6 +545,11 @@ function TextoRedacao({ redacao, criterios }) {
 
 export default function AlunoFeedbackPage() {
   const { redacaoId } = useParams()
+  const { usuario } = useAuth()
+  return <FeedbackDaRedacao key={`${usuario?.id}:${redacaoId}`} redacaoId={redacaoId} />
+}
+
+function FeedbackDaRedacao({ redacaoId }) {
   const [tentativa, setTentativa] = useState(0)
   const chave = `${redacaoId}:${tentativa}`
   const [carregamento, setCarregamento] = useState({
@@ -599,9 +615,11 @@ export default function AlunoFeedbackPage() {
   useEffect(() => {
     if (!correcaoCarregada) return
 
-    marcarNotificacoesDaRedacaoComoLidas(redacaoId).catch(
+    let ativo = true
+    marcarNotificacoesDaRedacaoComoLidas(redacaoId, () => ativo).catch(
       () => {},
     )
+    return () => { ativo = false }
   }, [correcaoCarregada, redacaoId])
 
   let conteudo
@@ -615,6 +633,7 @@ export default function AlunoFeedbackPage() {
     )
   } else if (estado.status === 'pronto') {
     const { feedback, redacao } = estado
+    const textoMarcado = montarTextoComTrechos(redacao.texto, feedback.criterios)
 
     conteudo = (
       <>
@@ -637,8 +656,8 @@ export default function AlunoFeedbackPage() {
         />
 
         <div className="feedback-impressao-grade mt-5 grid items-start gap-6 xl:grid-cols-2">
-          <CompetenciaDois feedback={feedback} />
-          <TextoRedacao redacao={redacao} criterios={feedback.criterios} />
+          <CompetenciaDois feedback={feedback} marcacoes={textoMarcado.marcacoes ?? []} />
+          <TextoRedacao redacao={redacao} textoMarcado={textoMarcado} />
         </div>
       </>
     )

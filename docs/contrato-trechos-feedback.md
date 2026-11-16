@@ -1,6 +1,6 @@
 # Trechos aprovados no feedback — #42
 
-Contrato aprovado por Bryan em 03/11/2026. Backend em implementação/revisão; a interface e o alinhamento de cores #44 continuam com Lucas. Este documento não declara a integração visual concluída.
+Contrato aprovado por Bryan em 03/11/2026. A regra de cor compartilhada é a da #44; o Lote 2 integra a marcação à tela de correção sem alterar este contrato.
 
 ## Salvar e publicar
 
@@ -45,7 +45,7 @@ O `POST /api/redacoes/:redacaoId/feedback/publicar` mantém a publicação human
 
 O `GET /api/aluno/redacoes/:redacaoId/feedback` retorna **somente a versão publicada atual e do próprio aluno**, com `trechos[{id,inicio,fim,trecho,sugeridoPorIa}]`. Não retorna `analiseIaId`, snapshot, diagnóstico, resultado bruto ou orientação privada. Rascunhos permanecem privados, e versões substituídas conservam seus registros para o histórico do professor.
 
-Clientes antigos podem continuar enviando comentários sem `trechos` e ignorando o novo campo de resposta. O frontend atual não realiza a seleção/publicação dessas marcações ainda; os testes de API não equivalem ao aceite visual.
+Clientes antigos podem continuar enviando comentários sem `trechos` e ignorando o novo campo de resposta. Na interface do Lote 2, a redação e os comentários usam a mesma numeração, por início e com o intervalo mais longo primeiro no empate. O aluno só vê os trechos aprovados da publicação atual, sem um rótulo que indique a origem por IA. Sugestões descartadas pelo professor não são persistidas.
 
 Erros adicionais: 422 `FEEDBACK_EVIDENCE_INVALID` para divergência literal/limites inválidos de texto; 422 de validação para campos extras, intervalos repetidos, formato, limites ou UUID inválido. Permanecem autenticação, papel, posse, critérios do tema e os códigos existentes de feedback indisponível/incompleto.
 
@@ -53,6 +53,6 @@ Erros adicionais: 422 `FEEDBACK_EVIDENCE_INVALID` para divergência literal/limi
 
 Migration aditiva `20261103233000_trechos_feedback_publicado`: nova tabela filha de `FeedbackCriterio`, exclusão em cascata apenas do comentário ao qual pertence, FK de análise Restrict. Nenhum dado existente é convertido em marcação automática.
 
-Lucas deve preparar o payload de entrada com lista positiva, manter seleção humana explícita, usar as cores da #44 e renderizar apenas o resultado publicado no aluno. Não buscar o endpoint privado de IA pelo aluno. O frontend deve testar teclado, sobreposição, edição de bordas, limpar marcações, rascunho, publicação/republicação e isolamento.
+O cliente envia só os campos aceitos e mantém a decisão humana explícita. Os rascunhos locais da correção armazenam apenas os intervalos e a referência opcional à análise, no escopo da conta e da redação. O conteúdo literal é reconstruído a partir da redação enviada quando o professor salva. A tela de feedback não consulta o endpoint privado de IA.
 
 Na integração com #94, preservar a distinção entre redação própria sem feedback e recurso indisponível: os dois PRs tocam `feedbacks.repository.js`. Repetir migrations e testes na base conjunta antes do aceite. Não aplicar migrations em produção por este documento.

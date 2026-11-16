@@ -1,6 +1,7 @@
 import { COMPETENCIAS_ENEM, calcularNotaTotalCompetencias } from '../constants/competencias-enem.js'
 import { segmentarTextoComEvidencias } from './ai-evidence.js'
 import { obterTomCriterio } from './criterio-cores.js'
+import { chaveTrecho, compararTrechos, criarTrechoDaSelecao, guardarIntervalos, limitesDeGrafemas, materializarTrechos, montarCriterioParaEnvio, numerarTrechos, podeAcrescentarTrecho, validarTrechosRecebidos } from './trechos-feedback.js'
 
 const normalizar = (texto) => String(texto ?? '').trim().normalize('NFC').toLocaleLowerCase('pt-BR')
 const BASE = ['legitimação', 'pertinência', 'uso produtivo']
@@ -23,24 +24,89 @@ export function tomCriterio(criterio) { return obterTomCriterio(criterio) }
 export function criarFormularioFeedback(redacao, feedback) {
   const atual = feedback?.versaoAtual
   const comentarios = new Map((atual?.criterios ?? []).map((item) => [item.criterioId, item.comentario]))
+  const trechos = new Map((atual?.criterios ?? []).map((item) => [item.criterioId, item.trechos]))
   return {
     ...Object.fromEntries(COMPETENCIAS_ENEM.map(({ campo }) => [campo, atual?.[campo] == null ? '' : String(atual[campo])])),
     legacyScore: !COMPETENCIAS_ENEM.some(({ campo }) => atual?.[campo] != null) && atual?.nota != null ? String(atual.nota) : '',
     generalComment: atual?.comentarioGeral ?? '',
     criterionComments: Object.fromEntries((redacao.tema.criterios ?? []).map((c) => [c.id, comentarios.get(c.id) ?? ''])),
     criterionReviewed: {},
+    criterionTrechos: Object.fromEntries((redacao.tema.criterios ?? []).map((c) => [c.id, guardarIntervalos(validarTrechosRecebidos(redacao.texto, trechos.get(c.id)))])),
+    criterionTrechosAlterados: {},
   }
 }
 
-export function montarDadosFeedback(form) {
+export function montarDadosFeedback(form, texto, { todosTrechos = false } = {}) {
   return {
     ...Object.fromEntries(COMPETENCIAS_ENEM.map(({ campo }) => {
       const texto = String(form[campo] ?? '').trim()
       return [campo, texto === '' ? null : Number(texto)]
     })),
     comentarioGeral: form.generalComment.trim() || null,
-    criterios: Object.entries(form.criterionComments).filter(([, c]) => c.trim()).map(([criterioId, c]) => ({ criterioId, comentario: c.trim() })),
+    criterios: Object.entries(form.criterionComments).filter(([, c]) => c.trim()).map(([criterioId, comentario]) => montarCriterioParaEnvio({
+      criterioId, comentario,
+      trechos: materializarTrechos(texto, form.criterionTrechos?.[criterioId]),
+      alterado: todosTrechos || form.criterionTrechosAlterados?.[criterioId] === true,
+    })),
   }
+}
+
+export function atualizarTrechos(form, id, trechos) {
+  return { ...form, criterionTrechos: { ...form.criterionTrechos, [id]: guardarIntervalos(trechos) },
+    criterionTrechosAlterados: { ...form.criterionTrechosAlterados, [id]: true } }
+}
+
+export function recuperarTrechos(form, salvo, texto) {
+  let resultado = form
+  for (const id of Object.keys(form.criterionComments)) {
+    const trechos = salvo.criterionTrechos?.[id]
+    if (salvo.criterionTrechosAlterados?.[id] !== true || !Array.isArray(trechos)) continue
+    const validos = []
+    for (const trecho of materializarTrechos(texto, trechos)) {
+      if (!podeAcrescentarTrecho(validos, trecho)) validos.push(trecho)
+    }
+    if (validos.length || trechos.length === 0) resultado = atualizarTrechos(resultado, id, validos)
+  }
+  return resultado
+}
+
+export function assinaturaPublicavel(form, texto) {
+  const dados = montarDadosFeedback(form, texto, { todosTrechos: true })
+  dados.criterios.sort((a, b) => a.criterioId.localeCompare(b.criterioId))
+  for (const item of dados.criterios) item.trechos.sort((a, b) => a.inicio - b.inicio || a.fim - b.fim)
+  return JSON.stringify(dados)
+}
+
+export function chaveSugestao(criterioId, trecho) {
+  return `${criterioId}:${trecho.analiseIaId}:${chaveTrecho(trecho)}`
+}
+
+export function prepararMarcacoes(texto, criterios, form, analise, descartadas) {
+  const porCriterio = {}
+  const aprovados = new Map()
+  const pendentes = []
+  const limites = analise ? new Set(limitesDeGrafemas(texto)) : null
+  for (const criterio of criterios) {
+    const marcados = materializarTrechos(texto, form.criterionTrechos[criterio.id]).sort(compararTrechos)
+    for (const trecho of marcados) {
+      const chave = chaveTrecho(trecho)
+      if (!aprovados.has(chave)) aprovados.set(chave, { ...trecho, criterios: [] })
+      aprovados.get(chave).criterios.push(criterio)
+    }
+    const sugestoes = new Map()
+    for (const e of sugestaoDoCriterio(analise, criterio)?.evidencias ?? []) {
+      if (!analise?.id || e.statusLocalizacao !== 'LOCALIZADA') continue
+      const { trecho } = criarTrechoDaSelecao(texto, e.inicio, e.fim)
+      if (!trecho || trecho.trecho !== e.trecho || !limites.has(e.inicio) || !limites.has(e.fim)) continue
+      const novo = { ...trecho, analiseIaId: analise.id }
+      const chave = chaveSugestao(criterio.id, novo)
+      if (descartadas.has(chave) || marcados.some((item) => chaveTrecho(item) === chaveTrecho(novo))) continue
+      sugestoes.set(chave, novo)
+    }
+    for (const [chave, trecho] of sugestoes) pendentes.push({ ...trecho, chave, criterios: [criterio] })
+    porCriterio[criterio.id] = { marcados, sugestoes: [...sugestoes.values()] }
+  }
+  return { porCriterio, aprovados: numerarTrechos([...aprovados.values()]), pendentes }
 }
 
 export function validarFeedback(dados, publicar = false) {
