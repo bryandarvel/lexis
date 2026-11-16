@@ -1,10 +1,54 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { criarFormularioFeedback, montarDadosFeedback, validarFeedback, sugestaoDoCriterio, criterioFixo, tomCriterio, evidenciasVerificadas, organizarFila, comentarioEditavel, atualizarComentario, selecionarAnaliseParaCorrecao } from '../src/utils/professor-correction.js'
+import { assinaturaPublicavel, atualizarTrechos, chaveSugestao, prepararMarcacoes, recuperarTrechos } from '../src/utils/professor-correction.js'
 
 const criterio = { id: 'c1', nome: 'Legitimação', ordem: 1 }
 const redacao = { tema: { criterios: [criterio] } }
 const completo = { competencia1: 160, competencia2: 180, competencia3: 140, competencia4: 160, competencia5: 180, comentarioGeral: 'Comentário humano.', criterios: [] }
+
+const redacaoMarcavel = { ...redacao, texto: ' É um texto fictício.\nOutro parágrafo.' }
+const intervalo = { inicio: 0, fim: 5, trecho: redacaoMarcavel.texto.slice(0, 5) }
+const feedbackMarcado = { versaoAtual: { criterios: [{ criterioId: 'c1', comentario: 'Evidência discutida.', trechos: [intervalo] }] } }
+
+test('hidrata trechos do servidor, guarda apenas offsets localmente e preserva por omissão', () => {
+  const form = criarFormularioFeedback(redacaoMarcavel, feedbackMarcado)
+  assert.deepEqual(form.criterionTrechos.c1, [{ inicio: 0, fim: 5 }])
+  assert.equal(Object.hasOwn(montarDadosFeedback(form, redacaoMarcavel.texto).criterios[0], 'trechos'), false)
+  const removido = atualizarTrechos(form, 'c1', [])
+  assert.deepEqual(montarDadosFeedback(removido, redacaoMarcavel.texto).criterios[0].trechos, [])
+  assert.notEqual(assinaturaPublicavel(removido, redacaoMarcavel.texto), assinaturaPublicavel(form, redacaoMarcavel.texto))
+})
+
+test('recupera só os critérios alterados da redação atual, sem carregar o texto para armazenamento local', () => {
+  const form = criarFormularioFeedback(redacaoMarcavel, feedbackMarcado)
+  const atual = atualizarTrechos(form, 'c1', [intervalo])
+  const salvo = JSON.parse(JSON.stringify(atual))
+  salvo.criterionTrechos.outro = [{ inicio: 0, fim: 5 }]
+  salvo.criterionTrechosAlterados.outro = true
+  assert.equal(JSON.stringify(salvo).includes(intervalo.trecho), false)
+  const recuperado = recuperarTrechos(form, salvo, redacaoMarcavel.texto)
+  assert.deepEqual(montarDadosFeedback(recuperado, redacaoMarcavel.texto).criterios[0].trechos, [intervalo])
+  assert.equal('outro' in recuperado.criterionTrechos, false)
+})
+
+test('sugestão localizada permanece pendente e fora do payload até o aceite', () => {
+  const form = criarFormularioFeedback(redacaoMarcavel, feedbackMarcado)
+  const limpo = atualizarTrechos(form, 'c1', [])
+  const evidencia = { ...intervalo, statusLocalizacao: 'LOCALIZADA' }
+  const analise = { id: 'analise-1', status: 'CONCLUIDA', resultadoEstruturado: {
+    analisePorCriterio: [{ ordem: 1, criterio: 'Legitimação', evidencias: [evidencia, evidencia, { ...evidencia, trecho: 'incompatível' }] }],
+  } }
+  const pendentes = prepararMarcacoes(redacaoMarcavel.texto, [criterio], limpo, analise, new Set())
+  assert.equal(pendentes.pendentes.length, 1)
+  assert.deepEqual(pendentes.aprovados, [])
+  assert.deepEqual(montarDadosFeedback(limpo, redacaoMarcavel.texto).criterios[0].trechos, [])
+  const sugestao = pendentes.porCriterio.c1.sugestoes[0]
+  const descartadas = new Set([chaveSugestao('c1', sugestao)])
+  assert.equal(prepararMarcacoes(redacaoMarcavel.texto, [criterio], limpo, analise, descartadas).pendentes.length, 0)
+  const aceito = atualizarTrechos(limpo, 'c1', [sugestao])
+  assert.deepEqual(montarDadosFeedback(aceito, redacaoMarcavel.texto).criterios[0].trechos, [{ ...intervalo, analiseIaId: analise.id }])
+})
 
 test('o formulário mantém notas vazias sem atribuir zero ou importar nota de IA', () => {
   const form = criarFormularioFeedback(redacao, null)

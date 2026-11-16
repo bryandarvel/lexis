@@ -15,6 +15,19 @@ const criterio = (ordem, nome, trechos) => ({
   trechos,
 })
 
+test('selos do aluno agrupam o mesmo intervalo e mantêm a ordem de início e comprimento', () => {
+  const trecho = (inicio, fim) => ({ inicio, fim, trecho: TEXTO.slice(inicio, fim) })
+  const { marcacoes } = montarTextoComTrechos(TEXTO, [
+    criterio(1, 'Legitimação', [trecho(2, 12), trecho(12, 20)]),
+    criterio(2, 'Pertinência', [trecho(2, 20), trecho(2, 12)]),
+  ])
+  assert.deepEqual(marcacoes, [
+    { inicio: 2, fim: 20, ordens: [2], numero: '01' },
+    { inicio: 2, fim: 12, ordens: [1, 2], numero: '02' },
+    { inicio: 12, fim: 20, ordens: [1], numero: '03' },
+  ])
+})
+
 test('marca os trechos publicados e monta a legenda por critério', () => {
   const { segmentos, legenda, total } = montarTextoComTrechos(TEXTO, [
     criterio(1, 'Legitimação', [{ id: 't1', inicio: 2, fim: 20, trecho: 'educação midiática' }]),

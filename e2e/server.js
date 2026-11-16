@@ -30,6 +30,7 @@ const { criarAnalisesIaRouter } = await import('../backend/src/modules/avaliacao
 const { solicitarAnaliseIaParaProfessor } = await import('../backend/src/modules/avaliacao-ia/analise-ia.service.js')
 const { MODELO_COMPETENCIA_DOIS } = await import('../backend/src/modules/temas/temas.competencia-dois.js')
 const { errorHandler } = await import('../backend/src/middlewares/error-handler.js')
+const trechosSimulados = ['A Constituição Federal', 'A Constituição Federal assegura o direito à educação.']
 const teste = express()
 teste.disable('x-powered-by')
 teste.use(helmet({ contentSecurityPolicy: false }))
@@ -42,7 +43,8 @@ teste.use('/api', criarAnalisesIaRouter({
       pontosFortes: [], pontosDeAtencao: [],
       analisePorCriterio: MODELO_COMPETENCIA_DOIS.criterios.map((c, i) => ({
         ordem: i + 1, criterio: c.nome, diagnostico: 'Sugestão fictícia para revisão humana.',
-        evidencias: [], orientacaoAoProfessor: 'Revise antes de publicar.',
+        evidencias: i === 0 ? trechosSimulados.map((trecho) => ({ trecho, inicio: 0, fim: trecho.length })) : [],
+        orientacaoAoProfessor: 'Revise antes de publicar.',
       })),
       observacoesFinais: 'Não substitui a decisão do professor.',
     }) }),

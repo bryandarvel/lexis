@@ -13,7 +13,7 @@
 export const LIMITE_TRECHOS_POR_CRITERIO = 20
 
 // Mesmo teto do backend (feedbacks.schemas.js): offsets e texto até 20000.
-const LIMITE_OFFSET = 20000
+export const LIMITE_OFFSET = 20000
 
 function ehInteiro(valor) {
   return Number.isInteger(valor)
@@ -117,4 +117,53 @@ export function validarTrechosRecebidos(texto, trechos) {
         texto.slice(item.inicio, item.fim) === item.trecho,
     )
     .sort((a, b) => a.inicio - b.inicio || a.fim - b.fim)
+}
+
+export const chaveTrecho = ({ inicio, fim }) => `${inicio}-${fim}`
+export const compararTrechos = (a, b) => a.inicio - b.inicio || b.fim - a.fim
+
+// Um intervalo exato tem um só número, mesmo aprovado em vários critérios.
+export function numerarTrechos(trechos) {
+  const unicos = new Map()
+  for (const trecho of trechos) {
+    const chave = chaveTrecho(trecho)
+    if (!unicos.has(chave)) unicos.set(chave, trecho)
+  }
+  return [...unicos.values()]
+    .sort(compararTrechos)
+    .map((item, indice) => ({ ...item, numero: String(indice + 1).padStart(2, '0') }))
+}
+
+export function limitesDeGrafemas(texto) {
+  return [...Array.from(new Intl.Segmenter('pt-BR', { granularity: 'grapheme' }).segment(texto), (item) => item.index), texto.length]
+}
+
+export function moverGrafema(limites, posicao, direcao) {
+  return direcao < 0
+    ? (limites.findLast((limite) => limite < posicao) ?? limites[0])
+    : (limites.find((limite) => limite > posicao) ?? limites.at(-1))
+}
+
+// Range mede cada borda a partir do texto real, inclusive entre segmentos.
+// Os selos são apenas CSS e não acrescentam caracteres aos nós de texto.
+export function lerIntervaloSelecionado(raiz, selecao) {
+  if (!raiz || !selecao?.rangeCount || selecao.isCollapsed) return null
+  const intervalo = selecao.getRangeAt(0)
+  if (!raiz.contains(intervalo.startContainer) || !raiz.contains(intervalo.endContainer)) return null
+  const prefixo = raiz.ownerDocument.createRange()
+  prefixo.selectNodeContents(raiz)
+  prefixo.setEnd(intervalo.startContainer, intervalo.startOffset)
+  const inicio = prefixo.toString().length
+  return { inicio, fim: inicio + intervalo.toString().length }
+}
+
+export function materializarTrechos(texto, intervalos = []) {
+  return intervalos.flatMap((item) => {
+    const { trecho } = criarTrechoDaSelecao(texto, item?.inicio, item?.fim)
+    return trecho ? [{ ...trecho, ...(item.analiseIaId ? { analiseIaId: item.analiseIaId } : {}) }] : []
+  })
+}
+
+export function guardarIntervalos(trechos) {
+  return trechos.map(({ inicio, fim, analiseIaId }) => ({ inicio, fim, ...(analiseIaId ? { analiseIaId } : {}) }))
 }

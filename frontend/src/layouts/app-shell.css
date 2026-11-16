@@ -155,16 +155,19 @@
 }
 
 /*
- * No modo imersivo não há menu lateral: o primeiro item da trilha é o caminho
- * de volta e por isso aparece em qualquer largura.
+ * No modo imersivo não há menu lateral: a trilha é o caminho de volta e por
+ * isso aparece em qualquer largura. Até 600 px só cabe o primeiro item, o
+ * mesmo corte que a correção já usava na trilha dela.
  */
 .casca--imersiva .casca-divisor,
 .casca--imersiva .casca-trilha {
   display: block;
 }
 
-.casca--imersiva .casca-trilha li:not(:first-child) {
-  display: none;
+@media (max-width: 600px) {
+  .casca--imersiva .casca-trilha li:not(:first-child) {
+    display: none;
+  }
 }
 
 /* Ferramentas da barra */
@@ -455,10 +458,6 @@
   .casca-divisor,
   .casca-trilha {
     display: block;
-  }
-
-  .casca--imersiva .casca-trilha li:not(:first-child) {
-    display: flex;
   }
 }
 

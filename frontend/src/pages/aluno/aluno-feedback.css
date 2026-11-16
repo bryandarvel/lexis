@@ -183,14 +183,19 @@
   -webkit-box-decoration-break: clone;
 }
 
-.feedback-trecho sup {
-  padding-left: 3px;
+.feedback-selo-trecho {
+  display: inline-block;
+  margin-inline: 1px 3px;
+  user-select: none;
   /* Herda a cor do texto: a cor do tom sobre o realce não alcança 4,5:1. */
   color: inherit;
   font-family: var(--fonte-interface);
   font-size: 10px;
   font-weight: 700;
 }
+.feedback-selo-trecho::before { content: attr(data-numero); }
+.feedback-atalhos-trechos { display: flex; flex-wrap: wrap; gap: 6px; }
+.feedback-atalhos-trechos a { display: inline-grid; place-items: center; min-height: 44px; padding-inline: 6px; font-size: 13px; text-decoration: underline; }
 
 @media print {
   /* Na impressão a cor pode sumir: o sublinhado e o número continuam. */
@@ -200,7 +205,7 @@
     background: transparent;
   }
 
-  .feedback-trecho sup,
+  .feedback-selo-trecho,
   .feedback-trechos-cor {
     color: inherit;
   }

@@ -1,187 +1,111 @@
-import { useId, useRef, useState } from 'react'
-
-import { obterTomCriterio } from '../../utils/criterio-cores.js'
-import {
-  LIMITE_TRECHOS_POR_CRITERIO,
-  criarTrechoDaSelecao,
-  podeAcrescentarTrecho,
-  validarTrechosRecebidos,
-} from '../../utils/trechos-feedback.js'
+import { useMemo, useRef, useState } from 'react'
+import Botao from '../base/Botao.jsx'
+import { LIMITE_OFFSET, LIMITE_TRECHOS_POR_CRITERIO, chaveTrecho, criarTrechoDaSelecao, limitesDeGrafemas, moverGrafema, podeAcrescentarTrecho } from '../../utils/trechos-feedback.js'
+import { chaveSugestao } from '../../utils/professor-correction.js'
 import './selecao-trechos.css'
 
-/*
- * Seleção e aprovação de trechos de um critério (#42).
- *
- * Componente isolado: ainda não está ligado a nenhuma tela, porque a correção
- * do professor é código compartilhado e depende do aval do Bryan. Recebe e
- * devolve apenas listas de {inicio, fim, trecho, analiseIaId?}; quem o usar
- * decide quando salvar e envia pelo util, sem campos proibidos.
- *
- * `onAlterar` é chamado a cada mudança, e a tela que integrar deve marcar o
- * critério como alterado, para o envio mandar a lista em vez de omiti-la.
- */
-export default function SelecaoTrechos({
-  texto = '',
-  criterio,
-  trechos = [],
-  sugestoes = [],
-  salvando = false,
-  onAlterar,
-}) {
-  const idAviso = useId()
-  const listaRef = useRef(null)
+export function AjusteBordas({ texto, intervalo, limites, onChange, disabled }) {
+  const { inicio, fim } = intervalo
+  function ajustar(campo, direcao) {
+    const proximo = moverGrafema(limites, intervalo[campo], direcao)
+    return { inicio, fim, [campo]: proximo }
+  }
+  return <>
+    <p className="trechos-preview"><strong>Prévia:</strong> <q>{texto.slice(inicio, fim)}</q> <small>({inicio}–{fim})</small></p>
+    <div className="trechos-bordas" aria-label="Ajustar bordas por caractere">
+      {[
+        ['inicio', -1, 'Recuar início'], ['inicio', 1, 'Avançar início'],
+        ['fim', -1, 'Recuar fim'], ['fim', 1, 'Avançar fim'],
+      ].map(([campo, direcao, rotulo]) => {
+        const proximo = ajustar(campo, direcao)
+        return <Botao key={rotulo} variante="secundario" disabled={disabled || proximo[campo] === intervalo[campo] ||
+          proximo.fim <= proximo.inicio || (proximo.fim > LIMITE_OFFSET && proximo.fim >= fim)}
+          onClick={() => onChange(proximo)}>{rotulo}</Botao>
+      })}
+    </div>
+  </>
+}
+
+export default function SelecaoTrechos({ texto, criterio, marcados, sugestoes, numeros, salvando, onAlterar, onDescartar, onVerNoTexto }) {
+  const [edicao, setEdicao] = useState(null)
   const [aviso, setAviso] = useState('')
-
-  const tom = obterTomCriterio(criterio)
-  const marcados = validarTrechosRecebidos(texto, trechos)
-  // Um trecho pode ter deixado de coincidir depois de o texto mudar.
-  const invalidos = trechos.length - marcados.length
-  const disponiveis = validarTrechosRecebidos(texto, sugestoes).filter(
-    (sugestao) =>
-      !marcados.some(
-        (item) => item.inicio === sugestao.inicio && item.fim === sugestao.fim,
-      ),
-  )
+  const painel = useRef(null)
+  const limites = useMemo(() => limitesDeGrafemas(texto), [texto])
   const cheio = marcados.length >= LIMITE_TRECHOS_POR_CRITERIO
+  const chaveEditada = edicao?.chave
+  const trechoEditado = marcados.find((item) => chaveTrecho(item) === chaveEditada)
+  const outros = chaveEditada ? marcados.filter((item) => chaveTrecho(item) !== chaveEditada) : marcados
+  const novo = edicao && limites.includes(edicao.intervalo.inicio) && limites.includes(edicao.intervalo.fim) &&
+    criarTrechoDaSelecao(texto, edicao.intervalo.inicio, edicao.intervalo.fim).trecho
+  const impedimento = novo && podeAcrescentarTrecho(outros, novo)
 
-  function devolver(proximos, mensagem = '') {
-    setAviso(mensagem)
-    onAlterar?.(proximos)
+  function cancelar() {
+    const botao = painel.current?.querySelector('[data-edicao-ativa]')
+    setEdicao(null)
+    botao?.focus()
   }
 
-  function acrescentar(novo) {
-    const impedimento = podeAcrescentarTrecho(marcados, novo)
-
-    if (impedimento) {
-      setAviso(impedimento)
-      return
-    }
-
-    devolver([...marcados, novo])
-  }
-
-  function marcarSelecao() {
-    const selecao = globalThis.getSelection?.()
-    const alvo = listaRef.current?.closest('[data-texto-redacao]')
-
-    if (!selecao || selecao.isCollapsed || !alvo) {
-      setAviso('Selecione um trecho no texto da redação.')
-      return
-    }
-
-    const inicio = Number(selecao.anchorNode?.parentElement?.dataset?.inicio ?? Number.NaN)
-    const posicao = Number.isInteger(inicio) ? inicio : 0
-    const { trecho, erro } = criarTrechoDaSelecao(
-      texto,
-      posicao + selecao.anchorOffset,
-      posicao + selecao.focusOffset,
-    )
-
-    if (!trecho) {
-      setAviso(erro)
-      return
-    }
-
-    acrescentar(trecho)
-  }
-
-  function remover(alvo) {
-    devolver(
-      marcados.filter(
-        (item) => !(item.inicio === alvo.inicio && item.fim === alvo.fim),
-      ),
-    )
-  }
-
-  return (
-    <section
-      className={`trechos-painel review-tone-${tom}`}
-      aria-labelledby={`${idAviso}-titulo`}
-    >
-      <div className="trechos-cabecalho">
-        <h4 id={`${idAviso}-titulo`}>
-          Trechos de {criterio?.nome ?? 'critério'}
-        </h4>
-        <p className="trechos-contador" aria-live="polite">
-          {marcados.length} de {LIMITE_TRECHOS_POR_CRITERIO}
-        </p>
-      </div>
-
-      <button
-        type="button"
-        className="trechos-botao"
-        disabled={salvando || cheio}
-        onClick={marcarSelecao}
-      >
-        Marcar trecho selecionado
-      </button>
-
-      {cheio && (
-        <p className="trechos-aviso" role="status">
-          Limite de {LIMITE_TRECHOS_POR_CRITERIO} trechos atingido. Remova um
-          para marcar outro.
-        </p>
-      )}
-
-      {invalidos > 0 && (
-        <p className="trechos-aviso trechos-aviso-atencao" role="status">
-          {invalidos === 1
-            ? '1 trecho não corresponde mais ao texto e não será salvo.'
-            : `${invalidos} trechos não correspondem mais ao texto e não serão salvos.`}
-        </p>
-      )}
-
-      {aviso && (
-        <p className="trechos-aviso trechos-aviso-atencao" role="alert">
-          {aviso}
-        </p>
-      )}
-
-      {disponiveis.length > 0 && (
-        <>
-          <h5 className="trechos-subtitulo">Sugestões da análise</h5>
-          <ul className="trechos-lista">
-            {disponiveis.map((sugestao) => (
-              <li key={`${sugestao.inicio}-${sugestao.fim}`}>
-                <span className="trechos-texto">{sugestao.trecho}</span>
-                <button
-                  type="button"
-                  className="trechos-acao"
-                  disabled={salvando || cheio}
-                  onClick={() => acrescentar(sugestao)}
-                >
-                  Aprovar
-                  <span className="sr-only"> o trecho {sugestao.trecho}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-
-      <h5 className="trechos-subtitulo">Marcados</h5>
-      {marcados.length === 0 ? (
-        <p className="trechos-vazio">
-          Nenhum trecho marcado neste critério.
-        </p>
-      ) : (
-        <ul className="trechos-lista" ref={listaRef}>
-          {marcados.map((item) => (
-            <li key={`${item.inicio}-${item.fim}`}>
-              <span className="trechos-texto">{item.trecho}</span>
-              <button
-                type="button"
-                className="trechos-acao trechos-acao-remover"
-                disabled={salvando}
-                onClick={() => remover(item)}
-              >
-                Remover
-                <span className="sr-only"> o trecho {item.trecho}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  )
+  return <section className="trechos-painel" ref={painel} aria-label={`Trechos de ${criterio.nome}`} onKeyDown={(event) => {
+    if (event.key === 'Escape' && edicao) { event.preventDefault(); cancelar() }
+  }}>
+    <h4>Trechos marcados <small>{marcados.length}/{LIMITE_TRECHOS_POR_CRITERIO}</small></h4>
+    {!marcados.length && <p className="review-caption">Nenhum trecho marcado.</p>}
+    {cheio && <p className="review-caption">Limite atingido. Remova um trecho para marcar outro.</p>}
+    <ul className="trechos-lista">
+      {marcados.map((item) => {
+        const chave = chaveTrecho(item)
+        return <li key={chave} id={`review-mark-${criterio.id}-${chave}`} tabIndex={-1}>
+          <q><strong>{numeros.get(chave)} </strong>{item.trecho}</q>
+          <div className="review-mark-actions">
+            <Botao variante="secundario" onClick={() => onVerNoTexto(item)}>Ver no texto<span className="sr-only">, trecho {numeros.get(chave)}</span></Botao>
+            <Botao variante="secundario" disabled={salvando} aria-expanded={chave === chaveEditada}
+              data-edicao-ativa={chave === chaveEditada ? '' : undefined}
+              onClick={() => setEdicao((atual) => atual?.chave === chave ? null : { chave, intervalo: { inicio: item.inicio, fim: item.fim } })}>Ajustar bordas<span className="sr-only">, trecho {numeros.get(chave)}</span></Botao>
+            <Botao variante="secundario" disabled={salvando} onClick={() => {
+              onAlterar(marcados.filter((t) => chaveTrecho(t) !== chave)); setEdicao(null); setAviso('Trecho removido do rascunho.')
+              document.getElementById(`review-comment-${criterio.id}`)?.focus()
+            }}>Remover trecho<span className="sr-only"> {numeros.get(chave)}</span></Botao>
+          </div>
+          {chave === chaveEditada && <div className="trechos-edicao">
+            <AjusteBordas texto={texto} intervalo={edicao.intervalo} limites={limites}
+              onChange={(intervalo) => setEdicao({ chave, intervalo })} disabled={salvando} />
+            {impedimento && <p role="status" className="review-caption">{impedimento}</p>}
+            <div className="review-mark-actions">
+              <Botao disabled={salvando || !novo || Boolean(impedimento)} onClick={() => {
+                const igual = chaveTrecho(novo) === chave
+                onAlterar([...outros, igual ? trechoEditado : novo])
+                setEdicao(null); setAviso('Trecho atualizado no rascunho.')
+                document.getElementById(`review-comment-${criterio.id}`)?.focus()
+              }}>Confirmar ajuste</Botao>
+              <Botao variante="secundario" onClick={cancelar}>Cancelar ajuste</Botao>
+            </div>
+          </div>}
+        </li>
+      })}
+    </ul>
+    {sugestoes.length > 0 && <details className="trechos-sugestoes" open>
+      <summary>Sugestões da IA não publicadas</summary>
+      <ul className="trechos-lista">
+        {sugestoes.map((item) => {
+          const chave = chaveSugestao(criterio.id, item)
+          return <li key={chave} id={`review-suggestion-${chave}`} tabIndex={-1}>
+            <q>{item.trecho}</q>
+            <div className="review-mark-actions">
+              <Botao variante="secundario" disabled={salvando || cheio} aria-label={`Aprovar trecho: ${item.trecho.slice(0, 100)}`} onClick={() => {
+                if (podeAcrescentarTrecho(marcados, item)) return
+                onAlterar([...marcados, item]); setAviso('Sugestão marcada no rascunho.')
+                document.getElementById(`review-comment-${criterio.id}`)?.focus()
+              }}>Aprovar trecho</Botao>
+              <Botao variante="secundario" disabled={salvando} aria-label={`Descartar sugestão: ${item.trecho.slice(0, 100)}`} onClick={() => {
+                onDescartar(chave); setAviso('Sugestão descartada nesta tela. Ela volta ao recarregar.')
+                document.getElementById(`review-comment-${criterio.id}`)?.focus()
+              }}>Descartar sugestão</Botao>
+            </div>
+          </li>
+        })}
+      </ul>
+      <p className="review-caption">Descartar só vale nesta tela. A sugestão volta ao recarregar.</p>
+    </details>}
+    <p className="sr-only" role="status">{aviso}</p>
+  </section>
 }

@@ -56,7 +56,10 @@ O Playwright inicia/encerra os próprios servidores. Um worker, zero retries;
 - Simulados somente no entrypoint `e2e/server.js`: resposta externa
   OCR e geração externa Gemini. O router de IA usa autenticação e service
   reais, injetando apenas `gerar`. Nenhuma rota HTTP concede privilégios
-  de teste; nenhuma rota da aplicação é interceptada pelo browser.
+  de teste.
+- O cenário de trechos simula uma única falha no PUT de feedback no
+  navegador para verificar que a edição sobrevive. Depois remove a
+  interceptação e executa a gravação e a publicação reais.
 - Desligados: envio Resend e LanguageTool. Falhas externas são cobertas
   pelas suítes backend/B35; este teste não valida qualidade ou disponibilidade
   de serviços reais.
@@ -83,9 +86,10 @@ As expectativas verificam respostas e registros reais além da UI.
 Não há retries automáticos, gravação de vídeo, screenshots ou traces;
 eventuais contextos de erro ficam em `tmp/e2e-results/`, ignorado.
 
-Três cenários encadeiam os fluxos de sessão/papel; propostas e entrega
+Os cenários encadeiam os fluxos de sessão/papel; propostas e entrega
 tardia com rascunho; OCR/revisão/IA consultiva/correção/notificação e
-isolamento. Não substituem B03 na máquina do Lucas, B31 WCAG, B46,
+isolamento; e marcação manual, gravação, publicação e histórico de trechos.
+Não substituem B03 na máquina do Lucas, B31 WCAG, B46,
 avaliação acadêmica da IA ou operação pública.
 
 Depois dos PRs independentes B36/B30/B35/B34 entrarem na `dev`,

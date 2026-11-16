@@ -1,7 +1,8 @@
 import Etiqueta from '../base/Etiqueta.jsx'
 import { comentarioEditavel, tomCriterio } from '../../utils/professor-correction.js'
+import SelecaoTrechos from './SelecaoTrechos.jsx'
 
-export default function CriterionComments({ criterios, analise, form, disabled, onChange }) {
+export default function CriterionComments({ criterios, analise, form, disabled, onChange, textoRedacao, marcacoes, numeros, onTrechos, onDescartar, onVerNoTexto }) {
   function focarComentario(id) {
     requestAnimationFrame(() => document.getElementById(`review-comment-${id}`)?.focus())
   }
@@ -22,8 +23,10 @@ export default function CriterionComments({ criterios, analise, form, disabled, 
             <button type="button" disabled={disabled} onClick={() => { onChange(c.id, ''); focarComentario(c.id) }}>Descartar</button>
           </div>
         </>}
-        <p id={`review-comment-hint-${c.id}`} className="review-caption">{sugerido ? 'Edite ou apague livremente. Para manter o texto sem alterações, clique em Usar sugestão.' : 'Comentário opcional. Revise antes de publicar; a nota é definida por você.'}</p>
+        <p id={`review-comment-hint-${c.id}`} className="review-caption">{sugerido ? 'Edite ou apague livremente. Para manter o texto sem alterações, clique em Usar sugestão.' : 'Comente se houver trechos marcados neste critério.'}</p>
         <span className="review-counter">{texto.length}/5000</span>
+        <SelecaoTrechos texto={textoRedacao} criterio={c} {...marcacoes[c.id]} numeros={numeros} salvando={disabled}
+          onAlterar={(trechos) => onTrechos(c.id, trechos)} onDescartar={onDescartar} onVerNoTexto={onVerNoTexto} />
       </article>
     })}</div>
   </section>

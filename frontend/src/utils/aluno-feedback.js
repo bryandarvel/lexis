@@ -6,7 +6,7 @@ import {
 } from './criterio-cores.js'
 import { COMPETENCIAS_ENEM } from '../constants/competencias-enem.js'
 import { segmentarTextoComEvidencias } from './ai-evidence.js'
-import { validarTrechosRecebidos } from './trechos-feedback.js'
+import { chaveTrecho, numerarTrechos, validarTrechosRecebidos } from './trechos-feedback.js'
 import {
   calcularPercentual,
   listarPropostasDoAluno,
@@ -259,8 +259,17 @@ export function montarTextoComTrechos(texto, criterios) {
     return { segmentos: [], legenda: [], total: 0 }
   }
 
+  const intervalos = new Map()
+  for (const { ordem, evidencias } of comTrechos) {
+    for (const trecho of evidencias) {
+      const chave = chaveTrecho(trecho)
+      if (!intervalos.has(chave)) intervalos.set(chave, { inicio: trecho.inicio, fim: trecho.fim, ordens: [] })
+      if (!intervalos.get(chave).ordens.includes(ordem)) intervalos.get(chave).ordens.push(ordem)
+    }
+  }
   return {
     segmentos: segmentarTextoComEvidencias(conteudo, comTrechos),
+    marcacoes: numerarTrechos([...intervalos.values()]),
     legenda: comTrechos.map(({ ordem, nome, tom, evidencias }) => ({
       ordem,
       nome,
