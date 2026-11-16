@@ -4,10 +4,11 @@ Liga cada token por função (`frontend/src/styles/tokens.css`) ao token antigo 
 
 ## Situação
 
-- **Lote 3a (este):** os tokens e os componentes base existem; nada do antigo foi removido. As telas atuais continuam usando `lexis-50…950` e as variáveis `--panel-*`, `--login-*` e `--aluno-*`.
-- **Lote 3b:** migra os usos, apaga o antigo e o código morto.
-- **D1 confirmada pelo Bryan no Figma.** Famílias Newsreader e Inter, navy `#002049` e azul `#1c6eba`, como no código e no protótipo.
-- **Fonte dos valores:** `output/prototipo-correcao/index.html`, bloco "Tokens por função" (e `NOTA-PARA-CODEX.md`, tabela "Bloco → componente → token"). Essa pasta é ignorada pelo Git: a coluna "Protótipo" cita o nome da variável no arquivo, não um link. Onde o protótipo não define o token, a coluna diz "sem equivalente".
+- **Lote 3a (PR #147):** criou os tokens e os componentes base, sem usá-los.
+- **Lote 3b (Issue #148):** migrou os usos e removeu o antigo. A escala  (classes e variáveis ), o truque que trocava  por navy no tema claro e  não existem mais. As páginas usam os tokens por função. Os componentes sem uso (UX-028) e o CSS dos botões, campos, diálogos, avisos, etiquetas e estados vazios antigos também saíram.
+- **O que ainda existe por tela:** as variáveis  (painel do professor),  (entrada) e  (telas do aluno), mais ,  e  em . Elas guardam valores próprios de cada tela e dependem da reorganização das telas (Lotes 2 e 3 do plano); as colunas "Antigo" abaixo descrevem esse legado. Valores arbitrários de tamanho e hexadecimais soltos nas páginas (UX-031) também ficam para esse momento.
+- **D1 confirmada pelo Bryan no Figma.** Famílias Newsreader e Inter, navy  e azul , como no código e no protótipo.
+- **Fonte dos valores:** , bloco "Tokens por função" (e , tabela "Bloco → componente → token"). Essa pasta é ignorada pelo Git: a coluna "Protótipo" cita o nome da variável no arquivo, não um link. Onde o protótipo não define o token, a coluna diz "sem equivalente".
 
 ## Como ler
 
@@ -81,7 +82,7 @@ Cor de critério aparece só em sublinhado, ponto e selo. O nome do critério fi
 | `--criterio-4` | `#4d7c0f` / `#e9f2d6` | `#b8d98c` / `#293c18` | `.review-tone-4`, `.feedback-tom-4` | `--criterio-extra-2` |
 | `--criterio-neutro` | `#516075` / `#e4e9ef` | `#a9bed1` / `#1b2a3c` | `.review-tone-neutro`, `.feedback-tom-neutro` | sem equivalente (valor atual da #44). O fundo escuro `#1b2a3c` é novo: o código atual não tem fundo neutro de critério no escuro |
 
-As três cópias antigas (`.review-tone-*` em `professor-correction.css`, `.feedback-tom-*` em `aluno-feedback.css` e as listras de turma por índice) serão trocadas por estes tokens no 3b.
+No 3b, `.review-tone-*` (`professor-correction.css`), `.feedback-tom-*` (`aluno-feedback.css`) e `.tone-*` (critérios da proposta, agora pela ordem do critério) passaram a usar estes tokens; as faixas de turma e proposta por índice saíram.
 
 ## Raio
 
@@ -114,7 +115,7 @@ No Tailwind: `rounded-marca`, `rounded-controle`, `rounded-cartao`, `rounded-dia
 |---|---|---|---|
 | `--fonte-titulo` | Newsreader, Georgia, serif | `--font-display` | Só em título de página, texto da redação e nota (decisão D2) |
 | `--fonte-interface` | Inter, system-ui, sans-serif | `--font-interface` | Todo o resto, inclusive `h2` e títulos de diálogo |
-| `.fonte-titulo-pagina`, `.fonte-redacao`, `.fonte-nota` | `font-family: var(--fonte-titulo)` | `h1, h2, .brand-wordmark, .font-display, .font-editorial, .font-essay` em `index.css` | As três únicas classes serifadas. A regra global `h1, h2` continua até o 3b, que a remove |
+| `.fonte-titulo-pagina`, `.fonte-redacao`, `.fonte-nota` | `font-family: var(--fonte-titulo)` | `h1, h2, .brand-wordmark, .font-display, .font-editorial, .font-essay` em `index.css` | No 3b a regra global passou a ser só `h1` (título de página). `.fonte-redacao` está nos textos da redação e `.fonte-nota` na nota de uma redação. O logotipo (`.brand-wordmark`, `.panel-wordmark`) segue em Newsreader por ser a marca. Indicadores agregados (contagens e médias) usam Inter com algarismos tabulares |
 | `.fonte-interface` | `font-family: var(--fonte-interface)` | `.aluno-titulo-interface` | |
 
 ### Monoespaçado e algarismos tabulares (N1, REV-014)
@@ -145,4 +146,4 @@ No Tailwind: `rounded-marca`, `rounded-controle`, `rounded-cartao`, `rounded-dia
 
 ## Formatação
 
-`utils/formatar-data.js` é o único lugar com opções de `Intl.DateTimeFormat` e `Intl.RelativeTimeFormat`, com três formas: `data` (`18/10/2026`), `dataHora` (`18/10/2026, 23:59`) e `relativa` (`há 5 minutos`, `em 2 dias`; passados 30 dias, cai para `data`). `utils/formatar-numero.js` centraliza `Intl.NumberFormat` em pt-BR. Os cinco formatos de data e as chamadas dispersas de `toLocaleString` (UX-043, UX-032) são migrados no 3b.
+`utils/formatar-data.js` é o único lugar com opções de `Intl.DateTimeFormat` e `Intl.RelativeTimeFormat`, com três formas: `data` (`18/10/2026`), `dataHora` (`18/10/2026, 23:59`) e `relativa` (`há 5 minutos`, `em 2 dias`; passados 30 dias, cai para `data`). `utils/formatar-numero.js` centraliza `Intl.NumberFormat` em pt-BR. No 3b, todas as telas passaram a usar essas funções; as cópias locais de formatação saíram. A saudação do painel do professor fica em `formatarSaudacaoData` (não é data de um registro).
