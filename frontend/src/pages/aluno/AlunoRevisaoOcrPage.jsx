@@ -12,7 +12,7 @@ import {
 } from 'react-router'
 
 import { useAuth } from '../../hooks/useAuth.js'
-import AlunoLayout from '../../layouts/AlunoLayout.jsx'
+import AppShell from '../../layouts/AppShell.jsx'
 import { confirmarRevisaoOcr } from '../../services/redacoes.js'
 import {
   atualizarTextoRevisaoOcr,
@@ -370,7 +370,7 @@ export default function AlunoRevisaoOcrPage() {
   )
 
   return (
-    <AlunoLayout
+    <AppShell
       rotaEnviarRedacao={rotaEditor}
       trilha={[
         'Enviar redação',
@@ -478,6 +478,6 @@ export default function AlunoRevisaoOcrPage() {
           </div>
         </section>
       </div>
-    </AlunoLayout>
+    </AppShell>
   )
 }

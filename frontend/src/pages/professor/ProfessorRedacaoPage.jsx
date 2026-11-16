@@ -8,7 +8,7 @@ import AnalysisPanel from '../../components/correction/AnalysisPanel.jsx'
 import EssayEvidenceText from '../../components/correction/EssayEvidenceText.jsx'
 import FeedbackEditor from '../../components/correction/FeedbackEditor.jsx'
 import CriterionComments from '../../components/correction/CriterionComments.jsx'
-import ProfessorWorkspaceLayout from '../../layouts/ProfessorWorkspaceLayout.jsx'
+import AppShell from '../../layouts/AppShell.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
 import { useRascunho } from '../../hooks/useRascunho.js'
 import { listarAnalisesIa, solicitarAnaliseIa } from '../../services/analises-ia.js'
@@ -258,10 +258,15 @@ function Correcao({ redacaoId, usuarioId }) {
     <div id="review-panel-criterios" role="tabpanel" aria-labelledby="review-tab-criterios" className={`review-criteria-panel ${painelAtivo === 'criterios' ? 'is-active' : ''}`}>{controles}</div>
   </>
 
-  return <ProfessorWorkspaceLayout secao="Correção" imersivo pronto={pronto} turmas={pronto ? [redacao.tema.turma] : []}
-    indicador={pagina.fila?.posicao ? <span className="review-position">Redação {pagina.fila.posicao} de {pagina.fila.total}</span> : null}
-    cabecalho={<nav className="review-breadcrumb" aria-label="Caminho da correção"><Link to="/professor/turmas">Turmas</Link>{pronto && <><span aria-hidden="true">›</span><Link to={`/professor/turmas/${redacao.tema.turma.id}`}>{redacao.tema.turma.nome}</Link></>}<span aria-hidden="true">›</span><span>Correção</span></nav>}>
-    <motion.main id="panel-main" className="review-main" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .2 }}>
+  const trilha = [
+    { rotulo: 'Turmas', para: '/professor/turmas' },
+    ...(pronto ? [{ rotulo: redacao.tema.turma.nome, para: `/professor/turmas/${redacao.tema.turma.id}` }] : []),
+    'Correção',
+  ]
+
+  return <AppShell imersivo trilha={trilha} pronto={pronto} turmas={pronto ? [redacao.tema.turma] : []}
+    indicador={pagina.fila?.posicao ? <span className="review-position">Redação {pagina.fila.posicao} de {pagina.fila.total}</span> : null}>
+    <motion.div className="review-main" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .2 }}>
       {pagina.status === 'carregando' && <div className="review-loading"><h1>Correção do professor</h1><p role="status">Carregando redação e avaliação…</p><div aria-hidden="true" className="review-loading-grid"><div className="skeleton-block" /><div className="skeleton-block" /><div className="skeleton-block" /></div></div>}
       {pagina.status === 'erro' && <section className="review-card review-load-error" role="alert"><h1>Não foi possível abrir a redação</h1><p>{pagina.mensagem}</p><Botao onClick={() => setTentativa((v) => v + 1)}>Tentar novamente</Botao></section>}
       {pronto && <div className="review-grid">
@@ -289,6 +294,6 @@ function Correcao({ redacaoId, usuarioId }) {
           </dialog>}
         </> : <aside className="review-tools" aria-label="Ferramentas de correção">{ferramentas}</aside>}
       </div>}
-    </motion.main>
-  </ProfessorWorkspaceLayout>
+    </motion.div>
+  </AppShell>
 }

@@ -5,7 +5,7 @@ import Botao from '../../components/base/Botao.jsx'
 import { motion } from 'motion/react'
 import { useNavigate } from 'react-router'
 
-import ProfessorWorkspaceLayout from '../../layouts/ProfessorWorkspaceLayout.jsx'
+import AppShell from '../../layouts/AppShell.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
 import {
   listarNotificacoesProfessor,
@@ -179,10 +179,8 @@ export default function ProfessorNotificacoesPage() {
   const visivel = estadoDaContaAtual(estado, usuarioId, INICIAL)
 
   return (
-    <ProfessorWorkspaceLayout secao="Notificações">
-      <motion.main
-        id="panel-main"
-        tabIndex={-1}
+    <AppShell conteudo="amplo" trilha={['Notificações']}>
+      <motion.div
         className="panel-main avisos-main"
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -284,7 +282,7 @@ export default function ProfessorNotificacoesPage() {
             </ul>
           </>
         )}
-      </motion.main>
-    </ProfessorWorkspaceLayout>
+      </motion.div>
+    </AppShell>
   )
 }

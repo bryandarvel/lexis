@@ -1,11 +1,6 @@
 .topic-main { max-width: 1600px; }
 .topic-main h1 { max-width: 950px; overflow-wrap: anywhere; }
 .topic-subtitle { margin: 16px 0 24px; }
-.topic-breadcrumb { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.topic-breadcrumb a { color: inherit; text-decoration: none; }
-.topic-breadcrumb a:nth-of-type(2) { max-width: 35vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.topic-breadcrumb a:hover { text-decoration: underline; }
-.panel-header:has(.topic-breadcrumb) .panel-header-label { min-width: 0; }
 .topic-tabs { display: flex; align-items: center; gap: 24px; min-height: 68px; padding: 13px 20px; border: 1px solid var(--panel-border); border-radius: var(--raio-cartao); background: var(--panel-surface); margin-bottom: 16px; }
 .topic-tabs h2, .topic-card h2 { margin: 0; font-family: var(--fonte-interface); font-size: 18px; line-height: 25px; font-weight: 600; }
 .topic-tabs nav { display: flex; flex: 1; flex-wrap: wrap; gap: 12px; min-width: 0; }
@@ -75,9 +70,6 @@
   .topic-criteria-list:has(.custom) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 767px) {
-  .topic-breadcrumb a:nth-of-type(2), .topic-breadcrumb span:last-child, .topic-breadcrumb span:nth-last-child(2) { display: none; }
-  .topic-breadcrumb { gap: 4px; }
-  .panel-header:has(.topic-breadcrumb) { gap: 10px; }
   .topic-card { padding: 20px; }
   .topic-tabs { padding: 16px; }
   .topic-tabs nav { flex-basis: 100%; }

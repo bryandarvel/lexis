@@ -3,7 +3,7 @@ import { useEffect, useId, useState } from 'react'
 import Botao from '../../components/base/Botao.jsx'
 import { Link } from 'react-router'
 
-import AlunoLayout from '../../layouts/AlunoLayout.jsx'
+import AppShell from '../../layouts/AppShell.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
 import { listarMinhasRedacoes } from '../../services/redacoes.js'
 import { listarTemasDoAluno } from '../../services/temas.js'
@@ -169,7 +169,7 @@ export default function AlunoRedacoesPage() {
   )
 
   return (
-    <AlunoLayout
+    <AppShell
       rotaEnviarRedacao={rotaEnviar}
       trilha={['Minhas redações']}
     >
@@ -303,6 +303,6 @@ export default function AlunoRedacoesPage() {
           )}
         </>
       )}
-    </AlunoLayout>
+    </AppShell>
   )
 }

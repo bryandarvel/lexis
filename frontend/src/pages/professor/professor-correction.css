@@ -1,10 +1,5 @@
 .review-main { max-width: 1600px; margin: 0 auto; padding: 18px 16px 36px; }
 .review-main h1, .review-main h2, .review-sheet h2 { margin: 0; font-family: var(--fonte-interface); font-size: 18px; line-height: 24px; font-weight: 600; letter-spacing: -.09px; }
-.review-breadcrumb { display: flex; gap: 8px; align-items: center; min-width: 0; }
-.review-breadcrumb a { color: inherit; text-decoration: none; }
-.review-breadcrumb a:hover { text-decoration: underline; }
-.review-breadcrumb a:nth-of-type(2) { max-width: 36vw; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
-.professor-panel-immersive .panel-header-label { min-width: 0; }
 .review-position { border-radius: var(--raio-pilula); background: var(--surface-shell-3); color: #93c4f7; font-size: 12px; line-height: 17px; padding: 4px 12px; white-space: nowrap; }
 .review-grid { display: grid; grid-template-columns: minmax(245px,296fr) minmax(0,764fr) minmax(260px,316fr); gap: 16px; align-items: start; }
 .review-center { grid-column: 2; grid-row: 1; min-width: 0; display: grid; gap: 14px; }
@@ -124,8 +119,6 @@
   .review-scores { grid-template-columns: repeat(3, minmax(0,1fr)); }
 }
 @media (max-width: 767px) {
-  .professor-panel-immersive .panel-header { gap: 10px; }
-  .review-breadcrumb a:nth-of-type(2), .review-breadcrumb > span { display: none; }
   .review-position { display: none; }
   .review-main { padding: 16px 12px 90px; }
   .review-grid { display: block; }

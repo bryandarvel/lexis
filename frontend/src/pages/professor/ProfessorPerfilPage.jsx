@@ -5,7 +5,7 @@ import { motion } from 'motion/react'
 import { useNavigate } from 'react-router'
 
 import Campo from '../../components/base/Campo.jsx'
-import ProfessorWorkspaceLayout from '../../layouts/ProfessorWorkspaceLayout.jsx'
+import AppShell from '../../layouts/AppShell.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
 import {
   alterarMinhaSenha,
@@ -217,10 +217,8 @@ export default function ProfessorPerfilPage() {
   })
 
   return (
-    <ProfessorWorkspaceLayout secao="Perfil">
-      <motion.main
-        id="panel-main"
-        tabIndex={-1}
+    <AppShell conteudo="amplo" trilha={['Perfil']}>
+      <motion.div
         className="panel-main perfil-main"
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -350,7 +348,7 @@ export default function ProfessorPerfilPage() {
             {saindo ? 'Saindo...' : 'Sair da conta'}
           </Botao>
         </section>
-      </motion.main>
-    </ProfessorWorkspaceLayout>
+      </motion.div>
+    </AppShell>
   )
 }

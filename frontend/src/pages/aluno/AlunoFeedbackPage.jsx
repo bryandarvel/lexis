@@ -10,7 +10,7 @@ import {
   useParams,
 } from 'react-router'
 
-import AlunoLayout from '../../layouts/AlunoLayout.jsx'
+import AppShell from '../../layouts/AppShell.jsx'
 import { obterFeedbackAluno } from '../../services/feedbacks.js'
 import { notificarContagemAtualizada } from '../../services/notification-events.js'
 import {
@@ -709,13 +709,13 @@ export default function AlunoFeedbackPage() {
   }
 
   return (
-    <AlunoLayout
+    <AppShell
       rotaEnviarRedacao={rotaEnviarRedacao}
       trilha={TRILHA}
     >
       <div className="aluno-feedback">
         {conteudo}
       </div>
-    </AlunoLayout>
+    </AppShell>
   )
 }

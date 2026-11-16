@@ -13,7 +13,7 @@ import {
   useNavigate,
 } from 'react-router'
 
-import AlunoLayout from '../../layouts/AlunoLayout.jsx'
+import AppShell from '../../layouts/AppShell.jsx'
 import { obterDesempenhoAluno } from '../../services/desempenho.js'
 import { observarMatriculaAtualizada } from '../../services/matricula-events.js'
 import {
@@ -884,7 +884,7 @@ export default function AlunoDashboardPage() {
         : undefined
 
   return (
-    <AlunoLayout
+    <AppShell
       rotaEnviarRedacao={
         proposta
           ? `/aluno/temas/${encodeURIComponent(proposta.id)}/redacao`
@@ -947,6 +947,6 @@ export default function AlunoDashboardPage() {
           />
         </>
       )}
-    </AlunoLayout>
+    </AppShell>
   )
 }

@@ -5,7 +5,7 @@ import Botao from '../../components/base/Botao.jsx'
 import { motion } from 'motion/react'
 import { Link } from 'react-router'
 
-import ProfessorWorkspaceLayout from '../../layouts/ProfessorWorkspaceLayout.jsx'
+import AppShell from '../../layouts/AppShell.jsx'
 import { carregarPainelProfessor } from '../../services/professor-dashboard.js'
 import { diasDesdeEnvio, obterIniciais } from '../../utils/professor-dashboard.js'
 import { interpretarErroApi } from '../../utils/api-error.js'
@@ -66,10 +66,8 @@ export default function ProfessorDashboardPage() {
   const exibidas = mostrarTodas ? pagina.pendentes : pagina.pendentes.slice(0, 3)
 
   return (
-    <ProfessorWorkspaceLayout secao="Painel" turmas={pagina.turmas} pronto={pagina.status === 'pronto'} onRedacoes={abrirRedacoes}>
-      <motion.main
-        id="panel-main"
-        tabIndex={-1}
+    <AppShell conteudo="amplo" trilha={['Painel']} turmas={pagina.turmas} pronto={pagina.status === 'pronto'} onRedacoes={abrirRedacoes}>
+      <motion.div
         className="panel-main"
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -140,7 +138,7 @@ export default function ProfessorDashboardPage() {
             </section>
           </>
         )}
-      </motion.main>
-    </ProfessorWorkspaceLayout>
+      </motion.div>
+    </AppShell>
   )
 }

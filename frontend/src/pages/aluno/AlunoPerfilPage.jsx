@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Botao from '../../components/base/Botao.jsx'
 import { Link, useNavigate } from 'react-router'
 
-import AlunoLayout from '../../layouts/AlunoLayout.jsx'
+import AppShell from '../../layouts/AppShell.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
 import { useRotaEnviarRedacao } from '../../hooks/useRotaEnviarRedacao.js'
 import { obterMinhaConta } from '../../services/conta.js'
@@ -283,7 +283,7 @@ export default function AlunoPerfilPage() {
   }
 
   return (
-    <AlunoLayout rotaEnviarRedacao={rotaEnviarRedacao} trilha={['Perfil']}>
+    <AppShell rotaEnviarRedacao={rotaEnviarRedacao} trilha={['Perfil']}>
       <header>
         <h1 className="text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-texto">
           Perfil
@@ -323,6 +323,6 @@ export default function AlunoPerfilPage() {
           </div>
         </section>
       </div>
-    </AlunoLayout>
+    </AppShell>
   )
 }

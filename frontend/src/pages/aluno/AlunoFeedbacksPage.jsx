@@ -2,7 +2,7 @@ import { useEffect, useId, useState } from 'react'
 import Botao from '../../components/base/Botao.jsx'
 import { Link } from 'react-router'
 
-import AlunoLayout from '../../layouts/AlunoLayout.jsx'
+import AppShell from '../../layouts/AppShell.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
 import { listarMinhasRedacoes } from '../../services/redacoes.js'
 import { obterDesempenhoAluno } from '../../services/desempenho.js'
@@ -152,7 +152,7 @@ export default function AlunoFeedbacksPage() {
   const visiveis = ordenarFeedbacks(feedbacks, ordenacao)
 
   return (
-    <AlunoLayout rotaEnviarRedacao={rotaEnviar} trilha={['Feedbacks']}>
+    <AppShell rotaEnviarRedacao={rotaEnviar} trilha={['Feedbacks']}>
       <header>
         <h1 className="text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-texto">
           Feedbacks
@@ -251,6 +251,6 @@ export default function AlunoFeedbacksPage() {
           </ul>
         </>
       )}
-    </AlunoLayout>
+    </AppShell>
   )
 }
