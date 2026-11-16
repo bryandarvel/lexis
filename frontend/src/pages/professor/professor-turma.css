@@ -13,9 +13,6 @@
 
 .turma-acoes { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
 .turma-acoes > * { min-height: 44px; }
-.turma-botao-perigo { color: var(--panel-error); }
-.panel-primary-button.turma-botao-perigo { background: var(--panel-error); color: #fff; }
-[data-theme="dark"] .panel-primary-button.turma-botao-perigo { color: #18212f; }
 
 /* Os botões base têm 40 px; nos diálogos desta tela o alvo mínimo é 44 px. */
 
@@ -24,7 +21,7 @@
 .turma-aluno-info { min-width: 0; flex: 1; }
 .turma-aluno-info strong { display: block; font-size: 14px; font-weight: 600; line-height: 20px; overflow-wrap: anywhere; }
 .turma-aluno-info > span { display: block; margin-top: 3px; color: var(--panel-muted); font-size: 12px; line-height: 17px; overflow-wrap: anywhere; }
-.turma-aluno .panel-soft-button { min-height: 44px; }
+.turma-aluno button { min-height: 44px; }
 [data-theme="dark"] .turma-aluno { box-shadow: inset 0 1px rgb(255 255 255 / 12%); }
 [data-theme="dark"] .turma-aviso { background: #0e3022; color: #5bda91; }
 
@@ -42,5 +39,5 @@
   .turma-stats { grid-template-columns: minmax(0, 1fr); }
   .turma-acoes > * { flex: 1 1 100%; }
   .turma-aluno { padding: 16px; }
-  .turma-aluno .panel-soft-button { width: 100%; }
+  .turma-aluno button { width: 100%; }
 }

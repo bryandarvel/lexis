@@ -1,3 +1,4 @@
+import Botao from '../../components/base/Botao.jsx'
 import {
   useCallback,
   useEffect,
@@ -817,12 +818,12 @@ export default function AlunoRedacaoPage() {
           <p className="mt-2 text-sm leading-[22px] text-lexis-200">
             {aviso?.mensagem}
           </p>
-          <Link
+          <Botao as={Link}
             to="/aluno"
-            className="mt-4 inline-flex h-10 items-center rounded-lg border border-[var(--aluno-borda-campo)] px-4 text-[13px] font-semibold text-lexis-100"
+            variante="secundario" tamanho="compacto" className="mt-4"
           >
             Voltar ao início
-          </Link>
+          </Botao>
         </div>
       </AlunoLayout>
     )
@@ -844,12 +845,12 @@ export default function AlunoRedacaoPage() {
         {descreverEntrega(redacao)}
       </p>
       {redacao.status === 'AVALIADA' ? (
-        <Link
+        <Botao as={Link}
           to={`/aluno/redacoes/${encodeURIComponent(redacao.id)}/feedback`}
-          className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-[var(--color-brand-accent)] px-5 text-[13px] font-semibold leading-[18px] text-[#ffffff] transition-[filter,opacity] hover:brightness-110 sm:w-[160px]"
+          className="w-full sm:w-[160px]"
         >
           Ver feedback
-        </Link>
+        </Botao>
       ) : (
         <p className="text-xs font-medium leading-[17px] text-lexis-200">
           Aguardando a correção do professor.
@@ -867,7 +868,7 @@ export default function AlunoRedacaoPage() {
         }
         onSalvarAgora={handleSalvar}
       />
-      <button
+      <Botao
         ref={botaoEnviarRef}
         type="button"
         onClick={handleRevisarEEnviar}
@@ -875,12 +876,11 @@ export default function AlunoRedacaoPage() {
           ocupado ||
           !texto.trim()
         }
-        className="h-11 w-full rounded-lg bg-[var(--color-brand-accent)] px-5 text-[13px] font-semibold leading-[18px] text-[#ffffff] transition-[filter,opacity] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-55 sm:w-[160px]"
-      >
+        className="w-full sm:w-[160px]">
         {acao === 'enviar'
           ? 'Enviando...'
           : 'Revisar e enviar'}
-      </button>
+      </Botao>
     </>
   )
 

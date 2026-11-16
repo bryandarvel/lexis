@@ -1,4 +1,5 @@
 import { descreverSugestao } from '../../utils/essay-editor.js'
+import Botao from '../base/Botao.jsx'
 
 const CORES_PONTO = {
   erro: 'bg-[var(--aluno-erro)]',
@@ -11,14 +12,13 @@ function BotaoRevisar({
   onRevisar,
 }) {
   return (
-    <button
+    <Botao
       type="button"
       onClick={onRevisar}
       disabled={desabilitado}
-      className="mt-4 h-10 rounded-lg border border-[var(--aluno-borda-campo)] px-4 text-[13px] font-semibold leading-[18px] text-lexis-100 transition-colors hover:bg-[var(--aluno-neutro-fundo)] disabled:cursor-not-allowed disabled:opacity-55"
-    >
+      variante="secundario" tamanho="compacto" className="mt-4">
       {children}
-    </button>
+    </Botao>
   )
 }
 
@@ -62,17 +62,16 @@ function ItemSugestao({
             </summary>
             <div className="mt-1.5 flex flex-wrap gap-1.5 pb-1">
               {alternativas.map((substituicao) => (
-                <button
+                <Botao
                   key={substituicao}
                   type="button"
                   disabled={desabilitado}
                   onClick={() =>
                     onAplicar(sugestao, substituicao)
                   }
-                  className="min-h-8 rounded-md border border-[var(--aluno-borda-campo)] px-2.5 text-xs font-semibold text-lexis-100 disabled:opacity-55"
-                >
+                  variante="secundario" tamanho="compacto">
                   Aplicar “{substituicao}”
-                </button>
+                </Botao>
               ))}
             </div>
           </details>

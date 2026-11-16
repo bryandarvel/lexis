@@ -1,3 +1,4 @@
+import Botao from '../../components/base/Botao.jsx'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import AuthField from '../../components/auth/AuthField.jsx'
@@ -59,9 +60,9 @@ export default function RedefinirSenhaPage() {
             <AuthField id="reset-password" label="Nova senha" type="password" autoComplete="new-password" value={senha} onChange={e => setSenha(e.target.value)} minLength={10} maxLength={72} aria-describedby="reset-rules" disabled={enviando} required />
             <AuthField id="reset-confirmation" label="Confirmar nova senha" type="password" autoComplete="new-password" value={confirmacao} onChange={e => setConfirmacao(e.target.value)} minLength={10} maxLength={72} disabled={enviando} required />
             <AuthNotice mensagem={erro} />
-            <button type="submit" className="login-submit" disabled={enviando}>{enviando ? 'Redefinindo...' : 'Redefinir senha'}</button>
+            <Botao type="submit" className="min-h-12 w-full" carregando={enviando} rotuloCarregando="Redefinindo...">Redefinir senha</Botao>
           </form>}
-        <Link className="login-back" to="/login">Voltar para entrar</Link>
+        <Botao as={Link} variante="fantasma" to="/login">Voltar para entrar</Botao>
       </div>
     </section>
   </main>

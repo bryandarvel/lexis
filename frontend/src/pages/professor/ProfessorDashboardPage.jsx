@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import Botao from '../../components/base/Botao.jsx'
 import { motion } from 'motion/react'
 import { Link } from 'react-router'
 
@@ -83,7 +84,7 @@ export default function ProfessorDashboardPage() {
           <section className="panel-error" role="alert">
             <h2>Não foi possível carregar o painel</h2>
             <p>{pagina.mensagem}</p>
-            <button type="button" className="panel-primary-button" onClick={() => setTentativa((valor) => valor + 1)}>Tentar novamente</button>
+            <Botao type="button" onClick={() => setTentativa((valor) => valor + 1)}>Tentar novamente</Botao>
           </section>
         ) : (
           <>
@@ -118,7 +119,7 @@ export default function ProfessorDashboardPage() {
                         <span className={`panel-wait ${dias >= 5 ? 'overdue' : dias >= 3 ? 'attention' : ''}`}>
                           {dias === null ? 'Data indisponível' : dias === 0 ? 'hoje' : dias === 1 ? 'há 1 dia' : `há ${dias} dias`}
                         </span>
-                        <Link className="panel-soft-button" to={`/professor/redacoes/${redacao.id}`} aria-label={`Corrigir redação de ${redacao.aluno?.nome ?? 'aluno'}`}>Corrigir</Link>
+                        <Botao as={Link} variante="secundario" to={`/professor/redacoes/${redacao.id}`} aria-label={`Corrigir redação de ${redacao.aluno?.nome ?? 'aluno'}`}>Corrigir</Botao>
                       </li>
                     )
                   })}
@@ -127,7 +128,7 @@ export default function ProfessorDashboardPage() {
                 <div className="panel-empty">
                   <h3>{pagina.turmas.length ? 'Nenhuma redação pendente' : 'Comece pelas suas turmas'}</h3>
                   <p>{pagina.turmas.length ? 'As redações enviadas pelos alunos aparecerão aqui para correção.' : 'Acesse Turmas para organizar alunos e propostas de redação.'}</p>
-                  <Link to="/professor/turmas" className="panel-soft-button">Ver turmas</Link>
+                  <Botao as={Link} to="/professor/turmas" variante="secundario">Ver turmas</Botao>
                 </div>
               )}
               {pagina.pendentes.length > 3 && (

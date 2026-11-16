@@ -316,31 +316,31 @@ export default function ProfessorTemaPage() {
       cabecalho={pronto ? <nav className="topic-breadcrumb" aria-label="Caminho da proposta"><Link to="/professor/turmas">Turmas</Link><span aria-hidden="true">›</span><Link to={`/professor/turmas/${turmaId}`} title={pagina.turma.nome}>{pagina.turma.nome}</Link><span aria-hidden="true">›</span><span>Proposta</span></nav> : undefined}>
       <motion.main id="panel-main" className="panel-main topic-main" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .2 }} aria-busy={pagina.status === 'carregando'}>
         {pagina.status === 'carregando' && <><h1>Proposta e critérios</h1><p role="status" className="panel-subtitle">Carregando proposta…</p><div className="topic-loading" aria-hidden="true"><div className="skeleton-block" /><div className="skeleton-block" /><div className="skeleton-block" /></div></>}
-        {pagina.status === 'erro' && <><h1>Proposta e critérios</h1><section className="panel-error" role="alert"><h2>Não foi possível abrir a proposta</h2><p>{pagina.mensagem}</p><button className="panel-primary-button" onClick={() => setTentativa((atual) => atual + 1)}>Tentar novamente</button><Link className="panel-soft-button" to="/professor/turmas">Voltar às turmas</Link></section></>}
+        {pagina.status === 'erro' && <><h1>Proposta e critérios</h1><section className="panel-error" role="alert"><h2>Não foi possível abrir a proposta</h2><p>{pagina.mensagem}</p><Botao onClick={() => setTentativa((atual) => atual + 1)}>Tentar novamente</Botao><Botao as={Link} variante="secundario" to="/professor/turmas">Voltar às turmas</Botao></section></>}
         {pronto && <>
           <h1>{pagina.tema.enunciado}</h1>
           <p className="panel-subtitle topic-subtitle">{pagina.turma.nome} <span aria-hidden="true"> · </span> entrega até {formatarPrazo(pagina.tema.prazoEntrega)} <span aria-hidden="true"> · </span> {entregas.texto}{!pagina.tema.ativo && ' · Proposta arquivada'}</p>
           <section className="topic-tabs" aria-labelledby="topic-tabs-title">
             <h2 id="topic-tabs-title">Temas</h2>
             <nav aria-label="Temas desta turma">{pagina.temas.map((tema) => <Link key={tema.id} to={`/professor/temas/${tema.id}`} title={tema.enunciado} aria-current={tema.id === temaId ? 'page' : undefined} aria-disabled={salvando || undefined} onClick={(event) => { if (salvando) event.preventDefault() }}>{tema.enunciado}</Link>)}</nav>
-            {pagina.turma.ativa ? <Link className="panel-primary-button" to={`/professor/turmas/${turmaId}/temas/novo`}>+ Novo tema</Link> : <button className="panel-primary-button" disabled>Turma arquivada</button>}
+            {pagina.turma.ativa ? <Botao as={Link} to={`/professor/turmas/${turmaId}/temas/novo`}>+ Novo tema</Botao> : <Botao disabled>Turma arquivada</Botao>}
           </section>
           <div className="topic-grid">
             <section className="topic-card topic-prompt" aria-labelledby="topic-prompt-title">
               <div className="topic-section-heading">
                 <h2 id="topic-prompt-title">Enunciado</h2>
                 <div className="topic-acoes">
-                  <button ref={editarRef} type="button" className="panel-soft-button" disabled={!edicao.podeEditar || salvando} onClick={(event) => abrirProposta('editar', event)}>Editar proposta</button>
+                  <Botao ref={editarRef} type="button" variante="secundario" disabled={!edicao.podeEditar || salvando} onClick={(event) => abrirProposta('editar', event)}>Editar proposta</Botao>
                   {reabertura.oferecer
-                    ? <button type="button" className="panel-primary-button" disabled={salvando} onClick={(event) => abrirProposta('reabrir', event)}>Reabrir proposta</button>
-                    : <button type="button" className="panel-soft-button topic-botao-perigo" disabled={!pagina.tema.ativo || salvando} onClick={(event) => abrirProposta('arquivar', event)}>Arquivar proposta</button>}
+                    ? <Botao type="button" disabled={salvando} onClick={(event) => abrirProposta('reabrir', event)}>Reabrir proposta</Botao>
+                    : <Botao type="button" variante="perigo" disabled={!pagina.tema.ativo || salvando} onClick={(event) => abrirProposta('arquivar', event)}>Arquivar proposta</Botao>}
                 </div>
               </div>
               {edicao.motivo && <p className="topic-rule">{edicao.motivo}</p>}
               {reabertura.bloqueada && (
                 <div className="topic-rule">
                   <p>{reabertura.motivo}</p>
-                  <Link className="panel-soft-button topic-rule-link" to={`/professor/turmas/${turmaId}`}>Ir para a turma e reabri-la</Link>
+                  <Botao as={Link} variante="secundario" className="topic-rule-link" to={`/professor/turmas/${turmaId}`}>Ir para a turma e reabri-la</Botao>
                 </div>
               )}
               <p className="topic-prose">{pagina.tema.descricao}</p>
@@ -349,7 +349,7 @@ export default function ProfessorTemaPage() {
             </section>
             <section className="topic-card topic-received" aria-labelledby="topic-received-title">
               <div className="topic-section-heading"><div><h2 ref={redacoesRef} tabIndex={-1} id="topic-received-title">Redações recebidas</h2><p>{entregas.texto}</p>{entregas.textoHistorico && <p className="topic-empty-text">{entregas.textoHistorico}. As entregas permanecem no histórico.</p>}</div>
-                {pagina.redacoes.length > 3 && <button type="button" className="panel-soft-button" onClick={() => setTodas(!todas)} aria-expanded={todas} aria-controls="topic-essays">{todas ? 'Mostrar menos' : 'Ver todas'}</button>}
+                {pagina.redacoes.length > 3 && <Botao type="button" variante="secundario" onClick={() => setTodas(!todas)} aria-expanded={todas} aria-controls="topic-essays">{todas ? 'Mostrar menos' : 'Ver todas'}</Botao>}
               </div>
               {pagina.redacoes.length ? <ul className="topic-essays" id="topic-essays">{(todas ? pagina.redacoes : pagina.redacoes.slice(0, 3)).map((redacao) => <li key={redacao.id}><Link to={`/professor/redacoes/${redacao.id}`}>
                 <span className="panel-student-avatar" aria-hidden="true">{obterIniciais(redacao.aluno?.nome)}</span><span className="topic-student-name">{redacao.aluno?.nome ?? 'Aluno'}{redacao.aluno?.matriculaAtivaNaTurma === false && <span className="topic-ex-aluno"> · sem matrícula ativa</span>}</span>
@@ -362,7 +362,7 @@ export default function ProfessorTemaPage() {
               <ul className="topic-criteria-list">{grupos.base.map((criterio, indice) => <li key={criterio.nome} className={`topic-criterion tone-${indice}`}><div><h4>{criterio.nome}</h4><span>fixo{!criterio.sincronizado && ' · não cadastrado'}</span></div><p>{criterio.descricao}</p></li>)}</ul>
               <h3 className="topic-eyebrow">Personalizados desta proposta</h3>
               {grupos.personalizados.length ? <ul className="topic-criteria-list">{grupos.personalizados.map((criterio, indice) => <li key={criterio.id ?? criterio.nome} className={`topic-criterion custom tone-${3 + indice % 2}`}><div><h4>{criterio.nome}</h4><button type="button" disabled={!podeEditar || salvando || Boolean(editor)} onClick={(event) => abrirEditor(indice, event)} aria-label={`Editar critério ${criterio.nome}`}>Editar</button></div><p>{criterio.descricao}</p></li>)}</ul> : <p className="topic-empty-text">Nenhum critério personalizado adicionado.</p>}
-              <button type="button" className="panel-soft-button topic-add" disabled={!podeEditar || grupos.personalizados.length >= 2 || salvando || Boolean(editor)} onClick={(event) => abrirEditor(null, event)}>+ Adicionar critério personalizado</button>
+              <Botao type="button" variante="secundario" className="topic-add" disabled={!podeEditar || grupos.personalizados.length >= 2 || salvando || Boolean(editor)} onClick={(event) => abrirEditor(null, event)}>+ Adicionar critério personalizado</Botao>
               <p className="topic-limit">Até dois critérios personalizados nesta proposta.</p>
               {pagina.tema.criteriosBloqueados && <p className="topic-rule">Critérios bloqueados após a primeira entrega, para preservar a avaliação da turma.</p>}
               {!grupos.compativel && <p className="topic-rule">Esta proposta usa uma configuração anterior. Os dados foram preservados; a edição exige adequação futura.</p>}

@@ -1,4 +1,5 @@
 import { useId } from 'react'
+import Botao from '../base/Botao.jsx'
 
 import { formatarTamanhoArquivo } from '../../utils/ocr-revisao.js'
 
@@ -128,20 +129,18 @@ export default function EnvioFotoPainel({
       )}
 
       <div className="mt-6 flex justify-end">
-        <button
+        <Botao
           type="button"
           onClick={onExtrair}
           disabled={
             desabilitado || enviando || !imagem
-          }
-          className="h-11 rounded-lg bg-[var(--color-brand-accent)] px-5 text-[13px] font-semibold leading-[18px] text-[#ffffff] transition-[filter,opacity] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-55"
-        >
+          }>
           {enviando
             ? progresso >= 100
               ? 'Transcrevendo...'
               : 'Enviando foto...'
             : 'Extrair texto da foto'}
-        </button>
+        </Botao>
       </div>
     </div>
   )

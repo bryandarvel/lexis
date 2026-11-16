@@ -1,4 +1,5 @@
 import { useEffect, useId, useState } from 'react'
+import Botao from '../../components/base/Botao.jsx'
 import { Link } from 'react-router'
 
 import AlunoLayout from '../../layouts/AlunoLayout.jsx'
@@ -53,13 +54,13 @@ function ItemFeedback({ redacao }) {
           <span className="sr-only"> de 1000 pontos</span>
         </p>
 
-        <Link
+        <Botao as={Link}
           to={caminhoDoFeedback(redacao)}
-          className="aluno-fb-botao"
+          variante="secundario"
           aria-label={`Ver feedback: ${tema}`}
         >
           Ver feedback
-        </Link>
+        </Botao>
       </div>
     </li>
   )
@@ -186,13 +187,12 @@ export default function AlunoFeedbacksPage() {
           <p className="mt-2 text-sm leading-[22px] text-lexis-200">
             Verifique sua conexão e tente novamente em instantes.
           </p>
-          <button
+          <Botao
             type="button"
             onClick={() => setTentativa((valor) => valor + 1)}
-            className="aluno-fb-botao aluno-fb-botao-primario mt-4"
-          >
+            className="mt-4">
             Tentar novamente
-          </button>
+          </Botao>
         </section>
       )}
 
@@ -206,9 +206,9 @@ export default function AlunoFeedbacksPage() {
             publica a nota da sua redação. Acompanhe o andamento de
             cada texto em Minhas redações.
           </p>
-          <Link to="/aluno/redacoes" className="aluno-fb-botao mt-4">
+          <Botao as={Link} to="/aluno/redacoes" variante="secundario" className="mt-4">
             Ir para Minhas redações
-          </Link>
+          </Botao>
         </section>
       )}
 

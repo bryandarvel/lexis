@@ -22,9 +22,6 @@
 .review-student-info p { margin: 4px 0 0; font-size: 12px; line-height: 17px; color: var(--panel-muted); }
 .review-student-actions { display: flex; gap: 10px; }
 .review-student-actions button { min-height: 44px; }
-.review-student-actions .panel-primary-button { min-width: 100px; }
-.review-outline-button { min-height: 44px; padding: 10px 18px; border: 1px solid #8895ab; border-radius: 10px; background: var(--panel-surface); color: var(--panel-text); font-size: 13px; line-height: 18px; font-weight: 600; cursor: pointer; }
-.review-outline-button:hover { background: var(--panel-soft); }
 .review-main button:disabled, .review-sheet button:disabled { opacity: .55; cursor: not-allowed; }
 .review-essay-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin-bottom: 12px; }
 .review-essay-heading > .review-caption { margin-left: auto; }
@@ -83,7 +80,7 @@
 .review-color { display: inline-block; width: 12px; height: 12px; border-radius: 4px; flex: 0 0 auto; background: var(--review-tone); }
 .review-criteria-subheading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .review-text-link { display: inline-block; color: var(--panel-action); font-size: 12px; line-height: 18px; text-decoration: underline; }
-.review-analysis > .review-outline-button { width: 100%; border-color: #1c6eba; color: var(--panel-action); }
+.review-analysis > button { width: 100%; }
 .review-analysis-details { margin-top: 12px; padding: 16px; font-size: 13px; line-height: 21px; }
 .review-analysis-details h3, .review-analysis-details h4 { margin: 18px 0 6px; font-weight: 600; }
 .review-analysis-details p { white-space: pre-wrap; }

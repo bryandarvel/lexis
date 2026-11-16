@@ -94,9 +94,6 @@
 
 .topic-acoes { display: flex; flex-wrap: wrap; gap: 10px; }
 .topic-acoes > button { min-height: 44px; }
-.topic-botao-perigo { color: var(--panel-error); }
-.panel-primary-button.topic-botao-perigo { background: var(--panel-error); color: #fff; }
-[data-theme="dark"] .panel-primary-button.topic-botao-perigo { color: #18212f; }
 @media (max-width: 767px) {
   .topic-acoes { width: 100%; }
   .topic-acoes > button { flex: 1 1 100%; }

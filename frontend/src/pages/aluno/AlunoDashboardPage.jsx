@@ -1,3 +1,4 @@
+import Botao from '../../components/base/Botao.jsx'
 import {
   useCallback,
   useEffect,
@@ -268,12 +269,12 @@ function CartaoProposta({
         {descricao.orientacao}
       </p>
 
-      <Link
+      <Botao as={Link}
         to={`/aluno/temas/${encodeURIComponent(proposta.id)}/redacao`}
-        className="mt-6 inline-flex h-11 w-full items-center justify-center rounded-lg bg-[var(--color-brand-accent)] text-[13px] font-semibold leading-[18px] text-[#ffffff] transition-[filter,opacity] hover:brightness-110 sm:w-[220px]"
+        className="mt-6 w-full sm:w-[220px]"
       >
         {rascunho ? 'Continuar rascunho' : 'Escrever redação'}
-      </Link>
+      </Botao>
 
       {tempoRascunho && (
         <p className="mt-3 text-xs font-medium leading-[17px] text-lexis-200">
@@ -721,18 +722,16 @@ function FormularioEntrarTurma({ onEntrou }) {
           />
         </div>
 
-        <button
+        <Botao
           type="submit"
           disabled={
             estado.enviando ||
             codigoAcesso.length !== 8
-          }
-          className="h-11 rounded-lg bg-[var(--color-brand-accent)] px-5 text-[13px] font-semibold leading-[18px] text-[#ffffff] transition-[filter,opacity] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-55"
-        >
+          }>
           {estado.enviando
             ? 'Entrando...'
             : 'Entrar na turma'}
-        </button>
+        </Botao>
       </form>
 
       {estado.erro && (

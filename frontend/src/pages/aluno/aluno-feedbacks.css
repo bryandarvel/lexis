@@ -143,36 +143,9 @@
   line-height: 30px;
 }
 
-.aluno-fb-botao {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 10px 18px;
-  border: 1px solid var(--aluno-borda-campo);
-  border-radius: 10px;
-  background: transparent;
-  color: var(--aluno-acao-suave-texto);
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 18px;
-  text-decoration: none;
-  cursor: pointer;
-}
 
-.aluno-fb-botao:hover {
-  background: var(--aluno-acao-suave);
-}
 
-.aluno-fb-botao-primario {
-  border-color: transparent;
-  background: #1c6eba;
-  color: #ffffff;
-}
 
-.aluno-fb-botao-primario:hover {
-  background: #175795;
-}
 
 .aluno-fb-esqueleto {
   background: var(--aluno-trilho);

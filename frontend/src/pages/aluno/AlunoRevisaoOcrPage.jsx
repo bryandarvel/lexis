@@ -1,3 +1,4 @@
+import Botao from '../../components/base/Botao.jsx'
 import {
   useEffect,
   useReducer,
@@ -30,9 +31,6 @@ import {
 } from '../../utils/ocr-revisao.js'
 
 const etapaAtual = descreverEtapaAtual(PASSOS_ENVIO_FOTO)
-
-const classeBotaoContorno =
-  'rounded-lg border border-[var(--aluno-borda-campo)] bg-lexis-900 text-[13px] font-semibold leading-[18px] text-lexis-100 transition-colors hover:bg-[var(--aluno-neutro-fundo)] disabled:cursor-not-allowed disabled:opacity-55'
 
 function IconeConcluido() {
   return (
@@ -220,14 +218,13 @@ function FotoEnviada({
       <p className="mt-3 text-xs font-medium leading-[17px] text-lexis-200">
         A imagem nunca é recortada. Se faltar linha, envie outra foto.
       </p>
-      <button
+      <Botao
         type="button"
         onClick={onEnviarOutra}
         disabled={desabilitado}
-        className={`mt-[5px] h-9 w-full sm:w-[160px] ${classeBotaoContorno}`}
-      >
+        variante="secundario" tamanho="compacto" className="mt-[5px] w-full sm:w-[160px]">
         Enviar outra foto
-      </button>
+      </Botao>
     </section>
   )
 }
@@ -461,25 +458,23 @@ export default function AlunoRevisaoOcrPage() {
           )}
 
           <div className="mt-[11px] flex flex-wrap items-center justify-between gap-3">
-            <button
+            <Botao
               type="button"
               onClick={() => voltarAoEditor()}
               disabled={salvando}
               aria-describedby="ajuda-voltar"
-              className={`h-[42px] w-full sm:w-[160px] ${classeBotaoContorno}`}
-            >
+              variante="secundario" className="w-full sm:w-[160px]">
               Voltar
-            </button>
-            <button
+            </Botao>
+            <Botao
               type="button"
               onClick={handleAceitar}
               disabled={salvando}
-              className="h-[42px] w-full rounded-lg bg-[var(--color-brand-accent)] text-[13px] font-semibold leading-[18px] text-[#ffffff] transition-[filter,opacity] hover:brightness-110 disabled:cursor-wait disabled:opacity-55 sm:w-[200px]"
-            >
+              className="w-full sm:w-[200px]">
               {salvando
                 ? 'Salvando...'
                 : 'Aceitar e continuar'}
-            </button>
+            </Botao>
           </div>
         </section>
       </div>

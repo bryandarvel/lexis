@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import Botao from '../../components/base/Botao.jsx'
 import { motion } from 'motion/react'
 import { Link, useNavigate, useParams } from 'react-router'
 import AnalysisPanel from '../../components/correction/AnalysisPanel.jsx'
@@ -261,17 +262,17 @@ function Correcao({ redacaoId, usuarioId }) {
     cabecalho={<nav className="review-breadcrumb" aria-label="Caminho da correção"><Link to="/professor/turmas">Turmas</Link>{pronto && <><span aria-hidden="true">›</span><Link to={`/professor/turmas/${redacao.tema.turma.id}`}>{redacao.tema.turma.nome}</Link></>}<span aria-hidden="true">›</span><span>Correção</span></nav>}>
     <motion.main id="panel-main" className="review-main" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .2 }}>
       {pagina.status === 'carregando' && <div className="review-loading"><h1>Correção do professor</h1><p role="status">Carregando redação e avaliação…</p><div aria-hidden="true" className="review-loading-grid"><div className="skeleton-block" /><div className="skeleton-block" /><div className="skeleton-block" /></div></div>}
-      {pagina.status === 'erro' && <section className="review-card review-load-error" role="alert"><h1>Não foi possível abrir a redação</h1><p>{pagina.mensagem}</p><button className="panel-primary-button" onClick={() => setTentativa((v) => v + 1)}>Tentar novamente</button></section>}
+      {pagina.status === 'erro' && <section className="review-card review-load-error" role="alert"><h1>Não foi possível abrir a redação</h1><p>{pagina.mensagem}</p><Botao onClick={() => setTentativa((v) => v + 1)}>Tentar novamente</Botao></section>}
       {pronto && <div className="review-grid">
         <div className="review-center">
           <section className="review-card review-student">
             <span className="review-student-avatar" aria-hidden="true">{obterIniciais(redacao.aluno.nome)}</span>
             <div className="review-student-info"><h1>{redacao.aluno.nome}</h1><p>{redacao.tema.turma.nome} · {redacao.tema.enunciado}</p></div>
-            <div className="review-student-actions"><button type="button" className="review-outline-button" disabled={!pagina.fila?.proxima || analysisBusy || Boolean(feedbackAction)} onClick={pular}>Pular</button>
-              <button type="button" className="panel-primary-button" disabled={Boolean(feedbackAction)} onClick={() => salvar()}>{feedbackAction === 'saving' ? 'Salvando…' : 'Salvar'}</button></div>
+            <div className="review-student-actions"><Botao type="button" variante="secundario" disabled={!pagina.fila?.proxima || analysisBusy || Boolean(feedbackAction)} onClick={pular}>Pular</Botao>
+              <Botao type="button" className="min-w-[100px]" disabled={Boolean(feedbackAction)} onClick={() => salvar()}>{feedbackAction === 'saving' ? 'Salvando…' : 'Salvar'}</Botao></div>
           </section>
           {pagina.erroFila && <p className="review-caption">A fila de redações está indisponível. A correção atual permanece acessível.</p>}
-          {rascunhoDivergente && <section className="review-notice" role="status"><strong>Rascunho local encontrado</strong><p>Há alterações não enviadas salvas neste dispositivo.</p><button type="button" className="panel-soft-button" disabled={Boolean(feedbackAction)} onClick={recuperarRascunho}>Recuperar rascunho</button> <button type="button" className="panel-soft-button" disabled={Boolean(feedbackAction)} onClick={() => rascunho.descartar(formServidor)}>Descartar rascunho local</button></section>}
+          {rascunhoDivergente && <section className="review-notice" role="status"><strong>Rascunho local encontrado</strong><p>Há alterações não enviadas salvas neste dispositivo.</p><Botao type="button" variante="secundario" disabled={Boolean(feedbackAction)} onClick={recuperarRascunho}>Recuperar rascunho</Botao> <Botao type="button" variante="secundario" disabled={Boolean(feedbackAction)} onClick={() => rascunho.descartar(formServidor)}>Descartar rascunho local</Botao></section>}
           {!rascunhoDivergente && rascunho.salvoEm && <p className="review-caption" role="status">Alterações locais protegidas em {formatarData(rascunho.salvoEm)}.</p>}
           <article className="review-card review-essay">
             <div className="review-essay-heading"><h2>Redação do aluno</h2><span className="review-badge">{trechos.length} {trechos.length === 1 ? 'trecho localizado' : 'trechos localizados'} da IA</span><span className="review-caption">{redacao.texto?.trim() ? redacao.texto.trim().split(/\s+/u).length : 0} palavras</span></div>
@@ -283,7 +284,7 @@ function Correcao({ redacaoId, usuarioId }) {
         {mobile ? <>
           <button className="review-sheet-trigger" type="button" aria-haspopup="dialog" aria-expanded={sheetAberto} onClick={() => setSheetAberto(true)}>Comentários e critérios</button>
           {sheetAberto && <dialog ref={sheetRef} className="review-sheet" aria-labelledby="review-sheet-title" onCancel={(e) => { e.preventDefault(); setSheetAberto(false) }}>
-            <div className="review-sheet-heading"><h2 id="review-sheet-title">Correção</h2><button className="panel-soft-button" type="button" onClick={() => setSheetAberto(false)}>Fechar</button></div>{ferramentas}
+            <div className="review-sheet-heading"><h2 id="review-sheet-title">Correção</h2><Botao variante="secundario" type="button" onClick={() => setSheetAberto(false)}>Fechar</Botao></div>{ferramentas}
           </dialog>}
         </> : <aside className="review-tools" aria-label="Ferramentas de correção">{ferramentas}</aside>}
       </div>}

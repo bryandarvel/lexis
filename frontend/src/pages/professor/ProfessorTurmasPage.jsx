@@ -140,7 +140,7 @@ export default function ProfessorTurmasPage() {
       <motion.main id="panel-main" tabIndex={-1} className="panel-main classes-main" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .22 }}>
         <div className="classes-heading">
           <div><h1>Turmas</h1><p className="panel-subtitle">Gerencie turmas, códigos de acesso e propostas.</p></div>
-          <button type="button" className="panel-primary-button classes-create" disabled={!pronto} onClick={() => { setSucesso(''); setCriando(true) }}>+ Nova turma</button>
+          <Botao type="button" className="classes-create" disabled={!pronto} onClick={() => { setSucesso(''); setCriando(true) }}>+ Nova turma</Botao>
         </div>
         <div className="classes-toolbar">
           <label className="classes-search"><span className="sr-only">Buscar turma ou código de acesso</span>
@@ -156,7 +156,7 @@ export default function ProfessorTurmasPage() {
         {pagina.status === 'carregando' ? (
           <div className="classes-grid" role="status" aria-label="Carregando turmas">{[0, 1, 2, 3].map((item) => <div key={item} className="class-card skeleton-block" aria-hidden="true" />)}</div>
         ) : pagina.status === 'erro' ? (
-          <section className="panel-error" role="alert"><h2>Não foi possível carregar as turmas</h2><p>{pagina.mensagem}</p><button className="panel-primary-button" type="button" onClick={() => setTentativa((valor) => valor + 1)}>Tentar novamente</button></section>
+          <section className="panel-error" role="alert"><h2>Não foi possível carregar as turmas</h2><p>{pagina.mensagem}</p><Botao type="button" onClick={() => setTentativa((valor) => valor + 1)}>Tentar novamente</Botao></section>
         ) : (
           <>
             {pagina.turmas.some((turma) => !turma.resumo) && <p className="class-partial-warning" role="status">Alguns indicadores não responderam. As turmas continuam disponíveis. <button type="button" onClick={() => setTentativa((valor) => valor + 1)}>Atualizar indicadores</button></p>}
@@ -165,7 +165,7 @@ export default function ProfessorTurmasPage() {
               <section className="panel-empty">
                 <h2>{pagina.turmas.length ? 'Nenhuma turma encontrada' : 'Você ainda não tem turmas'}</h2>
                 <p>{pagina.turmas.length ? 'Tente outro nome, código ou filtro.' : 'Crie sua primeira turma e compartilhe o código de acesso com os alunos.'}</p>
-                {pagina.turmas.length ? <button type="button" className="panel-soft-button" onClick={() => { setBusca(''); setFiltro('todas') }}>Limpar filtros</button> : <button type="button" className="panel-primary-button" onClick={() => setCriando(true)}>Criar primeira turma</button>}
+                {pagina.turmas.length ? <Botao type="button" variante="secundario" onClick={() => { setBusca(''); setFiltro('todas') }}>Limpar filtros</Botao> : <Botao type="button" onClick={() => setCriando(true)}>Criar primeira turma</Botao>}
               </section>
             )}
           </>

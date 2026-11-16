@@ -1,3 +1,4 @@
+import Botao from '../../components/base/Botao.jsx'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 
@@ -245,19 +246,14 @@ export default function CadastroPage() {
           maxLength={72}
         />
 
-        <button
+        <Botao
           type="submit"
-          disabled={enviando}
-          className="flex w-full items-center justify-center gap-3 rounded-[10px] bg-lexis-400 px-5 py-3.5 font-bold text-[color:var(--text-on-action-blue)] transition-colors hover:bg-lexis-500 disabled:cursor-not-allowed disabled:opacity-65"
+          className="min-h-12 w-full"
+          carregando={enviando}
+          rotuloCarregando="Criando conta..."
         >
-          {enviando && (
-            <span
-              aria-hidden="true"
-              className="h-4 w-4 animate-spin rounded-full border-2 border-current/25 border-t-current motion-reduce:animate-none"
-            />
-          )}
-          {enviando ? 'Criando conta...' : 'Criar conta'}
-        </button>
+          Criar conta
+        </Botao>
       </form>
     </AuthShell>
   )

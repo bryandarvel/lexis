@@ -107,10 +107,6 @@
 .login-forgot { position: absolute; top: 0; right: 0; z-index: 1; font-size: 12px; line-height: 18px; color: var(--login-action); cursor: pointer; }
 .login-forgot:hover { text-decoration: underline; }
 .login-password > div > div > button { color: var(--login-action); }
-.login-submit { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 48px; border: 0; border-radius: 10px; background: #1c6eba; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; transition: background-color 160ms ease; }
-.login-submit:hover:not(:disabled) { background: #165b9c; }
-.login-submit:disabled { cursor: not-allowed; opacity: .6; }
-.login-back { color: var(--login-action); min-height: 44px; cursor: pointer; font-size: 13px; font-weight: 600; }
 @media (max-width: 767px) {
   .login-page { grid-template-columns: 1fr; grid-template-rows: 140px 1fr; }
   .login-logo { width: 80px; height: 100px; }

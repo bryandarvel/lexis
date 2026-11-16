@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import Botao from '../../components/base/Botao.jsx'
 import { motion } from 'motion/react'
 import { useNavigate } from 'react-router'
 
@@ -219,13 +220,13 @@ export default function ProfessorNotificacoesPage() {
           <section className="avisos-vazio" aria-labelledby="avisos-erro-titulo">
             <h2 id="avisos-erro-titulo">Avisos indisponíveis</h2>
             <p>Verifique sua conexão e tente novamente.</p>
-            <button
+            <Botao
               type="button"
-              className="panel-primary-button"
+             
               onClick={() => setTentativa((valor) => valor + 1)}
             >
               Tentar novamente
-            </button>
+            </Botao>
           </section>
         )}
 

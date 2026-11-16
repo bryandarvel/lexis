@@ -111,7 +111,7 @@
 }
 
 /* O botão base do painel tem 40 px; aqui o alvo mínimo é 44 px. */
-.perfil-cartao form .panel-primary-button,
+.perfil-cartao form button[type="submit"],
 .perfil-sair {
   margin-top: 18px;
   min-height: 44px;

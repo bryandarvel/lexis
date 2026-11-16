@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import Botao from '../base/Botao.jsx'
 import { classificarEvidencia } from '../../utils/ai-evidence.js'
 import { avisoAnaliseDuplicado, avisoAtualDaAnalise, mensagemErroAnalise, segundosRestantesAnalise } from '../../utils/external-request.js'
 
@@ -32,16 +33,16 @@ export default function AnalysisPanel({ analysis, resultAnalysis = analysis, fal
   const dataFalhaAnterior = dataAnalise(falhaAnterior?.concluidaEm ?? falhaAnterior?.solicitadaEm)
   const dataAvisoAnterior = dataAnalise(avisoAnterior?.ocorridaEm)
   return <section className="review-analysis" aria-label="Análise consultiva por IA" aria-busy={isRequesting || pendente}>
-    <button type="button" className="review-outline-button" disabled={disabled || isRequesting || pendente || espera > 0} onClick={onRequest}>
+    <Botao type="button" variante="secundario" disabled={disabled || isRequesting || pendente || espera > 0} onClick={onRequest}>
       {isRequesting ? 'Analisando…' : analysis ? 'Analisar novamente com IA' : 'Analisar com IA'}
-    </button>
+    </Botao>
     <p className="review-caption">A IA não atribui nota. Revise cada sugestão antes de usá-la no feedback.</p>
     {espera > 0 && <p className="review-notice">Nova solicitação disponível em pelo menos {espera} s. A disponibilidade e os limites do serviço de IA ainda podem impedir a análise; não haverá nova tentativa automática.</p>}
-    {(isRequesting || pendente) && <div role="status" className="review-notice"><progress aria-label="Análise por IA em andamento" /><p>Análise em andamento. A conclusão depende do serviço de IA.</p>{!isRequesting && <button type="button" className="panel-soft-button" onClick={onRefresh}>Atualizar análise</button>}</div>}
+    {(isRequesting || pendente) && <div role="status" className="review-notice"><progress aria-label="Análise por IA em andamento" /><p>Análise em andamento. A conclusão depende do serviço de IA.</p>{!isRequesting && <Botao type="button" variante="secundario" onClick={onRefresh}>Atualizar análise</Botao>}</div>}
     {!analysis && !isRequesting && <p className="review-caption">Nenhuma análise solicitada para esta redação.</p>}
     {falhaAtual && !isRequesting && <p role="alert" className="review-notice error">{dataTentativa && <><strong>Última tentativa: {dataTentativa}</strong><br /></>}{mensagemErroAnalise(analysis)}</p>}
     {aviso && !(falhaAtual && !isRequesting && avisoAnaliseDuplicado(analysis, aviso)) && <p role={aviso.type === 'error' ? 'alert' : 'status'} className={`review-notice ${aviso.type}`}>{aviso.message}</p>}
-    {!isRequesting && !pendente && aviso?.type === 'error' && <button type="button" className="panel-soft-button" disabled={disabled} onClick={onRefresh}>Consultar resultado existente</button>}
+    {!isRequesting && !pendente && aviso?.type === 'error' && <Botao type="button" variante="secundario" disabled={disabled} onClick={onRefresh}>Consultar resultado existente</Botao>}
     {(falhaAnterior || avisoAnterior) && <details className="review-card review-analysis-details">
       <summary>Falha de IA anterior à publicação</summary>
       {falhaAnterior && <p>{dataFalhaAnterior && <><strong>{dataFalhaAnterior}</strong><br /></>}{mensagemErroAnalise(falhaAnterior)}</p>}

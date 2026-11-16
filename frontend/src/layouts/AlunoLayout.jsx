@@ -1,3 +1,4 @@
+import Botao from '../components/base/Botao.jsx'
 import {
   useEffect,
   useId,
@@ -269,25 +270,23 @@ function MenuUsuario({
             </p>
           )}
 
-          <button
+          <Botao
             type="button"
             onClick={() => {
               setAberto(false)
               onAbrirMinhaTurma()
             }}
-            className="mt-4 h-10 w-full rounded-lg border border-[var(--aluno-borda-campo)] text-[13px] font-semibold text-lexis-100 transition-colors hover:bg-[var(--aluno-neutro-fundo)]"
-          >
+            variante="secundario" tamanho="compacto" className="mt-4 w-full">
             Minha turma
-          </button>
+          </Botao>
 
-          <button
+          <Botao
             type="button"
             disabled={saindo}
             onClick={onSair}
-            className="mt-4 h-10 w-full rounded-lg border border-[var(--aluno-borda-campo)] text-[13px] font-semibold text-lexis-100 transition-colors hover:bg-[var(--aluno-neutro-fundo)] disabled:cursor-wait disabled:opacity-60"
-          >
+            variante="secundario" tamanho="compacto" className="mt-4 w-full">
             {saindo ? 'Saindo...' : 'Sair'}
-          </button>
+          </Botao>
         </div>
       )}
     </div>

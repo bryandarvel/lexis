@@ -357,9 +357,9 @@ export default function ProfessorTurmaPage() {
         transition={{ duration: .22 }}
         aria-busy={pagina.status === 'carregando'}
       >
-        <Link to="/professor/turmas" className="panel-soft-button turma-back">
+        <Botao as={Link} to="/professor/turmas" variante="secundario" className="turma-back">
           <span aria-hidden="true">←</span>&nbsp;Voltar às turmas
-        </Link>
+        </Botao>
 
         {pagina.status === 'carregando' && (
           <>
@@ -381,8 +381,8 @@ export default function ProfessorTurmaPage() {
               <h2>Não foi possível abrir a turma</h2>
               <p>{pagina.mensagem}</p>
               <div className="turma-acoes">
-                <button type="button" className="panel-primary-button" onClick={() => setTentativa((valor) => valor + 1)}>Tentar novamente</button>
-                <Link className="panel-soft-button" to="/professor/turmas">Voltar às turmas</Link>
+                <Botao type="button" onClick={() => setTentativa((valor) => valor + 1)}>Tentar novamente</Botao>
+                <Botao as={Link} variante="secundario" to="/professor/turmas">Voltar às turmas</Botao>
               </div>
             </section>
           </>
@@ -399,9 +399,9 @@ export default function ProfessorTurmaPage() {
                 </p>
               </div>
               {situacao.ativa && (
-                <Link to={`/professor/turmas/${turmaId}/temas/novo`} className="panel-primary-button turma-create">
+                <Botao as={Link} to={`/professor/turmas/${turmaId}/temas/novo`} className="turma-create">
                   Criar tema de redação
-                </Link>
+                </Botao>
               )}
             </div>
 
@@ -412,9 +412,9 @@ export default function ProfessorTurmaPage() {
                 <dt>Código de acesso</dt>
                 <dd>
                   <span className="turma-codigo">{turma.codigoAcesso}</span>
-                  <button type="button" className="panel-soft-button turma-copiar" onClick={copiarCodigo}>
+                  <Botao type="button" variante="secundario" className="turma-copiar" onClick={copiarCodigo}>
                     Copiar
-                  </button>
+                  </Botao>
                 </dd>
               </div>
               <div className="panel-stat">
@@ -433,9 +433,9 @@ export default function ProfessorTurmaPage() {
                 <>
                   <p>Renomear a turma, gerar um novo código de acesso ou arquivar a turma.</p>
                   <div className="turma-acoes">
-                    <button type="button" className="panel-soft-button" onClick={() => setDialogo({ tipo: 'renomear' })}>Renomear turma</button>
-                    <button type="button" className="panel-soft-button" onClick={() => setDialogo({ tipo: 'regenerar' })}>Gerar novo código</button>
-                    <button type="button" className="panel-soft-button turma-botao-perigo" onClick={() => setDialogo({ tipo: 'arquivar' })}>Arquivar turma</button>
+                    <Botao type="button" variante="secundario" onClick={() => setDialogo({ tipo: 'renomear' })}>Renomear turma</Botao>
+                    <Botao type="button" variante="secundario" onClick={() => setDialogo({ tipo: 'regenerar' })}>Gerar novo código</Botao>
+                    <Botao type="button" variante="perigo" onClick={() => setDialogo({ tipo: 'arquivar' })}>Arquivar turma</Botao>
                   </div>
                 </>
               ) : (
@@ -446,7 +446,7 @@ export default function ProfessorTurmaPage() {
                     e as correções continuam disponíveis.
                   </p>
                   <div className="turma-acoes">
-                    <button type="button" className="panel-primary-button" onClick={() => setDialogo({ tipo: 'reabrir' })}>Reabrir turma</button>
+                    <Botao type="button" onClick={() => setDialogo({ tipo: 'reabrir' })}>Reabrir turma</Botao>
                   </div>
                 </>
               )}
@@ -470,7 +470,7 @@ export default function ProfessorTurmaPage() {
                 <div className="panel-error" role="alert">
                   <h3>Não foi possível carregar os alunos</h3>
                   <p>{alunos.mensagem}</p>
-                  <button type="button" className="panel-primary-button" onClick={carregarAlunos}>Tentar novamente</button>
+                  <Botao type="button" onClick={carregarAlunos}>Tentar novamente</Botao>
                 </div>
               )}
 
@@ -496,14 +496,14 @@ export default function ProfessorTurmaPage() {
                             <span className={estado.atencao ? 'attention' : undefined}>{estado.rotulo}</span>
                           </span>
                         </div>
-                        <button
+                        <Botao
                           type="button"
-                          className="panel-soft-button turma-botao-perigo"
+                          variante="perigo"
                           onClick={() => setDialogo({ tipo: 'desvincular', matricula })}
                           aria-label={`Desvincular ${matricula.aluno?.nome ?? 'aluno'} da turma`}
                         >
                           Desvincular
-                        </button>
+                        </Botao>
                       </li>
                     )
                   })}

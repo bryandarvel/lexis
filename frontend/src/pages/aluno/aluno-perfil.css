@@ -107,46 +107,11 @@
   gap: 12px 24px;
 }
 
-.aluno-pf-botao {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  margin-top: 16px;
-  padding: 10px 18px;
-  border: 1px solid var(--aluno-borda-campo);
-  border-radius: 10px;
-  background: transparent;
-  color: var(--aluno-acao-suave-texto);
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 18px;
-  text-decoration: none;
-  cursor: pointer;
-}
 
-.aluno-pf-botao:hover {
-  background: var(--aluno-acao-suave);
-}
 
-.aluno-pf-botao:disabled {
-  cursor: wait;
-  opacity: 0.6;
-}
 
-.aluno-pf-botao-primario {
-  border-color: transparent;
-  background: #1c6eba;
-  color: #ffffff;
-}
 
-.aluno-pf-botao-primario:hover {
-  background: #175795;
-}
 
-.aluno-pf-sessao .aluno-pf-botao {
-  margin-top: 0;
-}
 
 .aluno-pf-erro {
   border-left: 3px solid var(--aluno-erro);

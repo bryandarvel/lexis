@@ -1,3 +1,4 @@
+import Botao from '../../components/base/Botao.jsx'
 import {
   useEffect,
   useId,
@@ -42,9 +43,6 @@ const TRILHA = ['Início', 'Feedback']
 
 const classeCartao =
   'rounded-xl border border-[var(--surface-border)] bg-lexis-900 aluno-elevacao-1'
-
-const classeBotaoContorno =
-  'inline-flex items-center justify-center rounded-lg border border-[var(--aluno-borda-campo)] bg-lexis-900 text-[13px] font-semibold leading-[18px] text-lexis-100 transition-colors hover:bg-[var(--aluno-neutro-fundo)]'
 
 const classeSobretitulo =
   'text-[11px] font-bold uppercase leading-[14px] tracking-[1.32px]'
@@ -115,14 +113,13 @@ function BotaoImprimir() {
 
   return (
     <>
-      <button
+      <Botao
         type="button"
         aria-describedby={idDescricao}
         onClick={() => window.print()}
-        className={`${classeBotaoContorno} h-11 w-40 shrink-0 sm:mt-1 print:hidden`}
-      >
+        variante="secundario" className="w-40 shrink-0 sm:mt-1 print:hidden">
         Baixar em PDF
-      </button>
+      </Botao>
       <span
         id={idDescricao}
         className="sr-only"
@@ -661,12 +658,12 @@ export default function AlunoFeedbackPage() {
           titulo={indisponivel.titulo}
           mensagem={indisponivel.mensagem}
         >
-          <Link
+          <Botao as={Link}
             to={indisponivel.acao.destino}
-            className={`${classeBotaoContorno} h-10 px-4`}
+            variante="secundario" tamanho="compacto"
           >
             {indisponivel.acao.rotulo}
-          </Link>
+          </Botao>
         </CartaoAviso>
       </>
     )
@@ -691,22 +688,21 @@ export default function AlunoFeedbackPage() {
           }
         >
           {!naoEncontrada && (
-            <button
+            <Botao
               type="button"
               onClick={() =>
                 setTentativa((atual) => atual + 1)
               }
-              className="inline-flex h-10 items-center justify-center rounded-lg bg-[var(--color-brand-accent)] px-4 text-[13px] font-semibold leading-[18px] text-white transition hover:brightness-110"
-            >
+              tamanho="compacto">
               Tentar novamente
-            </button>
+            </Botao>
           )}
-          <Link
+          <Botao as={Link}
             to="/aluno"
-            className={`${classeBotaoContorno} h-10 px-4`}
+            variante="secundario" tamanho="compacto"
           >
             Voltar ao início
-          </Link>
+          </Botao>
         </CartaoAviso>
       </>
     )

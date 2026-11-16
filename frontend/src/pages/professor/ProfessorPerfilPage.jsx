@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import Botao from '../../components/base/Botao.jsx'
 import { motion } from 'motion/react'
 import { useNavigate } from 'react-router'
 
@@ -301,13 +302,13 @@ export default function ProfessorPerfilPage() {
               </p>
             )}
 
-            <button
+            <Botao
               type="submit"
-              className="panel-primary-button"
+             
               disabled={nomeEstado.enviando}
             >
               {nomeEstado.enviando ? 'Salvando...' : 'Salvar nome'}
-            </button>
+            </Botao>
           </form>
         </section>
 
@@ -354,13 +355,13 @@ export default function ProfessorPerfilPage() {
               </p>
             )}
 
-            <button
+            <Botao
               type="submit"
-              className="panel-primary-button"
+             
               disabled={senhaEstado.enviando}
             >
               {senhaEstado.enviando ? 'Alterando...' : 'Alterar senha'}
-            </button>
+            </Botao>
           </form>
         </section>
 
@@ -371,14 +372,14 @@ export default function ProfessorPerfilPage() {
           <p className="perfil-nota">
             Encerra esta sessão neste navegador.
           </p>
-          <button
+          <Botao
             type="button"
-            className="panel-soft-button perfil-sair"
+            variante="secundario" className="perfil-sair"
             disabled={saindo}
             onClick={encerrarSessao}
           >
             {saindo ? 'Saindo...' : 'Sair da conta'}
-          </button>
+          </Botao>
         </section>
       </motion.main>
     </ProfessorWorkspaceLayout>

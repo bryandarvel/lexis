@@ -1,4 +1,5 @@
 import { useEffect, useId, useState } from 'react'
+import Botao from '../../components/base/Botao.jsx'
 import { Link } from 'react-router'
 
 import AlunoLayout from '../../layouts/AlunoLayout.jsx'
@@ -207,13 +208,12 @@ export default function AlunoRedacoesPage() {
           <p className="mt-2 text-sm leading-[22px] text-lexis-200">
             Verifique sua conexão e tente novamente em instantes.
           </p>
-          <button
+          <Botao
             type="button"
             onClick={() => setTentativa((valor) => valor + 1)}
-            className="aluno-botao-primario mt-4"
-          >
+            className="mt-4">
             Tentar novamente
-          </button>
+          </Botao>
         </section>
       )}
 
@@ -226,12 +226,12 @@ export default function AlunoRedacoesPage() {
             Quando você começar um rascunho ou enviar uma redação, ela
             aparece aqui.
           </p>
-          <Link
+          <Botao as={Link}
             to="/aluno"
-            className="aluno-botao-secundario mt-4"
+            variante="secundario" className="mt-4"
           >
             Ver propostas no painel
-          </Link>
+          </Botao>
         </section>
       )}
 
@@ -294,13 +294,12 @@ export default function AlunoRedacoesPage() {
               <h2 className="aluno-titulo-interface text-base font-semibold leading-6 text-lexis-50">
                 Nenhuma redação nesta situação
               </h2>
-              <button
+              <Botao
                 type="button"
                 onClick={() => setFiltro('todas')}
-                className="aluno-botao-secundario mt-3"
-              >
+                variante="secundario" className="mt-3">
                 Mostrar todas
-              </button>
+              </Botao>
             </section>
           )}
         </>

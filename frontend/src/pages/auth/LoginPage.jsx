@@ -1,3 +1,4 @@
+import Botao from '../../components/base/Botao.jsx'
 import { useState } from 'react'
 import { motion } from 'motion/react'
 import {
@@ -170,19 +171,14 @@ export default function LoginPage() {
         />
         </div>
 
-        <button
+        <Botao
           type="submit"
-          disabled={enviando}
-          className="login-submit"
+          className="min-h-12 w-full"
+          carregando={enviando}
+          rotuloCarregando="Entrando..."
         >
-          {enviando && (
-            <span
-              aria-hidden="true"
-              className="h-4 w-4 animate-spin rounded-full border-2 border-lexis-950/25 border-t-lexis-950 motion-reduce:animate-none"
-            />
-          )}
-          {enviando ? 'Entrando...' : 'Entrar'}
-        </button>
+          Entrar
+        </Botao>
       </form>
         </motion.div>
       </section>

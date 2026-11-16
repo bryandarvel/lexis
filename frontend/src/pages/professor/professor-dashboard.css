@@ -101,11 +101,6 @@
 .panel-student > span { display: block; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; line-height: 17px; color: var(--panel-muted); }
 .panel-wait { flex-shrink: 0; margin-right: 10px; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--panel-muted); }
 .panel-wait.overdue { color: var(--panel-error); }
-.panel-soft-button, .panel-primary-button { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; min-width: 120px; min-height: 40px; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; line-height: 18px; text-decoration: none; cursor: pointer; }
-.panel-soft-button { background: var(--panel-soft); color: var(--panel-action); }
-.panel-primary-button { background: #1c6eba; color: white; }
-.panel-soft-button:hover { filter: brightness(.95); }
-.panel-primary-button:hover { background: #175795; }
 .panel-more { margin-top: 16px; min-height: 44px; color: var(--panel-action); font-size: 13px; cursor: pointer; }
 .panel-empty, .panel-error { margin-top: 19px; padding: 28px; border: 1px solid var(--panel-border); border-radius: 14px; background: var(--panel-surface); }
 .panel-empty h3, .panel-error h2 { margin: 0; font-family: var(--font-interface); font-size: 18px; font-weight: 600; }
@@ -139,7 +134,6 @@
   .panel-stats { gap: 12px; }
   .panel-stat { padding: 14px; }
   .panel-pending { padding: 16px; gap: 12px; }
-  .panel-pending .panel-soft-button { min-height: 44px; }
   .panel-wait { margin-left: 48px; }
   .panel-header { padding-inline: 16px; }
 }
