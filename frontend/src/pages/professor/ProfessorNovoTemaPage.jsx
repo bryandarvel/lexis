@@ -173,8 +173,8 @@ export default function ProfessorNovoTemaPage() {
           className="mx-auto max-w-5xl px-6 py-16"
           role="status"
         >
-          <div className="h-10 w-72 animate-pulse rounded-[10px] bg-acao-suave" />
-          <div className="mt-8 h-[34rem] animate-pulse rounded-[14px] bg-acao-suave" />
+          <div className="h-10 w-72 animate-pulse rounded-cartao bg-acao-suave" />
+          <div className="mt-8 h-[34rem] animate-pulse rounded-cartao bg-acao-suave" />
           <span className="sr-only">
             Carregando modelo de critérios...
           </span>
@@ -195,7 +195,7 @@ export default function ProfessorNovoTemaPage() {
           </Link>
           <div
             role="alert"
-            className="mt-8 rounded-[14px] border border-red-300/25 bg-red-950/25 p-6 text-red-100"
+            className="mt-8 rounded-cartao border border-red-300/25 bg-red-950/25 p-6 text-red-100"
           >
             {aviso?.mensagem}
           </div>
@@ -238,7 +238,7 @@ export default function ProfessorNovoTemaPage() {
         className="mx-auto max-w-5xl space-y-7 px-6 py-10 sm:px-10"
         aria-busy={status === 'salvando'}
       >
-        <section className="surface-card rounded-[14px] p-5 sm:p-7">
+        <section className="surface-card rounded-cartao p-5 sm:p-7">
           <h2 className="text-xl font-semibold text-texto">
             Proposta
           </h2>
@@ -302,7 +302,7 @@ export default function ProfessorNovoTemaPage() {
           </div>
         </section>
 
-        <fieldset className="surface-card rounded-[14px] p-5 sm:p-7">
+        <fieldset className="surface-card rounded-cartao p-5 sm:p-7">
           <legend className="px-2 text-xl font-semibold text-texto">
             Critérios de avaliação
           </legend>
@@ -314,7 +314,7 @@ export default function ProfessorNovoTemaPage() {
             {formulario.criterios.map((criterio, indice) => (
               <li
                 key={criterio.idLocal}
-                className="rounded-[10px] border border-borda bg-pagina/40 p-4"
+                className="rounded-cartao border border-borda bg-pagina/40 p-4"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <h3 className="font-semibold text-texto">
@@ -326,7 +326,7 @@ export default function ProfessorNovoTemaPage() {
                         removerCriterio(criterio.idLocal)
                       }
                       aria-label={`Remover critério ${indice + 1}`}
-                      className="min-h-10 rounded-lg border border-red-300/25 px-3 text-sm text-red-200 disabled:opacity-40"
+                      className="min-h-10 rounded-controle border border-red-300/25 px-3 text-sm text-red-200 disabled:opacity-40"
                     >
                       Remover
                     </button>}
@@ -379,7 +379,7 @@ export default function ProfessorNovoTemaPage() {
               }))
             }
             disabled={formulario.criterios.length >= 5}
-            className="mt-5 min-h-11 rounded-[10px] bg-superficie-rebaixada px-4 font-bold text-texto disabled:opacity-45"
+            className="mt-5 min-h-11 rounded-cartao bg-superficie-rebaixada px-4 font-bold text-texto disabled:opacity-45"
           >
             + Adicionar critério personalizado
           </button>
@@ -391,7 +391,7 @@ export default function ProfessorNovoTemaPage() {
             ref={avisoRef}
             tabIndex={-1}
             role={aviso.tipo === 'erro' ? 'alert' : 'status'}
-            className={`rounded-[10px] border p-4 text-sm outline-none focus:ring-4 focus:ring-foco/20 ${
+            className={`rounded-cartao border p-4 text-sm outline-none focus:ring-4 focus:ring-foco/20 ${
               aviso.tipo === 'erro'
                 ? 'border-red-300/25 bg-red-950/25 text-red-100'
                 : 'border-emerald-300/25 bg-emerald-950/25 text-emerald-100'
@@ -413,7 +413,7 @@ export default function ProfessorNovoTemaPage() {
           </Botao>
           <Link
             to={`/professor/turmas/${turmaId}`}
-            className="inline-flex min-h-12 items-center rounded-[10px] border border-borda px-6 font-bold text-texto"
+            className="inline-flex min-h-12 items-center rounded-cartao border border-borda px-6 font-bold text-texto"
           >
             Cancelar
           </Link>

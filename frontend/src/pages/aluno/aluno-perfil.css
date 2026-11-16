@@ -15,7 +15,7 @@
   min-width: 0;
   padding: 20px 24px 22px;
   border: 1px solid var(--surface-border);
-  border-radius: 14px;
+  border-radius: var(--raio-cartao);
   background: var(--superficie-conteudo);
   box-shadow: var(--aluno-elevacao-1);
 }
@@ -65,7 +65,7 @@
 .aluno-pf-indicadores > div {
   padding: 12px 14px;
   border: 1px solid var(--surface-border);
-  border-radius: 10px;
+  border-radius: var(--raio-cartao);
 }
 
 .aluno-pf-indicadores dt {
@@ -121,7 +121,7 @@
 .aluno-pf-linha {
   height: 18px;
   margin-top: 14px;
-  border-radius: 6px;
+  border-radius: var(--raio-controle);
   background: var(--aluno-trilho);
   animation: aluno-pf-pulso 1.4s ease-in-out infinite;
 }

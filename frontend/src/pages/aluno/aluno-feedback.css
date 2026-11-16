@@ -160,7 +160,7 @@
   width: 12px;
   height: 12px;
   flex: 0 0 auto;
-  border-radius: 4px;
+  border-radius: var(--raio-marca);
   background: var(--feedback-tom);
 }
 
@@ -176,7 +176,7 @@
   display: inline;
   padding: 1px 2px;
   border-bottom: 2px solid var(--feedback-tom);
-  border-radius: 4px;
+  border-radius: var(--raio-marca);
   background: color-mix(in srgb, var(--feedback-tom) 16%, transparent);
   color: inherit;
   box-decoration-break: clone;

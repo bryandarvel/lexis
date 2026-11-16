@@ -22,7 +22,7 @@ import { mensagemSaidaDaTurma } from '../utils/minha-turma.js'
 import './aluno-layout.css'
 
 const classeItemNavegacao =
-  'aluno-foco-shell relative flex h-11 w-full items-center gap-2.5 rounded-lg pl-3.5 pr-3 text-sm leading-[22px] transition-colors'
+  'aluno-foco-shell relative flex h-11 w-full items-center gap-2.5 rounded-controle pl-3.5 pr-3 text-sm leading-[22px] transition-colors'
 
 function IconeInicio() {
   return (
@@ -259,7 +259,7 @@ function MenuUsuario({
         <div
           ref={painelRef}
           id={idPainel}
-          className="absolute right-0 top-[calc(100%+10px)] z-50 w-64 rounded-xl border border-[var(--surface-border)] bg-superficie p-4 text-texto shadow-[0_12px_32px_rgba(0,32,73,0.18)]"
+          className="absolute right-0 top-[calc(100%+10px)] z-50 w-64 rounded-cartao border border-[var(--surface-border)] bg-superficie p-4 text-texto shadow-[0_12px_32px_rgba(0,32,73,0.18)]"
         >
           <p className="truncate text-sm font-semibold">
             {usuario?.nome ?? 'Aluno'}
@@ -421,7 +421,7 @@ export default function AlunoLayout({
     <div className="aluno-shell min-h-screen bg-[var(--page-background)] text-texto">
       <a
         href="#conteudo-principal"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-3 focus:z-[60] focus:rounded-lg focus:bg-superficie focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-texto"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-3 focus:z-[60] focus:rounded-controle focus:bg-superficie focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-texto"
       >
         Pular para o conteúdo
       </a>
@@ -441,14 +441,14 @@ export default function AlunoLayout({
             onClick={() =>
               setNavegacaoAberta((atual) => !atual)
             }
-            className="aluno-foco-shell -ml-1 flex size-9 items-center justify-center rounded-lg text-[var(--aluno-shell-texto)] hover:bg-[var(--surface-shell-2)] lg:hidden"
+            className="aluno-foco-shell -ml-1 flex size-9 items-center justify-center rounded-controle text-[var(--aluno-shell-texto)] hover:bg-[var(--surface-shell-2)] lg:hidden"
           >
             <IconeMenu />
           </button>
 
           <Link
             to="/aluno"
-            className="aluno-foco-shell brand-wordmark rounded text-lg font-semibold leading-6 tracking-[-0.09px] text-[var(--aluno-shell-texto)]"
+            className="aluno-foco-shell brand-wordmark rounded-marca text-lg font-semibold leading-6 tracking-[-0.09px] text-[var(--aluno-shell-texto)]"
           >
             LÉXIS
           </Link>
@@ -461,7 +461,7 @@ export default function AlunoLayout({
             <Link
               to="/aluno/notificacoes"
               aria-label={rotuloNotificacoes}
-              className="aluno-foco-shell relative flex size-7 items-center justify-center rounded-lg bg-[var(--surface-shell-3)] text-[var(--aluno-shell-texto)] transition-colors hover:bg-[var(--surface-shell-4)]"
+              className="aluno-foco-shell relative flex size-7 items-center justify-center rounded-controle bg-[var(--surface-shell-3)] text-[var(--aluno-shell-texto)] transition-colors hover:bg-[var(--surface-shell-4)]"
             >
               <IconeSino />
 

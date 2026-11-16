@@ -63,7 +63,7 @@ const REVISAO_LINGUISTICA_INICIAL = {
 }
 
 const classeCartao =
-  'aluno-elevacao-1 rounded-xl border border-[var(--surface-border)] bg-superficie'
+  'aluno-elevacao-1 rounded-cartao border border-[var(--surface-border)] bg-superficie'
 
 function descreverEntrega(redacao) {
   const quando = formatarData(redacao?.enviadaEm, 'dataHora')
@@ -99,7 +99,7 @@ function AbasModoEnvio({
     <div
       role="tablist"
       aria-label="Forma de envio da redação"
-      className="flex w-full rounded-lg bg-[var(--aluno-trilho)] p-1 sm:w-auto"
+      className="flex w-full rounded-controle bg-[var(--aluno-trilho)] p-1 sm:w-auto"
     >
       {ABAS.map((aba, indice) => {
         const ativa = aba.id === abaAtiva
@@ -120,7 +120,7 @@ function AbasModoEnvio({
             onKeyDown={(evento) =>
               handleKeyDown(evento, indice)
             }
-            className={`h-9 flex-1 rounded-md px-3 text-[13px] font-semibold leading-[18px] transition-colors sm:w-[164px] sm:flex-none ${
+            className={`h-9 flex-1 rounded-controle px-3 text-[13px] font-semibold leading-[18px] transition-colors sm:w-[164px] sm:flex-none ${
               ativa
                 ? 'bg-superficie text-[var(--aluno-acao-suave-texto)] shadow-[0_1px_2px_rgba(0,32,73,0.08)]'
                 : 'text-texto-suave hover:text-texto'
@@ -212,7 +212,7 @@ function EditorCard({
   return (
     <section
       aria-labelledby="titulo-editor"
-      className={`${classeCartao} flex min-h-[500px] flex-col px-6 pb-[14px] pt-4`}
+      className={`${classeCartao} superficie-folha flex min-h-[500px] flex-col px-6 pb-[14px] pt-4`}
     >
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-[var(--surface-border)] pb-2">
         <h2
@@ -310,14 +310,14 @@ function EsqueletoEditor() {
       <span className="sr-only">
         Carregando o tema e o rascunho...
       </span>
-      <div className="h-[41px] w-72 max-w-full rounded bg-superficie-rebaixada" />
-      <div className="mt-[19px] h-16 rounded-lg bg-superficie-rebaixada" />
-      <div className="mt-5 h-11 w-[340px] max-w-full rounded-lg bg-superficie-rebaixada" />
+      <div className="h-[41px] w-72 max-w-full rounded-marca bg-superficie-rebaixada" />
+      <div className="mt-[19px] h-16 rounded-controle bg-superficie-rebaixada" />
+      <div className="mt-5 h-11 w-[340px] max-w-full rounded-controle bg-superficie-rebaixada" />
       <div className="mt-4 grid gap-6 xl:grid-cols-[minmax(0,1fr)_404px]">
-        <div className="h-[500px] rounded-xl bg-superficie-rebaixada" />
+        <div className="h-[500px] rounded-cartao bg-superficie-rebaixada" />
         <div className="flex flex-col gap-4">
-          <div className="h-[232px] rounded-xl bg-superficie-rebaixada" />
-          <div className="h-[252px] rounded-xl bg-superficie-rebaixada" />
+          <div className="h-[232px] rounded-cartao bg-superficie-rebaixada" />
+          <div className="h-[252px] rounded-cartao bg-superficie-rebaixada" />
         </div>
       </div>
     </div>
@@ -909,7 +909,7 @@ export default function AlunoRedacaoPage() {
 
       <section
         aria-labelledby="rotulo-tema"
-        className="mt-[19px] rounded-lg border border-[var(--color-brand-accent)] bg-[var(--aluno-acao-suave)] px-[19px] pb-2 pt-2.5"
+        className="mt-[19px] rounded-controle border border-[var(--color-brand-accent)] bg-[var(--aluno-acao-suave)] px-[19px] pb-2 pt-2.5"
       >
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1">
           <div className="min-w-0">
@@ -1006,7 +1006,7 @@ export default function AlunoRedacaoPage() {
               ? 'alert'
               : 'status'
           }
-          className={`mt-4 rounded-lg px-4 py-3 text-sm font-medium leading-[22px] outline-none ${
+          className={`mt-4 rounded-controle px-4 py-3 text-sm font-medium leading-[22px] outline-none ${
             {
               erro: 'bg-[var(--aluno-neutro-fundo)] text-[var(--aluno-erro)]',
               info: 'bg-[var(--aluno-neutro-fundo)] text-texto',

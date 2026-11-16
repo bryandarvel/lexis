@@ -67,7 +67,7 @@ const CLASSES_ACAO = {
 }
 
 const classeCartao =
-  'rounded-xl border border-[var(--surface-border)] bg-superficie'
+  'rounded-cartao border border-[var(--surface-border)] bg-superficie'
 
 function indicaSemMatricula(erro) {
   return (
@@ -165,9 +165,9 @@ function EsqueletoCartao({
     >
       <span className="sr-only">{rotulo}</span>
       <div className="h-6 w-40 rounded-full bg-superficie-rebaixada" />
-      <div className="mt-6 h-7 w-3/4 rounded bg-superficie-rebaixada" />
-      <div className="mt-4 h-4 w-1/2 rounded bg-superficie-rebaixada" />
-      <div className="mt-8 h-11 w-[220px] max-w-full rounded-lg bg-superficie-rebaixada" />
+      <div className="mt-6 h-7 w-3/4 rounded-marca bg-superficie-rebaixada" />
+      <div className="mt-4 h-4 w-1/2 rounded-marca bg-superficie-rebaixada" />
+      <div className="mt-8 h-11 w-[220px] max-w-full rounded-controle bg-superficie-rebaixada" />
     </div>
   )
 }
@@ -234,7 +234,7 @@ function CartaoProposta({
   return (
     <section
       aria-labelledby="titulo-proposta"
-      className="min-h-[236px] rounded-xl border-2 border-[var(--color-brand-accent)] bg-superficie px-[22px] pb-[11px] pt-[22px]"
+      className="min-h-[236px] rounded-cartao border-2 border-[var(--color-brand-accent)] bg-superficie px-[22px] pb-[11px] pt-[22px]"
     >
       <div className="flex flex-wrap gap-3">
         <span
@@ -320,7 +320,7 @@ function ListaPropostas({ status, propostas }) {
                 </p>
                 <p className="mt-1 text-sm leading-[22px] text-texto-suave">{orientacao}</p>
               </div>
-              <Link to={acao.destino} className={`inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg px-5 text-[13px] font-semibold transition ${CLASSES_ACAO[acao.variante]}`}>
+              <Link to={acao.destino} className={`inline-flex min-h-11 shrink-0 items-center justify-center rounded-controle px-5 text-[13px] font-semibold transition ${CLASSES_ACAO[acao.variante]}`}>
                 {acao.rotulo}
                 <span className="sr-only">{' '}— {proposta.enunciado}</span>
               </Link>
@@ -533,7 +533,7 @@ function LinhaRedacao({
         {exibirAcao && (
           <Link
             to={descricao.acao.destino}
-            className={`inline-flex h-10 w-[160px] items-center justify-center rounded-lg text-[13px] font-semibold leading-[18px] transition md:col-start-4 ${CLASSES_ACAO[descricao.acao.variante]}`}
+            className={`inline-flex h-10 w-[160px] items-center justify-center rounded-controle text-[13px] font-semibold leading-[18px] transition md:col-start-4 ${CLASSES_ACAO[descricao.acao.variante]}`}
           >
             {descricao.acao.rotulo}
             <span className="sr-only">
@@ -665,7 +665,7 @@ function FormularioEntrarTurma({ onEntrou }) {
   return (
     <section
       aria-labelledby={`${idCampo}-titulo`}
-      className="mt-[25px] max-w-[700px] rounded-xl border-2 border-[var(--color-brand-accent)] bg-superficie p-6"
+      className="mt-[25px] max-w-[700px] rounded-cartao border-2 border-[var(--color-brand-accent)] bg-superficie p-6"
     >
       <h2
         id={`${idCampo}-titulo`}
@@ -717,7 +717,7 @@ function FormularioEntrarTurma({ onEntrou }) {
               codigoAcesso.length !== 8
             }
             required
-            className="mt-2 h-11 w-full rounded-lg border border-[var(--aluno-borda-campo)] bg-[var(--page-background)] px-4 font-mono text-base font-bold uppercase tracking-[0.16em] text-texto"
+            className="mt-2 h-11 w-full rounded-controle border border-[var(--aluno-borda-campo)] bg-[var(--page-background)] px-4 font-mono text-base font-bold uppercase tracking-[0.16em] text-texto"
           />
         </div>
 
@@ -750,7 +750,7 @@ function SubtituloTurma({ bloco }) {
     return (
       <span
         role="status"
-        className="block h-[25px] w-72 max-w-full animate-pulse rounded bg-superficie-rebaixada"
+        className="block h-[25px] w-72 max-w-full animate-pulse rounded-marca bg-superficie-rebaixada"
       >
         <span className="sr-only">
           Carregando sua turma...
@@ -905,7 +905,7 @@ export default function AlunoDashboardPage() {
           ref={avisoRef}
           tabIndex={-1}
           role="status"
-          className="mt-4 rounded-lg bg-[var(--aluno-sucesso-fundo)] px-4 py-3 text-sm font-medium leading-[22px] text-[var(--aluno-sucesso)]"
+          className="mt-4 rounded-controle bg-[var(--aluno-sucesso-fundo)] px-4 py-3 text-sm font-medium leading-[22px] text-[var(--aluno-sucesso)]"
         >
           {aviso}
         </p>

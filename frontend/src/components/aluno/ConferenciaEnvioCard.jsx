@@ -13,7 +13,7 @@ function ItemConferencia({
             type="checkbox"
             checked={marcado}
             onChange={() => onAlternar(item.id)}
-            className="peer size-[18px] cursor-pointer appearance-none rounded-md border-[1.5px] border-[var(--aluno-borda-campo)] bg-superficie checked:border-[var(--color-brand-accent)] checked:bg-[var(--color-brand-accent)]"
+            className="peer size-[18px] cursor-pointer appearance-none rounded-controle border-[1.5px] border-[var(--aluno-borda-campo)] bg-superficie checked:border-[var(--color-brand-accent)] checked:bg-[var(--color-brand-accent)]"
           />
           <svg
             aria-hidden="true"
@@ -49,7 +49,7 @@ export default function ConferenciaEnvioCard({
   return (
     <section
       aria-labelledby="titulo-conferencia-envio"
-      className="aluno-elevacao-1 min-h-[252px] rounded-xl border border-[var(--surface-border)] bg-superficie px-5 pb-4 pt-4"
+      className="aluno-elevacao-1 min-h-[252px] rounded-cartao border border-[var(--surface-border)] bg-superficie px-5 pb-4 pt-4"
     >
       <h2
         id="titulo-conferencia-envio"
@@ -83,7 +83,7 @@ export default function ConferenciaEnvioCard({
 
       <div
         role="note"
-        className="relative mt-5 overflow-hidden rounded-lg bg-[var(--aluno-atencao-fundo)] py-2.5 pl-3.5 pr-3.5"
+        className="relative mt-5 overflow-hidden rounded-controle bg-[var(--aluno-atencao-fundo)] py-2.5 pl-3.5 pr-3.5"
       >
         <span
           aria-hidden="true"

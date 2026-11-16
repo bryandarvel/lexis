@@ -14,7 +14,7 @@
 .aluno-fb-resumo > div {
   padding: 14px 18px;
   border: 1px solid var(--surface-border);
-  border-radius: 14px;
+  border-radius: var(--raio-cartao);
   background: var(--superficie-conteudo);
   box-shadow: var(--aluno-elevacao-1);
 }
@@ -54,7 +54,7 @@
   min-height: 44px;
   padding: 10px 12px;
   border: 1px solid var(--aluno-borda-campo);
-  border-radius: 10px;
+  border-radius: var(--raio-cartao);
   background: var(--superficie-conteudo);
   color: var(--texto);
   font-family: var(--fonte-interface);
@@ -85,7 +85,7 @@
   min-height: 92px;
   padding: 18px 22px;
   border: 1px solid var(--surface-border);
-  border-radius: 14px;
+  border-radius: var(--raio-cartao);
   background: var(--superficie-conteudo);
   box-shadow: var(--aluno-elevacao-1);
 }

@@ -73,7 +73,7 @@ function EtapasEnvioFoto() {
       aria-label="Etapas do envio por foto"
       className="mt-[23px]"
     >
-      <ol className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg border border-[var(--surface-border)] bg-superficie px-[18px] py-[14px] sm:flex sm:flex-wrap sm:gap-x-0 sm:gap-y-2">
+      <ol className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-controle border border-[var(--surface-border)] bg-superficie px-[18px] py-[14px] sm:flex sm:flex-wrap sm:gap-x-0 sm:gap-y-2">
         {PASSOS_ENVIO_FOTO.map((passo, indice) => {
           const concluido = passo.estado === 'concluido'
           const situacao = {
@@ -154,7 +154,7 @@ function FotoEnviada({
   return (
     <section
       aria-labelledby="titulo-foto-enviada"
-      className="aluno-elevacao-1 flex flex-col rounded-xl border border-[var(--surface-border)] bg-superficie pb-8 pl-[18px] pr-5 pt-[14px]"
+      className="aluno-elevacao-1 flex flex-col rounded-cartao border border-[var(--surface-border)] bg-superficie pb-8 pl-[18px] pr-5 pt-[14px]"
     >
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h2
@@ -170,7 +170,7 @@ function FotoEnviada({
         )}
       </div>
 
-      <div className="relative mt-2 flex h-[260px] items-center justify-center overflow-hidden rounded-lg bg-[var(--aluno-trilho)] sm:h-[360px]">
+      <div className="relative mt-2 flex h-[260px] items-center justify-center overflow-hidden rounded-controle bg-[var(--aluno-trilho)] sm:h-[360px]">
         {foto.url && !indisponivel && (
           <img
             src={foto.url}
@@ -404,7 +404,7 @@ export default function AlunoRevisaoOcrPage() {
         <section
           aria-labelledby="titulo-texto-extraido"
           aria-busy={salvando}
-          className="flex flex-col rounded-xl border-2 border-[var(--color-brand-accent)] bg-superficie pb-4 pl-4 pr-5 pt-3"
+          className="flex flex-col rounded-cartao border-2 border-[var(--color-brand-accent)] bg-superficie pb-4 pl-4 pr-5 pt-3"
         >
           <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
             <h2
@@ -430,7 +430,7 @@ export default function AlunoRevisaoOcrPage() {
             aria-labelledby="titulo-texto-extraido"
             aria-describedby="extensao-transcricao orientacao-transcricao"
             aria-invalid={Boolean(erro)}
-            className="fonte-redacao mt-2.5 h-[360px] w-full resize-none rounded-lg border border-[var(--aluno-borda-campo)] bg-[var(--aluno-neutro-fundo)] p-3 text-[17px] leading-8 text-texto outline-none read-only:cursor-wait"
+            className="fonte-redacao mt-2.5 h-[360px] w-full resize-none rounded-controle border border-[var(--aluno-borda-campo)] bg-[var(--aluno-neutro-fundo)] p-3 text-[17px] leading-8 text-texto outline-none read-only:cursor-wait"
           />
 
           <p
@@ -451,7 +451,7 @@ export default function AlunoRevisaoOcrPage() {
           {erro && (
             <p
               role="alert"
-              className="mt-3 rounded-lg bg-[var(--aluno-neutro-fundo)] px-3.5 py-2.5 text-sm font-medium leading-[22px] text-[var(--aluno-erro)]"
+              className="mt-3 rounded-controle bg-[var(--aluno-neutro-fundo)] px-3.5 py-2.5 text-sm font-medium leading-[22px] text-[var(--aluno-erro)]"
             >
               {erro}
             </p>

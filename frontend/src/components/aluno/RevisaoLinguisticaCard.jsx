@@ -34,7 +34,7 @@ function ItemSugestao({
   return (
     <li
       title={sugestao.mensagem}
-      className="flex items-center gap-2.5 rounded-lg bg-[var(--aluno-neutro-fundo)] py-[5px] pl-3 pr-2"
+      className="flex items-center gap-2.5 rounded-controle bg-[var(--aluno-neutro-fundo)] py-[5px] pl-3 pr-2"
     >
       <span
         aria-hidden="true"
@@ -83,7 +83,7 @@ function ItemSugestao({
           type="button"
           disabled={desabilitado}
           onClick={() => onAplicar(sugestao, principal)}
-          className="h-8 shrink-0 self-start rounded-md px-2.5 text-xs font-semibold text-[var(--aluno-acao-suave-texto)] transition-colors hover:bg-[var(--aluno-acao-suave)] disabled:opacity-55"
+          className="h-8 shrink-0 self-start rounded-controle px-2.5 text-xs font-semibold text-[var(--aluno-acao-suave-texto)] transition-colors hover:bg-[var(--aluno-acao-suave)] disabled:opacity-55"
         >
           Aplicar
           <span className="sr-only">
@@ -111,7 +111,7 @@ export default function RevisaoLinguisticaCard({
     <section
       aria-labelledby="titulo-revisao-linguistica"
       aria-busy={carregando}
-      className="aluno-elevacao-1 min-h-[232px] rounded-xl border border-[var(--surface-border)] bg-superficie px-5 pb-4 pt-4"
+      className="aluno-elevacao-1 min-h-[232px] rounded-cartao border border-[var(--surface-border)] bg-superficie px-5 pb-4 pt-4"
     >
       <div className="flex items-start justify-between gap-3">
         <h2

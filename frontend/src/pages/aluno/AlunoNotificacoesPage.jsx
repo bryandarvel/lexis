@@ -54,7 +54,7 @@ function ListaCarregando() {
       {[1, 2, 3].map((item) => (
         <div
           key={item}
-          className="surface-card h-32 animate-pulse rounded-[14px]"
+          className="surface-card h-32 animate-pulse rounded-cartao"
         />
       ))}
     </div>
@@ -219,7 +219,7 @@ export default function AlunoNotificacoesPage() {
           {visivel.mensagem && (
             <div
               role="alert"
-              className="mt-6 rounded-[14px] border border-red-300/30 bg-red-950/30 p-4 text-red-100"
+              className="mt-6 rounded-cartao border border-red-300/30 bg-red-950/30 p-4 text-red-100"
             >
               {visivel.mensagem}
             </div>
@@ -228,7 +228,7 @@ export default function AlunoNotificacoesPage() {
           {visivel.status === 'carregando' && <ListaCarregando />}
 
           {visivel.status === 'erro' && (
-            <div className="surface-card mt-8 rounded-[14px] p-8 text-center">
+            <div className="surface-card mt-8 rounded-cartao p-8 text-center">
               <h2 className="text-xl font-bold text-texto">
                 Avisos indisponíveis
               </h2>
@@ -240,7 +240,7 @@ export default function AlunoNotificacoesPage() {
 
           {visivel.status === 'pronto' &&
             visivel.notificacoes.length === 0 && (
-              <div className="surface-card mt-8 rounded-[14px] p-10 text-center">
+              <div className="surface-card mt-8 rounded-cartao p-10 text-center">
                 <h2 className="text-xl font-bold text-texto">
                   Nenhuma notificação
                 </h2>
@@ -266,7 +266,7 @@ export default function AlunoNotificacoesPage() {
                           Boolean(visivel.processandoId) || !acao.acionavel
                         }
                         onClick={() => abrirNotificacao(notificacao)}
-                        className="surface-card group w-full rounded-[14px] p-6 text-left transition hover:-translate-y-0.5 hover:border-borda-forte disabled:cursor-wait disabled:opacity-70"
+                        className="surface-card group w-full rounded-cartao p-6 text-left transition hover:-translate-y-0.5 hover:border-borda-forte disabled:cursor-wait disabled:opacity-70"
                       >
                         <span className="flex items-start gap-4">
                           <span

@@ -196,7 +196,7 @@ export default function CadastroPage() {
             ].map(([valor, rotulo]) => (
               <label
                 key={valor}
-                className={`cursor-pointer rounded-xl border px-4 py-3 text-center text-sm font-bold transition focus-within:ring-4 focus-within:ring-foco/20 ${
+                className={`cursor-pointer rounded-cartao border px-4 py-3 text-center text-sm font-bold transition focus-within:ring-4 focus-within:ring-foco/20 ${
                   dados.papel === valor
                     ? 'border-acao bg-acao-suave text-texto'
                     : 'border-borda-forte bg-pagina/40 text-texto-suave hover:border-borda-forte'

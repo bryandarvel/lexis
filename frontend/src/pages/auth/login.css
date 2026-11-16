@@ -47,7 +47,7 @@
   max-width: 100%;
   padding: 33px;
   border: 1px solid var(--login-border);
-  border-radius: 20px;
+  border-radius: var(--raio-dialogo);
   background: var(--login-surface);
   box-shadow: 0 8px 24px rgb(0 32 73 / 10%);
 }
@@ -73,16 +73,16 @@
   height: 44px;
   margin-top: 16px;
   padding: 4px;
-  border-radius: 10px;
+  border-radius: var(--raio-cartao);
   background: var(--login-soft);
 }
-.login-tabs > * { display: grid; place-items: center; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none; color: var(--login-muted); }
+.login-tabs > * { display: grid; place-items: center; border-radius: var(--raio-controle); font-size: 13px; font-weight: 600; text-decoration: none; color: var(--login-muted); }
 .login-tabs [aria-current] { background: var(--login-surface); color: var(--login-action); }
 .login-form { display: grid; gap: 20px; margin-top: 24px; }
 .login-roles { min-width: 0; margin: 0; padding: 0; border: 0; }
 .login-roles legend { margin-bottom: 4px; font-size: 13px; font-weight: 600; line-height: 18px; }
 .login-roles > div { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.login-roles label { position: relative; display: grid; place-items: center; height: 66px; border: 1px solid var(--login-input-border); border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.login-roles label { position: relative; display: grid; place-items: center; height: 66px; border: 1px solid var(--login-input-border); border-radius: var(--raio-cartao); font-size: 13px; font-weight: 600; cursor: pointer; }
 .login-roles .is-selected { border: 2px solid var(--login-action); background: var(--login-selected); }
 .login-roles input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .login-roles label:has(:focus-visible) { outline: 2px solid var(--focus-color); outline-offset: 3px; }

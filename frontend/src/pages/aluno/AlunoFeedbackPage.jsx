@@ -42,7 +42,7 @@ import './aluno-feedback.css'
 const TRILHA = ['Início', 'Feedback']
 
 const classeCartao =
-  'rounded-xl border border-[var(--surface-border)] bg-superficie aluno-elevacao-1'
+  'rounded-cartao border border-[var(--surface-border)] bg-superficie aluno-elevacao-1'
 
 const classeSobretitulo =
   'text-[11px] font-bold uppercase leading-[14px] tracking-[1.32px]'
@@ -187,7 +187,7 @@ function AvisoCorrecaoAtualizada({ feedback }) {
   const publicadaEm = formatarData(feedback.publicadoEm, 'data')
 
   return (
-    <p className="mt-[23px] rounded-lg border-l-[3px] border-l-[var(--color-brand-accent)] bg-[var(--aluno-acao-suave)] px-4 py-3 text-sm leading-[22px] text-texto">
+    <p className="mt-[23px] rounded-controle border-l-[3px] border-l-[var(--color-brand-accent)] bg-[var(--aluno-acao-suave)] px-4 py-3 text-sm leading-[22px] text-texto">
       <strong className="font-semibold text-[var(--aluno-acao-suave-texto)]">
         Correção atualizada.
       </strong>{' '}
@@ -360,7 +360,7 @@ function CompetenciaDois({ feedback }) {
   return (
     <section
       aria-labelledby="feedback-titulo-competencia-2"
-      className="overflow-hidden rounded-xl border-2 border-[var(--color-brand-accent)] bg-superficie"
+      className="overflow-hidden rounded-cartao border-2 border-[var(--color-brand-accent)] bg-superficie"
     >
       <div className="flex items-start justify-between gap-4 bg-[var(--aluno-acao-suave)] px-[22px] pb-3 pt-[14px]">
         <div className="min-w-0">
@@ -401,7 +401,7 @@ function CompetenciaDois({ feedback }) {
             {criterios.map((criterio) => (
               <li
                 key={criterio.id}
-                className={`feedback-tom-${criterio.tom} relative overflow-hidden rounded-lg bg-[var(--aluno-neutro-fundo)] py-3 pl-[18px] pr-[18px]`}
+                className={`feedback-tom-${criterio.tom} relative overflow-hidden rounded-controle bg-[var(--aluno-neutro-fundo)] py-3 pl-[18px] pr-[18px]`}
               >
                 <span
                   aria-hidden="true"
@@ -421,7 +421,7 @@ function CompetenciaDois({ feedback }) {
             ))}
           </ul>
         ) : (
-          <p className="mt-2.5 rounded-lg bg-[var(--aluno-neutro-fundo)] px-4 py-3 text-[13px] leading-5 text-texto-suave">
+          <p className="mt-2.5 rounded-controle bg-[var(--aluno-neutro-fundo)] px-4 py-3 text-[13px] leading-5 text-texto-suave">
             Esta correção não tem comentários específicos por
             critério. O comentário geral traz o retorno sobre a
             sua redação.
@@ -442,7 +442,7 @@ function TextoRedacao({ redacao, criterios }) {
   return (
     <section
       aria-labelledby="feedback-titulo-redacao"
-      className={`${classeCartao} px-[23px] pb-7 pt-[19px]`}
+      className={`${classeCartao} superficie-folha px-[23px] pb-7 pt-[19px]`}
     >
       <div className="feedback-cabecalho-cartao flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h2

@@ -26,13 +26,13 @@ export default function AuthShell({
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: 'easeOut' }}
-        className="surface-card relative mx-auto grid min-h-[calc(100vh-3rem)] w-full max-w-6xl overflow-hidden rounded-[18px] lg:grid-cols-[1.05fr_0.95fr]"
+        className="surface-card relative mx-auto grid min-h-[calc(100vh-3rem)] w-full max-w-6xl overflow-hidden rounded-dialogo lg:grid-cols-[1.05fr_0.95fr]"
       >
         <section className="surface-shell relative flex flex-col justify-between overflow-hidden border-b p-7 sm:p-10 lg:border-b-0 lg:border-r lg:p-14">
           <div className="relative">
             <Link
               to="/login"
-              className="brand-wordmark inline-flex rounded-lg text-3xl text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--surface-shell-1)]"
+              className="brand-wordmark inline-flex rounded-controle text-3xl text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--surface-shell-1)]"
               aria-label="LÉXIS — página de login"
             >
               LÉXIS

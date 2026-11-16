@@ -83,7 +83,7 @@ export default function EnvioFotoPainel({
   const idAjuda = useId()
 
   return (
-    <div className="aluno-elevacao-1 flex min-h-[500px] flex-col rounded-xl border border-[var(--surface-border)] bg-superficie px-6 pb-6 pt-4">
+    <div className="aluno-elevacao-1 flex min-h-[500px] flex-col rounded-cartao border border-[var(--surface-border)] bg-superficie px-6 pb-6 pt-4">
       <h2 className="text-lg font-semibold leading-6 tracking-[-0.09px] text-texto">
         Enviar foto da redação
       </h2>
@@ -96,7 +96,7 @@ export default function EnvioFotoPainel({
 
       <label
         htmlFor={idArquivo}
-        className="mt-6 flex flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--aluno-borda-campo)] bg-[var(--aluno-neutro-fundo)] px-6 py-10 text-center focus-within:border-[var(--color-brand-accent)] focus-within:ring-4 focus-within:ring-[var(--color-brand-accent)]/20"
+        className="mt-6 flex flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-cartao border-2 border-dashed border-[var(--aluno-borda-campo)] bg-[var(--aluno-neutro-fundo)] px-6 py-10 text-center focus-within:border-[var(--color-brand-accent)] focus-within:ring-4 focus-within:ring-[var(--color-brand-accent)]/20"
       >
         <IconeFoto />
         <span className="break-all text-sm font-semibold leading-[22px] text-texto">

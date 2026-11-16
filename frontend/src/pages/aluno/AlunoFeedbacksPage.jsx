@@ -179,7 +179,7 @@ export default function AlunoFeedbacksPage() {
       {status === 'erro' && (
         <section
           role="alert"
-          className="aluno-elevacao-1 mt-[25px] max-w-[720px] rounded-[14px] border border-[var(--surface-border)] border-l-[3px] border-l-[var(--aluno-erro)] bg-superficie px-6 py-5"
+          className="aluno-elevacao-1 mt-[25px] max-w-[720px] rounded-cartao border border-[var(--surface-border)] border-l-[3px] border-l-[var(--aluno-erro)] bg-superficie px-6 py-5"
         >
           <h2 className="text-lg font-semibold leading-6 text-texto">
             Não foi possível carregar seus feedbacks
@@ -197,7 +197,7 @@ export default function AlunoFeedbacksPage() {
       )}
 
       {status === 'pronto' && feedbacks.length === 0 && (
-        <section className="aluno-elevacao-1 mt-[25px] max-w-[720px] rounded-[14px] border border-[var(--surface-border)] bg-superficie px-6 py-6">
+        <section className="aluno-elevacao-1 mt-[25px] max-w-[720px] rounded-cartao border border-[var(--surface-border)] bg-superficie px-6 py-6">
           <h2 className="text-lg font-semibold leading-6 text-texto">
             Você ainda não recebeu nenhum feedback
           </h2>
