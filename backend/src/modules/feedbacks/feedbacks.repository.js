@@ -5,12 +5,25 @@ import {
   CAMPOS_COMPETENCIAS,
   extrairCompetencias,
 } from './feedbacks.competencias.js'
+import { mesmoConteudoFeedback } from './feedbacks.conteudo.js'
 import { coincideComEvidenciaIa, trechoLiteralValido } from './feedbacks.trechos.js'
 
 const trechoSelect = {
   id: true, inicio: true, fim: true, trecho: true, sugeridoPorIa: true, analiseIaId: true,
 }
 const trechosSelect = { select: trechoSelect, orderBy: [{ inicio: 'asc' }, { fim: 'asc' }] }
+
+const conteudoPublicavelSelect = {
+  ...Object.fromEntries(CAMPOS_COMPETENCIAS.map(campo => [campo, true])),
+  comentarioGeral: true,
+  criterios: {
+    select: {
+      criterioId: true,
+      comentario: true,
+      trechos: { select: { inicio: true, fim: true, trecho: true } },
+    },
+  },
+}
 
 const feedbackVersaoSelect = {
   id: true,
@@ -408,14 +421,7 @@ export function publicarFeedback({
             take: 1,
             select: {
               id: true,
-              nota: true,
-              competencia1: true,
-              competencia2: true,
-              competencia3: true,
-              competencia4: true,
-              competencia5: true,
-              comentarioGeral: true,
-              criterios: { select: { trechos: trechosSelect } },
+              ...conteudoPublicavelSelect,
             },
           },
         },
@@ -462,12 +468,19 @@ export function publicarFeedback({
             feedbackId: feedback.id,
             status: 'PUBLICADA',
           },
-          select: {
-            id: true,
-          },
+          orderBy: { numero: 'desc' },
+          select: conteudoPublicavelSelect,
         })
 
       if (versaoPublicadaAnterior) {
+        if (mesmoConteudoFeedback(rascunho, versaoPublicadaAnterior)) {
+          return {
+            status: 'RASCUNHO_SEM_ALTERACOES',
+            feedbackVersao: null,
+            notificacao: null,
+          }
+        }
+
         await transaction.feedbackVersao.updateMany({
           where: {
             feedbackId: feedback.id,
