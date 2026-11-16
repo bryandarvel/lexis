@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import { Link, useParams } from 'react-router'
+import Aviso from '../../components/base/Aviso.jsx'
+import Botao from '../../components/base/Botao.jsx'
+import Campo from '../../components/base/Campo.jsx'
+import Dialogo from '../../components/base/Dialogo.jsx'
+import DialogoConfirmacao from '../../components/base/DialogoConfirmacao.jsx'
 import ProfessorWorkspaceLayout from '../../layouts/ProfessorWorkspaceLayout.jsx'
 import { listarTemasDaTurma } from '../../services/temas.js'
 import {
@@ -57,38 +62,10 @@ function obterStatusTema(tema) {
   return 'Recebendo redações'
 }
 
-// Mesmo padrão do NovaTurmaDialog: dialog nativo, Esc tratado e foco devolvido
-// a quem abriu.
-function useDialogoModal(onClose, enviandoRef) {
-  const dialogRef = useRef(null)
-
-  useEffect(() => {
-    const focoAnterior = document.activeElement
-    const dialog = dialogRef.current
-    dialog.showModal()
-
-    return () => {
-      dialog.close()
-      focoAnterior?.focus?.()
-    }
-  }, [])
-
-  const cancelar = (event) => {
-    event.preventDefault()
-    if (!enviandoRef.current) onClose()
-  }
-
-  return { dialogRef, cancelar }
-}
-
 function RenomearTurmaDialog({ nomeAtual, enviando, erro, onSave, onClose }) {
-  const enviandoRef = useRef(false)
   const nomeRef = useRef(null)
   const [nome, setNome] = useState(nomeAtual)
   const [erroCampo, setErroCampo] = useState('')
-  const { dialogRef, cancelar } = useDialogoModal(onClose, enviandoRef)
-
-  enviandoRef.current = enviando
 
   useEffect(() => {
     if (!enviando && (erro || erroCampo)) nomeRef.current?.focus()
@@ -108,57 +85,50 @@ function RenomearTurmaDialog({ nomeAtual, enviando, erro, onSave, onClose }) {
   }
 
   return (
-    <dialog ref={dialogRef} className="professor-panel-dialog turma-dialogo class-create-dialog" aria-labelledby="turma-renomear-title" onCancel={cancelar}>
-      <h2 id="turma-renomear-title">Renomear turma</h2>
-      <p>O código de acesso, os alunos e os temas não mudam.</p>
-      <form onSubmit={enviar} noValidate aria-busy={enviando}>
-        <label htmlFor="turma-nome">Nome da turma</label>
-        <input
+    <Dialogo
+      aberto
+      onFechar={() => { if (!enviando) onClose() }}
+      titulo="Renomear turma"
+      descricao="O código de acesso, os alunos e os temas não mudam."
+    >
+      <form onSubmit={enviar} noValidate aria-busy={enviando} className="space-y-4">
+        <Campo
           ref={nomeRef}
           id="turma-nome"
-          className="class-input"
+          label="Nome da turma"
           value={nome}
           maxLength={100}
           autoComplete="off"
           disabled={enviando}
           required
-          aria-invalid={Boolean(erroCampo)}
-          aria-describedby={erroCampo ? 'turma-nome-error' : 'turma-nome-hint'}
+          error={erroCampo}
+          hint="Entre 2 e 100 caracteres."
           onChange={(event) => { setNome(event.target.value); setErroCampo('') }}
         />
-        {erroCampo
-          ? <p id="turma-nome-error" className="class-field-error">{erroCampo}</p>
-          : <p id="turma-nome-hint">Entre 2 e 100 caracteres.</p>}
-        {erro && <p className="class-field-error" role="alert">{erro}</p>}
-        <div className="panel-dialog-actions">
-          <button type="button" className="panel-soft-button" disabled={enviando} onClick={onClose}>Cancelar</button>
-          <button type="submit" className="panel-primary-button" disabled={enviando}>{enviando ? 'Salvando...' : 'Salvar nome'}</button>
+        {erro && <Aviso tipo="erro">{erro}</Aviso>}
+        <div className="dialogo-base__rodape">
+          <Botao variante="secundario" disabled={enviando} onClick={onClose}>Cancelar</Botao>
+          <Botao type="submit" carregando={enviando} rotuloCarregando="Salvando...">Salvar nome</Botao>
         </div>
       </form>
-    </dialog>
+    </Dialogo>
   )
 }
 
 function ConfirmarAcaoDialog({ titulo, efeitos, rotulo, rotuloEnviando, enviando, erro, onConfirm, onClose, perigo = true }) {
-  const enviandoRef = useRef(false)
-  const { dialogRef, cancelar } = useDialogoModal(onClose, enviandoRef)
-
-  enviandoRef.current = enviando
-
   return (
-    <dialog ref={dialogRef} className="professor-panel-dialog turma-dialogo" aria-labelledby="turma-confirmar-title" aria-describedby="turma-confirmar-efeitos" onCancel={cancelar}>
-      <h2 id="turma-confirmar-title">{titulo}</h2>
-      <ul id="turma-confirmar-efeitos" className="turma-efeitos">
-        {efeitos.map((efeito) => <li key={efeito}>{efeito}</li>)}
-      </ul>
-      {erro && <p className="class-field-error" role="alert">{erro}</p>}
-      <div className="panel-dialog-actions">
-        <button type="button" className="panel-soft-button" disabled={enviando} onClick={onClose}>Cancelar</button>
-        <button type="button" className={`panel-primary-button${perigo ? ' turma-botao-perigo' : ''}`} disabled={enviando} onClick={onConfirm}>
-          {enviando ? rotuloEnviando : rotulo}
-        </button>
-      </div>
-    </dialog>
+    <DialogoConfirmacao
+      aberto
+      titulo={titulo}
+      efeitos={efeitos}
+      confirmarRotulo={enviando ? rotuloEnviando : rotulo}
+      perigo={perigo}
+      ocupado={enviando}
+      onConfirmar={onConfirm}
+      onCancelar={onClose}
+    >
+      {erro && <Aviso tipo="erro">{erro}</Aviso>}
+    </DialogoConfirmacao>
   )
 }
 

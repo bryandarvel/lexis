@@ -110,9 +110,6 @@
 .login-submit { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 48px; border: 0; border-radius: 10px; background: #1c6eba; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; transition: background-color 160ms ease; }
 .login-submit:hover:not(:disabled) { background: #165b9c; }
 .login-submit:disabled { cursor: not-allowed; opacity: .6; }
-.login-recovery { color: var(--login-text); }
-.login-recovery::backdrop { background: rgb(0 16 35 / 65%); }
-.login-recovery-pending { margin: 0; color: var(--login-muted); font-size: 14px; line-height: 22px; }
 .login-back { color: var(--login-action); min-height: 44px; cursor: pointer; font-size: 13px; font-weight: 600; }
 @media (max-width: 767px) {
   .login-page { grid-template-columns: 1fr; grid-template-rows: 140px 1fr; }
@@ -120,7 +117,6 @@
   .login-access { align-items: flex-start; padding: 64px 20px 32px; }
   .login-card { padding: 26px 23px; }
   .login-theme { top: 12px; right: 20px; }
-  .login-recovery { width: calc(100% - 32px); }
 }
 @media (prefers-reduced-motion: reduce) {
   .login-page *, .login-page *::before, .login-page *::after { transition: none; animation: none; }

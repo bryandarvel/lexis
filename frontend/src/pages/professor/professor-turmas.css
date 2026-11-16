@@ -29,10 +29,6 @@
 .class-open { color: var(--panel-action); font-size: 13px; font-weight: 600; line-height: 18px; }
 .class-metrics-unavailable { display: block; margin-top: 5px; color: var(--panel-muted); font-size: 12px; }
 .classes-success { margin: 20px 0 0; padding: 12px 16px; border-left: 3px solid var(--panel-success); border-radius: 10px; background: #dcfce7; color: #166534; font-size: 14px; overflow-wrap: anywhere; }
-.class-create-dialog label { display: block; margin: 20px 0 8px; font-size: 13px; font-weight: 600; }
-.class-create-dialog { margin: auto; }
-.class-create-dialog form > p { margin-top: 8px; font-size: 12px; }
-.class-create-dialog .class-field-error { color: var(--panel-error); }
 .class-partial-warning { color: var(--panel-muted); font-size: 13px; }
 .class-partial-warning button { color: var(--panel-action); text-decoration: underline; cursor: pointer; }
 .classes-main button:disabled, .classes-main input:disabled { opacity: .6; cursor: not-allowed; }

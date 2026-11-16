@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import { Link, useParams } from 'react-router'
+import Aviso from '../../components/base/Aviso.jsx'
+import Botao from '../../components/base/Botao.jsx'
+import Campo from '../../components/base/Campo.jsx'
+import Dialogo from '../../components/base/Dialogo.jsx'
+import DialogoConfirmacao from '../../components/base/DialogoConfirmacao.jsx'
 import ProfessorWorkspaceLayout from '../../layouts/ProfessorWorkspaceLayout.jsx'
 import CriterionDialog from '../../components/professor/CriterionDialog.jsx'
 import { carregarPropostaProfessor } from '../../services/professor-topic.js'
@@ -30,24 +35,7 @@ function formatarPrazo(valor) {
     : 'Prazo não informado'
 }
 
-// Mesmo padrão do NovaTurmaDialog: dialog nativo, Esc tratado e foco devolvido.
-function useDialogoProposta(onClose, enviando) {
-  const dialogRef = useRef(null)
-
-  useEffect(() => {
-    const dialog = dialogRef.current
-    dialog.showModal()
-    return () => dialog.close()
-  }, [])
-
-  return {
-    dialogRef,
-    cancelar: (event) => { event.preventDefault(); if (!enviando) onClose() },
-  }
-}
-
 function EditarPropostaDialog({ tema, enviando, erro, erros, onSave, onClose }) {
-  const { dialogRef, cancelar } = useDialogoProposta(onClose, enviando)
   const primeiroRef = useRef(null)
   const bloqueio = descreverEdicaoTema(tema)
   const [formulario, setFormulario] = useState({
@@ -64,87 +52,79 @@ function EditarPropostaDialog({ tema, enviando, erro, erros, onSave, onClose }) 
   const alterar = (campo) => (event) =>
     setFormulario((atual) => ({ ...atual, [campo]: event.target.value }))
 
-  const campo = (nome, rotulo, elemento) => (
-    <p className="topic-campo">
-      <label htmlFor={`tema-${nome}`}>{rotulo}</label>
-      {elemento}
-      {erros[nome] && <span id={`tema-${nome}-erro`} className="topic-campo-erro">{erros[nome]}</span>}
-    </p>
-  )
-
   const comuns = (nome) => ({
     id: `tema-${nome}`,
     value: formulario[nome],
     disabled: enviando || (bloqueio.conteudoBloqueado && nome !== 'prazoEntrega'),
     onChange: alterar(nome),
-    'aria-invalid': erros[nome] ? true : undefined,
-    'aria-describedby': erros[nome] ? `tema-${nome}-erro` : undefined,
+    error: erros[nome],
   })
 
   return (
-    <dialog ref={dialogRef} className="professor-panel-dialog topic-proposta-dialog topic-edit-dialog" aria-labelledby="tema-editar-title" onCancel={cancelar}>
-      <h2 id="tema-editar-title">Editar proposta</h2>
-      {bloqueio.conteudoBloqueado && <p className="topic-rule">{bloqueio.motivo}</p>}
+    <Dialogo
+      aberto
+      largo
+      onFechar={() => { if (!enviando) onClose() }}
+      titulo="Editar proposta"
+    >
+      {bloqueio.conteudoBloqueado && <Aviso tipo="atencao" className="mb-4">{bloqueio.motivo}</Aviso>}
       <form
         noValidate
         aria-busy={enviando}
+        className="space-y-4"
         onSubmit={(event) => { event.preventDefault(); if (!enviando) onSave(formulario) }}
       >
-        {campo('enunciado', 'Enunciado', <input ref={primeiroRef} type="text" maxLength={250} {...comuns('enunciado')} />)}
-        {campo('descricao', 'Descrição', <textarea rows={4} maxLength={10000} {...comuns('descricao')} />)}
-        {campo('instrucoes', 'Orientações e textos motivadores', <textarea rows={3} maxLength={5000} {...comuns('instrucoes')} />)}
-        {campo('prazoEntrega', 'Prazo de entrega', <input type="datetime-local" {...comuns('prazoEntrega')} />)}
-        {(erros.formulario || erro) && <p className="topic-campo-erro" role="alert">{erros.formulario || erro}</p>}
-        <div className="panel-dialog-actions">
-          <button type="button" className="panel-soft-button" disabled={enviando} onClick={onClose}>Cancelar</button>
-          <button type="submit" className="panel-primary-button" disabled={enviando}>{enviando ? 'Salvando...' : 'Salvar proposta'}</button>
+        <Campo ref={primeiroRef} label="Enunciado" type="text" maxLength={250} {...comuns('enunciado')} />
+        <Campo label="Descrição" multilinha rows={4} maxLength={10000} {...comuns('descricao')} />
+        <Campo label="Orientações e textos motivadores" multilinha rows={3} maxLength={5000} {...comuns('instrucoes')} />
+        <Campo label="Prazo de entrega" type="datetime-local" {...comuns('prazoEntrega')} />
+        {(erros.formulario || erro) && <Aviso tipo="erro">{erros.formulario || erro}</Aviso>}
+        <div className="dialogo-base__rodape">
+          <Botao variante="secundario" disabled={enviando} onClick={onClose}>Cancelar</Botao>
+          <Botao type="submit" carregando={enviando} rotuloCarregando="Salvando...">Salvar proposta</Botao>
         </div>
       </form>
-    </dialog>
+    </Dialogo>
   )
 }
 
 function ArquivarPropostaDialog({ tema, enviando, erro, onConfirm, onClose }) {
-  const { dialogRef, cancelar } = useDialogoProposta(onClose, enviando)
-
   return (
-    <dialog ref={dialogRef} className="professor-panel-dialog topic-proposta-dialog" aria-labelledby="tema-arquivar-title" aria-describedby="tema-arquivar-efeitos" onCancel={cancelar}>
-      <h2 id="tema-arquivar-title">Arquivar a proposta “{tema.enunciado}”?</h2>
-      <ul id="tema-arquivar-efeitos" className="topic-efeitos">
-        <li>A proposta sai da lista dos alunos e ninguém mais consegue abri-la nem enviar redação.</li>
-        <li>As redações já enviadas e as correções publicadas permanecem.</li>
-        <li>A proposta continua visível para você, marcada como arquivada.</li>
-        <li>Depois de arquivada, a proposta só volta a ficar ativa se você reabri-la nesta página.</li>
-      </ul>
-      {erro && <p className="topic-campo-erro" role="alert">{erro}</p>}
-      <div className="panel-dialog-actions">
-        <button type="button" className="panel-soft-button" disabled={enviando} onClick={onClose}>Cancelar</button>
-        <button type="button" className="panel-primary-button topic-botao-perigo" disabled={enviando} onClick={onConfirm}>
-          {enviando ? 'Arquivando...' : 'Arquivar proposta'}
-        </button>
-      </div>
-    </dialog>
+    <DialogoConfirmacao
+      aberto
+      titulo={`Arquivar a proposta “${tema.enunciado}”?`}
+      efeitos={[
+        'A proposta sai da lista dos alunos e ninguém mais consegue abri-la nem enviar redação.',
+        'As redações já enviadas e as correções publicadas permanecem.',
+        'A proposta continua visível para você, marcada como arquivada.',
+        'Depois de arquivada, a proposta só volta a ficar ativa se você reabri-la nesta página.',
+      ]}
+      confirmarRotulo={enviando ? 'Arquivando...' : 'Arquivar proposta'}
+      perigo
+      ocupado={enviando}
+      onConfirmar={onConfirm}
+      onCancelar={onClose}
+    >
+      {erro && <Aviso tipo="erro">{erro}</Aviso>}
+    </DialogoConfirmacao>
   )
 }
 
 function ReabrirPropostaDialog({ tema, enviando, erro, onConfirm, onClose }) {
-  const { dialogRef, cancelar } = useDialogoProposta(onClose, enviando)
   const { titulo, efeitos, rotulo, rotuloEnviando } = descreverDialogoReabrirProposta(tema)
 
   return (
-    <dialog ref={dialogRef} className="professor-panel-dialog topic-proposta-dialog" aria-labelledby="tema-reabrir-title" aria-describedby="tema-reabrir-efeitos" onCancel={cancelar}>
-      <h2 id="tema-reabrir-title">{titulo}</h2>
-      <ul id="tema-reabrir-efeitos" className="topic-efeitos">
-        {efeitos.map((efeito) => <li key={efeito}>{efeito}</li>)}
-      </ul>
-      {erro && <p className="topic-campo-erro" role="alert">{erro}</p>}
-      <div className="panel-dialog-actions">
-        <button type="button" className="panel-soft-button" disabled={enviando} onClick={onClose}>Cancelar</button>
-        <button type="button" className="panel-primary-button" disabled={enviando} onClick={onConfirm}>
-          {enviando ? rotuloEnviando : rotulo}
-        </button>
-      </div>
-    </dialog>
+    <DialogoConfirmacao
+      aberto
+      titulo={titulo}
+      efeitos={efeitos}
+      confirmarRotulo={enviando ? rotuloEnviando : rotulo}
+      ocupado={enviando}
+      onConfirmar={onConfirm}
+      onCancelar={onClose}
+    >
+      {erro && <Aviso tipo="erro">{erro}</Aviso>}
+    </DialogoConfirmacao>
   )
 }
 

@@ -18,10 +18,6 @@
 [data-theme="dark"] .panel-primary-button.turma-botao-perigo { color: #18212f; }
 
 /* Os botões base têm 40 px; nos diálogos desta tela o alvo mínimo é 44 px. */
-.turma-dialogo .panel-dialog-actions button { min-height: 44px; }
-.turma-dialogo .class-input { min-height: 44px; }
-.turma-efeitos { margin: 16px 0 0; padding-left: 20px; color: var(--panel-muted); font-size: 14px; line-height: 22px; }
-.turma-efeitos li + li { margin-top: 8px; }
 
 .turma-alunos-lista { display: grid; gap: 8px; margin: 19px 0 0; padding: 0; list-style: none; }
 .turma-aluno { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; min-height: 76px; padding: 15px 20px; border: 1px solid var(--panel-border); border-radius: 14px; background: var(--panel-surface); }

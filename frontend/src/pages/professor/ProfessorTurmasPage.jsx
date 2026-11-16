@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import { Link } from 'react-router'
+import Aviso from '../../components/base/Aviso.jsx'
+import Botao from '../../components/base/Botao.jsx'
+import Campo from '../../components/base/Campo.jsx'
+import Dialogo from '../../components/base/Dialogo.jsx'
 import ProfessorWorkspaceLayout from '../../layouts/ProfessorWorkspaceLayout.jsx'
 import { carregarTurmasProfessor } from '../../services/professor-classes.js'
 import { criarTurma } from '../../services/turmas.js'
@@ -9,19 +13,11 @@ import { filtrarTurmas, prepararNomeTurma, resumirRedacoesTurma } from '../../ut
 import './professor-turmas.css'
 
 function NovaTurmaDialog({ onClose, onCreated }) {
-  const dialogRef = useRef(null)
   const nomeRef = useRef(null)
   const enviandoRef = useRef(false)
   const [nome, setNome] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState({ mensagem: '', campo: '' })
-
-  useEffect(() => {
-    const focoAnterior = document.activeElement
-    const dialog = dialogRef.current
-    dialog.showModal()
-    return () => { dialog.close(); focoAnterior?.focus?.() }
-  }, [])
 
   useEffect(() => {
     if (!enviando && (erro.campo || erro.mensagem)) nomeRef.current?.focus()
@@ -53,23 +49,33 @@ function NovaTurmaDialog({ onClose, onCreated }) {
   }
 
   return (
-    <dialog ref={dialogRef} className="professor-panel-dialog class-create-dialog" aria-labelledby="class-create-title"
-      onCancel={(event) => { event.preventDefault(); if (!enviandoRef.current) onClose() }}>
-      <h2 id="class-create-title">Nova turma</h2>
-      <p>Defina o nome da turma. O código de acesso será gerado automaticamente.</p>
-      <form onSubmit={enviar} noValidate aria-busy={enviando}>
-        <label htmlFor="class-name">Nome da turma</label>
-        <input ref={nomeRef} id="class-name" className="class-input" value={nome} maxLength={100} autoComplete="off"
-          disabled={enviando} required aria-invalid={Boolean(erro.campo)} aria-describedby={erro.campo ? 'class-name-error' : 'class-name-hint'}
-          onChange={(event) => { setNome(event.target.value); setErro({ mensagem: '', campo: '' }) }} />
-        {erro.campo ? <p id="class-name-error" className="class-field-error">{erro.campo}</p> : <p id="class-name-hint">Entre 2 e 100 caracteres.</p>}
-        {erro.mensagem && <p className="class-field-error" role="alert">{erro.mensagem}</p>}
-        <div className="panel-dialog-actions">
-          <button type="button" className="panel-soft-button" disabled={enviando} onClick={onClose}>Cancelar</button>
-          <button type="submit" className="panel-primary-button" disabled={enviando}>{enviando ? 'Criando...' : 'Criar turma'}</button>
+    <Dialogo
+      aberto
+      onFechar={() => { if (!enviandoRef.current) onClose() }}
+      titulo="Nova turma"
+      descricao="Defina o nome da turma. O código de acesso será gerado automaticamente."
+    >
+      <form onSubmit={enviar} noValidate aria-busy={enviando} className="space-y-4">
+        <Campo
+          ref={nomeRef}
+          id="class-name"
+          label="Nome da turma"
+          value={nome}
+          maxLength={100}
+          autoComplete="off"
+          disabled={enviando}
+          required
+          error={erro.campo}
+          hint="Entre 2 e 100 caracteres."
+          onChange={(event) => { setNome(event.target.value); setErro({ mensagem: '', campo: '' }) }}
+        />
+        {erro.mensagem && <Aviso tipo="erro">{erro.mensagem}</Aviso>}
+        <div className="dialogo-base__rodape">
+          <Botao variante="secundario" disabled={enviando} onClick={onClose}>Cancelar</Botao>
+          <Botao type="submit" carregando={enviando} rotuloCarregando="Criando...">Criar turma</Botao>
         </div>
       </form>
-    </dialog>
+    </Dialogo>
   )
 }
 
