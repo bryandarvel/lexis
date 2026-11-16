@@ -99,9 +99,12 @@ export default function MinhaTurmaDialogo({
   const [saindo, setSaindo] = useState(false)
   const [erroSaida, setErroSaida] = useState('')
 
-  // O item do menu que abriu o diálogo já não existe; o foco volta ao avatar.
+  // O item do menu que abriu o diálogo já não existe; o foco volta ao avatar,
+  // mas só na transição de aberto para fechado (não na montagem com o diálogo fechado).
+  const estavaAbertoRef = useRef(false)
   useEffect(() => {
-    if (!aberto) retornoFocoRef?.current?.focus()
+    if (estavaAbertoRef.current && !aberto) retornoFocoRef?.current?.focus()
+    estavaAbertoRef.current = aberto
   }, [aberto, retornoFocoRef])
 
   useEffect(() => {
