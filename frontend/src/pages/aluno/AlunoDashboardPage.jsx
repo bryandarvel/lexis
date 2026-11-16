@@ -1,3 +1,4 @@
+import { formatarData } from '../../utils/formatar-data.js'
 import Botao from '../../components/base/Botao.jsx'
 import {
   useCallback,
@@ -29,11 +30,9 @@ import { interpretarErroApi } from '../../utils/api-error.js'
 import {
   calcularPercentual,
   descreverRedacao,
-  descreverTempoDesde,
   descreverTurma,
   encontrarRascunhoDoTema,
   formatarIndicador,
-  formatarPrazoEntrega,
   listarPropostasDoAluno,
 } from '../../utils/aluno-painel.js'
 import { normalizarCodigoAcesso } from '../../utils/class-code.js'
@@ -229,7 +228,7 @@ function CartaoProposta({
 
   const turma = descreverTurma(proposta.turma)
   const tempoRascunho = rascunho
-    ? descreverTempoDesde(rascunho.atualizadoEm, agora)
+    ? formatarData(rascunho.atualizadoEm, 'relativa', { agora })
     : null
 
   return (
@@ -263,7 +262,7 @@ function CartaoProposta({
 
       <p className="mt-3 text-sm leading-[22px] text-lexis-200">
         {descricao.prazoVencido ? 'Prazo vencido em ' : 'Entrega até '}
-        {formatarPrazoEntrega(proposta.prazoEntrega)}
+        {formatarData(proposta.prazoEntrega, 'dataHora', { vazio: 'Prazo indisponível' })}
       </p>
       <p className="mt-2 text-sm leading-[22px] text-lexis-200">
         {descricao.orientacao}
@@ -317,7 +316,7 @@ function ListaPropostas({ status, propostas }) {
                 <h3 className="break-words text-lg font-semibold leading-6 text-lexis-50">{proposta.enunciado}</h3>
                 <p className="mt-2 text-sm font-semibold text-lexis-200">{situacao}</p>
                 <p className="mt-1 text-sm leading-[22px] text-lexis-200">
-                  {prazoVencido ? 'Prazo vencido em ' : 'Entrega até '}{formatarPrazoEntrega(proposta.prazoEntrega)}
+                  {prazoVencido ? 'Prazo vencido em ' : 'Entrega até '}{formatarData(proposta.prazoEntrega, 'dataHora', { vazio: 'Prazo indisponível' })}
                 </p>
                 <p className="mt-1 text-sm leading-[22px] text-lexis-200">{orientacao}</p>
               </div>

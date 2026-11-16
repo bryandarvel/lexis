@@ -1,13 +1,8 @@
+import { formatarData } from '../../utils/formatar-data.js'
 import { useEffect, useState } from 'react'
 import Botao from '../base/Botao.jsx'
 import { classificarEvidencia } from '../../utils/ai-evidence.js'
 import { avisoAnaliseDuplicado, avisoAtualDaAnalise, mensagemErroAnalise, segundosRestantesAnalise } from '../../utils/external-request.js'
-
-function dataAnalise(instante) {
-  const data = new Date(instante)
-  return instante && !Number.isNaN(data.getTime())
-    ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(data) : null
-}
 
 export default function AnalysisPanel({ analysis, resultAnalysis = analysis, falhaAnterior, avisoAnterior, retryAt = 0, isRequesting, notice, onRequest, onRefresh, disabled }) {
   const falhaAtual = analysis?.status === 'ERRO' && (!falhaAnterior || analysis.id !== falhaAnterior.id)
@@ -28,10 +23,10 @@ export default function AnalysisPanel({ analysis, resultAnalysis = analysis, fal
   const pendente = ['PENDENTE', 'PROCESSANDO'].includes(analysis?.status)
   const result = resultAnalysis?.status === 'CONCLUIDA' ? resultAnalysis.resultadoEstruturado : null
   const anterior = result && resultAnalysis.id !== analysis?.id
-  const dataResultado = dataAnalise(resultAnalysis?.concluidaEm ?? resultAnalysis?.solicitadaEm)
-  const dataTentativa = dataAnalise(analysis?.solicitadaEm)
-  const dataFalhaAnterior = dataAnalise(falhaAnterior?.concluidaEm ?? falhaAnterior?.solicitadaEm)
-  const dataAvisoAnterior = dataAnalise(avisoAnterior?.ocorridaEm)
+  const dataResultado = formatarData(resultAnalysis?.concluidaEm ?? resultAnalysis?.solicitadaEm, 'dataHora')
+  const dataTentativa = formatarData(analysis?.solicitadaEm, 'dataHora')
+  const dataFalhaAnterior = formatarData(falhaAnterior?.concluidaEm ?? falhaAnterior?.solicitadaEm, 'dataHora')
+  const dataAvisoAnterior = formatarData(avisoAnterior?.ocorridaEm, 'dataHora')
   return <section className="review-analysis" aria-label="Análise consultiva por IA" aria-busy={isRequesting || pendente}>
     <Botao type="button" variante="secundario" disabled={disabled || isRequesting || pendente || espera > 0} onClick={onRequest}>
       {isRequesting ? 'Analisando…' : analysis ? 'Analisar novamente com IA' : 'Analisar com IA'}

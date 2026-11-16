@@ -1,3 +1,4 @@
+import { formatarData } from '../../utils/formatar-data.js'
 import Etiqueta from '../../components/base/Etiqueta.jsx'
 import EstadoVazio from '../../components/base/EstadoVazio.jsx'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -29,26 +30,11 @@ import {
 import {
   descreverSituacaoAluno,
   descreverSituacaoTurma,
-  formatarDataEntrada,
   ordenarAlunosDaTurma,
   resumirAlunosDaTurma,
 } from '../../utils/professor-turma.js'
 import './professor-turmas.css'
 import './professor-turma.css'
-
-function formatarPrazo(valor) {
-  if (!valor) {
-    return 'Prazo indisponível'
-  }
-
-  const data = new Date(valor)
-
-  if (Number.isNaN(data.getTime())) {
-    return 'Prazo indisponível'
-  }
-
-  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium', timeStyle: 'short' }).format(data)
-}
 
 function obterStatusTema(tema) {
   if (!tema.ativo) {
@@ -149,7 +135,7 @@ function TemaCard({ tema, indice }) {
             <span aria-hidden="true"> · </span>
             {criterios} {criterios === 1 ? 'critério' : 'critérios'}
             <span aria-hidden="true"> · </span>
-            Prazo: {formatarPrazo(tema.prazoEntrega)}
+            Prazo: {formatarData(tema.prazoEntrega, 'dataHora', { vazio: 'Prazo indisponível' })}
           </p>
         </div>
         <div className="class-card-actions">
@@ -443,7 +429,7 @@ export default function ProfessorTurmaPage() {
               ) : (
                 <>
                   <p>
-                    Esta turma está arquivada desde {formatarDataEntrada(turma.arquivadaEm)}. As matrículas
+                    Esta turma está arquivada desde {formatarData(turma.arquivadaEm, 'data', { vazio: 'Data indisponível' })}. As matrículas
                     foram encerradas e a turma não pode ser alterada enquanto estiver arquivada. As redações
                     e as correções continuam disponíveis.
                   </p>
@@ -494,7 +480,7 @@ export default function ProfessorTurmaPage() {
                           <strong>{matricula.aluno?.nome ?? 'Aluno'}</strong>
                           <span>{matricula.aluno?.email}</span>
                           <span>
-                            Entrou em {formatarDataEntrada(matricula.iniciadaEm)}
+                            Entrou em {formatarData(matricula.iniciadaEm, 'data', { vazio: 'Data indisponível' })}
                             <span aria-hidden="true"> · </span>
                             <span className={estado.atencao ? 'attention' : undefined}>{estado.rotulo}</span>
                           </span>

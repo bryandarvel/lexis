@@ -1,3 +1,4 @@
+import { formatarData } from '../../utils/formatar-data.js'
 import EstadoVazio from '../../components/base/EstadoVazio.jsx'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Botao from '../../components/base/Botao.jsx'
@@ -29,19 +30,6 @@ import {
 } from '../../utils/notificacoes-sequencia.js'
 import { respostaDeveSerAplicada } from '../../utils/resposta-notificacoes.js'
 import './professor-notificacoes.css'
-
-function formatarDataHora(valor) {
-  const data = new Date(valor)
-
-  if (Number.isNaN(data.getTime())) {
-    return ''
-  }
-
-  return new Intl.DateTimeFormat('pt-BR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  }).format(data)
-}
 
 const INICIAL = {
   usuarioId: null,
@@ -261,7 +249,7 @@ export default function ProfessorNotificacoesPage() {
                       <span className="avisos-item-topo">
                         <strong>{notificacao.titulo}</strong>
                         <span className="avisos-data">
-                          {formatarDataHora(notificacao.criadaEm)}
+                          {formatarData(notificacao.criadaEm, 'dataHora', { vazio: '' })}
                         </span>
                       </span>
 

@@ -1,3 +1,5 @@
+import { formatarNumero } from './formatar-numero.js'
+
 export const LIMITE_CARACTERES_REDACAO = 20_000
 
 export function mensagemRevisaoLinguistica(revisao) {
@@ -109,26 +111,6 @@ export const ITENS_CONFERENCIA_ENVIO = [
 const PADRAO_ORTOGRAFIA =
   /ortogr|digita|escrita|typo|spell|morfologik|hunspell/i
 
-function converterData(valor) {
-  if (!valor) {
-    return null
-  }
-
-  const data = new Date(valor)
-
-  return Number.isNaN(data.getTime())
-    ? null
-    : data
-}
-
-function obterPartesData(data, opcoes) {
-  return Object.fromEntries(
-    new Intl.DateTimeFormat('pt-BR', opcoes)
-      .formatToParts(data)
-      .map(({ type, value }) => [type, value]),
-  )
-}
-
 export function contarPalavras(texto) {
   return String(texto ?? '')
     .trim()
@@ -152,43 +134,9 @@ export function descreverExtensao(texto) {
   const paragrafos = contarLinhas(texto)
 
   return [
-    `${palavras.toLocaleString('pt-BR')} ${palavras === 1 ? 'palavra' : 'palavras'}`,
-    `${paragrafos.toLocaleString('pt-BR')} ${paragrafos === 1 ? 'parágrafo' : 'parágrafos'}`,
+    `${formatarNumero(palavras)} ${palavras === 1 ? 'palavra' : 'palavras'}`,
+    `${formatarNumero(paragrafos)} ${paragrafos === 1 ? 'parágrafo' : 'parágrafos'}`,
   ].join(' · ')
-}
-
-export function formatarHorario(valor) {
-  const data = converterData(valor)
-
-  if (!data) {
-    return null
-  }
-
-  const partes = obterPartesData(data, {
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-  })
-
-  return `${partes.hour}:${partes.minute}`
-}
-
-export function formatarPrazoCurto(valor) {
-  const data = converterData(valor)
-
-  if (!data) {
-    return 'Prazo indisponível'
-  }
-
-  const partes = obterPartesData(data, {
-    day: '2-digit',
-    month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-  })
-
-  return `${partes.day}/${partes.month}, ${partes.hour}h${partes.minute}`
 }
 
 export function descreverSugestao(sugestao) {

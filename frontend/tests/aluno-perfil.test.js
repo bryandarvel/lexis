@@ -5,7 +5,6 @@ import {
   aplicarBlocosDaConta,
   descreverConta,
   descreverTurma,
-  formatarMembroDesde,
   formatarNota,
   resolverBloco,
   resumirDesempenho,
@@ -23,15 +22,6 @@ test('rotula o papel e não inventa um para valores desconhecidos', () => {
   assert.equal(rotularPapel(undefined), 'Não informado')
 })
 
-test('formata "membro desde" por extenso e devolve null sem data válida', () => {
-  assert.match(
-    formatarMembroDesde('2026-03-10T12:00:00.000Z'),
-    /^10 de março de 2026$/,
-  )
-  assert.equal(formatarMembroDesde(null), null)
-  assert.equal(formatarMembroDesde('não é data'), null)
-})
-
 test('descreve a conta com nome, e-mail, papel e data', () => {
   assert.deepEqual(
     descreverConta({
@@ -44,7 +34,7 @@ test('descreve a conta com nome, e-mail, papel e data', () => {
       nome: 'Aluno Fictício',
       email: 'aluno@lexis.example.com',
       papel: 'Aluno',
-      membroDesde: '10 de março de 2026',
+      membroDesde: '10/03/2026',
     },
   )
   assert.equal(descreverConta(null), null)

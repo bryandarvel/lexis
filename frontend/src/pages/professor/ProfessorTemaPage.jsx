@@ -1,3 +1,4 @@
+import { formatarData } from '../../utils/formatar-data.js'
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import { Link, useParams } from 'react-router'
@@ -27,13 +28,6 @@ import {
   MENSAGENS_SUCESSO_REABERTURA,
 } from '../../utils/reabertura.js'
 import './professor-topic.css'
-
-function formatarPrazo(valor) {
-  const data = new Date(valor)
-  return valor && !Number.isNaN(data.getTime())
-    ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(data)
-    : 'Prazo não informado'
-}
 
 function EditarPropostaDialog({ tema, enviando, erro, erros, onSave, onClose }) {
   const primeiroRef = useRef(null)
@@ -319,7 +313,7 @@ export default function ProfessorTemaPage() {
         {pagina.status === 'erro' && <><h1>Proposta e critérios</h1><section className="panel-error" role="alert"><h2>Não foi possível abrir a proposta</h2><p>{pagina.mensagem}</p><Botao onClick={() => setTentativa((atual) => atual + 1)}>Tentar novamente</Botao><Botao as={Link} variante="secundario" to="/professor/turmas">Voltar às turmas</Botao></section></>}
         {pronto && <>
           <h1>{pagina.tema.enunciado}</h1>
-          <p className="panel-subtitle topic-subtitle">{pagina.turma.nome} <span aria-hidden="true"> · </span> entrega até {formatarPrazo(pagina.tema.prazoEntrega)} <span aria-hidden="true"> · </span> {entregas.texto}{!pagina.tema.ativo && ' · Proposta arquivada'}</p>
+          <p className="panel-subtitle topic-subtitle">{pagina.turma.nome} <span aria-hidden="true"> · </span> entrega até {formatarData(pagina.tema.prazoEntrega, 'dataHora', { vazio: 'Prazo não informado' })} <span aria-hidden="true"> · </span> {entregas.texto}{!pagina.tema.ativo && ' · Proposta arquivada'}</p>
           <section className="topic-tabs" aria-labelledby="topic-tabs-title">
             <h2 id="topic-tabs-title">Temas</h2>
             <nav aria-label="Temas desta turma">{pagina.temas.map((tema) => <Link key={tema.id} to={`/professor/temas/${tema.id}`} title={tema.enunciado} aria-current={tema.id === temaId ? 'page' : undefined} aria-disabled={salvando || undefined} onClick={(event) => { if (salvando) event.preventDefault() }}>{tema.enunciado}</Link>)}</nav>

@@ -62,16 +62,3 @@ export function resumirAlunosDaTurma(matriculas) {
   }
 }
 
-export function formatarDataEntrada(valor) {
-  if (!valor) {
-    return 'Data indisponível'
-  }
-
-  const data = new Date(valor)
-
-  if (Number.isNaN(data.getTime())) {
-    return 'Data indisponível'
-  }
-
-  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short' }).format(data)
-}

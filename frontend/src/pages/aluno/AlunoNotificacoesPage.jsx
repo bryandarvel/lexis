@@ -1,3 +1,4 @@
+import { formatarData } from '../../utils/formatar-data.js'
 import {
   useEffect,
   useRef,
@@ -40,19 +41,6 @@ const INICIAL = {
   totalNaoLidas: 0,
   mensagem: '',
   processandoId: null,
-}
-
-function formatarDataHora(valor) {
-  const data = new Date(valor)
-
-  if (Number.isNaN(data.getTime())) {
-    return 'Data indisponível'
-  }
-
-  return new Intl.DateTimeFormat('pt-BR', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(data)
 }
 
 function ListaCarregando() {
@@ -295,7 +283,7 @@ export default function AlunoNotificacoesPage() {
                                 {notificacao.titulo}
                               </strong>
                               <span className="text-xs text-lexis-300">
-                                {formatarDataHora(notificacao.criadaEm)}
+                                {formatarData(notificacao.criadaEm, 'dataHora', { vazio: 'Data indisponível' })}
                               </span>
                             </span>
                             <span className="mt-2 block leading-7 text-lexis-100">

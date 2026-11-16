@@ -1,3 +1,5 @@
+import { formatarData } from '../../utils/formatar-data.js'
+import { formatarNumero } from '../../utils/formatar-numero.js'
 import Botao from '../../components/base/Botao.jsx'
 import {
   useCallback,
@@ -27,17 +29,12 @@ import {
 } from '../../services/redacoes.js'
 import { guardarRevisaoOcr } from '../../services/revisao-ocr-pendente.js'
 import { obterTemaDoAluno } from '../../services/temas.js'
-import {
-  descreverPrazoDoEditor,
-  formatarDiaMes,
-} from '../../utils/aluno-painel.js'
+import { descreverPrazoDoEditor } from '../../utils/aluno-painel.js'
 import { interpretarErroApi } from '../../utils/api-error.js'
 import {
   aplicarSugestaoLinguistica,
   descreverExtensao,
   encontrarRedacaoPorTema,
-  formatarHorario,
-  formatarPrazoCurto,
   ITENS_CONFERENCIA_ENVIO,
   LIMITE_CARACTERES_REDACAO,
   mensagemRevisaoLinguistica,
@@ -69,11 +66,10 @@ const classeCartao =
   'aluno-elevacao-1 rounded-xl border border-[var(--surface-border)] bg-lexis-900'
 
 function descreverEntrega(redacao) {
-  const dia = formatarDiaMes(redacao?.enviadaEm)
-  const horario = formatarHorario(redacao?.enviadaEm)
+  const quando = formatarData(redacao?.enviadaEm, 'dataHora')
 
-  return dia && horario
-    ? `Enviada em ${dia} às ${horario}`
+  return quando
+    ? `Enviada em ${quando}`
     : 'Redação enviada'
 }
 
@@ -143,7 +139,7 @@ function IndicadorSalvamento({
   podeSalvar,
   onSalvarAgora,
 }) {
-  const horario = formatarHorario(salvamento.salvoEm)
+  const quando = formatarData(salvamento.salvoEm, 'dataHora')
   const estados = {
     salvando: {
       texto: 'Salvando...',
@@ -163,9 +159,9 @@ function IndicadorSalvamento({
   }
   const estado =
     estados[salvamento.status] ??
-    (horario
+    (quando
       ? {
-          texto: `Salvo no servidor às ${horario}`,
+          texto: `Salvo no servidor em ${quando}`,
           classe:
             'bg-[var(--aluno-sucesso-fundo)] text-[var(--aluno-sucesso)]',
         }
@@ -231,7 +227,7 @@ function EditorCard({
         >
           {extensao}
           {proximoDoLimite &&
-            ` · ${texto.length.toLocaleString('pt-BR')}/${LIMITE_CARACTERES_REDACAO.toLocaleString('pt-BR')} caracteres`}
+            ` · ${formatarNumero(texto.length)}/${formatarNumero(LIMITE_CARACTERES_REDACAO)} caracteres`}
         </p>
       </div>
 
@@ -930,7 +926,7 @@ export default function AlunoRedacaoPage() {
           <div className="flex flex-col items-start gap-1 sm:items-end">
             <p className="text-[13px] font-semibold leading-[18px] text-lexis-100">
               {avisoPrazo.rotulo ??
-                `Entrega até ${formatarPrazoCurto(tema.prazoEntrega)}`}
+                `Entrega até ${formatarData(tema.prazoEntrega, 'dataHora', { vazio: 'Prazo indisponível' })}`}
             </p>
             {avisoPrazo.aviso && (
               <p

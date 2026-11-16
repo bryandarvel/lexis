@@ -1,31 +1,11 @@
+import { converterData, formatarData } from './formatar-data.js'
+import { formatarNumero } from './formatar-numero.js'
+
 const STATUS_ENTREGUES = new Set([
   'ENVIADA',
   'AVALIADA',
 ])
 
-const MINUTO_MS = 60_000
-const HORA_MS = 60 * MINUTO_MS
-const DIA_MS = 24 * HORA_MS
-
-function converterData(valor) {
-  if (!valor) {
-    return null
-  }
-
-  const data = new Date(valor)
-
-  return Number.isNaN(data.getTime())
-    ? null
-    : data
-}
-
-function obterPartesData(data, opcoes) {
-  return Object.fromEntries(
-    new Intl.DateTimeFormat('pt-BR', opcoes)
-      .formatToParts(data)
-      .map(({ type, value }) => [type, value]),
-  )
-}
 
 export function obterIniciais(nome) {
   const palavras = String(nome ?? '')
@@ -185,86 +165,9 @@ export function descreverPrazoDoEditor({
 
   return {
     vencido: true,
-    rotulo: `Prazo vencido em ${formatarPrazoEntrega(prazoEntrega)}`,
+    rotulo: `Prazo vencido em ${formatarData(prazoEntrega, 'dataHora', { vazio: 'Prazo indisponível' })}`,
     aviso: MENSAGEM_ENTREGA_ATRASADA,
   }
-}
-
-export function formatarPrazoEntrega(valor) {
-  const data = converterData(valor)
-
-  if (!data) {
-    return 'Prazo indisponível'
-  }
-
-  const partes = obterPartesData(data, {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-  })
-
-  return `${partes.day}/${partes.month}/${partes.year}, ${partes.hour}h${partes.minute}`
-}
-
-export function formatarDiaMes(valor) {
-  const data = converterData(valor)
-
-  if (!data) {
-    return null
-  }
-
-  const partes = obterPartesData(data, {
-    day: '2-digit',
-    month: '2-digit',
-  })
-
-  return `${partes.day}/${partes.month}`
-}
-
-export function descreverTempoDesde(
-  valor,
-  agora = new Date(),
-) {
-  const data = converterData(valor)
-
-  if (!data) {
-    return null
-  }
-
-  const decorrido = agora.getTime() - data.getTime()
-
-  if (decorrido < MINUTO_MS) {
-    return 'agora há pouco'
-  }
-
-  const formatador = new Intl.RelativeTimeFormat(
-    'pt-BR',
-    {
-      numeric: 'always',
-    },
-  )
-
-  if (decorrido < HORA_MS) {
-    return formatador.format(
-      -Math.floor(decorrido / MINUTO_MS),
-      'minute',
-    )
-  }
-
-  if (decorrido < DIA_MS) {
-    return formatador.format(
-      -Math.floor(decorrido / HORA_MS),
-      'hour',
-    )
-  }
-
-  return formatador.format(
-    -Math.floor(decorrido / DIA_MS),
-    'day',
-  )
 }
 
 export function descreverRedacao(redacao) {
@@ -272,9 +175,7 @@ export function descreverRedacao(redacao) {
     `/aluno/temas/${encodeURIComponent(redacao.temaId)}/redacao`
 
   if (redacao.status === 'AVALIADA') {
-    const publicadaEm = formatarDiaMes(
-      redacao.publicadoEm,
-    )
+    const publicadaEm = formatarData(redacao.publicadoEm, 'data')
     const possuiNota = Number.isInteger(
       redacao.notaPublicada,
     )
@@ -302,9 +203,7 @@ export function descreverRedacao(redacao) {
   }
 
   if (redacao.status === 'ENVIADA') {
-    const enviadaEm = formatarDiaMes(
-      redacao.enviadaEm,
-    )
+    const enviadaEm = formatarData(redacao.enviadaEm, 'data')
 
     return {
       faixa: 'neutro',
@@ -340,7 +239,7 @@ export function descreverRedacao(redacao) {
 
 export function formatarIndicador(valor) {
   return Number.isFinite(valor)
-    ? Math.round(valor).toLocaleString('pt-BR')
+    ? formatarNumero(Math.round(valor))
     : null
 }
 

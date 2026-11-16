@@ -1,3 +1,4 @@
+import { formatarData } from '../../utils/formatar-data.js'
 import Botao from '../../components/base/Botao.jsx'
 import {
   useEffect,
@@ -36,7 +37,6 @@ import {
   possuiNotasCompetencias,
   selecionarNotificacoesNaoLidasDaRedacao,
 } from '../../utils/aluno-feedback.js'
-import { formatarDiaMes } from '../../utils/aluno-painel.js'
 import './aluno-feedback.css'
 
 const TRILHA = ['Início', 'Feedback']
@@ -184,7 +184,7 @@ function CartaoAviso({
 }
 
 function AvisoCorrecaoAtualizada({ feedback }) {
-  const publicadaEm = formatarDiaMes(feedback.publicadoEm)
+  const publicadaEm = formatarData(feedback.publicadoEm, 'data')
 
   return (
     <p className="mt-[23px] rounded-lg border-l-[3px] border-l-[var(--color-brand-accent)] bg-[var(--aluno-acao-suave)] px-4 py-3 text-sm leading-[22px] text-lexis-100">

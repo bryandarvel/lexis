@@ -1,3 +1,4 @@
+import { formatarData } from '../../utils/formatar-data.js'
 import Etiqueta from '../../components/base/Etiqueta.jsx'
 import { useEffect, useRef, useState } from 'react'
 import Botao from '../../components/base/Botao.jsx'
@@ -23,7 +24,6 @@ import './professor-correction.css'
 
 const erroApi = (error, fallback) => error?.response?.data?.error?.message ?? fallback
 const formVazio = { competencia1: '', competencia2: '', competencia3: '', competencia4: '', competencia5: '', legacyScore: '', generalComment: '', criterionComments: {}, criterionReviewed: {} }
-const formatarData = (valor) => valor && !Number.isNaN(new Date(valor).getTime()) ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(valor)) : 'Não informada'
 
 export default function ProfessorRedacaoPage() {
   const { redacaoId } = useParams()
@@ -274,11 +274,11 @@ function Correcao({ redacaoId, usuarioId }) {
           </section>
           {pagina.erroFila && <p className="review-caption">A fila de redações está indisponível. A correção atual permanece acessível.</p>}
           {rascunhoDivergente && <section className="review-notice" role="status"><strong>Rascunho local encontrado</strong><p>Há alterações não enviadas salvas neste dispositivo.</p><Botao type="button" variante="secundario" disabled={Boolean(feedbackAction)} onClick={recuperarRascunho}>Recuperar rascunho</Botao> <Botao type="button" variante="secundario" disabled={Boolean(feedbackAction)} onClick={() => rascunho.descartar(formServidor)}>Descartar rascunho local</Botao></section>}
-          {!rascunhoDivergente && rascunho.salvoEm && <p className="review-caption" role="status">Alterações locais protegidas em {formatarData(rascunho.salvoEm)}.</p>}
+          {!rascunhoDivergente && rascunho.salvoEm && <p className="review-caption" role="status">Alterações locais protegidas em {formatarData(rascunho.salvoEm, 'dataHora', { vazio: 'Não informada' })}.</p>}
           <article className="review-card review-essay">
             <div className="review-essay-heading"><h2>Redação do aluno</h2><Etiqueta tom="acao">{trechos.length} {trechos.length === 1 ? 'trecho localizado' : 'trechos localizados'} da IA</Etiqueta><span className="review-caption">{redacao.texto?.trim() ? redacao.texto.trim().split(/\s+/u).length : 0} palavras</span></div>
             <EssayEvidenceText texto={redacao.texto} analise={analise} criterios={criterios} onEvidence={abrirComentarios} />
-            <details className="review-submission"><summary>Informações da entrega</summary><p>{redacao.origemTexto === 'OCR' ? 'Texto digitalizado por OCR' : 'Texto digitado'} · {redacao.enviadaComAtraso ? 'Enviada com atraso' : 'Enviada no prazo'}</p><p>Enviada em {formatarData(redacao.enviadaEm)}. Prazo: {formatarData(redacao.prazoConsideradoEm)}.</p></details>
+            <details className="review-submission"><summary>Informações da entrega</summary><p>{redacao.origemTexto === 'OCR' ? 'Texto digitalizado por OCR' : 'Texto digitado'} · {redacao.enviadaComAtraso ? 'Enviada com atraso' : 'Enviada no prazo'}</p><p>Enviada em {formatarData(redacao.enviadaEm, 'dataHora', { vazio: 'Não informada' })}. Prazo: {formatarData(redacao.prazoConsideradoEm, 'dataHora', { vazio: 'Não informada' })}.</p></details>
           </article>
           <FeedbackEditor action={feedbackAction} currentFeedback={pagina.feedback?.versaoAtual} form={form} notice={feedbackNotice} onFieldChange={mudarCampo} onPublish={() => salvar(true)} />
         </div>

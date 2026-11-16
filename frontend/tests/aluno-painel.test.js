@@ -4,12 +4,9 @@ import { test } from 'node:test'
 import {
   calcularPercentual,
   descreverRedacao,
-  descreverTempoDesde,
   descreverTurma,
   encontrarRascunhoDoTema,
-  formatarDiaMes,
   formatarIndicador,
-  formatarPrazoEntrega,
   obterIniciais,
   descreverPrazoDoEditor,
   listarPropostasDoAluno,
@@ -190,51 +187,6 @@ test('não encerra a proposta exatamente no prazo e mantém estados vazios previ
   assert.equal(desconhecida.acao.destino, '/aluno/temas/t%2F1/redacao')
 })
 
-test('formata o prazo e as datas curtas no padrão do protótipo', () => {
-  assert.equal(
-    formatarPrazoEntrega(
-      new Date(2026, 7, 10, 23, 59).toISOString(),
-    ),
-    '10/08/2026, 23h59',
-  )
-  assert.equal(
-    formatarPrazoEntrega('data inválida'),
-    'Prazo indisponível',
-  )
-  assert.equal(
-    formatarDiaMes(new Date(2026, 7, 5, 12).toISOString()),
-    '05/08',
-  )
-  assert.equal(formatarDiaMes(null), null)
-})
-
-test('descreve há quanto tempo o rascunho foi salvo', () => {
-  const minutosAtras = (minutos) =>
-    new Date(agora.getTime() - minutos * 60_000)
-
-  assert.equal(
-    descreverTempoDesde(minutosAtras(0.5), agora),
-    'agora há pouco',
-  )
-  assert.equal(
-    descreverTempoDesde(minutosAtras(2), agora),
-    'há 2 minutos',
-  )
-  assert.equal(
-    descreverTempoDesde(minutosAtras(1), agora),
-    'há 1 minuto',
-  )
-  assert.equal(
-    descreverTempoDesde(minutosAtras(180), agora),
-    'há 3 horas',
-  )
-  assert.equal(
-    descreverTempoDesde(minutosAtras(60 * 24 * 2), agora),
-    'há 2 dias',
-  )
-  assert.equal(descreverTempoDesde(null, agora), null)
-})
-
 test('descreve uma redação corrigida com nota publicada', () => {
   const descricao = descreverRedacao({
     id: 'r1',
@@ -246,7 +198,7 @@ test('descreve uma redação corrigida com nota publicada', () => {
 
   assert.deepEqual(descricao, {
     faixa: 'sucesso',
-    legenda: 'Publicada em 05/08',
+    legenda: 'Publicada em 05/08/2026',
     nota: {
       texto: 'Nota 880/1000',
       tom: 'sucesso',
@@ -274,7 +226,7 @@ test('descreve redações em correção e em rascunho', () => {
     notaPublicada: null,
   })
 
-  assert.equal(emCorrecao.legenda, 'Em correção desde 04/08')
+  assert.equal(emCorrecao.legenda, 'Em correção desde 04/08/2026')
   assert.deepEqual(emCorrecao.nota, {
     texto: 'Sem nota',
     tom: 'atencao',
@@ -309,7 +261,7 @@ test('proposta com prazo vencido avisa que a entrega será registrada com atraso
   })
 
   assert.equal(resultado.vencido, true)
-  assert.match(resultado.rotulo, /^Prazo vencido em 03\/08\/2026, 23h59$/)
+  assert.match(resultado.rotulo, /^Prazo vencido em 03\/08\/2026, 23:59$/)
   assert.equal(resultado.aviso, MENSAGEM_ENTREGA_ATRASADA)
   assert.match(resultado.aviso, /Você ainda pode enviar\. A entrega será registrada com atraso\./)
 })

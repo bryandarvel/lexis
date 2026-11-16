@@ -1,3 +1,4 @@
+import { formatarData } from './formatar-data.js'
 import {
   TOM_NEUTRO,
   TOTAL_TONS_CRITERIO,
@@ -8,7 +9,6 @@ import { segmentarTextoComEvidencias } from './ai-evidence.js'
 import { validarTrechosRecebidos } from './trechos-feedback.js'
 import {
   calcularPercentual,
-  formatarDiaMes,
   listarPropostasDoAluno,
 } from './aluno-painel.js'
 
@@ -101,8 +101,8 @@ export function descreverOrigemFeedback({
   redacao,
   feedback,
 }) {
-  const enviadaEm = formatarDiaMes(redacao?.enviadaEm)
-  const publicadaEm = formatarDiaMes(feedback?.publicadoEm)
+  const enviadaEm = formatarData(redacao?.enviadaEm, 'data')
+  const publicadaEm = formatarData(feedback?.publicadoEm, 'data')
   const professor =
     redacao?.tema?.turma?.professor?.nome?.trim()
 

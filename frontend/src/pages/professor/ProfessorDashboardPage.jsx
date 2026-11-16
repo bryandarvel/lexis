@@ -1,3 +1,4 @@
+import { formatarSaudacaoData } from '../../utils/formatar-data.js'
 import EstadoVazio from '../../components/base/EstadoVazio.jsx'
 import { useEffect, useRef, useState } from 'react'
 import Botao from '../../components/base/Botao.jsx'
@@ -55,9 +56,7 @@ export default function ProfessorDashboardPage() {
     attentionRef.current?.scrollIntoView({ block: 'nearest' })
   }
 
-  const data = new Intl.DateTimeFormat('pt-BR', {
-    weekday: 'long', day: 'numeric', month: 'long', timeZone: 'America/Sao_Paulo',
-  }).format(new Date())
+  const data = formatarSaudacaoData()
   const indicadores = [
     ['Redações pendentes', pagina.pendentes.length, 'attention'],
     ['Turmas ativas', pagina.turmasAtivas, ''],

@@ -1,3 +1,5 @@
+import { formatarData } from './formatar-data.js'
+
 export const CODIGO_SEM_MATRICULA = 'ACTIVE_ENROLLMENT_NOT_FOUND'
 export const CODIGO_MATRICULA_ALTERADA = 'ACTIVE_ENROLLMENT_CHANGED'
 export const CODIGO_TURMA_INDISPONIVEL = 'CLASS_ACCESS_CODE_INVALID'
@@ -14,20 +16,6 @@ export function indicaSemMatricula(erro) {
   )
 }
 
-export function formatarDataEntrada(valor) {
-  const data = valor ? new Date(valor) : null
-
-  if (!data || Number.isNaN(data.getTime())) {
-    return null
-  }
-
-  return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).format(data)
-}
-
 export function descreverMatricula(matricula) {
   if (!matricula?.turma) {
     return null
@@ -39,7 +27,7 @@ export function descreverMatricula(matricula) {
     turma: matricula.turma.nome?.trim() || 'Turma',
     professor:
       matricula.turma.professor?.nome?.trim() || null,
-    desde: formatarDataEntrada(matricula.iniciadaEm),
+    desde: formatarData(matricula.iniciadaEm, 'data'),
     // Arquivar a turma encerra as matrículas; a saída não é oferecida nesse caso.
     podeSair: Boolean(matricula.id) && matricula.turma.ativa !== false,
   }
