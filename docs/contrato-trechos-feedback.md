@@ -43,6 +43,14 @@ Salvar/consultar pelo professor inclui, em cada comentário, `trechos[{id,inicio
 
 O `POST /api/redacoes/:redacaoId/feedback/publicar` mantém a publicação humana e sua transação: revalida os intervalos, publica o rascunho, substitui a publicação anterior e cria o aviso de feedback já existente. Salvar não publica. Nota pertence às cinco competências humanas.
 
+### Republicação sem alterações (UX-040)
+
+Antes de publicar, a API compara o rascunho válido com a última versão publicada da mesma correção, dentro da transação que bloqueia a redação. O conteúdo é igual quando as cinco notas, o comentário geral, os critérios por ID, seus comentários e os trechos por `(inicio, fim, trecho)` coincidem. A ordem das listas não importa. A comparação ignora IDs internos de registros, número da versão, datas, nota total derivada e metadados de origem por IA (`sugeridoPorIa` e `analiseIaId`). O texto persistido é comparado literalmente, sem normalização adicional.
+
+Se o conteúdo for igual, o POST retorna 409 `FEEDBACK_UNCHANGED`. O rascunho permanece editável, a versão publicada e o histórico ficam intactos, e nenhum aviso ou item na fila de e-mail é criado. O PUT de rascunho continua inalterado; se não houver rascunho, o POST continua retornando 409 `FEEDBACK_DRAFT_REQUIRED`.
+
+### Leitura e compatibilidade
+
 O `GET /api/aluno/redacoes/:redacaoId/feedback` retorna **somente a versão publicada atual e do próprio aluno**, com `trechos[{id,inicio,fim,trecho,sugeridoPorIa}]`. Não retorna `analiseIaId`, snapshot, diagnóstico, resultado bruto ou orientação privada. Rascunhos permanecem privados, e versões substituídas conservam seus registros para o histórico do professor.
 
 Clientes antigos podem continuar enviando comentários sem `trechos` e ignorando o novo campo de resposta. Na interface do Lote 2, a redação e os comentários usam a mesma numeração, por início e com o intervalo mais longo primeiro no empate. O aluno só vê os trechos aprovados da publicação atual, sem um rótulo que indique a origem por IA. Sugestões descartadas pelo professor não são persistidas.

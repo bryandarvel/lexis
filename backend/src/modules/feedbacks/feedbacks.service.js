@@ -162,6 +162,13 @@ export async function publicarFeedbackParaProfessor(
 
   validarResultadoTrechos(resultado)
 
+  if (resultado.status === 'RASCUNHO_SEM_ALTERACOES') {
+    throw new AppError(
+      'O rascunho é idêntico à versão publicada. Faça uma alteração antes de publicar novamente.',
+      { statusCode: 409, code: 'FEEDBACK_UNCHANGED' },
+    )
+  }
+
   return {
     feedback: resultado.feedbackVersao,
     notificacao: resultado.notificacao,

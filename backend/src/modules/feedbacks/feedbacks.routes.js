@@ -308,7 +308,7 @@ export function criarFeedbacksRouter({
    * /api/redacoes/{redacaoId}/feedback/publicar:
    *   post:
    *     summary: Publica a correção da redação
-   *     description: Publica o rascunho completo, revalida os trechos aprovados, marca a redação como avaliada e cria uma notificação para o aluno na mesma transação. Comentários por critério são opcionais. A versão substituída conserva seus trechos.
+   *     description: Publica o rascunho completo, revalida os trechos aprovados, marca a redação como avaliada e cria uma notificação para o aluno na mesma transação. Comentários por critério são opcionais. A versão substituída conserva seus trechos. Se o conteúdo for idêntico à publicação vigente, mantém o rascunho para edição e não notifica o aluno.
    *     tags:
    *       - Feedbacks
    *     security:
@@ -330,7 +330,7 @@ export function criarFeedbacksRouter({
    *       '404':
    *         description: Redação indisponível para o professor
    *       '409':
-   *         description: Rascunho inexistente
+   *         description: Rascunho inexistente (FEEDBACK_DRAFT_REQUIRED) ou idêntico à publicação vigente (FEEDBACK_UNCHANGED)
    *       '422':
    *         description: Identificador inválido, rascunho incompleto ou FEEDBACK_EVIDENCE_INVALID. Nenhuma publicação parcial.
    */
