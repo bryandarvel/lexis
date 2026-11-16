@@ -32,7 +32,7 @@ function ProgressoOcr({ progresso }) {
     >
       {processando ? (
         <>
-          <p className="text-sm font-medium leading-[22px] text-lexis-100">
+          <p className="text-sm font-medium leading-[22px] text-texto">
             Transcrevendo a imagem. Isso pode levar alguns segundos.
           </p>
           <div
@@ -46,7 +46,7 @@ function ProgressoOcr({ progresso }) {
         </>
       ) : (
         <>
-          <p className="flex justify-between gap-3 text-sm font-medium leading-[22px] text-lexis-100">
+          <p className="flex justify-between gap-3 text-sm font-medium leading-[22px] text-texto">
             <span>Enviando a foto</span>
             <span>{progresso}%</span>
           </p>
@@ -83,13 +83,13 @@ export default function EnvioFotoPainel({
   const idAjuda = useId()
 
   return (
-    <div className="aluno-elevacao-1 flex min-h-[500px] flex-col rounded-xl border border-[var(--surface-border)] bg-lexis-900 px-6 pb-6 pt-4">
-      <h2 className="aluno-titulo-interface text-lg font-semibold leading-6 tracking-[-0.09px] text-lexis-50">
+    <div className="aluno-elevacao-1 flex min-h-[500px] flex-col rounded-xl border border-[var(--surface-border)] bg-superficie px-6 pb-6 pt-4">
+      <h2 className="aluno-titulo-interface text-lg font-semibold leading-6 tracking-[-0.09px] text-texto">
         Enviar foto da redação
       </h2>
       <p
         id={idAjuda}
-        className="mt-1 text-sm leading-[22px] text-lexis-200"
+        className="mt-1 text-sm leading-[22px] text-texto-suave"
       >
         Envie uma foto nítida da folha, em JPEG ou PNG de até 1 MB. A transcrição automática pode conter erros: você revisa o texto extraído ao lado da foto antes de salvar.
       </p>
@@ -99,12 +99,12 @@ export default function EnvioFotoPainel({
         className="mt-6 flex flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--aluno-borda-campo)] bg-[var(--aluno-neutro-fundo)] px-6 py-10 text-center focus-within:border-[var(--color-brand-accent)] focus-within:ring-4 focus-within:ring-[var(--color-brand-accent)]/20"
       >
         <IconeFoto />
-        <span className="break-all text-sm font-semibold leading-[22px] text-lexis-50">
+        <span className="break-all text-sm font-semibold leading-[22px] text-texto">
           {imagem
             ? imagem.name
             : 'Escolher uma foto da redação'}
         </span>
-        <span className="text-xs font-medium leading-[17px] text-lexis-200">
+        <span className="text-xs font-medium leading-[17px] text-texto-suave">
           {imagem
             ? formatarTamanhoArquivo(imagem.size)
             : 'JPEG ou PNG, até 1 MB'}

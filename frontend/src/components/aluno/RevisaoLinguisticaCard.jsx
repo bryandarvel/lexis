@@ -42,10 +42,10 @@ function ItemSugestao({
       />
 
       <div className="min-w-0 flex-1">
-        <p className="break-words text-sm leading-[22px] text-lexis-100">
+        <p className="break-words text-sm leading-[22px] text-texto">
           {descricao.texto}
         </p>
-        <p className="text-xs font-medium leading-[17px] text-lexis-200">
+        <p className="text-xs font-medium leading-[17px] text-texto-suave">
           {descricao.categoria}
         </p>
         {sugestao.mensagem &&
@@ -111,26 +111,26 @@ export default function RevisaoLinguisticaCard({
     <section
       aria-labelledby="titulo-revisao-linguistica"
       aria-busy={carregando}
-      className="aluno-elevacao-1 min-h-[232px] rounded-xl border border-[var(--surface-border)] bg-lexis-900 px-5 pb-4 pt-4"
+      className="aluno-elevacao-1 min-h-[232px] rounded-xl border border-[var(--surface-border)] bg-superficie px-5 pb-4 pt-4"
     >
       <div className="flex items-start justify-between gap-3">
         <h2
           id="titulo-revisao-linguistica"
-          className="aluno-titulo-interface text-lg font-semibold leading-6 tracking-[-0.09px] text-lexis-50"
+          className="aluno-titulo-interface text-lg font-semibold leading-6 tracking-[-0.09px] text-texto"
         >
           Revisão linguística
         </h2>
-        <span className="inline-flex h-6 w-[84px] shrink-0 items-center justify-center rounded-full bg-[var(--aluno-trilho)] text-xs font-medium leading-[17px] text-lexis-200">
+        <span className="inline-flex h-6 w-[84px] shrink-0 items-center justify-center rounded-full bg-[var(--aluno-trilho)] text-xs font-medium leading-[17px] text-texto-suave">
           opcional
         </span>
       </div>
-      <p className="mt-0.5 text-xs font-medium leading-[17px] text-lexis-200">
+      <p className="mt-0.5 text-xs font-medium leading-[17px] text-texto-suave">
         Sugestões do LanguageTool. Você decide se aplica.
       </p>
 
       {estado.status === 'inicial' && (
         <>
-          <p className="mt-4 text-xs leading-[17px] text-lexis-200">
+          <p className="mt-4 text-xs leading-[17px] text-texto-suave">
             Ao revisar, o texto atual é enviado ao serviço LanguageTool configurado. As sugestões nunca bloqueiam o salvamento nem o envio.
           </p>
           <BotaoRevisar
@@ -145,7 +145,7 @@ export default function RevisaoLinguisticaCard({
       {carregando && (
         <p
           role="status"
-          className="mt-4 animate-pulse text-sm leading-[22px] text-lexis-100"
+          className="mt-4 animate-pulse text-sm leading-[22px] text-texto"
         >
           Consultando o LanguageTool...
         </p>
@@ -159,7 +159,7 @@ export default function RevisaoLinguisticaCard({
                 ? 'alert'
                 : 'status'
             }
-            className="mt-4 text-sm leading-[22px] text-lexis-100"
+            className="mt-4 text-sm leading-[22px] text-texto"
           >
             {estado.mensagem}
           </p>
@@ -176,7 +176,7 @@ export default function RevisaoLinguisticaCard({
         <>
           <p
             role="status"
-            className="mt-4 text-sm leading-[22px] text-lexis-100"
+            className="mt-4 text-sm leading-[22px] text-texto"
           >
             {estado.mensagem}
           </p>

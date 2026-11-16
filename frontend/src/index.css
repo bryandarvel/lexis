@@ -3,40 +3,14 @@
 @import "./styles/tokens.css";
 @import "./components/base/base.css";
 
-@theme {
-  --color-lexis-50: #eff8ff;
-  --color-lexis-100: #dff1ff;
-  --color-lexis-200: #b9e3ff;
-  --color-lexis-300: #7dccff;
-  --color-lexis-400: #39b0ff;
-  --color-lexis-500: #0e91ec;
-  --color-lexis-600: #0273c7;
-  --color-lexis-700: #045ba1;
-  --color-lexis-800: #094d84;
-  --color-lexis-900: #0e406d;
-  --color-lexis-950: #092945;
-}
-
 :root,
 :root[data-theme="light"] {
   color-scheme: light;
-  --color-lexis-50: #071b2f;
-  --color-lexis-100: #1d3347;
-  --color-lexis-200: #355068;
-  --color-lexis-300: #145c94;
-  --color-lexis-400: #1674bd;
-  --color-lexis-500: #286fbd;
-  --color-lexis-600: #7f91a4;
-  --color-lexis-700: #d5e0eb;
-  --color-lexis-800: #e7edf4;
-  --color-lexis-900: #ffffff;
-  --color-lexis-950: #f4f7fb;
   --surface-shell-1: #002049;
   --surface-shell-2: #062b58;
   --surface-shell-3: #0d3567;
   --surface-shell-4: #143f76;
   --color-brand-accent: #1c6eba;
-  --text-on-action-blue: #fff;
   --surface-border: #c8d4e0;
   --surface-highlight: rgba(255, 255, 255, 0);
   --page-background: #f4f7fb;
@@ -55,23 +29,11 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --color-lexis-50: #f7fbff;
-  --color-lexis-100: #dce9f5;
-  --color-lexis-200: #a9bed1;
-  --color-lexis-300: #7dccff;
-  --color-lexis-400: #39a7f2;
-  --color-lexis-500: #1688d6;
-  --color-lexis-600: #166da8;
-  --color-lexis-700: #0d3567;
-  --color-lexis-800: #062b58;
-  --color-lexis-900: #111d2e;
-  --color-lexis-950: #06101f;
   --surface-shell-1: #002049;
   --surface-shell-2: #062b58;
   --surface-shell-3: #0d3567;
   --surface-shell-4: #143f76;
   --color-brand-accent: #1c6eba;
-  --text-on-action-blue: var(--color-lexis-950);
   --surface-border: #2a3a4f;
   --surface-highlight: rgba(255, 255, 255, 0.12);
   --page-background: #06101f;
@@ -104,7 +66,7 @@ body {
   min-width: 0;
   min-height: 100vh;
   background: var(--page-background);
-  color: var(--color-lexis-50);
+  color: var(--texto);
   font-family: var(--font-interface);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -113,7 +75,7 @@ body {
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--color-lexis-400) 30%, transparent);
+  background: color-mix(in srgb, var(--acao) 30%, transparent);
 }
 
 :focus-visible {
@@ -148,7 +110,7 @@ h2,
 
 .surface-card {
   border: 1px solid var(--surface-border);
-  background: var(--color-lexis-900);
+  background: var(--superficie-conteudo);
   box-shadow:
     inset 0 1px var(--surface-highlight),
     var(--shadow-card);
@@ -165,29 +127,25 @@ h2,
   background: var(--surface-shell-1);
 }
 
-[data-theme="light"] .surface-shell .text-white {
-  color: #f7fbff;
-}
-
 .theme-toggle {
   display: inline-flex;
   min-height: 2.75rem;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border: 1px solid color-mix(in srgb, var(--color-lexis-300) 40%, transparent);
+  border: 1px solid color-mix(in srgb, var(--acao-texto) 40%, transparent);
   border-radius: 999px;
-  background: var(--color-lexis-900);
+  background: var(--superficie-conteudo);
   padding: 0.625rem 0.875rem;
-  color: var(--color-lexis-50);
+  color: var(--texto);
   font-size: 0.8125rem;
   font-weight: 700;
   transition: background-color 160ms ease, border-color 160ms ease;
 }
 
 .theme-toggle:hover {
-  border-color: var(--color-lexis-300);
-  background: var(--color-lexis-800);
+  border-color: var(--acao-texto);
+  background: var(--superficie-rebaixada);
 }
 
 .correction-workspace {
@@ -211,7 +169,7 @@ h2,
   overflow-y: auto;
   border: 1px solid var(--surface-border);
   border-radius: 18px 18px 0 0;
-  background: var(--color-lexis-950);
+  background: var(--superficie-pagina);
   box-shadow: 0 -18px 48px rgba(0, 32, 73, 0.24);
   transform: translateY(105%);
   transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -252,14 +210,14 @@ h2,
   justify-content: space-between;
   min-height: 3.5rem;
   border-bottom: 1px solid var(--surface-border);
-  background: var(--color-lexis-950);
+  background: var(--superficie-pagina);
   padding: 0.75rem 1rem;
 }
 
 .correction-sheet-heading button {
   border-radius: 8px;
   padding: 0.5rem;
-  color: var(--color-lexis-300);
+  color: var(--acao-texto);
   font-weight: 700;
 }
 
@@ -270,7 +228,7 @@ h2,
   width: 2.5rem;
   height: 0.25rem;
   border-radius: 999px;
-  background: var(--color-lexis-600);
+  background: var(--borda-campo);
   transform: translateX(-50%);
 }
 
@@ -280,21 +238,21 @@ h2,
   gap: 0.25rem;
   margin: 1rem;
   border-radius: 10px;
-  background: var(--color-lexis-800);
+  background: var(--superficie-rebaixada);
   padding: 0.25rem;
 }
 
 .correction-tabs button {
   min-height: 2.75rem;
   border-radius: 8px;
-  color: var(--color-lexis-200);
+  color: var(--texto-suave);
   font-size: 0.875rem;
   font-weight: 700;
 }
 
 .correction-tabs button[aria-selected="true"] {
-  background: var(--color-lexis-900);
-  color: var(--color-lexis-50);
+  background: var(--superficie-conteudo);
+  color: var(--texto);
 }
 
 .correction-tool-panel {
@@ -324,7 +282,7 @@ h2,
     grid-area: tools;
     max-height: calc(100vh - 7rem);
     border-radius: 14px;
-    background: var(--color-lexis-900);
+    background: var(--superficie-conteudo);
     box-shadow: var(--shadow-card);
     transform: none;
   }
@@ -364,7 +322,7 @@ h2,
     overflow-y: auto;
     border: 1px solid var(--surface-border);
     border-radius: 14px;
-    background: var(--color-lexis-900);
+    background: var(--superficie-conteudo);
     box-shadow:
       inset 0 1px var(--surface-highlight),
       var(--shadow-card);
@@ -387,14 +345,6 @@ h2,
   border-color: rgba(255, 255, 255, 0.22);
   background: var(--surface-shell-2);
   color: #f7fbff;
-}
-
-[data-theme="light"] .text-white {
-  color: var(--color-lexis-50);
-}
-
-[data-theme="dark"] .bg-lexis-400.text-white {
-  color: var(--color-lexis-950);
 }
 
 @media (prefers-reduced-motion: reduce) {

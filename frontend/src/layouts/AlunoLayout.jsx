@@ -259,13 +259,13 @@ function MenuUsuario({
         <div
           ref={painelRef}
           id={idPainel}
-          className="absolute right-0 top-[calc(100%+10px)] z-50 w-64 rounded-xl border border-[var(--surface-border)] bg-lexis-900 p-4 text-lexis-50 shadow-[0_12px_32px_rgba(0,32,73,0.18)]"
+          className="absolute right-0 top-[calc(100%+10px)] z-50 w-64 rounded-xl border border-[var(--surface-border)] bg-superficie p-4 text-texto shadow-[0_12px_32px_rgba(0,32,73,0.18)]"
         >
           <p className="truncate text-sm font-semibold">
             {usuario?.nome ?? 'Aluno'}
           </p>
           {usuario?.email && (
-            <p className="mt-0.5 truncate text-xs text-lexis-200">
+            <p className="mt-0.5 truncate text-xs text-texto-suave">
               {usuario.email}
             </p>
           )}
@@ -418,10 +418,10 @@ export default function AlunoLayout({
       : `Notificações: ${totalNaoLidas} avisos não lidos`
 
   return (
-    <div className="aluno-shell min-h-screen bg-[var(--page-background)] text-lexis-50">
+    <div className="aluno-shell min-h-screen bg-[var(--page-background)] text-texto">
       <a
         href="#conteudo-principal"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-3 focus:z-[60] focus:rounded-lg focus:bg-lexis-900 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-lexis-50"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-3 focus:z-[60] focus:rounded-lg focus:bg-superficie focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-texto"
       >
         Pular para o conteúdo
       </a>

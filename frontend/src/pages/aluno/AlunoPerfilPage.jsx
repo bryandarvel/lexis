@@ -285,10 +285,10 @@ export default function AlunoPerfilPage() {
   return (
     <AlunoLayout rotaEnviarRedacao={rotaEnviarRedacao} trilha={['Perfil']}>
       <header>
-        <h1 className="text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-lexis-50">
+        <h1 className="text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-texto">
           Perfil
         </h1>
-        <p className="mt-[11px] text-base leading-[25px] text-lexis-200">
+        <p className="mt-[11px] text-base leading-[25px] text-texto-suave">
           Seus dados de conta, sua turma e o resumo das suas correções.
         </p>
       </header>

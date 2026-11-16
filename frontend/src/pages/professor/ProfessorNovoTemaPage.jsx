@@ -1,3 +1,4 @@
+import Botao from '../../components/base/Botao.jsx'
 import Campo from '../../components/base/Campo.jsx'
 import {
   useEffect,
@@ -172,8 +173,8 @@ export default function ProfessorNovoTemaPage() {
           className="mx-auto max-w-5xl px-6 py-16"
           role="status"
         >
-          <div className="h-10 w-72 animate-pulse rounded-[10px] bg-lexis-300/15" />
-          <div className="mt-8 h-[34rem] animate-pulse rounded-[14px] bg-lexis-300/10" />
+          <div className="h-10 w-72 animate-pulse rounded-[10px] bg-acao-suave" />
+          <div className="mt-8 h-[34rem] animate-pulse rounded-[14px] bg-acao-suave" />
           <span className="sr-only">
             Carregando modelo de critérios...
           </span>
@@ -188,7 +189,7 @@ export default function ProfessorNovoTemaPage() {
         <section className="mx-auto max-w-3xl px-6 py-16">
           <Link
             to={`/professor/turmas/${turmaId}`}
-            className="text-sm font-semibold text-lexis-300 hover:text-white"
+            className="text-sm font-semibold text-acao-texto hover:text-texto"
           >
             ← Voltar à turma
           </Link>
@@ -198,13 +199,13 @@ export default function ProfessorNovoTemaPage() {
           >
             {aviso?.mensagem}
           </div>
-          <button
+          <Botao
             type="button"
             onClick={() => setTentativa((valor) => valor + 1)}
-            className="mt-5 min-h-11 rounded-[10px] bg-lexis-400 px-5 font-bold text-[color:var(--text-on-action-blue)]"
+            className="mt-5"
           >
             Tentar novamente
-          </button>
+          </Botao>
         </section>
       </DashboardLayout>
     )
@@ -212,21 +213,21 @@ export default function ProfessorNovoTemaPage() {
 
   return (
     <DashboardLayout>
-      <header className="border-b border-lexis-200/10 px-6 py-10 sm:px-10">
+      <header className="border-b border-borda px-6 py-10 sm:px-10">
         <div className="mx-auto max-w-5xl">
           <Link
             to={`/professor/turmas/${turmaId}`}
-            className="text-sm font-semibold text-lexis-300 hover:text-white"
+            className="text-sm font-semibold text-acao-texto hover:text-texto"
           >
             ← Voltar à turma
           </Link>
-          <p className="mt-8 text-xs font-bold uppercase tracking-[0.2em] text-lexis-300">
+          <p className="mt-8 text-xs font-bold uppercase tracking-[0.2em] text-acao-texto">
             Nova proposta
           </p>
-          <h1 className="mt-3 font-editorial text-4xl font-semibold text-white sm:text-5xl">
+          <h1 className="mt-3 font-editorial text-4xl font-semibold text-texto sm:text-5xl">
             Criar tema de redação
           </h1>
-          <p className="mt-4 max-w-3xl leading-7 text-lexis-200">
+          <p className="mt-4 max-w-3xl leading-7 text-texto-suave">
             A análise do repertório usa três critérios fixos: Legitimação, Pertinência e Uso produtivo. Você pode adicionar até dois critérios personalizados. Eles orientam a IA e não têm peso na nota.
           </p>
         </div>
@@ -238,7 +239,7 @@ export default function ProfessorNovoTemaPage() {
         aria-busy={status === 'salvando'}
       >
         <section className="surface-card rounded-[14px] p-5 sm:p-7">
-          <h2 className="text-xl font-semibold text-white">
+          <h2 className="text-xl font-semibold text-texto">
             Proposta
           </h2>
           <div className="mt-6 grid gap-6">
@@ -302,10 +303,10 @@ export default function ProfessorNovoTemaPage() {
         </section>
 
         <fieldset className="surface-card rounded-[14px] p-5 sm:p-7">
-          <legend className="px-2 text-xl font-semibold text-white">
+          <legend className="px-2 text-xl font-semibold text-texto">
             Critérios de avaliação
           </legend>
-          <p className="max-w-2xl text-sm leading-6 text-lexis-200">
+          <p className="max-w-2xl text-sm leading-6 text-texto-suave">
             Base fixa da Competência II. Os critérios personalizados aparecem depois da base na análise e na correção do professor.
           </p>
 
@@ -313,10 +314,10 @@ export default function ProfessorNovoTemaPage() {
             {formulario.criterios.map((criterio, indice) => (
               <li
                 key={criterio.idLocal}
-                className="rounded-[10px] border border-lexis-200/15 bg-lexis-950/40 p-4"
+                className="rounded-[10px] border border-borda bg-pagina/40 p-4"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h3 className="font-semibold text-white">
+                  <h3 className="font-semibold text-texto">
                     {indice < 3 ? `${criterio.nome} · fixo` : `Critério personalizado ${indice - 2}`}
                   </h3>
                   {indice >= 3 && <button
@@ -331,7 +332,7 @@ export default function ProfessorNovoTemaPage() {
                     </button>}
                 </div>
 
-                {indice < 3 ? <p className="mt-4 text-sm leading-6 text-lexis-200">{criterio.descricao}</p> : <div className="mt-4 grid gap-4">
+                {indice < 3 ? <p className="mt-4 text-sm leading-6 text-texto-suave">{criterio.descricao}</p> : <div className="mt-4 grid gap-4">
                   <Campo
                     label="Nome"
                     value={criterio.nome}
@@ -378,11 +379,11 @@ export default function ProfessorNovoTemaPage() {
               }))
             }
             disabled={formulario.criterios.length >= 5}
-            className="mt-5 min-h-11 rounded-[10px] bg-lexis-800 px-4 font-bold text-white disabled:opacity-45"
+            className="mt-5 min-h-11 rounded-[10px] bg-superficie-rebaixada px-4 font-bold text-texto disabled:opacity-45"
           >
             + Adicionar critério personalizado
           </button>
-          <p className="mt-3 text-sm text-lexis-200">Até dois personalizados.</p>
+          <p className="mt-3 text-sm text-texto-suave">Até dois personalizados.</p>
         </fieldset>
 
         {aviso && (
@@ -390,7 +391,7 @@ export default function ProfessorNovoTemaPage() {
             ref={avisoRef}
             tabIndex={-1}
             role={aviso.tipo === 'erro' ? 'alert' : 'status'}
-            className={`rounded-[10px] border p-4 text-sm outline-none focus:ring-4 focus:ring-lexis-300/20 ${
+            className={`rounded-[10px] border p-4 text-sm outline-none focus:ring-4 focus:ring-foco/20 ${
               aviso.tipo === 'erro'
                 ? 'border-red-300/25 bg-red-950/25 text-red-100'
                 : 'border-emerald-300/25 bg-emerald-950/25 text-emerald-100'
@@ -400,19 +401,19 @@ export default function ProfessorNovoTemaPage() {
           </div>
         )}
 
-        <div className="flex flex-wrap gap-3 border-t border-lexis-200/10 pt-6">
-          <button
+        <div className="flex flex-wrap gap-3 border-t border-borda pt-6">
+          <Botao
             type="submit"
             disabled={status === 'salvando'}
-            className="min-h-12 rounded-[10px] bg-lexis-400 px-6 font-bold text-[color:var(--text-on-action-blue)] disabled:opacity-55"
+            
           >
             {status === 'salvando'
               ? 'Criando tema...'
               : 'Criar tema'}
-          </button>
+          </Botao>
           <Link
             to={`/professor/turmas/${turmaId}`}
-            className="inline-flex min-h-12 items-center rounded-[10px] border border-lexis-200/20 px-6 font-bold text-lexis-100"
+            className="inline-flex min-h-12 items-center rounded-[10px] border border-borda px-6 font-bold text-texto"
           >
             Cancelar
           </Link>

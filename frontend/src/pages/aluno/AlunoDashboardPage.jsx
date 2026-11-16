@@ -56,18 +56,18 @@ const CORES_NOTA = {
   atencao:
     'bg-[var(--aluno-atencao-fundo)] text-[var(--aluno-atencao)]',
   neutro:
-    'bg-[var(--aluno-neutro-fundo)] text-lexis-200',
+    'bg-[var(--aluno-neutro-fundo)] text-texto-suave',
 }
 
 const CLASSES_ACAO = {
   suave:
     'bg-[var(--aluno-acao-suave)] text-[var(--aluno-acao-suave-texto)] hover:brightness-95',
   contorno:
-    'border border-[var(--aluno-borda-campo)] bg-lexis-900 text-lexis-100 hover:bg-[var(--aluno-neutro-fundo)]',
+    'border border-[var(--aluno-borda-campo)] bg-superficie text-texto hover:bg-[var(--aluno-neutro-fundo)]',
 }
 
 const classeCartao =
-  'rounded-xl border border-[var(--surface-border)] bg-lexis-900'
+  'rounded-xl border border-[var(--surface-border)] bg-superficie'
 
 function indicaSemMatricula(erro) {
   return (
@@ -164,10 +164,10 @@ function EsqueletoCartao({
       className={`${classeCartao} min-h-[236px] animate-pulse p-6 ${className}`}
     >
       <span className="sr-only">{rotulo}</span>
-      <div className="h-6 w-40 rounded-full bg-lexis-800" />
-      <div className="mt-6 h-7 w-3/4 rounded bg-lexis-800" />
-      <div className="mt-4 h-4 w-1/2 rounded bg-lexis-800" />
-      <div className="mt-8 h-11 w-[220px] max-w-full rounded-lg bg-lexis-800" />
+      <div className="h-6 w-40 rounded-full bg-superficie-rebaixada" />
+      <div className="mt-6 h-7 w-3/4 rounded bg-superficie-rebaixada" />
+      <div className="mt-4 h-4 w-1/2 rounded bg-superficie-rebaixada" />
+      <div className="mt-8 h-11 w-[220px] max-w-full rounded-lg bg-superficie-rebaixada" />
     </div>
   )
 }
@@ -199,7 +199,7 @@ function CartaoProposta({
         </h2>
         <p
           role="alert"
-          className="mt-2 text-sm leading-[22px] text-lexis-200"
+          className="mt-2 text-sm leading-[22px] text-texto-suave"
         >
           Não foi possível carregar as propostas da sua turma. Recarregue a página para tentar novamente.
         </p>
@@ -219,7 +219,7 @@ function CartaoProposta({
         >
           Nenhuma proposta pendente
         </h2>
-        <p className="mt-2 max-w-[520px] text-sm leading-[22px] text-lexis-200">
+        <p className="mt-2 max-w-[520px] text-sm leading-[22px] text-texto-suave">
           Quando houver uma proposta para escrever, ela aparecerá aqui. Consulte abaixo as propostas da sua turma e acompanhe as redações já enviadas.
         </p>
       </section>
@@ -234,7 +234,7 @@ function CartaoProposta({
   return (
     <section
       aria-labelledby="titulo-proposta"
-      className="min-h-[236px] rounded-xl border-2 border-[var(--color-brand-accent)] bg-lexis-900 px-[22px] pb-[11px] pt-[22px]"
+      className="min-h-[236px] rounded-xl border-2 border-[var(--color-brand-accent)] bg-superficie px-[22px] pb-[11px] pt-[22px]"
     >
       <div className="flex flex-wrap gap-3">
         <span
@@ -255,16 +255,16 @@ function CartaoProposta({
 
       <h2
         id="titulo-proposta"
-        className="mt-3.5 text-2xl font-semibold leading-[30px] tracking-[-0.29px] text-lexis-50 [overflow-wrap:anywhere]"
+        className="mt-3.5 text-2xl font-semibold leading-[30px] tracking-[-0.29px] text-texto [overflow-wrap:anywhere]"
       >
         {proposta.enunciado}
       </h2>
 
-      <p className="mt-3 text-sm leading-[22px] text-lexis-200">
+      <p className="mt-3 text-sm leading-[22px] text-texto-suave">
         {descricao.prazoVencido ? 'Prazo vencido em ' : 'Entrega até '}
         {formatarData(proposta.prazoEntrega, 'dataHora', { vazio: 'Prazo indisponível' })}
       </p>
-      <p className="mt-2 text-sm leading-[22px] text-lexis-200">
+      <p className="mt-2 text-sm leading-[22px] text-texto-suave">
         {descricao.orientacao}
       </p>
 
@@ -276,7 +276,7 @@ function CartaoProposta({
       </Botao>
 
       {tempoRascunho && (
-        <p className="mt-3 text-xs font-medium leading-[17px] text-lexis-200">
+        <p className="mt-3 text-xs font-medium leading-[17px] text-texto-suave">
           Rascunho salvo no servidor {tempoRascunho}.
         </p>
       )}
@@ -287,10 +287,10 @@ function CartaoProposta({
 function ListaPropostas({ status, propostas }) {
   return (
     <section aria-labelledby="titulo-propostas-turma" className="mt-8">
-      <h2 id="titulo-propostas-turma" className="aluno-titulo-interface text-xl font-semibold leading-[26px] text-lexis-50">
+      <h2 id="titulo-propostas-turma" className="aluno-titulo-interface text-xl font-semibold leading-[26px] text-texto">
         Propostas da turma
       </h2>
-      <p className="mt-2 text-sm leading-[22px] text-lexis-200">
+      <p className="mt-2 text-sm leading-[22px] text-texto-suave">
         Escolha a proposta que deseja abrir. Propostas com prazo vencido também permitem entrega, registrada com atraso.
       </p>
       {status === 'carregando' && (
@@ -299,12 +299,12 @@ function ListaPropostas({ status, propostas }) {
         </div>
       )}
       {status === 'erro' && (
-        <p role="alert" className={`${classeCartao} mt-4 p-6 text-sm text-lexis-200`}>
+        <p role="alert" className={`${classeCartao} mt-4 p-6 text-sm text-texto-suave`}>
           Não foi possível carregar a lista e a situação das propostas. Recarregue a página para tentar novamente.
         </p>
       )}
       {status === 'pronto' && propostas.length === 0 && (
-        <p className={`${classeCartao} mt-4 p-6 text-sm text-lexis-200`}>
+        <p className={`${classeCartao} mt-4 p-6 text-sm text-texto-suave`}>
           Sua turma ainda não tem propostas disponíveis.
         </p>
       )}
@@ -313,12 +313,12 @@ function ListaPropostas({ status, propostas }) {
           {propostas.map(({ proposta, prazoVencido, situacao, orientacao, acao }) => (
             <li key={proposta.id} className={`${classeCartao} flex min-w-0 flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between`}>
               <div className="min-w-0">
-                <h3 className="break-words text-lg font-semibold leading-6 text-lexis-50">{proposta.enunciado}</h3>
-                <p className="mt-2 text-sm font-semibold text-lexis-200">{situacao}</p>
-                <p className="mt-1 text-sm leading-[22px] text-lexis-200">
+                <h3 className="break-words text-lg font-semibold leading-6 text-texto">{proposta.enunciado}</h3>
+                <p className="mt-2 text-sm font-semibold text-texto-suave">{situacao}</p>
+                <p className="mt-1 text-sm leading-[22px] text-texto-suave">
                   {prazoVencido ? 'Prazo vencido em ' : 'Entrega até '}{formatarData(proposta.prazoEntrega, 'dataHora', { vazio: 'Prazo indisponível' })}
                 </p>
-                <p className="mt-1 text-sm leading-[22px] text-lexis-200">{orientacao}</p>
+                <p className="mt-1 text-sm leading-[22px] text-texto-suave">{orientacao}</p>
               </div>
               <Link to={acao.destino} className={`inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg px-5 text-[13px] font-semibold transition ${CLASSES_ACAO[acao.variante]}`}>
                 {acao.rotulo}
@@ -339,7 +339,7 @@ function Indicador({
 }) {
   return (
     <div className="min-w-0">
-      <dt className="text-xs font-medium leading-[17px] text-lexis-200">
+      <dt className="text-xs font-medium leading-[17px] text-texto-suave">
         {rotulo}
       </dt>
       <dd className="mt-px">
@@ -347,7 +347,7 @@ function Indicador({
           <>
             <span
               aria-hidden="true"
-              className="font-display block text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-lexis-50"
+              className="font-display block text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-texto"
             >
               —
             </span>
@@ -356,11 +356,11 @@ function Indicador({
             </span>
           </>
         ) : (
-          <span className="font-display block text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-lexis-50">
+          <span className="font-display block text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-texto">
             {valor}
           </span>
         )}
-        <span className="block text-xs font-medium leading-[17px] text-lexis-200">
+        <span className="block text-xs font-medium leading-[17px] text-texto-suave">
           {unidade}
         </span>
       </dd>
@@ -389,7 +389,7 @@ function CartaoDesempenho({ bloco }) {
         </h2>
         <p
           role="alert"
-          className="mt-3 text-sm leading-[22px] text-lexis-200"
+          className="mt-3 text-sm leading-[22px] text-texto-suave"
         >
           Não foi possível carregar seu desempenho. Recarregue a página para tentar novamente.
         </p>
@@ -448,10 +448,10 @@ function CartaoDesempenho({ bloco }) {
 
       <div className="mt-[13px] border-t border-[var(--surface-border)] pt-[13px]">
         <p className="flex items-baseline justify-between gap-3">
-          <span className="text-xs font-medium leading-[17px] text-lexis-300">
+          <span className="text-xs font-medium leading-[17px] text-acao-texto">
             Competência II — repertório
           </span>
-          <span className="text-[13px] font-semibold leading-[18px] text-lexis-300">
+          <span className="text-[13px] font-semibold leading-[18px] text-acao-texto">
             {possuiMediaCompetencia2 ? (
               `${mediaCompetencia2} / 200`
             ) : (
@@ -482,7 +482,7 @@ function CartaoDesempenho({ bloco }) {
           </div>
         )}
 
-        <p className="mt-2.5 text-xs font-medium leading-[17px] text-lexis-200">
+        <p className="mt-2.5 text-xs font-medium leading-[17px] text-texto-suave">
           {possuiMediaCompetencia2
             ? 'Média das suas redações corrigidas'
             : 'Suas médias aparecem aqui depois da primeira correção publicada.'}
@@ -515,10 +515,10 @@ function LinhaRedacao({
       />
 
       <div className="min-w-0">
-        <h3 className="break-words text-lg font-semibold leading-6 tracking-[-0.09px] text-lexis-50">
+        <h3 className="break-words text-lg font-semibold leading-6 tracking-[-0.09px] text-texto">
           {titulo}
         </h3>
-        <p className="mt-1 text-xs font-medium leading-[17px] text-lexis-200">
+        <p className="mt-1 text-xs font-medium leading-[17px] text-texto-suave">
           {descricao.legenda}
         </p>
       </div>
@@ -557,7 +557,7 @@ function ListaRedacoes({
     >
       <h2
         id="titulo-minhas-redacoes"
-        className="aluno-titulo-interface text-xl font-semibold leading-[26px] tracking-[-0.16px] text-lexis-50"
+        className="aluno-titulo-interface text-xl font-semibold leading-[26px] tracking-[-0.16px] text-texto"
       >
         Minhas redações
       </h2>
@@ -582,7 +582,7 @@ function ListaRedacoes({
       {bloco.status === 'erro' && (
         <p
           role="alert"
-          className={`${classeCartao} mt-4 p-6 text-sm leading-[22px] text-lexis-200`}
+          className={`${classeCartao} mt-4 p-6 text-sm leading-[22px] text-texto-suave`}
         >
           Não foi possível carregar suas redações. Recarregue a página para tentar novamente.
         </p>
@@ -591,7 +591,7 @@ function ListaRedacoes({
       {bloco.status === 'pronto' &&
         bloco.dados.length === 0 && (
           <p
-            className={`${classeCartao} mt-4 p-6 text-sm leading-[22px] text-lexis-200`}
+            className={`${classeCartao} mt-4 p-6 text-sm leading-[22px] text-texto-suave`}
           >
             Você ainda não começou nenhuma redação. Quando escrever a primeira, ela aparecerá aqui.
           </p>
@@ -665,17 +665,17 @@ function FormularioEntrarTurma({ onEntrou }) {
   return (
     <section
       aria-labelledby={`${idCampo}-titulo`}
-      className="mt-[25px] max-w-[700px] rounded-xl border-2 border-[var(--color-brand-accent)] bg-lexis-900 p-6"
+      className="mt-[25px] max-w-[700px] rounded-xl border-2 border-[var(--color-brand-accent)] bg-superficie p-6"
     >
       <h2
         id={`${idCampo}-titulo`}
-        className="aluno-titulo-interface text-xl font-semibold leading-[26px] tracking-[-0.16px] text-lexis-50"
+        className="aluno-titulo-interface text-xl font-semibold leading-[26px] tracking-[-0.16px] text-texto"
       >
         Entre na sua turma
       </h2>
       <p
         id={idAjuda}
-        className="mt-1 text-sm leading-[22px] text-lexis-200"
+        className="mt-1 text-sm leading-[22px] text-texto-suave"
       >
         Você ainda não participa de uma turma. Digite o código de oito caracteres enviado pelo professor para ver as propostas de redação.
       </p>
@@ -688,7 +688,7 @@ function FormularioEntrarTurma({ onEntrou }) {
         <div className="min-w-0 flex-1 sm:max-w-xs">
           <label
             htmlFor={idCampo}
-            className="block text-xs font-medium leading-[17px] text-lexis-200"
+            className="block text-xs font-medium leading-[17px] text-texto-suave"
           >
             Código da turma
           </label>
@@ -717,7 +717,7 @@ function FormularioEntrarTurma({ onEntrou }) {
               codigoAcesso.length !== 8
             }
             required
-            className="mt-2 h-11 w-full rounded-lg border border-[var(--aluno-borda-campo)] bg-[var(--page-background)] px-4 font-mono text-base font-bold uppercase tracking-[0.16em] text-lexis-50"
+            className="mt-2 h-11 w-full rounded-lg border border-[var(--aluno-borda-campo)] bg-[var(--page-background)] px-4 font-mono text-base font-bold uppercase tracking-[0.16em] text-texto"
           />
         </div>
 
@@ -750,7 +750,7 @@ function SubtituloTurma({ bloco }) {
     return (
       <span
         role="status"
-        className="block h-[25px] w-72 max-w-full animate-pulse rounded bg-lexis-800"
+        className="block h-[25px] w-72 max-w-full animate-pulse rounded bg-superficie-rebaixada"
       >
         <span className="sr-only">
           Carregando sua turma...
@@ -892,10 +892,10 @@ export default function AlunoDashboardPage() {
       }
     >
       <header>
-        <h1 className="text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-lexis-50">
+        <h1 className="text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-texto">
           Início
         </h1>
-        <p className="mt-[11px] min-h-[25px] text-base leading-[25px] text-lexis-200 [overflow-wrap:anywhere]">
+        <p className="mt-[11px] min-h-[25px] text-base leading-[25px] text-texto-suave [overflow-wrap:anywhere]">
           <SubtituloTurma bloco={painel.matricula} />
         </p>
       </header>

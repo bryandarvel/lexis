@@ -140,7 +140,7 @@ export default function CadastroPage() {
           Já possui uma conta?{' '}
           <Link
             to="/login"
-            className="font-bold text-lexis-200 underline decoration-lexis-400/60 underline-offset-4 transition hover:text-lexis-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lexis-300"
+            className="font-bold text-texto-suave underline decoration-acao/60 underline-offset-4 transition hover:text-texto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foco"
           >
             Voltar para o login
           </Link>
@@ -186,7 +186,7 @@ export default function CadastroPage() {
         />
 
         <fieldset className="space-y-3">
-          <legend className="text-sm font-semibold text-lexis-100">
+          <legend className="text-sm font-semibold text-texto">
             Seu perfil
           </legend>
           <div className="grid grid-cols-2 gap-3">
@@ -196,10 +196,10 @@ export default function CadastroPage() {
             ].map(([valor, rotulo]) => (
               <label
                 key={valor}
-                className={`cursor-pointer rounded-xl border px-4 py-3 text-center text-sm font-bold transition focus-within:ring-4 focus-within:ring-lexis-300/15 ${
+                className={`cursor-pointer rounded-xl border px-4 py-3 text-center text-sm font-bold transition focus-within:ring-4 focus-within:ring-foco/20 ${
                   dados.papel === valor
-                    ? 'border-lexis-300 bg-lexis-400/15 text-lexis-50'
-                    : 'border-lexis-300/20 bg-lexis-950/40 text-lexis-200 hover:border-lexis-300/45'
+                    ? 'border-acao bg-acao-suave text-texto'
+                    : 'border-borda-forte bg-pagina/40 text-texto-suave hover:border-borda-forte'
                 }`}
               >
                 <input

@@ -195,21 +195,21 @@ export default function AlunoNotificacoesPage() {
         <div className="mx-auto max-w-4xl">
           <Link
             to="/aluno"
-            className="text-sm font-semibold text-lexis-300 hover:text-white"
+            className="text-sm font-semibold text-acao-texto hover:text-texto"
           >
             ← Voltar ao painel
           </Link>
 
           <div className="mt-8 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-lexis-300">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-acao-texto">
                 Central do aluno
               </p>
-              <h1 className="mt-2 text-4xl font-black text-white">
+              <h1 className="mt-2 text-4xl font-black text-texto">
                 Notificações
               </h1>
             </div>
-            <p aria-live="polite" className="text-sm text-lexis-200">
+            <p aria-live="polite" className="text-sm text-texto-suave">
               {visivel.totalNaoLidas === 1
                 ? '1 aviso não lido'
                 : `${visivel.totalNaoLidas} avisos não lidos`}
@@ -229,10 +229,10 @@ export default function AlunoNotificacoesPage() {
 
           {visivel.status === 'erro' && (
             <div className="surface-card mt-8 rounded-[14px] p-8 text-center">
-              <h2 className="text-xl font-bold text-white">
+              <h2 className="text-xl font-bold text-texto">
                 Avisos indisponíveis
               </h2>
-              <p className="mt-3 text-lexis-200">
+              <p className="mt-3 text-texto-suave">
                 Recarregue a página para tentar novamente.
               </p>
             </div>
@@ -241,10 +241,10 @@ export default function AlunoNotificacoesPage() {
           {visivel.status === 'pronto' &&
             visivel.notificacoes.length === 0 && (
               <div className="surface-card mt-8 rounded-[14px] p-10 text-center">
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-xl font-bold text-texto">
                   Nenhuma notificação
                 </h2>
-                <p className="mt-3 text-lexis-200">
+                <p className="mt-3 text-texto-suave">
                   Avisos sobre suas correções e sua turma aparecem aqui.
                 </p>
               </div>
@@ -266,30 +266,30 @@ export default function AlunoNotificacoesPage() {
                           Boolean(visivel.processandoId) || !acao.acionavel
                         }
                         onClick={() => abrirNotificacao(notificacao)}
-                        className="surface-card group w-full rounded-[14px] p-6 text-left transition hover:-translate-y-0.5 hover:border-lexis-300/50 disabled:cursor-wait disabled:opacity-70"
+                        className="surface-card group w-full rounded-[14px] p-6 text-left transition hover:-translate-y-0.5 hover:border-borda-forte disabled:cursor-wait disabled:opacity-70"
                       >
                         <span className="flex items-start gap-4">
                           <span
                             aria-hidden="true"
                             className={`mt-2 h-2.5 w-2.5 shrink-0 rounded-full ${
                               notificacao.lidaEm
-                                ? 'bg-lexis-500/40'
-                                : 'bg-lexis-300'
+                                ? 'bg-acao-suave'
+                                : 'bg-acao'
                             }`}
                           />
                           <span className="min-w-0 flex-1">
                             <span className="flex flex-wrap items-center justify-between gap-2">
-                              <strong className="text-lg text-white">
+                              <strong className="text-lg text-texto">
                                 {notificacao.titulo}
                               </strong>
-                              <span className="text-xs text-lexis-300">
+                              <span className="text-xs text-acao-texto">
                                 {formatarData(notificacao.criadaEm, 'dataHora', { vazio: 'Data indisponível' })}
                               </span>
                             </span>
-                            <span className="mt-2 block leading-7 text-lexis-100">
+                            <span className="mt-2 block leading-7 text-texto">
                               {notificacao.mensagem}
                             </span>
-                            <span className="mt-4 inline-flex text-sm font-bold text-lexis-300 group-hover:text-white">
+                            <span className="mt-4 inline-flex text-sm font-bold text-acao-texto group-hover:text-texto">
                               {processando
                                 ? acao.rotuloProcessando
                                 : acao.rotulo}
