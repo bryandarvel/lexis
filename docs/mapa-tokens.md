@@ -5,10 +5,10 @@ Liga cada token por função (`frontend/src/styles/tokens.css`) ao token antigo 
 ## Situação
 
 - **Lote 3a (PR #147):** criou os tokens e os componentes base, sem usá-los.
-- **Lote 3b (Issue #148):** migrou os usos e removeu o antigo. A escala  (classes e variáveis ), o truque que trocava  por navy no tema claro e  não existem mais. As páginas usam os tokens por função. Os componentes sem uso (UX-028) e o CSS dos botões, campos, diálogos, avisos, etiquetas e estados vazios antigos também saíram.
-- **O que ainda existe por tela:** as variáveis  (painel do professor),  (entrada) e  (telas do aluno), mais ,  e  em . Elas guardam valores próprios de cada tela e dependem da reorganização das telas (Lotes 2 e 3 do plano); as colunas "Antigo" abaixo descrevem esse legado. Valores arbitrários de tamanho e hexadecimais soltos nas páginas (UX-031) também ficam para esse momento.
-- **D1 confirmada pelo Bryan no Figma.** Famílias Newsreader e Inter, navy  e azul , como no código e no protótipo.
-- **Fonte dos valores:** , bloco "Tokens por função" (e , tabela "Bloco → componente → token"). Essa pasta é ignorada pelo Git: a coluna "Protótipo" cita o nome da variável no arquivo, não um link. Onde o protótipo não define o token, a coluna diz "sem equivalente".
+- **Lote 3b (Issue #148):** migrou os usos e removeu o antigo. A escala `lexis-50…950` (classes e variáveis `--color-lexis-*`), o truque que trocava `text-white` por navy no tema claro e `--text-on-action-blue` não existem mais. As páginas usam os tokens por função. Os componentes sem uso (UX-028) e o CSS dos botões, campos, diálogos, avisos, etiquetas e estados vazios antigos também saíram.
+- **O que ainda existe por tela:** as variáveis `--panel-*` (painel do professor), `--login-*` (entrada) e `--aluno-*` (telas do aluno), mais `--surface-*`, `--page-background` e `--focus-color` em `index.css`. Elas guardam valores próprios de cada tela e dependem da reorganização das telas (Lotes 2 e 3 do plano); as colunas "Antigo" abaixo descrevem esse legado. Valores arbitrários de tamanho e hexadecimais soltos nas páginas (UX-031) também ficam para esse momento.
+- **D1 confirmada pelo Bryan no Figma.** Famílias Newsreader e Inter, navy `#002049` e azul `#1c6eba`, como no código e no protótipo.
+- **Fonte dos valores:** `output/prototipo-correcao/index.html`, bloco "Tokens por função" (e `NOTA-PARA-CODEX.md`, tabela "Bloco → componente → token"). Essa pasta é ignorada pelo Git: a coluna "Protótipo" cita o nome da variável no arquivo, não um link. Onde o protótipo não define o token, a coluna diz "sem equivalente".
 
 ## Como ler
 
