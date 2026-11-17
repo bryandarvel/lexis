@@ -25,7 +25,7 @@ test('o aluno mantém os cinco itens e os mesmos destinos', () => {
 
   assert.deepEqual(rotulos(itens), [
     'Início',
-    'Enviar redação',
+    'Escrever redação',
     'Minhas redações',
     'Feedbacks',
     'Perfil',

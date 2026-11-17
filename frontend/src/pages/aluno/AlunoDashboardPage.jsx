@@ -34,6 +34,7 @@ import {
   encontrarRascunhoDoTema,
   formatarIndicador,
   listarPropostasDoAluno,
+  organizarPropostasDoInicio,
 } from '../../utils/aluno-painel.js'
 import { normalizarCodigoAcesso } from '../../utils/class-code.js'
 
@@ -310,16 +311,13 @@ function ListaPropostas({ status, propostas }) {
       )}
       {status === 'pronto' && propostas.length > 0 && (
         <ul className="mt-4 space-y-3">
-          {propostas.map(({ proposta, prazoVencido, situacao, orientacao, acao }) => (
-            <li key={proposta.id} className={`${classeCartao} flex min-w-0 flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between`}>
-              <div className="min-w-0">
-                <h3 className="break-words text-lg font-semibold leading-6 text-texto">{proposta.enunciado}</h3>
-                <p className="mt-2 text-sm font-semibold text-texto-suave">{situacao}</p>
-                <p className="mt-1 text-sm leading-[22px] text-texto-suave">
+          {propostas.map(({ proposta, prazoVencido, situacao, acao }) => (
+            <li key={proposta.id} className={`${classeCartao} grid min-w-0 gap-2 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_minmax(9rem,auto)_minmax(7rem,auto)_auto] sm:items-center sm:gap-4`}>
+                <h3 className="break-words text-base font-semibold leading-6 text-texto">{proposta.enunciado}</h3>
+                <p className="text-sm leading-[22px] text-texto-suave">
                   {prazoVencido ? 'Prazo vencido em ' : 'Entrega até '}{formatarData(proposta.prazoEntrega, 'dataHora', { vazio: 'Prazo indisponível' })}
                 </p>
-                <p className="mt-1 text-sm leading-[22px] text-texto-suave">{orientacao}</p>
-              </div>
+                <p className="text-sm font-semibold text-texto-suave">{situacao}</p>
               <Link to={acao.destino} className={`inline-flex min-h-11 shrink-0 items-center justify-center rounded-controle px-5 text-[13px] font-semibold transition ${CLASSES_ACAO[acao.variante]}`}>
                 {acao.rotulo}
                 <span className="sr-only">{' '}— {proposta.enunciado}</span>
@@ -409,6 +407,13 @@ function CartaoDesempenho({ bloco }) {
   )
   const possuiMediaCompetencia2 =
     mediaCompetencia2 !== null
+
+  if (mediaGeral === null && ultimaNota === null && !possuiMediaCompetencia2) {
+    const total = desempenho.totalEnviadas ?? 0
+    return <p className="mt-4 text-sm text-texto-suave">
+      <strong>Seu desempenho:</strong> {total} {total === 1 ? 'redação enviada' : 'redações enviadas'} · Ainda sem nota publicada.
+    </p>
+  }
 
   return (
     <section
@@ -546,10 +551,11 @@ function LinhaRedacao({
   )
 }
 
-function ListaRedacoes({
+function CorrecoesRecentes({
   bloco,
   turmaAtivaId,
 }) {
+  if (bloco.status === 'pronto' && !bloco.dados.length) return null
   return (
     <section
       aria-labelledby="titulo-minhas-redacoes"
@@ -559,7 +565,7 @@ function ListaRedacoes({
         id="titulo-minhas-redacoes"
         className="text-xl font-semibold leading-[26px] tracking-[-0.16px] text-texto"
       >
-        Minhas redações
+        Corrigidas recentemente
       </h2>
 
       {bloco.status === 'carregando' && (
@@ -587,15 +593,6 @@ function ListaRedacoes({
           Não foi possível carregar suas redações. Recarregue a página para tentar novamente.
         </p>
       )}
-
-      {bloco.status === 'pronto' &&
-        bloco.dados.length === 0 && (
-          <p
-            className={`${classeCartao} mt-4 p-6 text-sm leading-[22px] text-texto-suave`}
-          >
-            Você ainda não começou nenhuma redação. Quando escrever a primeira, ela aparecerá aqui.
-          </p>
-        )}
 
       {bloco.status === 'pronto' &&
         bloco.dados.length > 0 && (
@@ -864,7 +861,9 @@ export default function AlunoDashboardPage() {
           agora,
         )
       : []
-  const descricaoProposta = propostas.find((item) => item.podeEnviar) ?? null
+  const { proxima: descricaoProposta, lista: propostasDaLista, corrigidas } =
+    organizarPropostasDoInicio(propostas, painel.redacoes.dados ?? [])
+  const blocoCorrigidas = { ...painel.redacoes, dados: corrigidas }
   const proposta = descricaoProposta?.proposta ?? null
   const rascunhoProposta = proposta
     ? encontrarRascunhoDoTema(
@@ -872,9 +871,6 @@ export default function AlunoDashboardPage() {
         proposta.id,
       )
     : null
-  const possuiRedacoes =
-    painel.redacoes.status === 'pronto' &&
-    painel.redacoes.dados.length > 0
   // undefined: matrícula ainda desconhecida, as ações não são restringidas.
   const turmaAtivaId =
     painel.matricula.status === 'pronto'
@@ -917,16 +913,16 @@ export default function AlunoDashboardPage() {
             onEntrou={recarregarAposMatricula}
           />
 
-          {possuiRedacoes && (
-            <ListaRedacoes
-              bloco={painel.redacoes}
+          {corrigidas.length > 0 && (
+            <CorrecoesRecentes
+              bloco={blocoCorrigidas}
               turmaAtivaId={turmaAtivaId}
             />
           )}
         </>
       ) : (
         <>
-          <div className="mt-[25px] grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_404px]">
+          <div className="mt-[25px]">
             <CartaoProposta
               status={statusProposta}
               proposta={proposta}
@@ -934,17 +930,15 @@ export default function AlunoDashboardPage() {
               agora={agora}
               descricao={descricaoProposta}
             />
-            <CartaoDesempenho
-              bloco={painel.desempenho}
-            />
           </div>
 
-          <ListaPropostas status={statusProposta} propostas={propostas} />
+          <ListaPropostas status={statusProposta} propostas={propostasDaLista} />
 
-          <ListaRedacoes
-            bloco={painel.redacoes}
+          <CorrecoesRecentes
+            bloco={blocoCorrigidas}
             turmaAtivaId={turmaAtivaId}
           />
+          <div className="mt-6 max-w-2xl"><CartaoDesempenho bloco={painel.desempenho} /></div>
         </>
       )}
     </AppShell>

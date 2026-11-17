@@ -4,6 +4,7 @@ import { bloquearRedeExterna, matricular, novaTurma } from '../professor-helpers
 test.beforeEach(async ({ context }) => { await bloquearRedeExterna(context) })
 
 const dialogo = (page, nome) => page.getByRole('dialog', { name: nome })
+const gerenciar = (page) => page.getByText('Gerenciar', { exact: true }).click()
 
 test('renomear a turma muda o nome em toda parte e preserva código e alunos', async ({ page, cenario }) => {
   const turma = await novaTurma(cenario, 'Turma para renomear')
@@ -15,6 +16,7 @@ test('renomear a turma muda o nome em toda parte e preserva código e alunos', a
   await entrar(page, cenario.professor)
   await page.goto('/professor/turmas/' + turma.id)
   await expect(page.getByRole('heading', { level: 1, name: 'Turma para renomear' })).toBeVisible()
+  await gerenciar(page)
   await page.getByRole('button', { name: 'Renomear turma', exact: true }).click()
   const caixa = dialogo(page, 'Renomear turma')
   await caixa.getByLabel('Nome da turma').fill(novoNome)
@@ -44,6 +46,7 @@ test('renomear recusa nome inválido sem alterar a turma', async ({ page, cenari
   const turma = await novaTurma(cenario, 'Turma nome inválido')
   await entrar(page, cenario.professor)
   await page.goto('/professor/turmas/' + turma.id)
+  await gerenciar(page)
   await page.getByRole('button', { name: 'Renomear turma', exact: true }).click()
   const caixa = dialogo(page, 'Renomear turma')
   await caixa.getByLabel('Nome da turma').fill('A')
@@ -63,6 +66,7 @@ test('gerar novo código invalida o antigo, ativa o novo e mantém quem já est�
   await entrar(page, cenario.professor)
   await page.goto('/professor/turmas/' + turma.id)
   await expect(page.getByText(turma.codigoAcesso, { exact: true })).toBeVisible()
+  await gerenciar(page)
   await page.getByRole('button', { name: 'Gerar novo código', exact: true }).click()
   const caixa = dialogo(page, 'Gerar um novo código de acesso?')
   await expect(caixa).toContainText('O código atual deixa de funcionar imediatamente.')
@@ -92,6 +96,7 @@ test('arquivar a turma encerra as matrículas, avisa o aluno e bloqueia qualquer
 
   await entrar(page, cenario.professor)
   await page.goto('/professor/turmas/' + turma.id)
+  await gerenciar(page)
   await page.getByRole('button', { name: 'Arquivar turma', exact: true }).click()
   const caixa = dialogo(page, 'Arquivar a turma “Turma para arquivar”?')
   await expect(caixa).toContainText('As matrículas de todos os alunos são encerradas.')
@@ -99,12 +104,13 @@ test('arquivar a turma encerra as matrículas, avisa o aluno e bloqueia qualquer
 
   // Interface: arquivada, sem ações de gestão nem criação de tema.
   await expect(page.getByRole('status').filter({ hasText: 'Turma arquivada. As matrículas ativas foram encerradas.' })).toBeVisible()
-  await expect(page.getByText('Situação').locator('xpath=following-sibling::dd')).toHaveText('Arquivada')
+  await expect(page.getByRole('heading', { name: 'Turma arquivada', exact: true })).toBeVisible()
   await expect(page.getByText(/Esta turma está arquivada desde/)).toBeVisible()
   for (const nome of ['Renomear turma', 'Gerar novo código', 'Arquivar turma']) {
     await expect(page.getByRole('button', { name: nome, exact: true })).toHaveCount(0)
   }
-  await expect(page.getByRole('link', { name: 'Criar tema de redação' })).toHaveCount(0)
+  await expect(page.getByRole('link', { name: 'Nova proposta' })).toHaveCount(0)
+  await page.getByRole('link', { name: /^Alunos \(/ }).click()
   await expect(page.getByRole('heading', { name: 'Lista indisponível em turma arquivada' })).toBeVisible()
 
   // API: estado arquivado e nenhuma alteração aceita.

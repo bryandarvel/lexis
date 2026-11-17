@@ -11,13 +11,16 @@ async function consultarEmLotes(itens, consultar) {
   return resultados
 }
 
-export async function carregarPainelProfessor() {
+export async function carregarPainelProfessor({ aoCarregarFila, signal } = {}) {
   const turmas = await listarTurmas()
+  if (signal?.aborted) return null
   const grupos = await consultarEmLotes(turmas, async (turma) => {
     const redacoes = await listarRedacoesDaTurma(turma.id)
     return redacoes.map((redacao) => ({ ...redacao, turma }))
   })
   const redacoes = grupos.flat()
+  if (signal?.aborted) return null
+  aoCarregarFila?.({ turmas, ...resumirPainelProfessor(turmas, redacoes, null) })
   let feedbacks = []
   try {
     feedbacks = await consultarEmLotes(

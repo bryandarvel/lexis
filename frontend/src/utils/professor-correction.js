@@ -127,8 +127,8 @@ export function sugestaoDoCriterio(analise, criterio) {
 export function comentarioEditavel(form, analise, criterio) {
   const comentario = form.criterionComments[criterio.id] ?? ''
   const sugestao = sugestaoDoCriterio(analise, criterio)
-  const sugerido = Boolean(sugestao && !comentario && !form.criterionReviewed?.[criterio.id])
-  return { texto: sugerido ? sugestao.diagnostico : comentario, sugerido }
+  const disponivel = Boolean(sugestao && !comentario && !form.criterionReviewed?.[criterio.id])
+  return { texto: comentario, sugestao: disponivel ? sugestao.diagnostico : null }
 }
 
 export function atualizarComentario(form, id, texto) {
@@ -156,5 +156,10 @@ export function organizarFila(redacoes, atualId) {
     .sort((a, b) => String(a.enviadaEm).localeCompare(String(b.enviadaEm)) || a.id.localeCompare(b.id))
   const indice = lista.findIndex((r) => r.id === atualId)
   const seguintes = indice < 0 ? [] : [...lista.slice(indice + 1), ...lista.slice(0, indice)]
-  return { posicao: indice < 0 ? null : indice + 1, total: lista.length, proxima: seguintes.find((r) => r.status === 'ENVIADA') ?? null }
+  return {
+    posicao: indice < 0 ? null : indice + 1,
+    total: lista.length,
+    anterior: indice > 0 ? lista[indice - 1] : null,
+    proxima: seguintes.find((r) => r.status === 'ENVIADA') ?? null,
+  }
 }

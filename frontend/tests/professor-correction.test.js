@@ -109,10 +109,10 @@ test('a base é reconhecida pelo nome e a cor vem da ordem', () => {
 test('exibe sugestão editável sem incorporá-la automaticamente ao feedback humano', () => {
   const form = criarFormularioFeedback(redacao, null)
   const analise = { status: 'CONCLUIDA', resultadoEstruturado: { analisePorCriterio: [{ ordem: 1, criterio: 'Legitimação', diagnostico: 'Sugestão consultiva.' }] } }
-  assert.deepEqual(comentarioEditavel(form, analise, criterio), { texto: 'Sugestão consultiva.', sugerido: true })
+  assert.deepEqual(comentarioEditavel(form, analise, criterio), { texto: '', sugestao: 'Sugestão consultiva.' })
   assert.deepEqual(montarDadosFeedback(form).criterios, [])
   const editado = atualizarComentario(form, 'c1', 'Texto reescrito pelo professor.')
-  assert.deepEqual(comentarioEditavel(editado, analise, criterio), { texto: 'Texto reescrito pelo professor.', sugerido: false })
+  assert.deepEqual(comentarioEditavel(editado, analise, criterio), { texto: 'Texto reescrito pelo professor.', sugestao: null })
   assert.deepEqual(montarDadosFeedback(editado).criterios, [{ criterioId: 'c1', comentario: 'Texto reescrito pelo professor.' }])
   assert.equal('criterionReviewed' in montarDadosFeedback(editado), false)
   assert.equal(form.criterionComments.c1, '')
@@ -121,18 +121,18 @@ test('exibe sugestão editável sem incorporá-la automaticamente ao feedback hu
 test('apagar ou descartar uma sugestão mantém o campo vazio inclusive no rascunho recuperado', () => {
   const analise = { status: 'CONCLUIDA', resultadoEstruturado: { analisePorCriterio: [{ ordem: 1, criterio: 'Legitimação', diagnostico: 'Sugestão consultiva.' }] } }
   const vazio = atualizarComentario(criarFormularioFeedback(redacao, null), 'c1', '')
-  assert.deepEqual(comentarioEditavel(vazio, analise, criterio), { texto: '', sugerido: false })
+  assert.deepEqual(comentarioEditavel(vazio, analise, criterio), { texto: '', sugestao: null })
   const recuperado = JSON.parse(JSON.stringify(vazio))
-  assert.deepEqual(comentarioEditavel(recuperado, analise, criterio), { texto: '', sugerido: false })
+  assert.deepEqual(comentarioEditavel(recuperado, analise, criterio), { texto: '', sugestao: null })
   assert.deepEqual(montarDadosFeedback(recuperado).criterios, [])
 })
 
 test('aceitar uma sugestão ou receber outra análise não sobrescreve a decisão humana', () => {
   const analise = { status: 'CONCLUIDA', resultadoEstruturado: { analisePorCriterio: [{ ordem: 1, criterio: 'Legitimação', diagnostico: 'Outra sugestão.' }] } }
   const aceito = atualizarComentario(criarFormularioFeedback(redacao, null), 'c1', 'Sugestão revisada.')
-  assert.deepEqual(comentarioEditavel(aceito, analise, criterio), { texto: 'Sugestão revisada.', sugerido: false })
+  assert.deepEqual(comentarioEditavel(aceito, analise, criterio), { texto: 'Sugestão revisada.', sugestao: null })
   const apagado = atualizarComentario(aceito, 'c1', '')
-  assert.deepEqual(comentarioEditavel(apagado, analise, criterio), { texto: '', sugerido: false })
+  assert.deepEqual(comentarioEditavel(apagado, analise, criterio), { texto: '', sugestao: null })
 })
 
 test('marcações e lista usam somente trechos reais e não duplicam evidências sobrepostas', () => {
@@ -148,16 +148,21 @@ test('marcações e lista usam somente trechos reais e não duplicam evidências
   assert.equal(evidenciasVerificadas('A fonte citada.', { ...analise, status: 'ERRO' }).trechos.length, 0)
 })
 
-test('a fila exclui rascunhos e Pular procura outra redação enviada sem mutar a lista', () => {
+test('a fila exclui rascunhos, indica a anterior e procura a próxima pendente sem mutar a lista', () => {
   const lista = [{ id: 'c', enviadaEm: '2026-10-03', status: 'AVALIADA' }, { id: 'b', enviadaEm: '2026-10-02', status: 'ENVIADA' }, { id: 'a', enviadaEm: '2026-10-01', status: 'ENVIADA' }, { id: 'd', status: 'RASCUNHO' }]
   const copia = structuredClone(lista)
   const fila = organizarFila(lista, 'b')
   assert.equal(fila.posicao, 2)
   assert.equal(fila.total, 3)
+  assert.equal(fila.anterior.id, 'a')
   assert.equal(fila.proxima.id, 'a')
+  assert.equal(organizarFila(lista, 'a').anterior, null)
+  assert.equal(organizarFila(lista, 'c').anterior.id, 'b')
+  assert.equal(organizarFila(lista, 'a').proxima.id, 'b')
   assert.deepEqual(lista, copia)
   assert.equal(organizarFila([lista[1]], 'b').proxima, null)
   assert.equal(organizarFila(lista, 'inexistente').posicao, null)
+  assert.equal(organizarFila(lista, 'inexistente').anterior, null)
 })
 
 test('preserva análise concluída e marcações quando a tentativa mais recente falha ou está processando', () => {
@@ -185,5 +190,5 @@ test('usa a conclusão mais recente sem transformar falha em sucesso nem alterar
   const antiga = { ...nova, id: 'antiga' }
   assert.equal(selecionarAnaliseParaCorrecao([nova, antiga]).concluida, nova)
   const form = atualizarComentario(criarFormularioFeedback(redacao, null), 'c1', 'Decisão humana preservada.')
-  assert.deepEqual(comentarioEditavel(form, nova, criterio), { texto: 'Decisão humana preservada.', sugerido: false })
+  assert.deepEqual(comentarioEditavel(form, nova, criterio), { texto: 'Decisão humana preservada.', sugestao: null })
 })

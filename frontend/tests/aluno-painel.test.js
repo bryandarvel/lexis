@@ -1,4 +1,21 @@
 import assert from 'node:assert/strict'
+
+test('o início usa a primeira proposta enviável e não duplica itens entre listas', () => {
+  const propostas = [
+    { proposta: { id: 'corrigida' }, podeEnviar: false },
+    { proposta: { id: 'atrasada' }, podeEnviar: true },
+    { proposta: { id: 'atrasada' }, podeEnviar: true },
+  ]
+  const corrigida = { temaId: 'corrigida', status: 'AVALIADA' }
+  const resultado = organizarPropostasDoInicio(propostas, [
+    corrigida,
+    { temaId: 'corrigida', status: 'AVALIADA' },
+    { temaId: 'atrasada', status: 'RASCUNHO' },
+  ])
+  assert.equal(resultado.proxima.proposta.id, 'atrasada')
+  assert.deepEqual(resultado.lista.map(({ proposta }) => proposta.id), ['atrasada'])
+  assert.deepEqual(resultado.corrigidas, [corrigida])
+})
 import { test } from 'node:test'
 
 import {
@@ -10,6 +27,7 @@ import {
   obterIniciais,
   descreverPrazoDoEditor,
   listarPropostasDoAluno,
+  organizarPropostasDoInicio,
   MENSAGEM_ENTREGA_ATRASADA,
   selecionarPropostaAberta,
 } from '../src/utils/aluno-painel.js'

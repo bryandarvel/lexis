@@ -20,6 +20,14 @@ test('a lista mostra só os alunos com matrícula ativa da turma, e o resumo aco
 
   await entrar(page, cenario.professor)
   await page.goto('/professor/turmas/' + turma.id)
+  await expect(page.getByRole('heading', { name: 'Propostas da turma' })).toBeVisible()
+  await page.getByRole('link', { name: 'Alunos (2)', exact: true }).click()
+  await expect(page).toHaveURL(/\?aba=alunos$/)
+  await page.goBack()
+  await expect(page.getByRole('heading', { name: 'Propostas da turma' })).toBeVisible()
+  await page.goForward()
+  await expect(page).toHaveURL(/\?aba=alunos$/)
+  await page.reload()
   const secao = page.getByRole('region', { name: 'Alunos da turma' })
   await expect(secao.getByText('2 alunos ativos')).toBeVisible()
   for (const aluno of [primeiro, segundo]) {
@@ -39,6 +47,7 @@ test('turma sem alunos mostra o estado vazio com o código de acesso', async ({ 
   const turma = await novaTurma(cenario, 'Turma vazia')
   await entrar(page, cenario.professor)
   await page.goto('/professor/turmas/' + turma.id)
+  await page.getByRole('link', { name: 'Alunos (0)', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Nenhum aluno nesta turma' })).toBeVisible()
   await expect(page.getByRole('region', { name: 'Alunos da turma' }).getByText(turma.codigoAcesso, { exact: true })).toBeVisible()
 })
@@ -56,6 +65,7 @@ test('desvincular encerra a matrícula, avisa o aluno, tira o acesso e preserva 
 
   await entrar(page, cenario.professor)
   await page.goto('/professor/turmas/' + turma.id)
+  await page.getByRole('link', { name: 'Alunos (2)', exact: true }).click()
   await expect(linhaDoAluno(page, saindo)).toBeVisible()
   await linhaDoAluno(page, saindo).getByRole('button', { name: /Desvincular/ }).click()
   const caixa = page.getByRole('dialog', { name: /Desvincular .* da turma\?/ })

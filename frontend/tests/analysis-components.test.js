@@ -96,7 +96,7 @@ test('trecho comum aos três critérios conserva vínculos e exibe as três core
     texto: 'Outro texto.', marcacoes: prepararMarcacoes('Outro texto.', criterios, form, null, new Set()), criterios,
   }))
   assert.doesNotMatch(divergente, /class="review-seal/)
-  assert.ok(divergente.includes('Uso produtivo: 0 trechos marcados'))
+  assert.doesNotMatch(divergente, /aria-label="Marcações no texto"/)
 })
 
 test('legenda distingue evidências de critérios e não esconde referências do desenvolvimento', () => {
@@ -109,7 +109,7 @@ test('legenda distingue evidências de critérios e não esconde referências do
   })) } }
   const form = { criterionTrechos: { 'c-0': evidencias } }
   const marcacoes = prepararMarcacoes(texto, criterios, form, analise, new Set())
-  const html = renderToStaticMarkup(createElement(EssayEvidenceText, { texto, marcacoes, criterios }))
+  const html = renderToStaticMarkup(createElement(EssayEvidenceText, { texto, marcacoes, criterios, analise }))
   assert.ok(html.includes('Legitimação: 5 trechos marcados'))
   assert.ok(html.includes('Pertinência: 0 trechos marcados'))
   assert.ok(html.includes('Uso produtivo: 0 trechos marcados'))

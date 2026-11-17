@@ -94,15 +94,15 @@ export default function EssayEvidenceText({ texto = '', criterios, marcacoes, an
       area.current?.focus()
     }}>Marcar com o teclado</Botao>
     {teclado && <p className="review-caption" role="status">Use as setas para mover, Shift e seta para selecionar, Enter para marcar e Escape para sair.</p>}
-    <ul className="review-evidence-legend" aria-label="Marcações no texto">
+    {(aprovados.length > 0 || analise?.status === 'CONCLUIDA') && <ul className="review-evidence-legend" aria-label="Marcações no texto">
       {criterios.map((c) => {
         const quantidade = porCriterio[c.id].marcados.length
         return <li key={c.id} className={`review-tone-${tomCriterio(c)}`}>
           <span className="review-color" aria-hidden="true" />{c.nome}: {quantidade} {quantidade === 1 ? 'trecho marcado' : 'trechos marcados'}
         </li>
       })}
-      {pendentes.length > 0 && <li>Sugestões da IA não aprovadas: {pendentes.length}</li>}
-    </ul>
+      {analise?.status === 'CONCLUIDA' && pendentes.length > 0 && <li>Sugestões da IA não aprovadas: {pendentes.length}</li>}
+    </ul>}
     {aprovados.length > 0 && <p className="review-caption">Os números identificam trechos, não critérios. Um mesmo trecho pode apoiar mais de um critério.</p>}
     <div ref={area} tabIndex={-1} className="review-essay-text" aria-label="Texto da redação" aria-describedby={instrucao} onKeyDown={usarTeclado}>
       {pontos.slice(0, -1).map((inicio, indice) => {

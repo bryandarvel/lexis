@@ -1,4 +1,4 @@
-import { formatarData } from '../../utils/formatar-data.js'
+import { descreverTempoDesde, formatarData } from '../../utils/formatar-data.js'
 import { formatarNumero } from '../../utils/formatar-numero.js'
 import Botao from '../../components/base/Botao.jsx'
 import {
@@ -47,11 +47,11 @@ const LIMIAR_AVISO_CARACTERES = 18_000
 const ABAS = [
   {
     id: 'digitar',
-    rotulo: 'Digitar redação',
+    rotulo: 'Digitar',
   },
   {
     id: 'foto',
-    rotulo: 'Enviar foto (OCR)',
+    rotulo: 'Enviar foto',
   },
 ]
 
@@ -139,10 +139,18 @@ function IndicadorSalvamento({
   podeSalvar,
   onSalvarAgora,
 }) {
-  const quando = formatarData(salvamento.salvoEm, 'dataHora')
+  const [agora, atualizarAgora] = useState(() => new Date())
+  useEffect(() => {
+    if (!salvamento.salvoEm) return undefined
+    const verificar = () => atualizarAgora(new Date())
+    verificar()
+    const intervalo = setInterval(verificar, 30_000)
+    return () => clearInterval(intervalo)
+  }, [salvamento.salvoEm])
+  const quando = descreverTempoDesde(salvamento.salvoEm, { agora })
   const estados = {
     salvando: {
-      texto: 'Salvando...',
+      texto: 'Salvando…',
       classe:
         'bg-[var(--aluno-neutro-fundo)] text-texto-suave',
     },
@@ -161,7 +169,7 @@ function IndicadorSalvamento({
     estados[salvamento.status] ??
     (quando
       ? {
-          texto: `Salvo no servidor em ${quando}`,
+          texto: `Salvo ${quando}`,
           classe:
             'bg-[var(--aluno-sucesso-fundo)] text-[var(--aluno-sucesso)]',
         }
@@ -175,6 +183,7 @@ function IndicadorSalvamento({
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
       <p
         id="status-salvamento"
+        title={formatarData(salvamento.salvoEm, 'dataHora') ?? undefined}
         role={
           salvamento.status === 'erro'
             ? 'alert'
@@ -788,7 +797,7 @@ export default function AlunoRedacaoPage() {
     return (
       <AppShell
         rotaEnviarRedacao={rotaEditor}
-        trilha={['Enviar redação']}
+        trilha={['Escrever redação']}
       >
         <EsqueletoEditor />
       </AppShell>
@@ -799,7 +808,7 @@ export default function AlunoRedacaoPage() {
     return (
       <AppShell
         rotaEnviarRedacao={rotaEditor}
-        trilha={['Enviar redação']}
+        trilha={['Escrever redação']}
       >
         <h1 className="text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-texto">
           Escrever redação
@@ -899,7 +908,7 @@ export default function AlunoRedacaoPage() {
   return (
     <AppShell
       rotaEnviarRedacao={rotaEditor}
-      trilha={['Enviar redação', tema.enunciado]}
+      trilha={['Escrever redação', tema.enunciado]}
     >
       <h1 className="text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-texto">
         {redacaoImutavel
