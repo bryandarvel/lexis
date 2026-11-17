@@ -1,0 +1,25 @@
+.vinculos-trecho {
+  margin-block: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--raio-controle);
+}
+.vinculos-trecho p { margin: 0; font-weight: 600; }
+.vinculos-trecho ul { display: flex; flex-wrap: wrap; gap: 0 0.75rem; padding: 0; list-style: none; }
+.vinculo-trecho-acao {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: inherit;
+  font-size: 0.8125rem;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+.vinculo-trecho-acao[aria-pressed="true"] { font-weight: 700; text-decoration-style: double; }
+.review-seal:focus-visible,
+.feedback-selo-trecho:focus-visible,
+.vinculo-trecho-acao:focus-visible,
+.vinculos-trecho p:focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: 2px;
+}

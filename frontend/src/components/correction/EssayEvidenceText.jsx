@@ -3,9 +3,11 @@ import Botao from '../base/Botao.jsx'
 import { chaveTrecho, criarTrechoDaSelecao, lerIntervaloSelecionado, limitesDeGrafemas, moverGrafema, podeAcrescentarTrecho } from '../../utils/trechos-feedback.js'
 import { tomCriterio } from '../../utils/professor-correction.js'
 import { resumirEvidencias } from '../../utils/ai-evidence.js'
+import { obterTomDaMarca } from '../../utils/criterio-cores.js'
 import { AjusteBordas } from './SelecaoTrechos.jsx'
+import VinculosDoTrecho from './VinculosDoTrecho.jsx'
 
-export default function EssayEvidenceText({ texto = '', criterios, marcacoes, analise, onMark, onEvidence, disabled }) {
+export default function EssayEvidenceText({ texto = '', criterios, marcacoes, analise, onMark, onEvidence, disabled, vinculo }) {
   const instrucao = useId()
   const area = useRef(null)
   const modoRef = useRef(null)
@@ -76,9 +78,11 @@ export default function EssayEvidenceText({ texto = '', criterios, marcacoes, an
   ])].sort((a, b) => a - b)
   const selo = (item, pendente) => (
     <button key={pendente ? item.chave : chaveTrecho(item)} type="button"
-      className={`review-seal review-tone-${tomCriterio(item.criterios[0])}${pendente ? ' is-pending' : ''}`}
+      id={pendente ? undefined : `review-selo-${chaveTrecho(item)}`}
+      className={`review-seal review-tone-${obterTomDaMarca(item.criterios.map((c) => c.ordem))}${pendente ? ' is-pending' : ''}`}
       data-numero={pendente ? 'IA' : item.numero} data-marca={!pendente ? chaveTrecho(item) : undefined}
       aria-label={`${pendente ? 'Sugestão da IA não aprovada' : `Trecho ${item.numero}`}: ${item.criterios.map((c) => c.nome).join(', ')}. ${item.trecho.slice(0, 100)}`}
+      aria-pressed={pendente ? undefined : Boolean(vinculo?.chaves.includes(chaveTrecho(item)))}
       onClick={() => onEvidence(item, pendente)} />
   )
   return <figure onKeyDown={(event) => {
@@ -104,6 +108,7 @@ export default function EssayEvidenceText({ texto = '', criterios, marcacoes, an
       {analise?.status === 'CONCLUIDA' && pendentes.length > 0 && <li>Sugestões da IA não aprovadas: {pendentes.length}</li>}
     </ul>}
     {aprovados.length > 0 && <p className="review-caption">Os números identificam trechos, não critérios. Um mesmo trecho pode apoiar mais de um critério.</p>}
+    {vinculo?.destinos.length > 1 && <VinculosDoTrecho vinculo={vinculo} />}
     <div ref={area} tabIndex={-1} className="review-essay-text" aria-label="Texto da redação" aria-describedby={instrucao} onKeyDown={usarTeclado}>
       {pontos.slice(0, -1).map((inicio, indice) => {
         const fim = pontos[indice + 1]
@@ -112,10 +117,11 @@ export default function EssayEvidenceText({ texto = '', criterios, marcacoes, an
         const tons = [...new Set(atuais.flatMap((item) => item.criterios.map(tomCriterio)))]
         const tom = tons[0] ?? tomCriterio(sugestoes[0]?.criterios[0] ?? {})
         const selecionado = teclado && intervalo.inicio <= inicio && intervalo.fim >= fim
+        const relacionado = atuais.some((item) => vinculo?.chaves.includes(chaveTrecho(item)))
         return <Fragment key={inicio}>
           {aprovados.filter((item) => item.inicio === inicio).map((item) => selo(item, false))}
           {pendentes.filter((item) => item.inicio === inicio).map((item) => selo(item, true))}
-          <span data-inicio={inicio} className={`review-fragment review-tone-${tom}${atuais.length ? ' is-marked' : ''}${sugestoes.length ? ' is-suggested' : ''}${selecionado ? ' is-selected' : ''}${teclado?.cursor === inicio ? ' has-caret' : ''}`}
+          <span data-inicio={inicio} className={`review-fragment review-tone-${tom}${atuais.length ? ' is-marked' : ''}${sugestoes.length ? ' is-suggested' : ''}${selecionado ? ' is-selected' : ''}${relacionado ? ' trecho-em-foco' : ''}${teclado?.cursor === inicio ? ' has-caret' : ''}`}
             style={tons.length > 1 ? {
               backgroundImage: tons.map((t) => `linear-gradient(var(--review-color-${t}),var(--review-color-${t}))`).join(','),
               backgroundSize: '100% 1px', backgroundRepeat: 'no-repeat',

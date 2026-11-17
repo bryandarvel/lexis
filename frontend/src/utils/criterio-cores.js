@@ -25,3 +25,11 @@ export function obterTomCriterio(criterioOuOrdem) {
 
   return String((ordem - 1) % TOTAL_TONS_CRITERIO)
 }
+
+// Um intervalo pode pertencer a vários critérios. O selo usa o primeiro
+// pela ordem do critério; as linhas no texto continuam mostrando todos.
+export function obterTomDaMarca(ordens) {
+  const primeira = ordens.reduce((menor, ordem) =>
+    Number.isInteger(ordem) && ordem > 0 && (menor === null || ordem < menor) ? ordem : menor, null)
+  return obterTomCriterio(primeira)
+}
