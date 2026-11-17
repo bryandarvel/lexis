@@ -2,7 +2,6 @@ import { formatarData } from '../../utils/formatar-data.js'
 import EstadoVazio from '../../components/base/EstadoVazio.jsx'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Botao from '../../components/base/Botao.jsx'
-import { motion } from 'motion/react'
 import { useNavigate } from 'react-router'
 
 import AppShell from '../../layouts/AppShell.jsx'
@@ -180,11 +179,8 @@ export default function ProfessorNotificacoesPage() {
 
   return (
     <AppShell conteudo="amplo" trilha={['Notificações']}>
-      <motion.div
+      <div
         className="panel-main avisos-main"
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.22 }}
       >
         <h1>Notificações</h1>
         <p className="panel-subtitle">
@@ -282,7 +278,7 @@ export default function ProfessorNotificacoesPage() {
             </ul>
           </>
         )}
-      </motion.div>
+      </div>
     </AppShell>
   )
 }

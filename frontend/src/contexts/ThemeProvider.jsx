@@ -3,11 +3,13 @@ import {
   useEffect,
   useLayoutEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 
 import { ThemeContext } from './theme-context.js'
 import {
+  aplicarTemaNoDocumento,
   decidirTemaInicial,
   gravarPreferencia,
   lerPreferenciaSalva,
@@ -28,9 +30,19 @@ export default function ThemeProvider({ children }) {
     () => obterPreferenciaSalva() !== null,
   )
 
+  // O script do <head> já aplicou o tema salvo antes do React montar; aqui só
+  // uma troca de verdade suspende as transições de cor.
+  const temaAplicado = useRef(null)
+
   useLayoutEffect(() => {
-    document.documentElement.dataset.theme = tema
-    document.documentElement.style.colorScheme = tema
+    const trocou =
+      temaAplicado.current !== null && temaAplicado.current !== tema
+
+    temaAplicado.current = tema
+
+    return aplicarTemaNoDocumento(document.documentElement, tema, {
+      suspenderTransicoes: trocou,
+    })
   }, [tema])
 
   // Só grava depois de uma escolha explícita: o tema padrão não vira uma

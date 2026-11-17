@@ -1,7 +1,6 @@
 import { obterTomCriterio } from '../../utils/criterio-cores.js'
 import { formatarData } from '../../utils/formatar-data.js'
 import { useEffect, useRef, useState } from 'react'
-import { motion } from 'motion/react'
 import { Link, useParams } from 'react-router'
 import Aviso from '../../components/base/Aviso.jsx'
 import Botao from '../../components/base/Botao.jsx'
@@ -311,7 +310,7 @@ export default function ProfessorTemaPage() {
       trilha={pronto
         ? [{ rotulo: 'Turmas', para: '/professor/turmas' }, { rotulo: pagina.turma.nome, para: `/professor/turmas/${turmaId}` }, 'Proposta']
         : ['Propostas']}>
-      <motion.div className="panel-main topic-main" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .2 }} aria-busy={pagina.status === 'carregando'}>
+      <div className="panel-main topic-main" aria-busy={pagina.status === 'carregando'}>
         {pagina.status === 'carregando' && <><h1>Proposta e critérios</h1><p role="status" className="panel-subtitle">Carregando proposta…</p><div className="topic-loading" aria-hidden="true"><div className="skeleton-block" /><div className="skeleton-block" /><div className="skeleton-block" /></div></>}
         {pagina.status === 'erro' && <><h1>Proposta e critérios</h1><section className="panel-error" role="alert"><h2>Não foi possível abrir a proposta</h2><p>{pagina.mensagem}</p><Botao onClick={() => setTentativa((atual) => atual + 1)}>Tentar novamente</Botao><Botao as={Link} variante="secundario" to="/professor/turmas">Voltar às turmas</Botao></section></>}
         {pronto && <>
@@ -399,7 +398,7 @@ export default function ProfessorTemaPage() {
             />
           )}
         </>}
-      </motion.div>
+      </div>
     </AppShell>
   )
 }
