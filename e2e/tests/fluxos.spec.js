@@ -272,9 +272,11 @@ test('trechos manuais sem IA: teclado, cancelamento, falha de gravação, retorn
   expect(feedback.criterios[0].trechos).toEqual([expect.objectContaining({ trecho: textoLongo.slice(0, 16), sugeridoPorIa: false })])
 
   for (const tema of ['claro', 'escuro']) {
-    const alternar = page.getByRole('button', { name: 'Ativar tema ' + tema })
-    if (await alternar.isVisible()) await alternar.click()
-    await expect(page.getByRole('button', { name: 'Ativar tema ' + (tema === 'claro' ? 'escuro' : 'claro') })).toBeVisible()
+    // O alternador tem nome fixo ("Tema escuro"); o estado vai em aria-pressed.
+    const alternar = page.getByRole('button', { name: 'Tema escuro', exact: true })
+    const queroEscuro = tema === 'escuro'
+    if ((await alternar.getAttribute('aria-pressed')) !== String(queroEscuro)) await alternar.click()
+    await expect(alternar).toHaveAttribute('aria-pressed', String(queroEscuro))
     for (const largura of [320, 360, 768, 1024, 1366, 1440]) {
       await page.setViewportSize({ width: largura, height: 768 })
       expect(await page.evaluate(() => document.documentElement.scrollWidth), tema + ' a ' + largura + ' px').toBeLessThanOrEqual(largura)

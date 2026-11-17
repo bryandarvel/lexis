@@ -41,3 +41,49 @@ export function gravarPreferencia(
     return false
   }
 }
+
+// Classe posta na raiz só durante a troca: suspende as transições de cor para
+// que nada mude de cor em tempos diferentes (nenhuma animação acima de 1 ms).
+export const CLASSE_TROCANDO_TEMA = 'tema-trocando'
+
+// Aplica o tema na raiz do documento, de forma síncrona e instantânea. Sem
+// `suspenderTransicoes`, só escreve data-theme e color-scheme. Com ele, as
+// transições de cor ficam desligadas até dois quadros depois da troca. Devolve
+// a função que desfaz a suspensão (usada na limpeza do efeito).
+export function aplicarTemaNoDocumento(
+  raiz,
+  tema,
+  {
+    suspenderTransicoes = false,
+    agendarQuadro = globalThis.requestAnimationFrame?.bind(globalThis),
+  } = {},
+) {
+  if (suspenderTransicoes) raiz.classList.add(CLASSE_TROCANDO_TEMA)
+
+  raiz.dataset.theme = tema
+  raiz.style.colorScheme = tema
+
+  if (!suspenderTransicoes) return () => {}
+
+  const religar = () => raiz.classList.remove(CLASSE_TROCANDO_TEMA)
+
+  if (!agendarQuadro) {
+    religar()
+    return () => {}
+  }
+
+  let cancelado = false
+
+  // O primeiro quadro pinta o tema novo sem transição; o segundo já é seguro
+  // para religá-las, porque nenhum valor muda na volta.
+  agendarQuadro(() => {
+    agendarQuadro(() => {
+      if (!cancelado) religar()
+    })
+  })
+
+  return () => {
+    cancelado = true
+    religar()
+  }
+}

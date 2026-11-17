@@ -2,7 +2,6 @@ import { formatarSaudacaoData } from '../../utils/formatar-data.js'
 import EstadoVazio from '../../components/base/EstadoVazio.jsx'
 import { useEffect, useRef, useState } from 'react'
 import Botao from '../../components/base/Botao.jsx'
-import { motion } from 'motion/react'
 import { Link } from 'react-router'
 
 import AppShell from '../../layouts/AppShell.jsx'
@@ -68,11 +67,8 @@ export default function ProfessorDashboardPage() {
 
   return (
     <AppShell conteudo="amplo" trilha={['Painel']} turmas={pagina.turmas} pronto={pagina.status === 'pronto'} onRedacoes={() => irParaFila()}>
-      <motion.div
+      <div
         className="panel-main"
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: .22 }}
       >
         <h1>Painel</h1>
         <p className="panel-subtitle">
@@ -136,7 +132,7 @@ export default function ProfessorDashboardPage() {
             )}
           </>
         )}
-      </motion.div>
+      </div>
     </AppShell>
   )
 }

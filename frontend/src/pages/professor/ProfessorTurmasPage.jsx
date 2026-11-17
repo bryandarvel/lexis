@@ -1,7 +1,6 @@
 import Etiqueta from '../../components/base/Etiqueta.jsx'
 import EstadoVazio from '../../components/base/EstadoVazio.jsx'
 import { useEffect, useRef, useState } from 'react'
-import { motion } from 'motion/react'
 import { Link } from 'react-router'
 import Aviso from '../../components/base/Aviso.jsx'
 import Botao from '../../components/base/Botao.jsx'
@@ -139,7 +138,7 @@ export default function ProfessorTurmasPage() {
 
   return (
     <AppShell conteudo="amplo" trilha={['Turmas']} turmas={pagina.turmas} pronto={pronto}>
-      <motion.div className="panel-main classes-main" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .22 }}>
+      <div className="panel-main classes-main">
         <div className="classes-heading">
           <div><h1>Turmas</h1><p className="panel-subtitle">Gerencie turmas, códigos de acesso e propostas.</p></div>
           <Botao type="button" className="classes-create" disabled={!pronto} onClick={() => { setSucesso(''); setCriando(true) }}>+ Nova turma</Botao>
@@ -173,7 +172,7 @@ export default function ProfessorTurmasPage() {
           </>
         )}
         {criando && <NovaTurmaDialog onClose={() => setCriando(false)} onCreated={turmaCriada} />}
-      </motion.div>
+      </div>
     </AppShell>
   )
 }

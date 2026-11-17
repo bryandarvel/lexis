@@ -226,21 +226,308 @@
   line-height: 1;
 }
 
+/* Sino como botão (abre o painel de avisos) */
+.casca-sino-conjunto {
+  position: relative;
+  flex: none;
+}
+
+button.casca-sino {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+/*
+ * Painel de avisos (Lote 5, §9B). No computador é um popover ancorado ao sino,
+ * não modal; abaixo de 768 px vira folha de tela cheia, aberta com showModal.
+ * O foco usa o anel do conteúdo: o painel tem superfície própria, não o navy
+ * da barra.
+ */
+.casca-avisos {
+  inset: auto;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-cartao);
+  background: var(--superficie-flutuante);
+  color: var(--texto);
+  box-shadow: var(--sombra-flutuante);
+}
+
+.casca-avisos[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.casca-avisos[data-modal="false"] {
+  position: absolute;
+  top: calc(100% + 3px);
+  right: 0;
+  z-index: 50;
+  width: 23.75rem;
+  max-width: calc(100vw - 1.5rem);
+  max-height: 70vh;
+}
+
+.casca-avisos[data-modal="true"] {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  border: 0;
+  border-radius: 0;
+}
+
+.casca-avisos :focus-visible {
+  outline-color: var(--foco);
+}
+
+.casca-avisos__cabecalho {
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1rem 0.75rem;
+  border-bottom: 1px solid var(--borda);
+}
+
+.casca-avisos__titulo {
+  margin: 0;
+  font-family: var(--fonte-interface);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5rem;
+}
+
+.casca-avisos__titulo:focus-visible {
+  outline-offset: 2px;
+}
+
+.casca-avisos__contagem {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+}
+
+.casca-avisos__fechar,
+.casca-avisos__acao {
+  min-height: 2.75rem;
+  padding: 0 0.875rem;
+  border: 1px solid var(--borda-forte);
+  border-radius: var(--raio-controle);
+  background: transparent;
+  color: var(--texto);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.casca-avisos__corpo {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.casca-avisos__lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.casca-aviso {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  padding: 0.25rem 1rem 0.75rem;
+  border-bottom: 1px solid var(--borda);
+}
+
+.casca-aviso__corpo {
+  display: flex;
+  gap: 0.625rem;
+  width: 100%;
+  padding: 0.5rem 0.25rem;
+  border-radius: var(--raio-controle);
+  color: inherit;
+  text-decoration: none;
+}
+
+a.casca-aviso__corpo:hover {
+  background: var(--superficie-rebaixada);
+}
+
+.casca-aviso__ponto {
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-top: 0.4375rem;
+  border-radius: var(--raio-pilula);
+  background: var(--acao);
+}
+
+.casca-aviso[data-lido="true"] .casca-aviso__ponto {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--borda-forte);
+}
+
+.casca-aviso__texto {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.casca-aviso__titulo {
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.375rem;
+}
+
+.casca-aviso[data-lido="true"] .casca-aviso__titulo {
+  font-weight: 500;
+}
+
+.casca-aviso__mensagem,
+.casca-aviso__contexto {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--texto-suave);
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.casca-aviso__contexto {
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}
+
+.casca-aviso__data {
+  color: var(--texto-suave);
+  font-size: 0.75rem;
+  line-height: 1.125rem;
+}
+
+.casca-aviso__marcar {
+  min-height: 2.75rem;
+  margin-left: 0.875rem;
+  padding: 0 0.5rem;
+  border: 0;
+  background: transparent;
+  color: var(--acao-texto);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.casca-aviso__marcar:disabled {
+  cursor: progress;
+  text-decoration: none;
+}
+
+.casca-aviso__falha,
+.casca-avisos__erro p {
+  margin: 0;
+  color: var(--erro);
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+}
+
+.casca-avisos__erro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--borda);
+  background: var(--superficie-rebaixada);
+}
+
+.casca-avisos__estado {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 1.5rem 1rem;
+  color: var(--texto-suave);
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+}
+
+.casca-avisos__estado p {
+  margin: 0;
+}
+
+.casca-avisos__vazio-titulo {
+  color: var(--texto);
+  font-weight: 600;
+}
+
+.casca-avisos__esqueleto {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.casca-avisos__esqueleto-linha {
+  display: block;
+  height: 3.5rem;
+  border-radius: var(--raio-controle);
+  background: var(--superficie-rebaixada);
+}
+
+.casca-avisos__rodape {
+  flex: none;
+  padding: 0.25rem 1rem;
+  border-top: 1px solid var(--borda);
+}
+
+.casca-avisos__todas {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  color: var(--acao-texto);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 /*
  * O botão de tema acompanha os demais controles da barra em vez da pílula
  * clara do index.css. Mantém o alvo de 44 px nas duas direções.
  */
 .casca .casca-barra .theme-toggle {
-  min-width: 2.75rem;
-  padding-inline: 0.75rem;
-  border-color: var(--casca-icone);
-  background: var(--surface-shell-3);
   color: var(--texto-sobre-shell);
 }
 
-.casca .casca-barra .theme-toggle:hover {
+.casca .casca-barra .theme-toggle__trilho {
+  border-color: var(--casca-icone);
+  background: var(--surface-shell-3);
+  color: var(--casca-texto-suave);
+}
+
+.casca .casca-barra .theme-toggle__polegar {
+  background: var(--texto-sobre-shell);
+  color: var(--surface-shell-1);
+}
+
+.casca .casca-barra .theme-toggle:hover .theme-toggle__trilho {
   border-color: var(--casca-texto-suave);
-  background: var(--surface-shell-4);
 }
 
 /* Menu do usuário */
