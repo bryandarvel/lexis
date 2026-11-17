@@ -6,7 +6,7 @@ Plataforma web acadêmica para produção, análise e correção de redações, 
 
 ## Arquitetura
 
-- **Frontend:** React, Vite, Tailwind CSS, Motion e GSAP.
+- **Frontend:** React, Vite, Tailwind CSS e Motion.
 - **Backend:** Node.js e Express.
 - **Banco de dados:** MySQL 8.4, Prisma ORM e Docker Compose.
 - **Autenticação:** JWT, refresh token em cookie HttpOnly e bcrypt.
