@@ -40,6 +40,9 @@
 .review-seal { display: inline-flex; vertical-align: middle; margin-inline: 1px 3px; padding: 4px; border: 1px solid var(--review-tone); border-radius: var(--raio-marca); background: var(--review-highlight); color: var(--panel-text); font: 700 11px/1 var(--fonte-interface); user-select: none; cursor: pointer; }
 .review-seal::before { content: attr(data-numero); }
 .review-seal.is-pending { border-style: dashed; background: transparent; }
+.review-seal[aria-pressed="true"] { box-shadow: inset 0 0 0 1px var(--review-tone); text-decoration: underline; }
+.review-fragment.trecho-em-foco { border-bottom: 3px double var(--review-tone); }
+.review-comment.comentario-em-foco { outline: 2px solid var(--review-tone); outline-offset: -2px; }
 .review-mark-bar { position: sticky; bottom: 8px; z-index: 2; margin-top: 12px; padding: 12px; border: 1px solid var(--panel-border); border-radius: var(--raio-cartao); background: var(--panel-surface); }
 .review-mark-bar h3 { margin: 0; font-size: 14px; }
 .review-mark-bar .review-mark-actions { margin-top: 8px; }

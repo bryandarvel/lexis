@@ -10,6 +10,7 @@ import CriterionComments from '../../components/correction/CriterionComments.jsx
 import AppShell from '../../layouts/AppShell.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
 import { useRascunho } from '../../hooks/useRascunho.js'
+import { focarVinculo, useVinculoDeTrechos } from '../../hooks/useVinculoDeTrechos.js'
 import { listarAnalisesIa, solicitarAnaliseIa } from '../../services/analises-ia.js'
 import { obterFeedbackProfessor, publicarFeedback, salvarRascunhoFeedback } from '../../services/feedbacks.js'
 import { listarRedacoesDaTurma, obterRedacaoProfessor } from '../../services/redacoes.js'
@@ -35,6 +36,7 @@ export default function ProfessorRedacaoPage() {
 
 function Correcao({ redacaoId, usuarioId }) {
   const navigate = useNavigate()
+  const { vinculo, selecionar, limpar, aoPressionarTecla } = useVinculoDeTrechos()
   const [pagina, setPagina] = useState({ status: 'carregando', analises: [], fila: null })
   const [tentativa, setTentativa] = useState(0)
   const [form, setForm] = useState(formVazio)
@@ -89,6 +91,7 @@ function Correcao({ redacaoId, usuarioId }) {
     if (!operacao.current) setForm((f) => atualizarComentario(f, id, valor))
   }
   function mudarTrechos(id, trechos) {
+    limpar()
     if (!operacao.current) setForm((f) => atualizarTrechos(f, id, trechos))
   }
   function recuperarRascunho() {
@@ -191,15 +194,23 @@ function Correcao({ redacaoId, usuarioId }) {
     }
     navigate(`/professor/redacoes/${destino.id}`)
   }
-  function focar(alvo) {
-    alvo?.scrollIntoView({ block: 'nearest' })
-    alvo?.focus({ preventScroll: true })
-  }
   function abrirComentarios(item, pendente) {
-    const alvo = document.getElementById(pendente ? `review-suggestion-${item.chave}` : `review-mark-${item.criterios[0].id}-${chaveTrecho(item)}`)
+    if (!pendente) {
+      const chave = chaveTrecho(item)
+      const destinos = item.criterios.map(({ id, nome }) => ({ id: `review-comment-${id}`, nome }))
+      selecionar({ origem: `review-selo-${chave}`, chaves: [chave], criterios: item.criterios.map((c) => c.id), destinos, numero: item.numero },
+        destinos.length === 1 ? destinos[0].id : undefined)
+      return
+    }
+    const alvo = document.getElementById(`review-suggestion-${item.chave}`)
     const details = alvo?.closest('details')
     if (details) details.open = true
-    focar(alvo)
+    focarVinculo(alvo)
+  }
+
+  function destacarComentario(criterio) {
+    const chaves = marcacoes.porCriterio[criterio.id].marcados.map(chaveTrecho)
+    selecionar({ origem: `review-destacar-${criterio.id}`, chaves, criterios: [criterio.id] }, `review-selo-${chaves[0]}`)
   }
 
   const pronto = pagina.status === 'pronto'
@@ -229,7 +240,7 @@ function Correcao({ redacaoId, usuarioId }) {
 
   return <AppShell imersivo trilha={trilha} pronto={pronto} turmas={pronto ? [redacao.tema.turma] : []}
     indicador={pagina.fila?.posicao ? <span className="review-position">Redação {pagina.fila.posicao} de {pagina.fila.total}</span> : null}>
-    <div className="review-main">
+    <div className="review-main" onKeyDown={aoPressionarTecla}>
       {pagina.status === 'carregando' && <div className="review-loading"><h1>Correção do professor</h1><p role="status">Carregando redação e avaliação…</p><div aria-hidden="true" className="review-loading-grid"><div className="skeleton-block" /><div className="skeleton-block" /><div className="skeleton-block" /></div></div>}
       {pagina.status === 'erro' && <section className="review-card review-load-error" role="alert"><h1>Não foi possível abrir a redação</h1><p>{pagina.mensagem}</p><Botao onClick={() => setTentativa((v) => v + 1)}>Tentar novamente</Botao></section>}
       {pronto && <div className="review-grid">
@@ -243,7 +254,7 @@ function Correcao({ redacaoId, usuarioId }) {
           {!rascunhoDivergente && rascunho.salvoEm && <p className="review-caption" role="status">Alterações locais protegidas em {formatarData(rascunho.salvoEm, 'dataHora', { vazio: 'Não informada' })}.</p>}
           <article className="review-card review-essay">
             <div className="review-essay-heading"><h2 id="review-essay-title" tabIndex={-1}>Redação do aluno</h2><span className="review-caption">{texto.trim() ? texto.trim().split(/\s+/u).length : 0} palavras</span></div>
-            <EssayEvidenceText texto={texto} criterios={criterios} marcacoes={marcacoes} analise={analise} disabled={bloqueado}
+            <EssayEvidenceText texto={texto} criterios={criterios} marcacoes={marcacoes} analise={analise} disabled={bloqueado} vinculo={vinculo}
               onMark={(id, trecho) => mudarTrechos(id, [...marcacoes.porCriterio[id].marcados, trecho])} onEvidence={abrirComentarios} />
             <details className="review-submission"><summary>Informações da entrega</summary><p>{redacao.origemTexto === 'OCR' ? 'Texto digitalizado por OCR' : 'Texto digitado'} · {redacao.enviadaComAtraso ? 'Enviada com atraso' : 'Enviada no prazo'}</p><p>Enviada em {formatarData(redacao.enviadaEm, 'dataHora', { vazio: 'Não informada' })}. Prazo: {formatarData(redacao.prazoConsideradoEm, 'dataHora', { vazio: 'Não informada' })}.</p></details>
           </article>
@@ -253,9 +264,9 @@ function Correcao({ redacaoId, usuarioId }) {
         <aside className="review-tools" aria-label="Margem de correção">
           <AnalysisPanel analysis={ultimaAnalise} resultAnalysis={analise} falhaAnterior={falhaAnteriorPublicacao} avisoAnterior={avisoAnteriorPublicacao} retryAt={analysisRetryAt} isRequesting={analysisBusy} notice={analysisNotice} disabled={bloqueado} onRequest={() => analisar()} onRefresh={() => analisar(true)} />
           <CriterionComments criterios={criterios} analise={analise} form={form} disabled={bloqueado} onChange={mudarCriterio} textoRedacao={texto}
-            marcacoes={marcacoes.porCriterio} numeros={numeros} onTrechos={mudarTrechos}
+            marcacoes={marcacoes.porCriterio} numeros={numeros} onTrechos={mudarTrechos} vinculo={vinculo} onDestacar={destacarComentario}
             onDescartar={(chave) => setDescartadas((atual) => new Set([...atual, chave]))}
-            onVerNoTexto={(item) => focar(document.querySelector(`[data-marca="${chaveTrecho(item)}"]`))} />
+            onVerNoTexto={(item) => focarVinculo(document.getElementById(`review-selo-${chaveTrecho(item)}`))} />
         </aside>
         <section className="review-evaluation" aria-label="Avaliação">
           <FeedbackEditor action={feedbackAction} form={form} onFieldChange={mudarCampo} bloqueado={recarregarObrigatorio} />

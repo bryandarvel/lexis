@@ -5,9 +5,17 @@ import {
   TOM_NEUTRO,
   TOTAL_TONS_CRITERIO,
   obterTomCriterio,
+  obterTomDaMarca,
 } from '../src/utils/criterio-cores.js'
 import { obterTomCriterio as tomDoAluno } from '../src/utils/aluno-feedback.js'
 import { tomCriterio as tomDoProfessor } from '../src/utils/professor-correction.js'
+
+test('o selo usa a menor ordem válida do próprio intervalo, sem depender da lista', () => {
+  assert.equal(obterTomDaMarca([2, 1]), '0')
+  assert.equal(obterTomDaMarca([6, undefined, 2]), '1')
+  assert.equal(obterTomDaMarca([null, 0, '1']), TOM_NEUTRO)
+  assert.equal(obterTomDaMarca([]), TOM_NEUTRO)
+})
 
 const criterio = (ordem, nome = 'Critério') => ({ id: `c-${ordem}`, nome, ordem })
 

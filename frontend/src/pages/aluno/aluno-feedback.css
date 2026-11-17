@@ -30,13 +30,16 @@
   min-width: 0;
 }
 
+.feedback-so-impressao { display: none; }
+
 /*
  * "Baixar em PDF" usa a impressão do navegador. As regras só valem quando a
  * página de feedback está montada: o shell do aluno, os botões e os
- * controles somem, e o conteúdo sai em preto sobre branco.
+ * controles somem. Os trechos mantêm a cor e o número do feedback.
  */
 @media print {
-  @page {
+  @page lexis-feedback {
+    size: A4;
     margin: 16mm 14mm;
   }
 
@@ -78,6 +81,7 @@
     border-color: #8c8c8c !important;
     box-shadow: none !important;
   }
+  .aluno-feedback { page: lexis-feedback; }
 
   .aluno-feedback .feedback-impressao-grade {
     display: block !important;
@@ -172,12 +176,15 @@
 }
 
 .feedback-trecho {
-  /* Marca não interativa dentro do texto corrido: sem alvo de toque. */
   display: inline;
   padding: 1px 2px;
   border-bottom: 2px solid var(--feedback-tom);
   border-radius: var(--raio-marca);
   background: color-mix(in srgb, var(--feedback-tom) 16%, transparent);
+  background-image: var(--feedback-faixas, none);
+  background-repeat: no-repeat;
+  background-size: 100% 1px;
+  background-position: var(--feedback-faixas-posicao, left bottom);
   color: inherit;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
@@ -186,27 +193,63 @@
 .feedback-selo-trecho {
   display: inline-block;
   margin-inline: 1px 3px;
+  padding: 2px 3px;
   user-select: none;
-  /* Herda a cor do texto: a cor do tom sobre o realce não alcança 4,5:1. */
+  border: 1px solid var(--feedback-tom);
+  border-radius: var(--raio-marca);
+  background: var(--superficie-conteudo);
   color: inherit;
   font-family: var(--fonte-interface);
   font-size: 10px;
   font-weight: 700;
+  line-height: 1;
+  vertical-align: middle;
 }
+.feedback-selo-trecho.feedback-so-impressao { display: none; }
+button.feedback-selo-trecho { cursor: pointer; min-width: 24px; min-height: 24px; }
 .feedback-selo-trecho::before { content: attr(data-numero); }
-.feedback-atalhos-trechos { display: flex; flex-wrap: wrap; gap: 6px; }
-.feedback-atalhos-trechos a { display: inline-grid; place-items: center; min-height: 44px; padding-inline: 6px; font-size: 13px; text-decoration: underline; }
+.feedback-atalhos-trechos { display: flex; flex-wrap: wrap; column-gap: 12px; }
+.feedback-selo-trecho[aria-pressed="true"] { box-shadow: inset 0 0 0 1px var(--feedback-tom); text-decoration: underline; }
+.feedback-trecho.trecho-em-foco { border-bottom: 3px double var(--feedback-tom); }
+.aluno-feedback .comentario-em-foco { outline: 2px solid var(--feedback-tom); outline-offset: -2px; }
 
 @media print {
-  /* Na impressão a cor pode sumir: o sublinhado e o número continuam. */
-  .feedback-trecho {
-    padding: 0 1px;
-    border-bottom: 1.5px solid currentColor;
-    background: transparent;
-  }
+  .aluno-feedback .feedback-so-impressao { display: revert; }
+  .aluno-feedback button.feedback-selo-trecho,
+  .aluno-feedback .feedback-atalhos-trechos,
+  .aluno-feedback .feedback-trechos-nota { display: none !important; }
 
-  .feedback-selo-trecho,
-  .feedback-trechos-cor {
-    color: inherit;
+  .aluno-feedback .feedback-folha-identidade {
+    margin-bottom: 5mm;
+    padding-bottom: 3mm;
+    border-bottom: 1px solid;
+    break-after: avoid;
+    break-inside: avoid;
+  }
+  .feedback-folha-identidade p { margin: 0; font-size: 10pt; }
+  .feedback-folha-identidade .brand-wordmark { margin-bottom: 1mm; font-size: 16pt; }
+  .aluno-feedback .comentario-em-foco { outline: none; }
+  .aluno-feedback .feedback-trecho,
+  .aluno-feedback .feedback-trecho.trecho-em-foco {
+    padding: 0 1px;
+    border-bottom: 1.5px solid var(--feedback-tom) !important;
+    background-image: var(--feedback-faixas, none) !important;
+    background-repeat: no-repeat !important;
+    background-size: 100% 1px !important;
+    background-position: var(--feedback-faixas-posicao, left bottom) !important;
+  }
+  .aluno-feedback .feedback-selo-trecho.feedback-so-impressao {
+    display: inline-block;
+    border-color: var(--feedback-tom) !important;
+    break-inside: avoid;
+  }
+  .aluno-feedback .feedback-trechos-cor,
+  .aluno-feedback .feedback-faixa {
+    background: var(--feedback-tom) !important;
+  }
+  .aluno-feedback .feedback-trecho,
+  .aluno-feedback .feedback-selo-trecho,
+  .aluno-feedback .feedback-trechos-cor {
+    print-color-adjust: exact;
   }
 }

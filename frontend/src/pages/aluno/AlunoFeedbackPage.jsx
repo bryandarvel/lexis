@@ -11,7 +11,10 @@ import {
 } from 'react-router'
 
 import AppShell from '../../layouts/AppShell.jsx'
+import VinculosDoTrecho from '../../components/correction/VinculosDoTrecho.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
+import { useVinculoDeTrechos } from '../../hooks/useVinculoDeTrechos.js'
+import { obterTomDaMarca } from '../../utils/criterio-cores.js'
 import { chaveTrecho } from '../../utils/trechos-feedback.js'
 import { obterFeedbackAluno } from '../../services/feedbacks.js'
 import { notificarContagemAtualizada } from '../../services/notification-events.js'
@@ -28,7 +31,6 @@ import {
   classificarCarregamentoFeedback,
   descreverFeedbackIndisponivel,
   descreverOrigemFeedback,
-  descreverSegmentoMarcado,
   descreverVersaoFeedback,
   listarNotasCompetencias,
   montarTextoComTrechos,
@@ -352,7 +354,7 @@ function ComentarioGeral({ comentario }) {
   )
 }
 
-function CompetenciaDois({ feedback, marcacoes }) {
+function CompetenciaDois({ feedback, marcacoes, vinculo, selecionar }) {
   const criterios = organizarCriteriosComentados(
     feedback.criterios,
   )
@@ -401,16 +403,23 @@ function CompetenciaDois({ feedback, marcacoes }) {
 
         {criterios.length > 0 ? (
           <ul className="mt-2.5 space-y-2">
-            {criterios.map((criterio) => (
+            {criterios.map((criterio) => {
+              const trechos = marcacoes.filter((marca) => marca.ordens.includes(criterio.ordem))
+              const destino = `feedback-comentario-${criterio.ordem}`
+              const seletor = `feedback-destacar-${criterio.ordem}`
+              return (
               <li
                 key={criterio.id}
-                className={`feedback-tom-${criterio.tom} relative overflow-hidden rounded-controle bg-[var(--aluno-neutro-fundo)] py-3 pl-[18px] pr-[18px]`}
+                id={destino}
+                tabIndex={-1}
+                aria-labelledby={`${destino}-nome`}
+                className={`feedback-tom-${criterio.tom} relative overflow-hidden rounded-controle bg-[var(--aluno-neutro-fundo)] py-3 pl-[18px] pr-[18px]${vinculo?.criterios.includes(criterio.ordem) ? ' comentario-em-foco' : ''}`}
               >
                 <span
                   aria-hidden="true"
                   className="feedback-faixa absolute inset-y-0 left-0 w-1 bg-[var(--feedback-tom)]"
                 />
-                <h4 className="flex items-center gap-2 text-[13px] font-semibold leading-[18px] text-[var(--feedback-tom)]">
+                <h4 id={`${destino}-nome`} className="flex items-center gap-2 text-[13px] font-semibold leading-[18px] text-[var(--feedback-tom)]">
                   <span
                     aria-hidden="true"
                     className="feedback-faixa size-2.5 shrink-0 rounded-full bg-[var(--feedback-tom)]"
@@ -420,17 +429,30 @@ function CompetenciaDois({ feedback, marcacoes }) {
                 <p className="mt-2 whitespace-pre-wrap break-words text-[13px] leading-5 text-texto">
                   {criterio.comentario}
                 </p>
-                <div className="feedback-atalhos-trechos">
-                  {marcacoes.filter((marca) => marca.ordens.includes(criterio.ordem)).map((marca) => (
-                    <a key={chaveTrecho(marca)} href={`#feedback-marca-${chaveTrecho(marca)}`} onClick={(event) => {
-                      event.preventDefault()
-                      const alvo = document.getElementById(`feedback-marca-${chaveTrecho(marca)}`)
-                      alvo?.scrollIntoView({ block: 'nearest' }); alvo?.focus({ preventScroll: true })
-                    }}>Trecho {marca.numero}</a>
-                  ))}
-                </div>
+                {trechos.length > 0 && <>
+                  <div className="feedback-atalhos-trechos">
+                    {trechos.length > 1 && <button id={seletor} type="button" className="vinculo-trecho-acao"
+                      aria-label={`Destacar trechos de ${criterio.nome}`} aria-pressed={vinculo?.origem === seletor}
+                      onClick={() => selecionar({ origem: seletor, chaves: trechos.map(chaveTrecho), criterios: [criterio.ordem] },
+                        `feedback-marca-${chaveTrecho(trechos[0])}`)}>Destacar trechos</button>}
+                    {trechos.map((marca) => {
+                      const chave = chaveTrecho(marca)
+                      const alvo = `feedback-marca-${chave}`
+                      const id = `${seletor}-${chave}`
+                      return <a id={id} key={chave} className="vinculo-trecho-acao" href={`#${alvo}`} onClick={(event) => {
+                        event.preventDefault()
+                        selecionar({ origem: id, chaves: [chave], criterios: [criterio.ordem] }, alvo)
+                      }}>Trecho {marca.numero}</a>
+                    })}
+                  </div>
+                  <p className="feedback-so-impressao">
+                    {trechos.length === 1 ? 'Trecho: ' : 'Trechos: '}
+                    {trechos.map((marca) => marca.numero).join(', ')}
+                  </p>
+                </>}
               </li>
-            ))}
+              )
+            })}
           </ul>
         ) : (
           <p className="mt-2.5 rounded-controle bg-[var(--aluno-neutro-fundo)] px-4 py-3 text-[13px] leading-5 text-texto-suave">
@@ -444,9 +466,10 @@ function CompetenciaDois({ feedback, marcacoes }) {
   )
 }
 
-function TextoRedacao({ redacao, textoMarcado }) {
+function TextoRedacao({ redacao, textoMarcado, vinculo, selecionar }) {
   const texto = redacao.texto?.trim()
   const { segmentos, legenda, total, marcacoes = [] } = textoMarcado
+  const relacionadas = vinculo ? marcacoes.filter((marca) => vinculo.chaves.includes(chaveTrecho(marca))) : []
 
   return (
     <section
@@ -486,11 +509,13 @@ function TextoRedacao({ redacao, textoMarcado }) {
             ))}
           </ul>
           <p className="feedback-trechos-nota">
-            Os números identificam os trechos. Um mesmo trecho pode ser
-            comentado em mais de um critério.
+            Selecione um número para ver os comentários do trecho.
+            Um mesmo trecho pode ser comentado em mais de um critério.
           </p>
         </>
       )}
+
+      {vinculo?.destinos.length > 1 && <VinculosDoTrecho vinculo={vinculo} />}
 
       {texto ? (
         <div className="feedback-texto-redacao mt-2.5 whitespace-pre-wrap break-words fonte-redacao text-[17px] leading-8 text-texto">
@@ -505,6 +530,8 @@ function TextoRedacao({ redacao, textoMarcado }) {
                 }
 
                 const selos = marcacoes.filter((marca) => marca.inicio === segmento.inicio)
+                const relacionado = relacionadas.some((marca) =>
+                  marca.inicio <= segmento.inicio && marca.fim >= segmento.fim)
                 const tons = [
                   ...new Set(
                     segmento.criterios.map(
@@ -517,17 +544,29 @@ function TextoRedacao({ redacao, textoMarcado }) {
                 return (
                   <mark
                     key={`${segmento.inicio}-${segmento.fim}`}
-                    className={`feedback-trecho feedback-tom-${tons[0]}`}
-                    aria-label={descreverSegmentoMarcado(segmento, legenda)}
+                    className={`feedback-trecho feedback-tom-${tons[0]}${relacionado ? ' trecho-em-foco' : ''}`}
                     style={tons.length > 1 ? {
-                      backgroundImage: tons.map((tom) => `linear-gradient(var(--criterio-${tom}),var(--criterio-${tom}))`).join(','),
-                      backgroundRepeat: 'no-repeat', backgroundSize: '100% 1px',
-                      backgroundPosition: tons.map((_, i) => `left bottom ${i * 2}px`).join(','),
+                      '--feedback-faixas': tons.map((tom) => `linear-gradient(var(--criterio-${tom}),var(--criterio-${tom}))`).join(','),
+                      '--feedback-faixas-posicao': tons.map((_, i) => `left bottom ${i * 2}px`).join(','),
                     } : undefined}
                   >
-                    {selos.map((marca) => <span key={chaveTrecho(marca)} id={`feedback-marca-${chaveTrecho(marca)}`}
-                      tabIndex={-1} className="feedback-selo-trecho" data-numero={marca.numero}
-                      aria-label={`Trecho ${marca.numero}: ${marca.ordens.map((ordem) => legenda.find((c) => c.ordem === ordem)?.nome).join(', ')}`} />)}
+                    {selos.map((marca) => {
+                      const chave = chaveTrecho(marca)
+                      const id = `feedback-marca-${chave}`
+                      const tom = obterTomDaMarca(marca.ordens)
+                      const destinos = marca.ordens.map((ordem) => ({
+                        id: `feedback-comentario-${ordem}`,
+                        nome: legenda.find((c) => c.ordem === ordem)?.nome,
+                      }))
+                      return <span key={chave} className={`feedback-tom-${tom}`}>
+                        <button type="button" id={id} className="feedback-selo-trecho" data-numero={marca.numero}
+                          aria-label={`Trecho ${marca.numero}: ${destinos.map((d) => d.nome).join(', ')}`}
+                          aria-pressed={Boolean(vinculo?.chaves.includes(chave))}
+                          onClick={() => selecionar({ origem: id, chaves: [chave], criterios: marca.ordens, destinos, numero: marca.numero },
+                            destinos.length === 1 ? destinos[0].id : undefined)} />
+                        <span className="feedback-selo-trecho feedback-so-impressao" data-numero={marca.numero} aria-label={`Trecho ${marca.numero}`} />
+                      </span>
+                    })}
                     {segmento.texto}
                   </mark>
                 )
@@ -546,10 +585,11 @@ function TextoRedacao({ redacao, textoMarcado }) {
 export default function AlunoFeedbackPage() {
   const { redacaoId } = useParams()
   const { usuario } = useAuth()
-  return <FeedbackDaRedacao key={`${usuario?.id}:${redacaoId}`} redacaoId={redacaoId} />
+  return <FeedbackDaRedacao key={`${usuario?.id}:${redacaoId}`} redacaoId={redacaoId} nomeAluno={usuario?.nome} />
 }
 
-function FeedbackDaRedacao({ redacaoId }) {
+function FeedbackDaRedacao({ redacaoId, nomeAluno }) {
+  const { vinculo, selecionar, aoPressionarTecla } = useVinculoDeTrechos()
   const [tentativa, setTentativa] = useState(0)
   const chave = `${redacaoId}:${tentativa}`
   const [carregamento, setCarregamento] = useState({
@@ -637,6 +677,11 @@ function FeedbackDaRedacao({ redacaoId }) {
 
     conteudo = (
       <>
+        <div className="feedback-so-impressao feedback-folha-identidade">
+          <p className="brand-wordmark">LÉXIS</p>
+          <p>Aluno: <strong>{nomeAluno}</strong></p>
+          <p>Turma: <strong>{redacao.tema?.turma?.nome}</strong></p>
+        </div>
         <Cabecalho
           origem={descreverOrigemFeedback({
             redacao,
@@ -656,8 +701,8 @@ function FeedbackDaRedacao({ redacaoId }) {
         />
 
         <div className="feedback-impressao-grade mt-5 grid items-start gap-6 xl:grid-cols-2">
-          <CompetenciaDois feedback={feedback} marcacoes={textoMarcado.marcacoes ?? []} />
-          <TextoRedacao redacao={redacao} textoMarcado={textoMarcado} />
+          <CompetenciaDois feedback={feedback} marcacoes={textoMarcado.marcacoes ?? []} vinculo={vinculo} selecionar={selecionar} />
+          <TextoRedacao redacao={redacao} textoMarcado={textoMarcado} vinculo={vinculo} selecionar={selecionar} />
         </div>
       </>
     )
@@ -732,7 +777,7 @@ function FeedbackDaRedacao({ redacaoId }) {
       rotaEnviarRedacao={rotaEnviarRedacao}
       trilha={TRILHA}
     >
-      <div className="aluno-feedback">
+      <div className="aluno-feedback" onKeyDown={aoPressionarTecla}>
         {conteudo}
       </div>
     </AppShell>
