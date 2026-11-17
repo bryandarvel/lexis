@@ -43,11 +43,11 @@ function itensDoAluno({ caminho, rotaEnviarRedacao }) {
   return [
     link('inicio', 'Início', '/aluno', caminho, true),
     rotaEnviarRedacao
-      ? link('escrever', 'Enviar redação', rotaEnviarRedacao, caminho)
+      ? link('escrever', 'Escrever redação', rotaEnviarRedacao, caminho)
       : {
           chave: 'escrever',
           tipo: 'indisponivel',
-          rotulo: 'Enviar redação',
+          rotulo: 'Escrever redação',
           motivo: 'indisponível: nenhuma proposta pendente',
           atual: false,
         },

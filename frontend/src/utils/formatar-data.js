@@ -134,3 +134,14 @@ export function formatarSaudacaoData(agora = new Date()) {
     timeZone: 'America/Sao_Paulo',
   }).format(agora)
 }
+
+export function descreverTempoDesde(valor, { agora = new Date(), fusoHorario } = {}) {
+  const data = converterData(valor)
+  if (!data) return null
+  const hoje = converterData(agora) ?? new Date()
+  const idade = hoje.getTime() - data.getTime()
+  if (idade >= 0 && idade < MINUTO_MS) return 'agora'
+  const dia = formatarDia(data, fusoHorario)
+  const hora = obterFormatador('hora', fusoHorario).format(data)
+  return dia === formatarDia(hoje, fusoHorario) ? `hoje às ${hora}` : `em ${dia} às ${hora}`
+}

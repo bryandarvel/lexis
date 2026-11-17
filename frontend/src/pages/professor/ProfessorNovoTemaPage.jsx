@@ -226,11 +226,8 @@ export default function ProfessorNovoTemaPage() {
           >
             ← Voltar à turma
           </Link>
-          <p className="mt-8 text-xs font-bold uppercase tracking-[0.2em] text-acao-texto">
-            Nova proposta
-          </p>
           <h1 className="mt-3 text-4xl font-semibold text-texto sm:text-5xl">
-            Criar tema de redação
+            Nova proposta de redação
           </h1>
           <p className="mt-4 max-w-3xl leading-7 text-texto-suave">
             A análise do repertório usa três critérios fixos: Legitimação, Pertinência e Uso produtivo. Você pode adicionar até dois critérios personalizados. Eles orientam a IA e não têm peso na nota.
@@ -249,7 +246,7 @@ export default function ProfessorNovoTemaPage() {
           </h2>
           <div className="mt-6 grid gap-6">
             <Campo
-              label="Enunciado"
+              label="Título da proposta"
               value={formulario.enunciado}
               onChange={(evento) =>
                 atualizarCampo(
@@ -263,7 +260,7 @@ export default function ProfessorNovoTemaPage() {
             />
 
             <Campo
-              label="Descrição" multilinha
+              label="Comando da redação" multilinha
               value={formulario.descricao}
               onChange={(evento) =>
                 atualizarCampo(
@@ -315,11 +312,11 @@ export default function ProfessorNovoTemaPage() {
             Base fixa da Competência II. Os critérios personalizados aparecem depois da base na análise e na correção do professor.
           </p>
 
-          <ol className="mt-6 space-y-5">
+          <ol className="mt-5 divide-y divide-borda">
             {formulario.criterios.map((criterio, indice) => (
               <li
                 key={criterio.idLocal}
-                className="rounded-cartao border border-borda bg-pagina/40 p-4"
+                className="py-3"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <h3 className="font-semibold text-texto">
@@ -337,7 +334,7 @@ export default function ProfessorNovoTemaPage() {
                     </button>}
                 </div>
 
-                {indice < 3 ? <p className="mt-4 text-sm leading-6 text-texto-suave">{criterio.descricao}</p> : <div className="mt-4 grid gap-4">
+                {indice < 3 ? <p className="mt-1 text-sm leading-6 text-texto-suave">{criterio.descricao}</p> : <div className="mt-3 grid gap-4">
                   <Campo
                     label="Nome"
                     value={criterio.nome}
@@ -414,7 +411,7 @@ export default function ProfessorNovoTemaPage() {
           >
             {status === 'salvando'
               ? 'Criando tema...'
-              : 'Criar tema'}
+              : 'Criar proposta'}
           </Botao>
           <Link
             to={`/professor/turmas/${turmaId}`}

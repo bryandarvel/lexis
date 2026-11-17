@@ -4,12 +4,21 @@ import {
   FORMAS_DATA,
   LIMITE_RELATIVA_DIAS,
   converterData,
+  descreverTempoDesde,
   formatarData,
 } from '../src/utils/formatar-data.js'
 import { formatarNumero } from '../src/utils/formatar-numero.js'
 
 const UTC = { fusoHorario: 'UTC' }
 const AGORA = new Date('2026-10-18T12:00:00Z')
+
+test('indicador diferencia uma gravação recente, de hoje e de outro dia', () => {
+  const opcoes = { ...UTC, agora: AGORA }
+  assert.equal(descreverTempoDesde('2026-10-18T11:59:31Z', opcoes), 'agora')
+  assert.equal(descreverTempoDesde('2026-10-18T11:58:00Z', opcoes), 'hoje às 11:58')
+  assert.equal(descreverTempoDesde('2026-10-17T11:58:00Z', opcoes), 'em 17/10/2026 às 11:58')
+  assert.equal(descreverTempoDesde('inválida', opcoes), null)
+})
 
 test('forma data: dia, mês e ano com dois dígitos', () => {
   assert.equal(formatarData('2026-10-18T23:59:00Z', 'data', UTC), '18/10/2026')

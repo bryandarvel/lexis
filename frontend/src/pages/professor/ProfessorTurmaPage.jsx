@@ -2,7 +2,7 @@ import { formatarData } from '../../utils/formatar-data.js'
 import Etiqueta from '../../components/base/Etiqueta.jsx'
 import EstadoVazio from '../../components/base/EstadoVazio.jsx'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useParams, useSearchParams } from 'react-router'
 import Aviso from '../../components/base/Aviso.jsx'
 import Botao from '../../components/base/Botao.jsx'
 import Campo from '../../components/base/Campo.jsx'
@@ -148,6 +148,18 @@ function TemaCard({ tema }) {
 
 export default function ProfessorTurmaPage() {
   const { turmaId } = useParams()
+  const [parametros] = useSearchParams()
+  const aba = parametros.get('aba') === 'alunos' ? 'alunos' : 'propostas'
+  const [copiado, setCopiado] = useState(false)
+  const codigoRef = useRef(null)
+  const copiarTimerRef = useRef(null)
+  useEffect(() => () => clearTimeout(copiarTimerRef.current), [])
+
+  function linkDaAba(destino) {
+    const busca = new URLSearchParams(parametros)
+    busca.set('aba', destino)
+    return { search: busca.toString() }
+  }
 
   const [pagina, setPagina] = useState({ status: 'carregando', turma: null, temas: [], mensagem: '' })
   const [tentativa, setTentativa] = useState(0)
@@ -326,23 +338,29 @@ export default function ProfessorTurmaPage() {
     try {
       await navigator.clipboard.writeText(turma.codigoAcesso)
       setAviso(`Código ${turma.codigoAcesso} copiado.`)
+      setCopiado(true)
+      clearTimeout(copiarTimerRef.current)
+      copiarTimerRef.current = setTimeout(() => setCopiado(false), 2000)
     } catch {
-      setAviso(`Não foi possível copiar automaticamente. O código é ${turma.codigoAcesso}.`)
+      const selecao = document.getSelection()
+      if (selecao && codigoRef.current) {
+        const intervalo = document.createRange()
+        intervalo.selectNodeContents(codigoRef.current)
+        selecao.removeAllRanges()
+        selecao.addRange(intervalo)
+      }
+      setAviso(`Não foi possível copiar automaticamente. Copie o código ${turma.codigoAcesso}.`)
     }
   }
 
   const resumo = resumirAlunosDaTurma(alunos.lista)
 
   return (
-    <AppShell conteudo="amplo" trilha={['Turmas']} turmas={pronto ? [turma] : []} pronto={pronto}>
+    <AppShell conteudo="amplo" trilha={[{ rotulo: 'Turmas', para: '/professor/turmas' }, pronto ? turma.nome : 'Turma']} turmas={pronto ? [turma] : []} pronto={pronto}>
       <div
         className="panel-main turma-main"
         aria-busy={pagina.status === 'carregando'}
       >
-        <Botao as={Link} to="/professor/turmas" variante="secundario" className="turma-back">
-          <span aria-hidden="true">←</span>&nbsp;Voltar às turmas
-        </Botao>
-
         {pagina.status === 'carregando' && (
           <>
             <h1>Turma</h1>
@@ -372,56 +390,39 @@ export default function ProfessorTurmaPage() {
 
         {pronto && (
           <>
-            <p className="turma-eyebrow">Visão da turma</p>
             <div className="turma-heading">
               <div>
                 <h1>{turma.nome}</h1>
                 <p className="panel-subtitle">
-                  Organize temas, acompanhe as entregas e gerencie os participantes desta turma.
+                  Acompanhe as propostas, entregas e matrículas.
                 </p>
               </div>
               {situacao.ativa && (
                 <Botao as={Link} to={`/professor/turmas/${turmaId}/temas/novo`} className="turma-create">
-                  Criar tema de redação
+                  Nova proposta
                 </Botao>
               )}
             </div>
 
             <p role="status" className="turma-aviso">{aviso}</p>
 
-            <dl className="panel-stats turma-stats" aria-label="Indicadores da turma">
-              <div className="panel-stat">
-                <dt>Código de acesso</dt>
-                <dd>
-                  <span className="turma-codigo">{turma.codigoAcesso}</span>
-                  <Botao type="button" variante="secundario" className="turma-copiar" onClick={copiarCodigo}>
-                    Copiar
-                  </Botao>
-                </dd>
-              </div>
-              <div className="panel-stat">
-                <dt>Alunos ativos</dt>
-                <dd>{turma.quantidadeAlunosAtivos ?? 0}</dd>
-              </div>
-              <div className="panel-stat">
-                <dt>Situação</dt>
-                <dd>{situacao.rotulo}</dd>
-              </div>
-            </dl>
-
-            <section className="panel-attention turma-gestao" aria-labelledby="turma-gestao-title">
-              <h2 id="turma-gestao-title" ref={gestaoTituloRef} tabIndex={-1}>Gestão da turma</h2>
-              {situacao.podeGerenciar ? (
-                <>
-                  <p>Renomear a turma, gerar um novo código de acesso ou arquivar a turma.</p>
+            <div className="turma-contexto">
+              <span>Código de acesso: <strong ref={codigoRef}>{turma.codigoAcesso}</strong></span>
+              <Botao type="button" variante="secundario" className="turma-copiar" onClick={copiarCodigo}>
+                {copiado ? 'Copiado' : 'Copiar'}
+              </Botao>
+              {situacao.podeGerenciar && <details className="turma-gestao">
+                  <summary ref={gestaoTituloRef}>Gerenciar</summary>
                   <div className="turma-acoes">
                     <Botao type="button" variante="secundario" onClick={() => setDialogo({ tipo: 'renomear' })}>Renomear turma</Botao>
                     <Botao type="button" variante="secundario" onClick={() => setDialogo({ tipo: 'regenerar' })}>Gerar novo código</Botao>
                     <Botao type="button" variante="perigo" onClick={() => setDialogo({ tipo: 'arquivar' })}>Arquivar turma</Botao>
                   </div>
-                </>
-              ) : (
-                <>
+                </details>}
+            </div>
+            {!situacao.podeGerenciar && (
+                <section className="turma-arquivada" aria-labelledby="turma-gestao-title">
+                  <h2 id="turma-gestao-title" ref={gestaoTituloRef} tabIndex={-1}>Turma arquivada</h2>
                   <p>
                     Esta turma está arquivada desde {formatarData(turma.arquivadaEm, 'data', { vazio: 'Data indisponível' })}. As matrículas
                     foram encerradas e a turma não pode ser alterada enquanto estiver arquivada. As redações
@@ -430,11 +431,14 @@ export default function ProfessorTurmaPage() {
                   <div className="turma-acoes">
                     <Botao type="button" onClick={() => setDialogo({ tipo: 'reabrir' })}>Reabrir turma</Botao>
                   </div>
-                </>
-              )}
-            </section>
+                </section>
+            )}
+            <nav className="turma-abas" aria-label="Seções da turma">
+              <Link to={linkDaAba('propostas')} aria-current={aba === 'propostas' ? 'page' : undefined}>Propostas</Link>
+              <Link to={linkDaAba('alunos')} aria-current={aba === 'alunos' ? 'page' : undefined}>Alunos ({turma.quantidadeAlunosAtivos ?? 0})</Link>
+            </nav>
 
-            <section className="panel-attention turma-alunos" aria-labelledby="turma-alunos-title">
+            {aba === 'alunos' && <section className="panel-attention turma-alunos" aria-labelledby="turma-alunos-title">
               <h2 id="turma-alunos-title" ref={alunosTituloRef} tabIndex={-1}>Alunos da turma</h2>
               <p>
                 {alunos.status === 'pronto'
@@ -481,7 +485,7 @@ export default function ProfessorTurmaPage() {
                         </div>
                         <Botao
                           type="button"
-                          variante="perigo"
+                          variante="secundario"
                           onClick={() => setDialogo({ tipo: 'desvincular', matricula })}
                           aria-label={`Desvincular ${matricula.aluno?.nome ?? 'aluno'} da turma`}
                         >
@@ -498,19 +502,19 @@ export default function ProfessorTurmaPage() {
                   descricao={<>Compartilhe o código <strong className="codigo-turma">{turma.codigoAcesso}</strong> para os alunos entrarem.</>}
                 />
               ))}
-            </section>
+            </section>}
 
-            <section className="panel-attention turma-temas" aria-labelledby="turma-temas-title">
-              <h2 id="turma-temas-title">Temas da turma</h2>
+            {aba === 'propostas' && <section className="panel-attention turma-temas" aria-labelledby="turma-temas-title">
+              <h2 id="turma-temas-title">Propostas da turma</h2>
               <p>Acompanhe os prazos e a quantidade de redações recebidas em cada proposta.</p>
               {pagina.temas.length ? (
                 <ul className="classes-grid">
                   {pagina.temas.map((tema) => <TemaCard key={tema.id} tema={tema} />)}
                 </ul>
               ) : (
-                <EstadoVazio nivel={3} titulo="Esta turma ainda não possui temas de redação." />
+                <EstadoVazio nivel={3} titulo="Esta turma ainda não possui propostas de redação." />
               )}
-            </section>
+            </section>}
 
             {dialogo?.tipo === 'renomear' && (
               <RenomearTurmaDialog

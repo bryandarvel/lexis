@@ -142,6 +142,23 @@ export function listarPropostasDoAluno(temas, redacoes, agora = new Date()) {
     })
 }
 
+// O destaque pode repetir; a lista de propostas e as correções recentes não.
+export function organizarPropostasDoInicio(propostas, redacoes) {
+  const recentes = new Map()
+  for (const redacao of redacoes) {
+    if (redacao.status !== 'AVALIADA' || !redacao.temaId || recentes.has(redacao.temaId)) continue
+    recentes.set(redacao.temaId, redacao)
+    if (recentes.size === 3) break
+  }
+  const ids = new Set()
+  const lista = propostas.filter(({ proposta }) => {
+    if (recentes.has(proposta.id) || ids.has(proposta.id)) return false
+    ids.add(proposta.id)
+    return true
+  })
+  return { proxima: propostas.find((item) => item.podeEnviar) ?? null, lista, corrigidas: [...recentes.values()] }
+}
+
 // Texto único do aviso de prazo vencido: o painel e o editor mostram o mesmo.
 // O backend aceita a entrega atrasada e registra o atraso.
 export const MENSAGEM_ENTREGA_ATRASADA =

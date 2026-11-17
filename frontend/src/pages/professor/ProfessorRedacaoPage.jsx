@@ -1,5 +1,4 @@
 import { formatarData } from '../../utils/formatar-data.js'
-import Etiqueta from '../../components/base/Etiqueta.jsx'
 import { useEffect, useRef, useState } from 'react'
 import Botao from '../../components/base/Botao.jsx'
 import DialogoConfirmacao from '../../components/base/DialogoConfirmacao.jsx'
@@ -17,11 +16,10 @@ import { listarRedacoesDaTurma, obterRedacaoProfessor } from '../../services/red
 import { criarChaveRascunho } from '../../utils/draft-storage.js'
 import { obterIniciais } from '../../utils/professor-dashboard.js'
 import { avisoEstadoAnalise, obterEsperaMinimaAnalise, obterFalhaAnteriorPublicacao } from '../../utils/external-request.js'
-import { criarFormularioFeedback, montarDadosFeedback, validarFeedback, criterioFixo, tomCriterio, organizarFila, atualizarComentario, selecionarAnaliseParaCorrecao, atualizarTrechos, recuperarTrechos, prepararMarcacoes, assinaturaPublicavel } from '../../utils/professor-correction.js'
+import { criarFormularioFeedback, montarDadosFeedback, validarFeedback, organizarFila, atualizarComentario, selecionarAnaliseParaCorrecao, atualizarTrechos, recuperarTrechos, prepararMarcacoes, assinaturaPublicavel } from '../../utils/professor-correction.js'
 import { chaveTrecho } from '../../utils/trechos-feedback.js'
 import { calcularNotaTotalCompetencias } from '../../constants/competencias-enem.js'
 import { obterPublicacaoFeedback } from '../../utils/professor-topic.js'
-import fixedIcon from '../../assets/criterion-fixed.svg'
 import './professor-correction.css'
 
 const erroApi = (error, fallback) => error?.response?.data?.error?.message ?? fallback
@@ -50,6 +48,7 @@ function Correcao({ redacaoId, usuarioId }) {
   const [feedbackNotice, setFeedbackNotice] = useState(null)
   const [descartadas, setDescartadas] = useState(() => new Set())
   const [confirmaPublicacao, setConfirmaPublicacao] = useState(false)
+  const [destinoFila, setDestinoFila] = useState(null)
   const [recarregarObrigatorio, setRecarregarObrigatorio] = useState(false)
   const ativo = useRef(true)
   const operacao = useRef(false)
@@ -182,14 +181,15 @@ function Correcao({ redacaoId, usuarioId }) {
       if (ativo.current) setFeedbackAction(null)
     }
   }
-  function pular() {
-    if (operacao.current || analiseEmCurso.current || !pagina.fila?.proxima) return
+  function navegarNaFila(destino) {
+    if (operacao.current || analiseEmCurso.current || !destino) return
     const alterado = JSON.stringify(form) !== JSON.stringify(formServidor)
     if (alterado) {
       rascunho.salvarAgora()
-      if (!globalThis.confirm('Há alterações não enviadas ao servidor. Deseja ir para a próxima redação mesmo assim?')) return
+      setDestinoFila(destino)
+      return
     }
-    navigate(`/professor/redacoes/${pagina.fila.proxima.id}`)
+    navigate(`/professor/redacoes/${destino.id}`)
   }
   function focar(alvo) {
     alvo?.scrollIntoView({ block: 'nearest' })
@@ -220,25 +220,6 @@ function Correcao({ redacaoId, usuarioId }) {
   const versaoDialogo = versaoAtual?.status === 'RASCUNHO' ? `Versão ${versaoAtual.numero}`
     : `Versão ${(versaoAtual?.numero ?? 0) + 1} (prévia)`
   const bloqueado = Boolean(feedbackAction) || recarregarObrigatorio
-  const base = criterios.filter(criterioFixo)
-  const extras = criterios.filter((c) => !criterioFixo(c))
-  const criteriosDaProposta = (
-    <section className="review-card review-criteria" aria-labelledby="review-criteria-title">
-      <h2 id="review-criteria-title">Critérios da avaliação</h2>
-      <h3>Base · sempre avaliados</h3>
-      {base.map((c) => <div className={`review-criterion-row review-tone-${tomCriterio(c)}`} key={c.id}>
-        <img src={fixedIcon} alt="Fixo" /><span className="review-color" aria-hidden="true" /><span>{c.nome}</span>
-      </div>)}
-      {!base.length && <p className="review-caption">Esta proposta utiliza critérios anteriores à base atual.</p>}
-      <div className="review-criteria-subheading"><h3>Personalizados</h3><Etiqueta tom="acao">{extras.length} {extras.length === 1 ? 'cadastrado' : 'cadastrados'}</Etiqueta></div>
-      {extras.map((c) => <label className={`review-criterion-row review-tone-${tomCriterio(c)}`} key={c.id}>
-        <input type="checkbox" checked disabled aria-label={`Critério definido na proposta: ${c.nome}`} /><span className="review-color" aria-hidden="true" /><span>{c.nome}</span>
-      </label>)}
-      {!extras.length && <p className="review-caption">Nenhum critério personalizado nesta proposta.</p>}
-      <p className="review-caption">Critérios definidos na proposta.</p>
-      <Link className="review-text-link" to={pronto ? `/professor/temas/${redacao.tema.id}` : '/professor/turmas'}>Consultar proposta e critérios</Link>
-    </section>
-  )
 
   const trilha = [
     { rotulo: 'Turmas', para: '/professor/turmas' },
@@ -256,7 +237,6 @@ function Correcao({ redacaoId, usuarioId }) {
           <section className="review-card review-student">
             <span className="review-student-avatar" aria-hidden="true">{obterIniciais(redacao.aluno.nome)}</span>
             <div className="review-student-info"><h1>{redacao.aluno.nome}</h1><p>{redacao.tema.turma.nome} · {redacao.tema.enunciado}</p></div>
-            <div className="review-student-actions"><Botao type="button" variante="secundario" disabled={!pagina.fila?.proxima || analysisBusy || bloqueado} onClick={pular}>Pular</Botao></div>
           </section>
           {pagina.erroFila && <p className="review-caption">A fila de redações está indisponível. A correção atual permanece acessível.</p>}
           {rascunhoDivergente && <section className="review-notice" role="status"><strong>Rascunho local encontrado</strong><p>Há alterações não enviadas salvas neste dispositivo.</p><Botao type="button" variante="secundario" disabled={Boolean(feedbackAction)} onClick={recuperarRascunho}>Recuperar rascunho</Botao> <Botao type="button" variante="secundario" disabled={Boolean(feedbackAction)} onClick={() => rascunho.descartar(formServidor)}>Descartar rascunho local</Botao></section>}
@@ -267,7 +247,7 @@ function Correcao({ redacaoId, usuarioId }) {
               onMark={(id, trecho) => mudarTrechos(id, [...marcacoes.porCriterio[id].marcados, trecho])} onEvidence={abrirComentarios} />
             <details className="review-submission"><summary>Informações da entrega</summary><p>{redacao.origemTexto === 'OCR' ? 'Texto digitalizado por OCR' : 'Texto digitado'} · {redacao.enviadaComAtraso ? 'Enviada com atraso' : 'Enviada no prazo'}</p><p>Enviada em {formatarData(redacao.enviadaEm, 'dataHora', { vazio: 'Não informada' })}. Prazo: {formatarData(redacao.prazoConsideradoEm, 'dataHora', { vazio: 'Não informada' })}.</p></details>
           </article>
-          {criteriosDaProposta}
+          <Link className="review-text-link" to={`/professor/temas/${redacao.tema.id}`}>Consultar proposta e critérios</Link>
         </div>
         <div className="review-side">
         <aside className="review-tools" aria-label="Margem de correção">
@@ -281,9 +261,15 @@ function Correcao({ redacaoId, usuarioId }) {
           <FeedbackEditor action={feedbackAction} form={form} onFieldChange={mudarCampo} bloqueado={recarregarObrigatorio} />
         </section>
         </div>
+        <div className="review-actions-area">
         <FeedbackActions action={feedbackAction} currentFeedback={versaoAtual} notice={feedbackNotice}
           publicada={Boolean(publicada)} publicacaoIdentica={publicacaoIdentica} recarregarObrigatorio={recarregarObrigatorio}
           onSave={() => salvar()} onPublish={pedirPublicacao} onReload={() => globalThis.location.reload()} />
+        {(pagina.fila?.anterior || pagina.fila?.proxima) && <nav aria-label="Fila de correção" className="review-queue">
+          {pagina.fila?.anterior && <Botao variante="secundario" disabled={analysisBusy || bloqueado} onClick={() => navegarNaFila(pagina.fila.anterior)}>Redação anterior</Botao>}
+          {pagina.fila?.proxima && <Botao variante="secundario" disabled={analysisBusy || bloqueado} onClick={() => navegarNaFila(pagina.fila.proxima)}>Próxima redação</Botao>}
+        </nav>}
+        </div>
         <nav className="review-section-nav" aria-label="Seções da correção">
           {[['review-essay-title', 'Redação'], ['review-comments-title', 'Comentários'], ['review-grades-title', 'Notas']].map(([id, nome]) =>
             <a key={id} href={`#${id}`} onClick={(event) => { event.preventDefault(); focar(document.getElementById(id)) }}>{nome}</a>)}
@@ -292,10 +278,16 @@ function Correcao({ redacaoId, usuarioId }) {
           descricao={`${redacao.aluno.nome} · ${versaoDialogo} · Nota ${calcularNotaTotalCompetencias(montarDadosFeedback(form, texto)) ?? '—'}`}
           efeitos={[
             ...(versaoAtual?.status === 'RASCUNHO' && salvoSemEdicoes ? ['O rascunho salvo será publicado.'] : ['Suas alterações serão salvas e publicadas nesta versão.']),
-            `Critérios com comentário: ${criterios.filter((c) => form.criterionComments[c.id]?.trim()).map((c) => c.nome).join(', ') || 'nenhum'}.`,
-            'O aluno será notificado no sistema.',
+            `Critérios com comentário: ${criterios.filter((c) => form.criterionComments[c.id]?.trim()).length} de ${criterios.length}.`,
+            publicada ? 'O aluno receberá um novo aviso no sistema.' : 'O aluno será notificado no sistema.',
           ]}
-          confirmarRotulo={publicada ? 'Publicar nova versão' : 'Publicar correção'} onConfirmar={() => salvar(true)} onCancelar={() => setConfirmaPublicacao(false)} />
+          cancelarRotulo="Voltar à correção" confirmarRotulo={publicada ? 'Publicar nova versão' : 'Publicar correção'} onConfirmar={() => salvar(true)} onCancelar={() => setConfirmaPublicacao(false)} />
+        <DialogoConfirmacao aberto={Boolean(destinoFila)} titulo="Ir para outra redação?"
+          descricao="Há alterações nesta correção que ainda não foram enviadas ao servidor."
+          efeitos={['O rascunho fica disponível neste dispositivo para recuperar ao voltar.']}
+          cancelarRotulo="Voltar à correção" confirmarRotulo="Ir para a redação"
+          onConfirmar={() => { if (destinoFila) navigate(`/professor/redacoes/${destinoFila.id}`) }}
+          onCancelar={() => setDestinoFila(null)} />
       </div>}
     </div>
   </AppShell>

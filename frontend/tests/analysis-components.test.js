@@ -13,9 +13,10 @@ import { prepararMarcacoes } from '../src/utils/professor-correction.js'
 let servidor, cache, AnalysisPanel, EssayEvidenceText
 before(async () => {
   cache = await mkdtemp(join(tmpdir(), 'lexis-analysis-components-'))
-  // Cache isolado para não invalidar React no servidor de desenvolvimento aberto.
+  // O teste renderiza só no servidor. Sem o otimizador do cliente em segundo
+  // plano, a limpeza do cache isolado não disputa com uma escrita do Vite.
   servidor = await createServer({ root: fileURLToPath(new URL('../', import.meta.url)), configFile: false,
-    cacheDir: cache, plugins: [react()], server: { middlewareMode: true }, appType: 'custom' })
+    cacheDir: cache, plugins: [react()], optimizeDeps: { noDiscovery: true }, server: { middlewareMode: true }, appType: 'custom' })
   AnalysisPanel = (await servidor.ssrLoadModule('/src/components/correction/AnalysisPanel.jsx')).default
   EssayEvidenceText = (await servidor.ssrLoadModule('/src/components/correction/EssayEvidenceText.jsx')).default
 })
@@ -96,7 +97,7 @@ test('trecho comum aos três critérios conserva vínculos e exibe as três core
     texto: 'Outro texto.', marcacoes: prepararMarcacoes('Outro texto.', criterios, form, null, new Set()), criterios,
   }))
   assert.doesNotMatch(divergente, /class="review-seal/)
-  assert.ok(divergente.includes('Uso produtivo: 0 trechos marcados'))
+  assert.doesNotMatch(divergente, /aria-label="Marcações no texto"/)
 })
 
 test('legenda distingue evidências de critérios e não esconde referências do desenvolvimento', () => {
@@ -109,7 +110,7 @@ test('legenda distingue evidências de critérios e não esconde referências do
   })) } }
   const form = { criterionTrechos: { 'c-0': evidencias } }
   const marcacoes = prepararMarcacoes(texto, criterios, form, analise, new Set())
-  const html = renderToStaticMarkup(createElement(EssayEvidenceText, { texto, marcacoes, criterios }))
+  const html = renderToStaticMarkup(createElement(EssayEvidenceText, { texto, marcacoes, criterios, analise }))
   assert.ok(html.includes('Legitimação: 5 trechos marcados'))
   assert.ok(html.includes('Pertinência: 0 trechos marcados'))
   assert.ok(html.includes('Uso produtivo: 0 trechos marcados'))

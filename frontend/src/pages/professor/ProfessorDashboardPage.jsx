@@ -10,14 +10,13 @@ import { diasDesdeEnvio, obterIniciais } from '../../utils/professor-dashboard.j
 import { interpretarErroApi } from '../../utils/api-error.js'
 import './professor-dashboard.css'
 
+const POR_PAGINA = 6
+
 function PainelSkeleton() {
   return (
     <div className="panel-skeleton" role="status" aria-label="Carregando indicadores e redações">
-      <div className="panel-stats" aria-hidden="true">
-        {[0, 1, 2, 3].map((item) => <div className="panel-stat skeleton-block" key={item} />)}
-      </div>
       <div className="panel-attention">
-        <h2>Precisa da sua atenção</h2>
+        <h2>Para corrigir</h2>
         <p>Redações aguardando correção há mais tempo</p>
         <div className="panel-pending-list" aria-hidden="true">
           {[0, 1, 2].map((item) => <div className="panel-pending skeleton-block" key={item} />)}
@@ -30,13 +29,19 @@ function PainelSkeleton() {
 export default function ProfessorDashboardPage() {
   const [pagina, setPagina] = useState({ status: 'carregando', turmas: [], pendentes: [] })
   const [tentativa, setTentativa] = useState(0)
-  const [mostrarTodas, setMostrarTodas] = useState(false)
+  const [indiceFila, setIndiceFila] = useState(0)
   const attentionRef = useRef(null)
 
   useEffect(() => {
     let ativo = true
+    const controle = new AbortController()
     setPagina({ status: 'carregando', turmas: [], pendentes: [] })
-    carregarPainelProfessor()
+    carregarPainelProfessor({
+      signal: controle.signal,
+      aoCarregarFila: (dados) => {
+        if (ativo) setPagina({ status: 'pronto', carregandoPublicadas: true, ...dados })
+      },
+    })
       .then((dados) => {
         if (ativo) setPagina({ status: 'pronto', ...dados })
       })
@@ -46,33 +51,28 @@ export default function ProfessorDashboardPage() {
           mensagem: interpretarErroApi(error, 'Não foi possível carregar o painel. Tente novamente.').mensagem,
         })
       })
-    return () => { ativo = false }
+    return () => { ativo = false; controle.abort() }
   }, [tentativa])
 
-  function abrirRedacoes() {
-    setMostrarTodas(true)
+  function irParaFila(indice = 0) {
+    setIndiceFila(indice)
     attentionRef.current?.focus()
     attentionRef.current?.scrollIntoView({ block: 'nearest' })
   }
 
   const data = formatarSaudacaoData()
-  const indicadores = [
-    ['Redações pendentes', pagina.pendentes.length, 'attention'],
-    ['Turmas ativas', pagina.turmasAtivas, ''],
-    ['Alunos cadastrados', pagina.alunosCadastrados, ''],
-    ['Publicadas no mês', pagina.publicadasNoMes ?? '—', 'success'],
-  ]
-  const exibidas = mostrarTodas ? pagina.pendentes : pagina.pendentes.slice(0, 3)
+  const totalPaginas = Math.max(1, Math.ceil(pagina.pendentes.length / POR_PAGINA))
+  const indice = Math.min(indiceFila, totalPaginas - 1)
+  const exibidas = pagina.pendentes.slice(indice * POR_PAGINA, (indice + 1) * POR_PAGINA)
 
   return (
-    <AppShell conteudo="amplo" trilha={['Painel']} turmas={pagina.turmas} pronto={pagina.status === 'pronto'} onRedacoes={abrirRedacoes}>
+    <AppShell conteudo="amplo" trilha={['Painel']} turmas={pagina.turmas} pronto={pagina.status === 'pronto'} onRedacoes={() => irParaFila()}>
       <div
         className="panel-main"
       >
         <h1>Painel</h1>
         <p className="panel-subtitle">
           <span>{data.charAt(0).toUpperCase() + data.slice(1)}</span>
-          {pagina.status === 'pronto' && <> · {pagina.turmasAtivas} {pagina.turmasAtivas === 1 ? 'turma ativa' : 'turmas ativas'}</>}
         </p>
         {pagina.status === 'carregando' ? <PainelSkeleton /> : pagina.status === 'erro' ? (
           <section className="panel-error" role="alert">
@@ -82,22 +82,8 @@ export default function ProfessorDashboardPage() {
           </section>
         ) : (
           <>
-            <dl className="panel-stats" aria-label="Indicadores do professor">
-              {indicadores.map(([rotulo, valor, estilo]) => (
-                <div key={rotulo} className="panel-stat">
-                  <dt>{rotulo}</dt>
-                  <dd className={estilo}>{valor}</dd>
-                </div>
-              ))}
-            </dl>
-            {pagina.publicadasNoMes === null && (
-              <p role="status" className="panel-publication-warning">
-                O histórico de publicações não respondeu. Os demais dados estão disponíveis.
-                <button type="button" onClick={() => setTentativa((valor) => valor + 1)}>Atualizar</button>
-              </p>
-            )}
             <section className="panel-attention" aria-labelledby="panel-attention-title">
-              <h2 id="panel-attention-title" ref={attentionRef} tabIndex={-1}>Precisa da sua atenção</h2>
+              <h2 id="panel-attention-title" ref={attentionRef} tabIndex={-1}>Para corrigir ({pagina.pendentes.length})</h2>
               <p>Redações aguardando correção há mais tempo</p>
               {exibidas.length ? (
                 <ul className="panel-pending-list">
@@ -121,17 +107,29 @@ export default function ProfessorDashboardPage() {
               ) : (
                 <EstadoVazio
                   nivel={3}
-                  titulo={pagina.turmas.length ? 'Nenhuma redação pendente' : 'Comece pelas suas turmas'}
+                  titulo={pagina.turmas.length ? 'Nenhuma redação aguardando correção' : 'Comece pelas suas turmas'}
                   descricao={pagina.turmas.length ? 'As redações enviadas pelos alunos aparecerão aqui para correção.' : 'Acesse Turmas para organizar alunos e propostas de redação.'}
                   acao={<Botao as={Link} to="/professor/turmas" variante="secundario">Ver turmas</Botao>}
                 />
               )}
-              {pagina.pendentes.length > 3 && (
-                <button type="button" className="panel-more" onClick={() => setMostrarTodas((valor) => !valor)}>
-                  {mostrarTodas ? 'Mostrar apenas as três mais antigas' : `Ver todas as ${pagina.pendentes.length} pendentes`}
-                </button>
-              )}
+              {totalPaginas > 1 && <nav className="panel-pagination" aria-label="Páginas de redações pendentes">
+                <Botao variante="secundario" disabled={indice === 0} onClick={() => irParaFila(indice - 1)}>Anterior</Botao>
+                <span role="status">Página {indice + 1} de {totalPaginas}</span>
+                <Botao variante="secundario" disabled={indice + 1 >= totalPaginas} onClick={() => irParaFila(indice + 1)}>Próxima</Botao>
+              </nav>}
             </section>
+            <p className="panel-subtitle">
+              {pagina.turmasAtivas} {pagina.turmasAtivas === 1 ? 'turma ativa' : 'turmas ativas'}
+              {' · '}{pagina.alunosCadastrados} {pagina.alunosCadastrados === 1 ? 'aluno' : 'alunos'}
+              {pagina.publicadasNoMes !== null && <> · {pagina.publicadasNoMes} {pagina.publicadasNoMes === 1 ? 'correção publicada neste mês' : 'correções publicadas neste mês'}</>}
+            </p>
+            {pagina.carregandoPublicadas && <p role="status" className="panel-publication-warning">Carregando histórico de publicações…</p>}
+            {!pagina.carregandoPublicadas && pagina.publicadasNoMes === null && (
+              <p role="status" className="panel-publication-warning">
+                O histórico de publicações não respondeu. A fila continua disponível.
+                <button type="button" onClick={() => setTentativa((valor) => valor + 1)}>Atualizar</button>
+              </p>
+            )}
           </>
         )}
       </div>

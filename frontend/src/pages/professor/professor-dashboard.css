@@ -45,7 +45,7 @@
 .panel-student > span { display: block; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; line-height: 17px; color: var(--panel-muted); }
 .panel-wait { flex-shrink: 0; margin-right: 10px; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--panel-muted); }
 .panel-wait.overdue { color: var(--panel-error); }
-.panel-more { margin-top: 16px; min-height: 44px; color: var(--panel-action); font-size: 13px; cursor: pointer; }
+.panel-pagination { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-block: 16px; font-size: 13px; color: var(--panel-muted); }
 .panel-error { margin-top: 19px; padding: 28px; border: 1px solid var(--panel-border); border-radius: var(--raio-cartao); background: var(--panel-surface); }
 .panel-error h2 { margin: 0; font-family: var(--fonte-interface); font-size: 18px; font-weight: 600; }
 .panel-error p { color: var(--panel-muted); font-size: 14px; line-height: 22px; }
