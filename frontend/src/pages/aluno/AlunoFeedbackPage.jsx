@@ -47,7 +47,7 @@ const classeCartao =
   'rounded-cartao border border-[var(--surface-border)] bg-superficie aluno-elevacao-1'
 
 const classeSobretitulo =
-  'text-[11px] font-bold uppercase leading-[14px] tracking-[1.32px]'
+  'text-xs font-semibold leading-5'
 
 // Falhas aqui não aparecem para o aluno: o sino continua com a contagem
 // anterior e a leitura pode ser feita depois na página de notificações.

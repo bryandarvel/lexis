@@ -15,7 +15,7 @@
   --casca-texto-suave: #93c4f7;
   --casca-icone: #3d72b0;
   --casca-borda: #1e4a80;
-  --casca-avatar: #6b7a90;
+  --casca-avatar: #34495f;
   --casca-contagem: #c42626;
   min-height: 100svh;
 }
@@ -68,8 +68,8 @@
   display: grid;
   place-items: center;
   flex: none;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2.75rem;
+  height: 2.75rem;
   margin-left: -0.25rem;
   border: 0;
   border-radius: var(--raio-controle);
@@ -153,6 +153,7 @@
 .casca-trilha a:hover {
   text-decoration: underline;
 }
+.casca-trilha a { min-width: 24px; }
 
 /*
  * No modo imersivo não há menu lateral: a trilha é o caminho de volta e por

@@ -65,6 +65,7 @@ body {
   color: var(--texto);
   font-family: var(--fonte-interface);
   font-synthesis: none;
+  font-variant-numeric: tabular-nums;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -213,6 +214,24 @@ select {
 button,
 a {
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Links no texto corrido mantêm a leitura; os isolados ganham área de alvo. */
+:where(a[href]):not(:where(p a, .sr-only, .casca-pular)) {
+  display: inline-flex;
+  align-items: center;
+  min-width: 24px;
+  min-height: 24px;
+}
+button { min-height: 24px; }
+/* O conteúdo de um details fechado não participa de layout nem de transições.
+   A ocultação nativa por content-visibility pode reter transições concluídas. */
+details:not([open]) > :not(summary) { display: none; }
+input[type="checkbox"] { width: 24px; height: 24px; flex-shrink: 0; }
+label:has(input[type="checkbox"]), label:has(input[type="radio"]) { min-height: 44px; }
+@media (max-width: 767px) {
+  body :is(a[href], button):not(:where(p a, .sr-only, .casca-pular)) { min-width: 44px; min-height: 44px; }
+  label:has(input[type="checkbox"]) { padding-block: 10px; }
 }
 
 ::-webkit-scrollbar {

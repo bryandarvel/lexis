@@ -19,7 +19,7 @@ export default function RouteLoading() {
         />
 
         <p className="text-sm font-medium text-texto-suave">
-          Verificando sua sessão...
+          Verificando sua sessão…
         </p>
       </div>
     </main>

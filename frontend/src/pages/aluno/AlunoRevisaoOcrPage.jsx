@@ -197,7 +197,7 @@ function FotoEnviada({
             className="absolute inset-0 animate-pulse bg-[var(--aluno-trilho)]"
           >
             <span className="sr-only">
-              Carregando a foto enviada...
+              Carregando a foto enviada…
             </span>
           </div>
         )}
@@ -472,7 +472,7 @@ export default function AlunoRevisaoOcrPage() {
               disabled={salvando}
               className="w-full sm:w-[200px]">
               {salvando
-                ? 'Salvando...'
+                ? 'Salvando…'
                 : 'Aceitar e continuar'}
             </Botao>
           </div>

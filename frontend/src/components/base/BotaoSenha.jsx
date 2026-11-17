@@ -14,7 +14,7 @@ export default function BotaoSenha({ visivel, onAlternar, disabled = false }) {
       onClick={onAlternar}
       disabled={disabled}
       aria-label={visivel ? 'Ocultar senha' : 'Mostrar senha'}
-      className="absolute right-1 top-1/2 inline-flex size-10 -translate-y-1/2 items-center justify-center rounded-controle text-texto-suave transition-[background-color,color] duration-[var(--rapido)] hover:bg-superficie-rebaixada hover:text-texto focus-visible:outline-offset-0 disabled:cursor-not-allowed disabled:opacity-60"
+      className="absolute right-1 top-1/2 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-controle text-texto-suave transition-[background-color,color] duration-[var(--rapido)] hover:bg-superficie-rebaixada hover:text-texto focus-visible:outline-offset-0 disabled:cursor-not-allowed disabled:opacity-60"
     >
       {visivel ? <IconeOlhoRiscado /> : <IconeOlho />}
     </button>

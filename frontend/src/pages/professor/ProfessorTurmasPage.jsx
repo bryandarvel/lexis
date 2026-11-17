@@ -73,7 +73,7 @@ function NovaTurmaDialog({ onClose, onCreated }) {
         {erro.mensagem && <Aviso tipo="erro">{erro.mensagem}</Aviso>}
         <div className="dialogo-base__rodape">
           <Botao variante="secundario" disabled={enviando} onClick={onClose}>Cancelar</Botao>
-          <Botao type="submit" carregando={enviando} rotuloCarregando="Criando...">Criar turma</Botao>
+          <Botao type="submit" carregando={enviando} rotuloCarregando="Criando…">Criar turma</Botao>
         </div>
       </form>
     </Dialogo>
@@ -89,17 +89,12 @@ function TurmaCard({ turma }) {
       <Link to={`/professor/turmas/${turma.id}`} className="class-card-link" aria-label={`Abrir turma ${turma.nome}`}>
         <div className="class-card-info">
           <h2>{turma.nome}</h2>
-          <p>{alunos} {alunos === 1 ? 'aluno' : 'alunos'} · <span>{turma.codigoAcesso}</span></p>
-          {resumo ? (
-            <div className="class-progress" role="progressbar" aria-label={`Redações avaliadas em ${turma.nome}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={resumo.progresso}
-              aria-valuetext={`${resumo.avaliadas} de ${resumo.total} redações avaliadas`} title={`${resumo.avaliadas} de ${resumo.total} redações avaliadas`}>
-              <span style={{ width: `${resumo.progresso}%` }} />
-            </div>
-          ) : <span className="class-metrics-unavailable">Indicadores indisponíveis</span>}
         </div>
+        <p className="class-card-alunos">{alunos} {alunos === 1 ? 'aluno' : 'alunos'}</p>
+        <p className="class-card-codigo"><span className="sr-only">Código de acesso: </span>{turma.codigoAcesso}</p>
+        <p className="class-card-progresso">{resumo ? `${resumo.avaliadas} de ${resumo.total} corrigidas` : 'Indicadores indisponíveis'}</p>
         <div className="class-card-actions">
           <Etiqueta tom={turma.ativa && resumo?.pendentes ? 'atencao' : 'neutro'} className="min-w-[120px] justify-center">{estado}</Etiqueta>
-          <span className="class-open" aria-hidden="true">Abrir ›</span>
         </div>
       </Link>
     </li>
@@ -145,7 +140,7 @@ export default function ProfessorTurmasPage() {
         </div>
         <div className="classes-toolbar">
           <label className="classes-search"><span className="sr-only">Buscar turma ou código de acesso</span>
-            <input type="search" className="class-input" placeholder="Buscar turma ou código de acesso..." value={busca} disabled={!pronto} onChange={(event) => setBusca(event.target.value)} />
+            <input type="search" className="class-input" placeholder="Buscar turma ou código de acesso…" value={busca} disabled={!pronto} onChange={(event) => setBusca(event.target.value)} />
           </label>
           <div className="classes-filters" role="group" aria-label="Filtrar turmas por situação">
             {[['todas', 'Todas'], ['ativas', 'Ativas'], ['arquivadas', 'Arquivadas']].map(([valor, rotulo]) => (

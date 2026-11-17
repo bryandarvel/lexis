@@ -95,7 +95,7 @@ function RenomearTurmaDialog({ nomeAtual, enviando, erro, onSave, onClose }) {
         {erro && <Aviso tipo="erro">{erro}</Aviso>}
         <div className="dialogo-base__rodape">
           <Botao variante="secundario" disabled={enviando} onClick={onClose}>Cancelar</Botao>
-          <Botao type="submit" carregando={enviando} rotuloCarregando="Salvando...">Salvar nome</Botao>
+          <Botao type="submit" carregando={enviando} rotuloCarregando="Salvando…">Salvar nome</Botao>
         </div>
       </form>
     </Dialogo>
@@ -535,7 +535,7 @@ export default function ProfessorTurmaPage() {
                   'Alunos que ainda não entraram precisarão do código novo.',
                 ]}
                 rotulo="Gerar novo código"
-                rotuloEnviando="Gerando..."
+                rotuloEnviando="Gerando…"
                 enviando={acao.enviando}
                 erro={acao.erro}
                 onConfirm={regenerar}
@@ -554,7 +554,7 @@ export default function ProfessorTurmaPage() {
                   'A turma continua na sua lista, marcada como arquivada, e só poderá ser alterada de novo se você reabri-la.',
                 ]}
                 rotulo="Arquivar turma"
-                rotuloEnviando="Arquivando..."
+                rotuloEnviando="Arquivando…"
                 enviando={acao.enviando}
                 erro={acao.erro}
                 onConfirm={arquivar}
@@ -583,7 +583,7 @@ export default function ProfessorTurmaPage() {
                   'Ele pode voltar depois com o código de acesso ou entrar em outra turma.',
                 ]}
                 rotulo="Desvincular aluno"
-                rotuloEnviando="Desvinculando..."
+                rotuloEnviando="Desvinculando…"
                 enviando={acao.enviando}
                 erro={acao.erro}
                 onConfirm={() => desvincular(dialogo.matricula)}

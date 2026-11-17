@@ -4,7 +4,6 @@ import {
   useRef,
   useState,
 } from 'react'
-import { motion } from 'motion/react'
 import {
   Link,
   useNavigate,
@@ -51,7 +50,7 @@ function ListaCarregando() {
       aria-live="polite"
       className="mt-8 space-y-4"
     >
-      <span className="sr-only">Carregando notificações...</span>
+      <span className="sr-only">Carregando notificações…</span>
       {[1, 2, 3].map((item) => (
         <div
           key={item}
@@ -188,10 +187,7 @@ export default function AlunoNotificacoesPage() {
 
   return (
     <AppShell conteudo="livre" trilha={['Notificações']} rotaEnviarRedacao={rotaEnviarRedacao}>
-      <motion.section
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35 }}
+      <section
         className="px-6 py-12 sm:px-10 lg:px-16"
       >
         <div className="mx-auto max-w-4xl">
@@ -204,10 +200,7 @@ export default function AlunoNotificacoesPage() {
 
           <div className="mt-8 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-acao-texto">
-                Central do aluno
-              </p>
-              <h1 className="mt-2 text-4xl font-black text-texto">
+              <h1 className="text-4xl font-black text-texto">
                 Notificações
               </h1>
             </div>
@@ -305,7 +298,7 @@ export default function AlunoNotificacoesPage() {
               </ul>
             )}
         </div>
-      </motion.section>
+      </section>
     </AppShell>
   )
 }

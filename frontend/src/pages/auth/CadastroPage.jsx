@@ -239,7 +239,7 @@ export default function CadastroPage() {
           type="submit"
           className="min-h-12 w-full"
           carregando={enviando}
-          rotuloCarregando="Criando conta..."
+          rotuloCarregando="Criando conta…"
         >
           Criar conta
         </Botao>

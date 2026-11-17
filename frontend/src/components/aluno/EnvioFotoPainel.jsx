@@ -137,8 +137,8 @@ export default function EnvioFotoPainel({
           }>
           {enviando
             ? progresso >= 100
-              ? 'Transcrevendo...'
-              : 'Enviando foto...'
+              ? 'Transcrevendo…'
+              : 'Enviando foto…'
             : 'Extrair texto da foto'}
         </Botao>
       </div>

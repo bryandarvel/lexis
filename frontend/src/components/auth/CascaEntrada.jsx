@@ -1,5 +1,4 @@
 import { useId } from 'react'
-import { motion } from 'motion/react'
 import { Link } from 'react-router'
 
 import logo from '../../assets/lexis-logo-login.svg'
@@ -34,11 +33,8 @@ export default function CascaEntrada({
         <div className="login-theme">
           <ThemeToggle compacto />
         </div>
-        <motion.div
+        <div
           className="login-card"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, ease: 'easeOut' }}
         >
           <h1 id={idTitulo}>{titulo}</h1>
           {descricao && (
@@ -60,7 +56,7 @@ export default function CascaEntrada({
             </nav>
           )}
           {children}
-        </motion.div>
+        </div>
       </section>
     </main>
   )

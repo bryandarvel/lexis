@@ -181,7 +181,7 @@ export default function ProfessorNovoTemaPage() {
           <div className="h-10 w-72 animate-pulse rounded-cartao bg-acao-suave" />
           <div className="mt-8 h-[34rem] animate-pulse rounded-cartao bg-acao-suave" />
           <span className="sr-only">
-            Carregando modelo de critérios...
+            Carregando modelo de critérios…
           </span>
         </div>
       </AppShell>
@@ -410,7 +410,7 @@ export default function ProfessorNovoTemaPage() {
             
           >
             {status === 'salvando'
-              ? 'Criando tema...'
+              ? 'Criando tema…'
               : 'Criar proposta'}
           </Botao>
           <Link
