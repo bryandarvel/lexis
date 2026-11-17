@@ -1,7 +1,6 @@
 import Aviso from '../../components/base/Aviso.jsx'
 import { useEffect, useRef, useState } from 'react'
 import Botao from '../../components/base/Botao.jsx'
-import { motion } from 'motion/react'
 import { useNavigate } from 'react-router'
 
 import Campo from '../../components/base/Campo.jsx'
@@ -218,11 +217,8 @@ export default function ProfessorPerfilPage() {
 
   return (
     <AppShell conteudo="amplo" trilha={['Perfil']}>
-      <motion.div
+      <div
         className="panel-main perfil-main"
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.22 }}
       >
         <h1>Perfil</h1>
         <p className="panel-subtitle">
@@ -348,7 +344,7 @@ export default function ProfessorPerfilPage() {
             {saindo ? 'Saindo...' : 'Sair da conta'}
           </Botao>
         </section>
-      </motion.div>
+      </div>
     </AppShell>
   )
 }

@@ -2,7 +2,6 @@ import { formatarData } from '../../utils/formatar-data.js'
 import Etiqueta from '../../components/base/Etiqueta.jsx'
 import EstadoVazio from '../../components/base/EstadoVazio.jsx'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { motion } from 'motion/react'
 import { Link, useParams } from 'react-router'
 import Aviso from '../../components/base/Aviso.jsx'
 import Botao from '../../components/base/Botao.jsx'
@@ -336,11 +335,8 @@ export default function ProfessorTurmaPage() {
 
   return (
     <AppShell conteudo="amplo" trilha={['Turmas']} turmas={pronto ? [turma] : []} pronto={pronto}>
-      <motion.div
+      <div
         className="panel-main turma-main"
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: .22 }}
         aria-busy={pagina.status === 'carregando'}
       >
         <Botao as={Link} to="/professor/turmas" variante="secundario" className="turma-back">
@@ -592,7 +588,7 @@ export default function ProfessorTurmaPage() {
             )}
           </>
         )}
-      </motion.div>
+      </div>
     </AppShell>
   )
 }

@@ -21,13 +21,21 @@ import Trilha from '../components/layout/Trilha.jsx'
 import DialogoPropostasPorTurma from '../components/professor/DialogoPropostasPorTurma.jsx'
 import { useAuth } from '../hooks/useAuth.js'
 import { useNotificacoesNaoLidas } from '../hooks/useNotificacoesNaoLidas.js'
-import { listarNotificacoesProfessor } from '../services/notificacoes-professor.js'
-import { listarNotificacoes } from '../services/notificacoes.js'
+import {
+  listarNotificacoesProfessor,
+  marcarNotificacaoProfessorLida,
+} from '../services/notificacoes-professor.js'
+import {
+  listarNotificacoes,
+  marcarNotificacaoLida,
+} from '../services/notificacoes.js'
 import { mensagemSaidaDaTurma } from '../utils/minha-turma.js'
 import {
   montarNavegacao,
   rotaInicialDoPapel,
 } from '../utils/navegacao-casca.js'
+import { descreverAvisoProfessor } from '../utils/notificacoes-professor.js'
+import { descreverAcaoNotificacao } from '../utils/notifications.js'
 import './app-shell.css'
 import './escopo-aluno.css'
 import '../pages/professor/professor-dashboard.css'
@@ -50,6 +58,10 @@ const PAPEIS = {
     rotaNotificacoes: '/aluno/notificacoes',
     rotaPerfil: '/aluno/perfil',
     listarAvisos: listarNotificacoes,
+    marcarAvisoLido: marcarNotificacaoLida,
+    descreverAviso: descreverAcaoNotificacao,
+    textoSemAvisos:
+      'Quando um professor publicar uma correção, o aviso aparece aqui.',
   },
   PROFESSOR: {
     escopo: 'professor-panel',
@@ -58,6 +70,10 @@ const PAPEIS = {
     rotaNotificacoes: '/professor/notificacoes',
     rotaPerfil: '/professor/perfil',
     listarAvisos: listarNotificacoesProfessor,
+    marcarAvisoLido: marcarNotificacaoProfessorLida,
+    descreverAviso: descreverAvisoProfessor,
+    textoSemAvisos:
+      'Quando um aluno enviar uma redação, o aviso aparece aqui.',
   },
 }
 
@@ -298,8 +314,13 @@ export default function AppShell({
           <div className="casca-ferramentas">
             {indicador}
             <Sino
-              para={dadosDoPapel.rotaNotificacoes}
               total={totalNaoLidas}
+              usuarioId={usuario?.id}
+              rotaTodas={dadosDoPapel.rotaNotificacoes}
+              textoVazio={dadosDoPapel.textoSemAvisos}
+              listar={dadosDoPapel.listarAvisos}
+              marcarLida={dadosDoPapel.marcarAvisoLido}
+              descrever={dadosDoPapel.descreverAviso}
             />
             <ThemeToggle compacto />
             <MenuUsuario
