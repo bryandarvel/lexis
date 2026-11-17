@@ -182,7 +182,7 @@ function CartaoProposta({
 }) {
   if (status === 'carregando') {
     return (
-      <EsqueletoCartao rotulo="Carregando a próxima proposta..." />
+      <EsqueletoCartao rotulo="Carregando a próxima proposta…" />
     )
   }
 
@@ -239,7 +239,7 @@ function CartaoProposta({
     >
       <div className="flex flex-wrap gap-3">
         <span
-          className={`inline-flex h-6 min-w-[150px] items-center justify-center rounded-full px-4 text-xs font-medium uppercase leading-[17px] ${
+          className={`inline-flex h-6 min-w-[150px] items-center justify-center rounded-full px-4 text-xs font-medium leading-[17px] ${
             descricao.prazoVencido
               ? 'bg-[var(--aluno-atencao-fundo)] text-[var(--aluno-atencao)]'
               : 'bg-[var(--aluno-sucesso-fundo)] text-[var(--aluno-sucesso)]'
@@ -296,7 +296,7 @@ function ListaPropostas({ status, propostas }) {
       </p>
       {status === 'carregando' && (
         <div role="status" className={`${classeCartao} mt-4 h-32 animate-pulse`}>
-          <span className="sr-only">Carregando as propostas da turma...</span>
+          <span className="sr-only">Carregando as propostas da turma…</span>
         </div>
       )}
       {status === 'erro' && (
@@ -369,7 +369,7 @@ function Indicador({
 function CartaoDesempenho({ bloco }) {
   if (bloco.status === 'carregando') {
     return (
-      <EsqueletoCartao rotulo="Carregando seu desempenho..." />
+      <EsqueletoCartao rotulo="Carregando seu desempenho…" />
     )
   }
 
@@ -574,7 +574,7 @@ function CorrecoesRecentes({
           className="mt-4 space-y-3"
         >
           <span className="sr-only">
-            Carregando suas redações...
+            Carregando suas redações…
           </span>
           {[0, 1, 2].map((item) => (
             <div
@@ -725,7 +725,7 @@ function FormularioEntrarTurma({ onEntrou }) {
             codigoAcesso.length !== 8
           }>
           {estado.enviando
-            ? 'Entrando...'
+            ? 'Entrando…'
             : 'Entrar na turma'}
         </Botao>
       </form>
@@ -750,7 +750,7 @@ function SubtituloTurma({ bloco }) {
         className="block h-[25px] w-72 max-w-full animate-pulse rounded-marca bg-superficie-rebaixada"
       >
         <span className="sr-only">
-          Carregando sua turma...
+          Carregando sua turma…
         </span>
       </span>
     )

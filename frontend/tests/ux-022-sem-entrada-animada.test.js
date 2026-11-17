@@ -19,3 +19,16 @@ test('nenhuma página do professor usa motion nem entrada animada', () => {
     assert.doesNotMatch(fonte, /initial=\{\{/, nome)
   }
 })
+
+test('aluno e telas públicas também chegam sem animação de entrada', () => {
+  for (const pasta of ['../src/pages/aluno/', '../src/pages/auth/']) {
+    const base = new URL(pasta, import.meta.url)
+    for (const nome of readdirSync(base).filter((nome) => nome.endsWith('Page.jsx'))) {
+      const fonte = readFileSync(new URL(nome, base), 'utf8')
+      assert.doesNotMatch(fonte, /motion\./, nome)
+      assert.doesNotMatch(fonte, /initial=\{\{/, nome)
+    }
+  }
+  const casca = readFileSync(new URL('../src/components/auth/CascaEntrada.jsx', import.meta.url), 'utf8')
+  assert.doesNotMatch(casca, /motion\.|initial=\{\{/)
+})

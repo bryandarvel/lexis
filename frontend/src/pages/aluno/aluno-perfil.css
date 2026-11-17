@@ -1,5 +1,5 @@
 /*
- * Perfil do aluno (somente leitura). Usa os tokens --aluno-* do shell do
+ * Perfil do aluno. Usa os tokens --aluno-* do shell do
  * aluno, que já têm variante para o tema escuro. Classes com prefixo próprio
  * (aluno-pf-) para não colidir com as de outras telas do aluno.
  */

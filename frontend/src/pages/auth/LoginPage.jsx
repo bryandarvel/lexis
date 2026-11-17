@@ -132,7 +132,7 @@ export default function LoginPage() {
           type="submit"
           className="min-h-12 w-full"
           carregando={enviando}
-          rotuloCarregando="Entrando..."
+          rotuloCarregando="Entrando…"
         >
           Entrar
         </Botao>

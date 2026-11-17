@@ -76,10 +76,11 @@
 .login-tabs [aria-current] { background: var(--login-surface); color: var(--login-action); }
 .login-form { display: grid; gap: 20px; margin-top: 24px; }
 .login-password { position: relative; }
-.login-forgot { position: absolute; top: 0; right: 0; z-index: 1; font-size: 12px; line-height: 18px; color: var(--login-action); cursor: pointer; }
+.login-forgot { position: absolute; top: 0; right: 0; z-index: 1; min-height: 24px; font-size: 12px; line-height: 18px; color: var(--login-action); cursor: pointer; }
 .login-forgot:hover { text-decoration: underline; }
 .login-password > div > div > button { color: var(--login-action); }
 @media (max-width: 767px) {
+  .login-forgot { position: static; display: flex; width: 100%; justify-content: flex-end; margin-bottom: 8px; }
   .login-page { grid-template-columns: 1fr; grid-template-rows: 140px 1fr; }
   .login-logo { width: 80px; height: 100px; }
   .login-access { align-items: flex-start; padding: 64px 20px 32px; }

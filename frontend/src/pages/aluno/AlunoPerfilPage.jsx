@@ -3,6 +3,7 @@ import Botao from '../../components/base/Botao.jsx'
 import { Link, useNavigate } from 'react-router'
 
 import AppShell from '../../layouts/AppShell.jsx'
+import EditorConta from '../../components/conta/EditorConta.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
 import { useRotaEnviarRedacao } from '../../hooks/useRotaEnviarRedacao.js'
 import { obterMinhaConta } from '../../services/conta.js'
@@ -105,19 +106,12 @@ function Campos({ itens }) {
 function BlocoConta({ estado, onTentar }) {
   const conta = descreverConta(estado.dados)
 
+  if (estado.status === 'pronto' && conta) {
+    return <div className="aluno-pf-largo"><EditorConta exibirSessao={false} membroDesde={conta.membroDesde} /></div>
+  }
+
   return (
-    <Bloco chave="conta" estado={estado} onTentar={onTentar}>
-      {conta && (
-        <Campos
-          itens={[
-            ['Nome', conta.nome],
-            ['E-mail', conta.email],
-            ['Papel', conta.papel],
-            ['Membro desde', conta.membroDesde ?? 'Não informado'],
-          ]}
-        />
-      )}
-    </Bloco>
+    <Bloco chave="conta" estado={estado} onTentar={onTentar} />
   )
 }
 

@@ -39,7 +39,7 @@
 .panel-attention > p { margin: 4px 0 0; font-size: 12px; line-height: 17px; color: var(--panel-muted); }
 .panel-pending-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin: 19px 0 0; padding: 0; list-style: none; }
 .panel-pending { min-width: 0; display: flex; align-items: center; gap: 14px; min-height: 76px; padding: 17px 20px; border: 1px solid var(--panel-border); border-radius: var(--raio-cartao); background: var(--panel-surface); }
-.panel-student-avatar { display: grid; place-items: center; flex: 0 0 auto; width: 36px; height: 36px; border-radius: var(--raio-pilula); background: #93a1b5; color: white; font-size: 12px; line-height: 17px; }
+.panel-student-avatar { display: grid; place-items: center; flex: 0 0 auto; width: 36px; height: 36px; border-radius: var(--raio-pilula); background: var(--superficie-rebaixada); color: var(--texto); font-size: 12px; line-height: 17px; }
 .panel-student { min-width: 0; flex: 1; }
 .panel-student strong { display: block; font-size: 13px; font-weight: 600; line-height: 18px; }
 .panel-student > span { display: block; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; line-height: 17px; color: var(--panel-muted); }

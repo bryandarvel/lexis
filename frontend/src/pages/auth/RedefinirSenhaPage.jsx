@@ -52,7 +52,7 @@ export default function RedefinirSenhaPage() {
             <Campo id="reset-password" label="Nova senha" type="password" autoComplete="new-password" value={senha} onChange={e => setSenha(e.target.value)} minLength={10} maxLength={72} aria-describedby="reset-rules" disabled={enviando} required />
             <Campo id="reset-confirmation" label="Confirmar nova senha" type="password" autoComplete="new-password" value={confirmacao} onChange={e => setConfirmacao(e.target.value)} minLength={10} maxLength={72} disabled={enviando} required />
             {erro && <Aviso tipo="erro">{erro}</Aviso>}
-            <Botao type="submit" className="min-h-12 w-full" carregando={enviando} rotuloCarregando="Redefinindo...">Redefinir senha</Botao>
+            <Botao type="submit" className="min-h-12 w-full" carregando={enviando} rotuloCarregando="Redefinindo…">Redefinir senha</Botao>
           </form>}
         <Botao as={Link} variante="fantasma" to="/login">Voltar para entrar</Botao>
   </CascaEntrada>

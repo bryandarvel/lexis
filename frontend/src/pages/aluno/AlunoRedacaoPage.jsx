@@ -256,7 +256,7 @@ function EditorCard({
         maxLength={LIMITE_CARACTERES_REDACAO}
         readOnly={somenteLeitura}
         aria-describedby="contagem-redacao status-salvamento"
-        placeholder="Comece a desenvolver sua redação..."
+        placeholder="Comece a desenvolver sua redação…"
         className="fonte-redacao mt-[17px] min-h-[348px] w-full flex-1 resize-none bg-transparent text-[17px] leading-8 text-texto outline-none placeholder:text-texto-fraco read-only:cursor-default"
       />
 
@@ -317,7 +317,7 @@ function EsqueletoEditor() {
       className="animate-pulse"
     >
       <span className="sr-only">
-        Carregando o tema e o rascunho...
+        Carregando o tema e o rascunho…
       </span>
       <div className="h-[41px] w-72 max-w-full rounded-marca bg-superficie-rebaixada" />
       <div className="mt-[19px] h-16 rounded-controle bg-superficie-rebaixada" />
@@ -883,7 +883,7 @@ export default function AlunoRedacaoPage() {
         }
         className="w-full sm:w-[160px]">
         {acao === 'enviar'
-          ? 'Enviando...'
+          ? 'Enviando…'
           : 'Revisar e enviar'}
       </Botao>
     </>
@@ -924,7 +924,7 @@ export default function AlunoRedacaoPage() {
           <div className="min-w-0">
             <p
               id="rotulo-tema"
-              className="text-[11px] font-bold uppercase leading-[14px] tracking-[1.32px] text-[var(--aluno-acao-suave-texto)]"
+              className="text-xs font-semibold leading-5 text-[var(--aluno-acao-suave-texto)]"
             >
               Tema da proposta
             </p>

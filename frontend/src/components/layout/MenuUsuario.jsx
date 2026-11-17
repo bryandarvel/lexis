@@ -114,7 +114,7 @@ export default function MenuUsuario({
               tamanho="compacto"
               className="w-full"
             >
-              {saindo ? 'Saindo...' : 'Sair'}
+              {saindo ? 'Saindo…' : 'Sair'}
             </Botao>
           </div>
         </div>

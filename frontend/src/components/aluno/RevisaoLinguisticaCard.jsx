@@ -147,7 +147,7 @@ export default function RevisaoLinguisticaCard({
           role="status"
           className="mt-4 animate-pulse text-sm leading-[22px] text-texto"
         >
-          Consultando o LanguageTool...
+          Consultando o LanguageTool…
         </p>
       )}
 

@@ -75,7 +75,7 @@ function EditarPropostaDialog({ tema, enviando, erro, erros, onSave, onClose }) 
         {(erros.formulario || erro) && <Aviso tipo="erro">{erros.formulario || erro}</Aviso>}
         <div className="dialogo-base__rodape">
           <Botao variante="secundario" disabled={enviando} onClick={onClose}>Cancelar</Botao>
-          <Botao type="submit" carregando={enviando} rotuloCarregando="Salvando...">Salvar proposta</Botao>
+          <Botao type="submit" carregando={enviando} rotuloCarregando="Salvando…">Salvar proposta</Botao>
         </div>
       </form>
     </Dialogo>
@@ -93,7 +93,7 @@ function ArquivarPropostaDialog({ tema, enviando, erro, onConfirm, onClose }) {
         'A proposta continua visível para você, marcada como arquivada.',
         'Depois de arquivada, a proposta só volta a ficar ativa se você reabri-la nesta página.',
       ]}
-      confirmarRotulo={enviando ? 'Arquivando...' : 'Arquivar proposta'}
+      confirmarRotulo={enviando ? 'Arquivando…' : 'Arquivar proposta'}
       perigo
       ocupado={enviando}
       onConfirmar={onConfirm}

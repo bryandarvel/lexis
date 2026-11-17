@@ -23,7 +23,7 @@ export default function FeedbackEditor({ action, form, onFieldChange, bloqueado 
       <section className="review-card review-general" aria-labelledby="review-general-title">
         <h2 id="review-general-title"><label htmlFor="review-general-comment">Comentário geral</label></h2>
         <textarea id="review-general-comment" rows={3} maxLength={10000} value={form.generalComment} disabled={Boolean(action) || bloqueado}
-          onChange={(event) => onFieldChange('generalComment', event.target.value)} placeholder="Escreva um comentário geral sobre a redação..." />
+          onChange={(event) => onFieldChange('generalComment', event.target.value)} placeholder="Escreva um comentário geral sobre a redação…" />
         <span className="review-counter">{form.generalComment.length}/10000</span>
       </section>
     </>

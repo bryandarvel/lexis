@@ -9,7 +9,7 @@
 .review-card p, .review-card li, .review-card h3 { overflow-wrap: anywhere; }
 .review-caption { margin: 8px 0; color: var(--panel-muted); font-size: 12px; line-height: 19px; }
 .review-student { display: flex; align-items: center; gap: 16px; padding: 16px 20px; min-height: 80px; }
-.review-student-avatar { width: 44px; height: 44px; flex: 0 0 auto; display: grid; place-items: center; border-radius: var(--raio-pilula); background: #6b7a90; color: white; font-size: 13px; font-weight: 600; }
+.review-student-avatar { width: 44px; height: 44px; flex: 0 0 auto; display: grid; place-items: center; border-radius: var(--raio-pilula); background: var(--superficie-rebaixada); color: var(--texto); font-size: 13px; font-weight: 600; }
 .review-student-info { flex: 1; min-width: 0; }
 .review-student-info h1 { overflow-wrap: anywhere; }
 .review-student-info p { margin: 4px 0 0; font-size: 12px; line-height: 17px; color: var(--panel-muted); }

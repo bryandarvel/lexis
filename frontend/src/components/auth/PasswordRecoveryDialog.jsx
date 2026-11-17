@@ -81,7 +81,7 @@ export default function PasswordRecoveryDialog({
             type="submit"
             disabled={!onRequestRecovery || concluido}
             carregando={enviando}
-            rotuloCarregando="Solicitando..."
+            rotuloCarregando="Solicitando…"
           >
             Enviar instruções
           </Botao>

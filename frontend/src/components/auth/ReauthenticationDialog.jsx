@@ -119,7 +119,7 @@ export default function ReauthenticationDialog({
             Sair da conta
           </Botao>
           <Botao type="submit" disabled={enviando}>
-            {enviando ? 'Entrando...' : 'Entrar e continuar'}
+            {enviando ? 'Entrando…' : 'Entrar e continuar'}
           </Botao>
         </div>
       </form>
