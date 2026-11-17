@@ -13,9 +13,10 @@ import { prepararMarcacoes } from '../src/utils/professor-correction.js'
 let servidor, cache, AnalysisPanel, EssayEvidenceText
 before(async () => {
   cache = await mkdtemp(join(tmpdir(), 'lexis-analysis-components-'))
-  // Cache isolado para não invalidar React no servidor de desenvolvimento aberto.
+  // O teste renderiza só no servidor. Sem o otimizador do cliente em segundo
+  // plano, a limpeza do cache isolado não disputa com uma escrita do Vite.
   servidor = await createServer({ root: fileURLToPath(new URL('../', import.meta.url)), configFile: false,
-    cacheDir: cache, plugins: [react()], server: { middlewareMode: true }, appType: 'custom' })
+    cacheDir: cache, plugins: [react()], optimizeDeps: { noDiscovery: true }, server: { middlewareMode: true }, appType: 'custom' })
   AnalysisPanel = (await servidor.ssrLoadModule('/src/components/correction/AnalysisPanel.jsx')).default
   EssayEvidenceText = (await servidor.ssrLoadModule('/src/components/correction/EssayEvidenceText.jsx')).default
 })
