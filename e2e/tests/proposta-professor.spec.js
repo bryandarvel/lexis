@@ -111,7 +111,9 @@ test('arquivar a proposta tira ela dos alunos, preserva as redações e bloqueia
   await entrar(page, cenario.professor)
   await page.goto('/professor/temas/' + proposta.id)
   await page.getByRole('button', { name: 'Arquivar proposta', exact: true }).click()
-  const caixa = dialogo(page, 'Arquivar a proposta “Proposta que será arquivada”?')
+  // Issue #175: o enunciado saiu do título e foi para o cartão de resumo.
+  const caixa = dialogo(page, 'Arquivar esta proposta?')
+  await expect(caixa).toContainText('Proposta que será arquivada')
   await expect(caixa).toContainText('As redações já enviadas e as correções publicadas permanecem.')
   await caixa.getByRole('button', { name: 'Arquivar proposta', exact: true }).click()
 

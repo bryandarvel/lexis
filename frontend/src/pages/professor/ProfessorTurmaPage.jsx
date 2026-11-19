@@ -29,25 +29,16 @@ import {
 import {
   descreverSituacaoAluno,
   descreverSituacaoTurma,
+  descreverResultadoDasPropostas,
+  FILTROS_DE_PROPOSTA,
+  obterStatusTema,
   ordenarAlunosDaTurma,
+  organizarPropostasDaTurma,
   resumirAlunosDaTurma,
 } from '../../utils/professor-turma.js'
+import { IconeEngrenagem } from '../../components/base/icones.jsx'
 import './professor-turmas.css'
 import './professor-turma.css'
-
-function obterStatusTema(tema) {
-  if (!tema.ativo) {
-    return 'Arquivado'
-  }
-
-  const prazo = new Date(tema.prazoEntrega).getTime()
-
-  if (Number.isFinite(prazo) && prazo < Date.now()) {
-    return 'Prazo encerrado'
-  }
-
-  return 'Recebendo redações'
-}
 
 function RenomearTurmaDialog({ nomeAtual, enviando, erro, onSave, onClose }) {
   const nomeRef = useRef(null)
@@ -165,6 +156,8 @@ export default function ProfessorTurmaPage() {
   const [tentativa, setTentativa] = useState(0)
   const [alunos, setAlunos] = useState({ status: 'carregando', lista: [], mensagem: '' })
   const [dialogo, setDialogo] = useState(null)
+  const [buscaProposta, setBuscaProposta] = useState('')
+  const [filtroProposta, setFiltroProposta] = useState('todas')
   const [acao, setAcao] = useState({ enviando: false, erro: '' })
   const [aviso, setAviso] = useState('')
   const acaoRef = useRef(false)
@@ -354,6 +347,15 @@ export default function ProfessorTurmaPage() {
   }
 
   const resumo = resumirAlunosDaTurma(alunos.lista)
+  const propostasVisiveis = organizarPropostasDaTurma(pagina.temas, {
+    busca: buscaProposta,
+    filtro: filtroProposta,
+  })
+
+  function limparFiltrosDePropostas() {
+    setBuscaProposta('')
+    setFiltroProposta('todas')
+  }
 
   return (
     <AppShell conteudo="amplo" trilha={[{ rotulo: 'Turmas', para: '/professor/turmas' }, pronto ? turma.nome : 'Turma']}>
@@ -397,11 +399,19 @@ export default function ProfessorTurmaPage() {
                   Acompanhe as propostas, entregas e matrículas.
                 </p>
               </div>
-              {situacao.ativa && (
-                <Botao as={Link} to={`/professor/turmas/${turmaId}/temas/novo`} className="turma-create">
-                  Nova proposta
-                </Botao>
-              )}
+              <div className="turma-heading-acoes">
+                {situacao.podeGerenciar && (
+                  <Botao type="button" variante="secundario" ref={gestaoTituloRef}
+                    onClick={() => setDialogo({ tipo: 'gerenciar' })}>
+                    <IconeEngrenagem />Gerenciar
+                  </Botao>
+                )}
+                {situacao.ativa && (
+                  <Botao as={Link} to={`/professor/turmas/${turmaId}/temas/novo`} className="turma-create">
+                    Nova proposta
+                  </Botao>
+                )}
+              </div>
             </div>
 
             <p role="status" className="turma-aviso">{aviso}</p>
@@ -411,14 +421,6 @@ export default function ProfessorTurmaPage() {
               <Botao type="button" variante="secundario" className="turma-copiar" onClick={copiarCodigo}>
                 {copiado ? 'Copiado' : 'Copiar'}
               </Botao>
-              {situacao.podeGerenciar && <details className="turma-gestao">
-                  <summary ref={gestaoTituloRef}>Gerenciar</summary>
-                  <div className="turma-acoes">
-                    <Botao type="button" variante="secundario" onClick={() => setDialogo({ tipo: 'renomear' })}>Renomear turma</Botao>
-                    <Botao type="button" variante="secundario" onClick={() => setDialogo({ tipo: 'regenerar' })}>Gerar novo código</Botao>
-                    <Botao type="button" variante="perigo" onClick={() => setDialogo({ tipo: 'arquivar' })}>Arquivar turma</Botao>
-                  </div>
-                </details>}
             </div>
             {!situacao.podeGerenciar && (
                 <section className="turma-arquivada" aria-labelledby="turma-gestao-title">
@@ -507,14 +509,58 @@ export default function ProfessorTurmaPage() {
             {aba === 'propostas' && <section className="panel-attention turma-temas" aria-labelledby="turma-temas-title">
               <h2 id="turma-temas-title">Propostas da turma</h2>
               <p>Acompanhe os prazos e a quantidade de redações recebidas em cada proposta.</p>
-              {pagina.temas.length ? (
-                <ul className="classes-grid">
-                  {pagina.temas.map((tema) => <TemaCard key={tema.id} tema={tema} />)}
-                </ul>
-              ) : (
+              {pagina.temas.length > 0 && (
+                <div className="classes-toolbar turma-temas-toolbar">
+                  <label className="classes-search"><span className="sr-only">Buscar proposta pelo enunciado</span>
+                    <input type="search" className="class-input" placeholder="Buscar proposta pelo enunciado…"
+                      value={buscaProposta} onChange={(evento) => setBuscaProposta(evento.target.value)} />
+                  </label>
+                  <div className="classes-filters" role="group" aria-label="Filtrar propostas por situação">
+                    {FILTROS_DE_PROPOSTA.map(([valor, rotulo]) => (
+                      <button key={valor} type="button" aria-pressed={filtroProposta === valor}
+                        onClick={() => setFiltroProposta(valor)}>{rotulo}</button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {pagina.temas.length === 0 ? (
                 <EstadoVazio nivel={3} titulo="Esta turma ainda não possui propostas de redação." />
+              ) : propostasVisiveis.length ? (
+                <>
+                  <p role="status" className="turma-temas-resultado">
+                    {descreverResultadoDasPropostas(propostasVisiveis.length, pagina.temas.length)}
+                  </p>
+                  <ul className="classes-grid">
+                    {propostasVisiveis.map((tema) => <TemaCard key={tema.id} tema={tema} />)}
+                  </ul>
+                </>
+              ) : (
+                <EstadoVazio
+                  nivel={3}
+                  titulo="Nenhuma proposta nesta busca"
+                  descricao="Tente outro trecho do enunciado ou outro filtro."
+                  acao={<Botao type="button" variante="secundario" onClick={limparFiltrosDePropostas}>Limpar filtros</Botao>}
+                />
               )}
             </section>}
+
+            {dialogo?.tipo === 'gerenciar' && (
+              <Dialogo
+                aberto
+                titulo="Gerenciar turma"
+                descricao="Escolha o que deseja fazer. Cada ação pede uma confirmação antes de valer."
+                resumo={<p className="turma-gerenciar-resumo"><strong>{turma.nome}</strong><span>Código de acesso: {turma.codigoAcesso}</span></p>}
+                onFechar={fecharDialogo}
+                rodape={<Botao type="button" variante="secundario" onClick={fecharDialogo}>Fechar</Botao>}
+                rodapeSeparado
+              >
+                <div className="turma-gerenciar-acoes">
+                  <Botao type="button" variante="secundario" onClick={() => setDialogo({ tipo: 'renomear' })}>Renomear turma</Botao>
+                  <Botao type="button" variante="secundario" onClick={() => setDialogo({ tipo: 'regenerar' })}>Gerar novo código</Botao>
+                  <Botao type="button" variante="perigo" onClick={() => setDialogo({ tipo: 'arquivar' })}>Arquivar turma</Botao>
+                </div>
+              </Dialogo>
+            )}
 
             {dialogo?.tipo === 'renomear' && (
               <RenomearTurmaDialog

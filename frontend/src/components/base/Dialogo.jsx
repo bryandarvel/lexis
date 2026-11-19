@@ -9,14 +9,21 @@ import { useEffect, useId, useRef } from 'react'
  * diálogo de fato fecha é a tela, mudando `aberto`.
  *
  * O título é um h2 em Inter (regra de títulos, D2). Ações vão em `rodape`.
+ *
+ * `resumo` e `rodapeSeparado` (Issue #175) são o padrão visual das
+ * confirmações do fluxo da turma: um cartão com o dado em destaque logo abaixo
+ * do título e um divisor antes das ações. São opcionais e, sem eles, o diálogo
+ * continua exatamente como era.
  */
 export default function Dialogo({
   aberto,
   onFechar,
   titulo,
   descricao,
+  resumo,
   children,
   rodape,
+  rodapeSeparado = false,
   largo = false,
   fecharAoClicarFora = false,
   ocupado = false,
@@ -76,13 +83,20 @@ export default function Dialogo({
           <h2 id={idTitulo} className="dialogo-base__titulo">
             {titulo}
           </h2>
+          {resumo && <div className="dialogo-base__resumo">{resumo}</div>}
           {descricao && (
             <div id={idDescricao} className="dialogo-base__descricao">
               {descricao}
             </div>
           )}
           {children && <div className="dialogo-base__corpo">{children}</div>}
-          {rodape && <div className="dialogo-base__rodape">{rodape}</div>}
+          {rodape && (
+            <div
+              className={`dialogo-base__rodape${rodapeSeparado ? ' dialogo-base__rodape--separado' : ''}`}
+            >
+              {rodape}
+            </div>
+          )}
         </>
       )}
     </dialog>

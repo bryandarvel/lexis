@@ -84,21 +84,28 @@ function EditarPropostaDialog({ tema, enviando, erro, erros, onSave, onClose }) 
 
 function ArquivarPropostaDialog({ tema, enviando, erro, onConfirm, onClose }) {
   return (
+    /*
+     * Issue #175: o enunciado saiu do título, onde ocupava três linhas, e foi
+     * para o cartão de resumo. Os quatro efeitos viraram duas frases, sem
+     * perder nada do que diziam.
+     */
     <DialogoConfirmacao
       aberto
-      titulo={`Arquivar a proposta “${tema.enunciado}”?`}
-      efeitos={[
-        'A proposta sai da lista dos alunos e ninguém mais consegue abri-la nem enviar redação.',
-        'As redações já enviadas e as correções publicadas permanecem.',
-        'A proposta continua visível para você, marcada como arquivada.',
-        'Depois de arquivada, a proposta só volta a ficar ativa se você reabri-la nesta página.',
-      ]}
+      titulo="Arquivar esta proposta?"
+      resumo={<p className="topic-dialogo-resumo">{tema.enunciado}</p>}
+      descricao="A proposta sai da lista dos alunos: ninguém mais consegue abri-la nem enviar redação."
       confirmarRotulo={enviando ? 'Arquivando…' : 'Arquivar proposta'}
       perigo
       ocupado={enviando}
+      rodapeSeparado
       onConfirmar={onConfirm}
       onCancelar={onClose}
     >
+      <p className="topic-dialogo-nota">
+        As redações já enviadas e as correções publicadas permanecem. A proposta continua
+        visível para você, marcada como arquivada, e volta a ficar ativa se você reabri-la
+        nesta página.
+      </p>
       {erro && <Aviso tipo="erro">{erro}</Aviso>}
     </DialogoConfirmacao>
   )
