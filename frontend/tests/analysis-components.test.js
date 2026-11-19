@@ -51,7 +51,19 @@ test('publicação confirmada rebaixa a falha antiga a histórico consultável, 
   assert.match(html, /12\/11\/2026/)
   assert.equal(html.match(/Falha fictícia antes da publicação\./g).length, 1)
   assert.doesNotMatch(html, /role="alert"|Consultar resultado existente|Nenhuma análise solicitada/)
-  assert.match(html, /<button[^>]*disabled[^>]*>Analisar novamente com IA/)
+  // Durante a espera o botão segue desabilitado. Sem resultado aproveitável
+  // ele continua sendo o pedido de análise, não "Gerar nova análise" (#179).
+  assert.match(html, /<button[^>]*disabled[^>]*>/)
+  assert.match(html, /Analisar redação com IA/)
+  assert.doesNotMatch(html, /Gerar nova análise/)
+})
+
+test('o card da IA se anuncia por um título visível, não só por aria-label', () => {
+  const html = renderToStaticMarkup(createElement(AnalysisPanel, {}))
+
+  assert.match(html, /<h2[^>]*class="review-section-title">Análise de apoio da IA<\/h2>/)
+  assert.match(html, /A nota é atribuída pelo professor\./)
+  assert.doesNotMatch(html, /aria-label="Análise consultiva por IA"/)
 })
 
 test('falha nova é ativa mesmo quando sua mensagem coincide com a do histórico', () => {

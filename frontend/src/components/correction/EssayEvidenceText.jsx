@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useId, useMemo, useRef, useState } from 'react'
 import Botao from '../base/Botao.jsx'
-import { chaveTrecho, criarTrechoDaSelecao, lerIntervaloSelecionado, limitesDeGrafemas, moverGrafema, podeAcrescentarTrecho } from '../../utils/trechos-feedback.js'
+import { chaveTrecho, criarTrechoDaSelecao, criteriosComOTrecho, descreverTrechoJaMarcado, lerIntervaloSelecionado, limitesDeGrafemas, moverGrafema, podeAcrescentarTrecho } from '../../utils/trechos-feedback.js'
 import { tomCriterio } from '../../utils/professor-correction.js'
 import { resumirEvidencias } from '../../utils/ai-evidence.js'
 import { obterTomDaMarca } from '../../utils/criterio-cores.js'
@@ -28,6 +28,7 @@ export default function EssayEvidenceText({ texto = '', criterios, marcacoes, an
   const erroBorda = candidato?.trecho && (!limites.includes(proposta.inicio) || !limites.includes(proposta.fim))
   const pronto = candidato?.trecho && !erroBorda ? candidato.trecho : null
   const mostrarBarra = Boolean(intervalo && intervalo.inicio !== intervalo.fim)
+  const jaMarcadoEm = criteriosComOTrecho(criterios, porCriterio, pronto)
 
   useEffect(() => {
     if (teclado || disabled) return undefined
@@ -136,14 +137,36 @@ export default function EssayEvidenceText({ texto = '', criterios, marcacoes, an
       <p className="review-caption">Evidências sem localização confirmada ficam nos detalhes da análise.</p>}
     {mostrarBarra && <section ref={barra} tabIndex={-1} className="review-mark-bar" aria-label="Marcar este trecho em">
       <h3>Marcar este trecho em</h3>
-      <AjusteBordas texto={texto} intervalo={proposta} limites={limites} onChange={setAjuste} disabled={disabled} />
+      {/*
+        * Issue #179: a barra mostra primeiro as opções de critério, cada uma
+        * com a cor que o trecho vai receber no texto. O ajuste de bordas
+        * continua disponível, recolhido, e abre sozinho quando a seleção corta
+        * um caractere — que é quando ele é necessário.
+        */}
+      {jaMarcadoEm.length > 0 && <p role="status" className="review-caption">{descreverTrechoJaMarcado(jaMarcadoEm)}</p>}
       {(!pronto || aviso) && <p role="status" className="review-caption">{aviso || (erroBorda ? 'Ajuste as bordas para não cortar um caractere.' : candidato?.erro)}</p>}
+      <div className="review-mark-actions review-mark-opcoes">
+        {criterios.map((c) => {
+          const repetido = jaMarcadoEm.some((item) => item.id === c.id)
+
+          return <Botao key={c.id} variante="secundario" className={`review-mark-opcao review-tone-${tomCriterio(c)}`}
+            disabled={disabled || !pronto || repetido}
+            title={repetido ? 'Este trecho já está marcado neste critério.' : undefined}
+            onClick={() => {
+              const motivo = podeAcrescentarTrecho(porCriterio[c.id].marcados, pronto)
+              if (motivo) { setAviso(motivo); return }
+              onMark(c.id, pronto); limpar(teclado ? 'modo' : 'texto')
+            }}>
+            <span aria-hidden="true" className="review-color" />{c.nome}
+            {repetido && <span className="sr-only">, já marcado neste critério</span>}
+          </Botao>
+        })}
+      </div>
+      <details className="review-mark-bordas" open={Boolean(erroBorda)}>
+        <summary>Ajustar bordas</summary>
+        <AjusteBordas texto={texto} intervalo={proposta} limites={limites} onChange={setAjuste} disabled={disabled} />
+      </details>
       <div className="review-mark-actions">
-        {criterios.map((c) => <Botao key={c.id} variante="secundario" disabled={disabled || !pronto} onClick={() => {
-          const motivo = podeAcrescentarTrecho(porCriterio[c.id].marcados, pronto)
-          if (motivo) { setAviso(motivo); return }
-          onMark(c.id, pronto); limpar(teclado ? 'modo' : 'texto')
-        }}>{c.nome}</Botao>)}
         <Botao variante="secundario" onClick={() => limpar(teclado ? 'modo' : 'texto')}>Cancelar marcação</Botao>
       </div>
     </section>}
