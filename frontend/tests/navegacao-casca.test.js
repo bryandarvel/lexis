@@ -54,53 +54,58 @@ test('sem proposta pendente, "Enviar redação" fica indisponível e sem destino
   assert.match(item.motivo, /nenhuma proposta pendente/)
 })
 
-test('o professor mantém os seis itens: quatro destinos e duas ações', () => {
+test('o professor fica com três destinos e nenhuma ação', () => {
   const itens = montarNavegacao({ papel: 'PROFESSOR', caminho: '/professor' })
 
-  assert.deepEqual(rotulos(itens), [
-    'Painel',
-    'Turmas',
-    'Notificações',
-    'Propostas',
-    'Redações',
-    'Perfil',
-  ])
+  assert.deepEqual(rotulos(itens), ['Painel', 'Turmas', 'Perfil'])
   assert.deepEqual(
-    itens.filter((item) => item.tipo === 'link').map((item) => item.para),
-    [
-      '/professor',
-      '/professor/turmas',
-      '/professor/notificacoes',
-      '/professor/perfil',
-    ],
+    itens.map((item) => item.para),
+    ['/professor', '/professor/turmas', '/professor/perfil'],
   )
-  assert.deepEqual(
-    itens.filter((item) => item.tipo === 'acao').map((item) => item.acao),
-    ['propostas', 'redacoes'],
-  )
+  assert.ok(itens.every((item) => item.tipo === 'link'))
 })
 
-test('"Propostas" só fica disponível quando a tela informa as turmas', () => {
-  const propostas = (propostasDisponiveis) =>
-    porChave(
-      montarNavegacao({ papel: 'PROFESSOR', caminho: '/professor', propostasDisponiveis }),
-      'propostas',
-    )
+test('Redações, Propostas e Notificações saíram do menu do professor', () => {
+  const itens = montarNavegacao({ papel: 'PROFESSOR', caminho: '/professor' })
 
-  assert.equal(propostas(false).desabilitado, true)
-  assert.equal(propostas(true).desabilitado, false)
+  for (const chave of ['redacoes', 'propostas', 'notificacoes']) {
+    assert.equal(porChave(itens, chave), undefined, chave)
+  }
 })
 
-test('cada rota do professor marca o mesmo item de antes', () => {
+test('nenhum item do professor pode nascer desabilitado', () => {
+  // O item "Propostas" dependia das turmas carregadas pela tela e ficava
+  // morto em Notificações, Perfil e Nova proposta. Sem ações, não há item
+  // que o menu possa apresentar sem destino.
+  const caminhos = [
+    '/professor',
+    '/professor/notificacoes',
+    '/professor/perfil',
+    '/professor/temas/novo',
+  ]
+
+  for (const caminho of caminhos) {
+    const itens = montarNavegacao({ papel: 'PROFESSOR', caminho })
+
+    assert.ok(itens.every((item) => item.desabilitado === undefined), caminho)
+    assert.ok(itens.every((item) => item.para), caminho)
+  }
+})
+
+test('cada rota do professor marca o item por onde se chega a ela', () => {
   const ativo = (caminho) => ativos(montarNavegacao({ papel: 'PROFESSOR', caminho }))
 
   assert.deepEqual(ativo('/professor'), ['painel'])
   assert.deepEqual(ativo('/professor/turmas'), ['turmas'])
   assert.deepEqual(ativo('/professor/turmas/abc'), ['turmas'])
   assert.deepEqual(ativo('/professor/turmas/abc/temas/novo'), ['turmas'])
-  assert.deepEqual(ativo('/professor/temas/xyz'), ['propostas'])
-  assert.deepEqual(ativo('/professor/notificacoes'), ['notificacoes'])
+  // A proposta vive dentro de uma turma e é por Turmas que se chega a ela.
+  assert.deepEqual(ativo('/professor/temas/xyz'), ['turmas'])
+  assert.deepEqual(ativo('/professor/temas/novo'), ['turmas'])
   assert.deepEqual(ativo('/professor/perfil'), ['perfil'])
+  // Notificações continua existindo como página, mas abre pelo sino: não é
+  // destino do menu e por isso não marca item nenhum.
+  assert.deepEqual(ativo('/professor/notificacoes'), [])
   // A correção é imersiva e não mostra o menu; nenhum item fica marcado.
   assert.deepEqual(ativo('/professor/redacoes/r1'), [])
 })

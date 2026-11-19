@@ -82,16 +82,6 @@ function IconeTurmas() {
   )
 }
 
-function IconePropostas() {
-  return (
-    <svg {...PROPS}>
-      <rect x="5" y="4" width="14" height="17" rx="2" />
-      <path d="M9 4V3h6v1" />
-      <path d="M9 10h6M9 14h6M9 18h3" />
-    </svg>
-  )
-}
-
 export function IconeSino() {
   return (
     <svg {...PROPS} strokeWidth={1.8}>
@@ -118,8 +108,6 @@ const ICONES_DA_NAVEGACAO = {
   perfil: IconePerfil,
   painel: IconePainel,
   turmas: IconeTurmas,
-  notificacoes: IconeSino,
-  propostas: IconePropostas,
 }
 
 export function IconeSol() {

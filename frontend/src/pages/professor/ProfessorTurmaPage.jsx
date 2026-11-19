@@ -356,7 +356,7 @@ export default function ProfessorTurmaPage() {
   const resumo = resumirAlunosDaTurma(alunos.lista)
 
   return (
-    <AppShell conteudo="amplo" trilha={[{ rotulo: 'Turmas', para: '/professor/turmas' }, pronto ? turma.nome : 'Turma']} turmas={pronto ? [turma] : []} pronto={pronto}>
+    <AppShell conteudo="amplo" trilha={[{ rotulo: 'Turmas', para: '/professor/turmas' }, pronto ? turma.nome : 'Turma']}>
       <div
         className="panel-main turma-main"
         aria-busy={pagina.status === 'carregando'}

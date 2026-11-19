@@ -3,9 +3,11 @@
  * itens cada papel vê, para onde levam e qual está ativo. O desenho fica no
  * AppShell; aqui não há JSX, para que a regra seja testável sem render.
  *
- * Os itens são os mesmos que cada papel já tinha antes da casca única. As
- * decisões D3 e D4 da auditoria (Correções como destino do professor e
- * Feedbacks dentro de Minhas redações) não entram aqui.
+ * O menu do professor tem três destinos. "Redações", "Propostas" e
+ * "Notificações" saíram: as páginas continuam existindo, mas o acesso mudou.
+ * As propostas vivem dentro de Turmas, os avisos abrem pelo sino da barra e as
+ * redações pendentes continuam no Painel. A decisão D4 da auditoria (Feedbacks
+ * dentro de Minhas redações) é do aluno e não entra aqui.
  */
 
 export function rotaInicialDoPapel(papel) {
@@ -57,28 +59,16 @@ function itensDoAluno({ caminho, rotaEnviarRedacao }) {
   ]
 }
 
-function itensDoProfessor({ caminho, propostasDisponiveis }) {
+// Uma proposta só existe dentro de uma turma, e é por Turmas que se chega a
+// ela: as rotas de /professor/temas marcam "Turmas" no menu.
+const ROTAS_DE_TURMAS = ['/professor/turmas', '/professor/temas']
+
+function itensDoProfessor({ caminho }) {
   return [
     link('painel', 'Painel', '/professor', caminho, true),
-    link('turmas', 'Turmas', '/professor/turmas', caminho),
-    link('notificacoes', 'Notificações', '/professor/notificacoes', caminho),
-    // "Propostas" abre a escolha de turma e "Redações" leva à fila do painel:
-    // são ações, não destinos (UX-008). Ficam como estavam até a D3.
     {
-      chave: 'propostas',
-      tipo: 'acao',
-      acao: 'propostas',
-      rotulo: 'Propostas',
-      desabilitado: !propostasDisponiveis,
-      atual: destinoAtivo(caminho, '/professor/temas'),
-    },
-    {
-      chave: 'redacoes',
-      tipo: 'acao',
-      acao: 'redacoes',
-      rotulo: 'Redações',
-      desabilitado: false,
-      atual: false,
+      ...link('turmas', 'Turmas', '/professor/turmas', caminho),
+      atual: ROTAS_DE_TURMAS.some((rota) => destinoAtivo(caminho, rota)),
     },
     link('perfil', 'Perfil', '/professor/perfil', caminho),
   ]
@@ -88,10 +78,9 @@ export function montarNavegacao({
   papel,
   caminho = '',
   rotaEnviarRedacao = null,
-  propostasDisponiveis = false,
 }) {
   return papel === 'PROFESSOR'
-    ? itensDoProfessor({ caminho, propostasDisponiveis })
+    ? itensDoProfessor({ caminho })
     : itensDoAluno({ caminho, rotaEnviarRedacao })
 }
 
