@@ -238,7 +238,7 @@ function Correcao({ redacaoId, usuarioId }) {
     'Correção',
   ]
 
-  return <AppShell imersivo trilha={trilha} pronto={pronto} turmas={pronto ? [redacao.tema.turma] : []}
+  return <AppShell imersivo trilha={trilha}
     indicador={pagina.fila?.posicao ? <span className="review-position">Redação {pagina.fila.posicao} de {pagina.fila.total}</span> : null}>
     <div className="review-main" onKeyDown={aoPressionarTecla}>
       {pagina.status === 'carregando' && <div className="review-loading"><h1>Correção do professor</h1><p role="status">Carregando redação e avaliação…</p><div aria-hidden="true" className="review-loading-grid"><div className="skeleton-block" /><div className="skeleton-block" /><div className="skeleton-block" /></div></div>}

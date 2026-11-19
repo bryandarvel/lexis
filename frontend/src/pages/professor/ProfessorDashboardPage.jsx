@@ -66,7 +66,7 @@ export default function ProfessorDashboardPage() {
   const exibidas = pagina.pendentes.slice(indice * POR_PAGINA, (indice + 1) * POR_PAGINA)
 
   return (
-    <AppShell conteudo="amplo" trilha={['Painel']} turmas={pagina.turmas} pronto={pagina.status === 'pronto'} onRedacoes={() => irParaFila()}>
+    <AppShell conteudo="amplo" trilha={['Painel']}>
       <div
         className="panel-main"
       >

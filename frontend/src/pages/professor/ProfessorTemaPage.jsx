@@ -142,7 +142,6 @@ export default function ProfessorTemaPage() {
   // O botão Reabrir é trocado por Arquivar no mesmo lugar. O efeito roda depois da
   // limpeza do diálogo e leva o foco a Editar proposta, não a uma ação destrutiva.
   const [focoEditar, setFocoEditar] = useState(0)
-  const redacoesRef = useRef(null)
 
   useEffect(() => {
     let ativo = true
@@ -300,13 +299,8 @@ export default function ProfessorTemaPage() {
     }
   }
 
-  function irParaRedacoes() {
-    redacoesRef.current?.scrollIntoView({ block: 'start' })
-    redacoesRef.current?.focus()
-  }
-
   return (
-    <AppShell conteudo="amplo" pronto={pronto} turmas={pronto ? [pagina.turma] : []} onRedacoes={irParaRedacoes}
+    <AppShell conteudo="amplo"
       trilha={pronto
         ? [{ rotulo: 'Turmas', para: '/professor/turmas' }, { rotulo: pagina.turma.nome, para: `/professor/turmas/${turmaId}` }, 'Proposta']
         : ['Propostas']}>
@@ -344,7 +338,7 @@ export default function ProfessorTemaPage() {
               {pagina.tema.instrucoes ? <p className="topic-instructions">{pagina.tema.instrucoes}</p> : <p className="topic-empty-text">Nenhuma orientação adicional cadastrada nesta proposta.</p>}
             </section>
             <section className="topic-card topic-received" aria-labelledby="topic-received-title">
-              <div className="topic-section-heading"><div><h2 ref={redacoesRef} tabIndex={-1} id="topic-received-title">Redações recebidas</h2><p>{entregas.texto}</p>{entregas.textoHistorico && <p className="topic-empty-text">{entregas.textoHistorico}. As entregas permanecem no histórico.</p>}</div>
+              <div className="topic-section-heading"><div><h2 tabIndex={-1} id="topic-received-title">Redações recebidas</h2><p>{entregas.texto}</p>{entregas.textoHistorico && <p className="topic-empty-text">{entregas.textoHistorico}. As entregas permanecem no histórico.</p>}</div>
                 {pagina.redacoes.length > 3 && <Botao type="button" variante="secundario" onClick={() => setTodas(!todas)} aria-expanded={todas} aria-controls="topic-essays">{todas ? 'Mostrar menos' : 'Ver todas'}</Botao>}
               </div>
               {pagina.redacoes.length ? <ul className="topic-essays" id="topic-essays">{(todas ? pagina.redacoes : pagina.redacoes.slice(0, 3)).map((redacao) => <li key={redacao.id}><Link to={`/professor/redacoes/${redacao.id}`}>

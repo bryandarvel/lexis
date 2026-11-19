@@ -132,7 +132,7 @@ export default function ProfessorTurmasPage() {
   const pronto = pagina.status === 'pronto'
 
   return (
-    <AppShell conteudo="amplo" trilha={['Turmas']} turmas={pagina.turmas} pronto={pronto}>
+    <AppShell conteudo="amplo" trilha={['Turmas']}>
       <div className="panel-main classes-main">
         <div className="classes-heading">
           <div><h1>Turmas</h1><p className="panel-subtitle">Gerencie turmas, códigos de acesso e propostas.</p></div>
