@@ -4,6 +4,8 @@ import test from 'node:test'
 import {
   LIMITE_TRECHOS_POR_CRITERIO,
   criarTrechoDaSelecao,
+  criteriosComOTrecho,
+  descreverTrechoJaMarcado,
   montarCriterioParaEnvio,
   montarTrechosParaEnvio,
   podeAcrescentarTrecho,
@@ -194,4 +196,66 @@ test('offset acima do limite do servidor é recusado', () => {
 
   assert.equal(criarTrechoDaSelecao(longo, 0, 20001).trecho, null)
   assert.equal(criarTrechoDaSelecao(longo, 19999, 20000).erro, '')
+})
+
+/*
+ * Issue #179: o mesmo trecho em mais de um critério continua permitido — o
+ * texto desenha uma listra por critério e o aluno vê os vínculos. O que muda
+ * é o professor enxergar onde ele já está antes de marcar de novo.
+ */
+const criterio = (id, nome) => ({ id, nome })
+const marcado = (inicio, fim) => ({ inicio, fim, trecho: 'x' })
+
+test('o aviso nomeia os critérios onde o trecho já está', () => {
+  assert.equal(descreverTrechoJaMarcado([]), '')
+  assert.equal(descreverTrechoJaMarcado(null), '')
+  assert.match(
+    descreverTrechoJaMarcado([criterio('a', 'Legitimação')]),
+    /^Este trecho já está marcado em Legitimação\./,
+  )
+  assert.match(
+    descreverTrechoJaMarcado([criterio('a', 'Legitimação'), criterio('b', 'Pertinência')]),
+    /marcado em Legitimação e Pertinência\./,
+  )
+  assert.match(
+    descreverTrechoJaMarcado([criterio('a', 'A'), criterio('b', 'B'), criterio('c', 'C')]),
+    /marcado em A, B e C\./,
+  )
+})
+
+test('o aviso lembra que um trecho pode apoiar mais de um critério', () => {
+  assert.match(
+    descreverTrechoJaMarcado([criterio('a', 'Legitimação')]),
+    /pode apoiar mais de um critério/,
+  )
+})
+
+test('critério sem nome não vira "undefined" no aviso', () => {
+  assert.equal(descreverTrechoJaMarcado([{ id: 'a' }, { id: 'b', nome: '  ' }]), '')
+  assert.match(descreverTrechoJaMarcado([{ id: 'a' }, criterio('b', 'Uso produtivo')]), /em Uso produtivo\./)
+})
+
+test('só o intervalo idêntico conta como já marcado', () => {
+  const criterios = [criterio('a', 'Legitimação'), criterio('b', 'Pertinência')]
+  const porCriterio = {
+    a: { marcados: [marcado(10, 20)] },
+    b: { marcados: [marcado(10, 21)] },
+  }
+
+  assert.deepEqual(
+    criteriosComOTrecho(criterios, porCriterio, marcado(10, 20)).map((c) => c.id),
+    ['a'],
+  )
+  // Sobreposição parcial não é o mesmo trecho.
+  assert.deepEqual(criteriosComOTrecho(criterios, porCriterio, marcado(12, 18)), [])
+})
+
+test('sem trecho pronto, nada é apontado como já marcado', () => {
+  const criterios = [criterio('a', 'Legitimação')]
+  const porCriterio = { a: { marcados: [marcado(10, 20)] } }
+
+  assert.deepEqual(criteriosComOTrecho(criterios, porCriterio, null), [])
+  // Critério ainda sem lista não pode quebrar a barra de marcação.
+  assert.deepEqual(criteriosComOTrecho(criterios, {}, marcado(10, 20)), [])
+  assert.deepEqual(criteriosComOTrecho(undefined, porCriterio, marcado(10, 20)), [])
 })

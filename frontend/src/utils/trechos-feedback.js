@@ -167,3 +167,34 @@ export function materializarTrechos(texto, intervalos = []) {
 export function guardarIntervalos(trechos) {
   return trechos.map(({ inicio, fim, analiseIaId }) => ({ inicio, fim, ...(analiseIaId ? { analiseIaId } : {}) }))
 }
+
+/*
+ * Issue #179. Marcar o mesmo trecho em mais de um critério é intencional: o
+ * texto desenha uma listra por critério e o aluno vê os vínculos. O que não
+ * pode é repetir no mesmo critério, e o professor precisa enxergar onde o
+ * trecho já está antes de decidir. Daí o aviso, e não um bloqueio.
+ */
+export function descreverTrechoJaMarcado(criterios) {
+  const nomes = (Array.isArray(criterios) ? criterios : [])
+    .map((criterio) => String(criterio?.nome ?? '').trim())
+    .filter(Boolean)
+
+  if (nomes.length === 0) return ''
+
+  const lista = nomes.length === 1
+    ? nomes[0]
+    : `${nomes.slice(0, -1).join(', ')} e ${nomes[nomes.length - 1]}`
+
+  return `Este trecho já está marcado em ${lista}. Um mesmo trecho pode apoiar mais de um critério.`
+}
+
+// Critérios que já têm exatamente este intervalo marcado.
+export function criteriosComOTrecho(criterios, porCriterio, trecho) {
+  if (!trecho) return []
+
+  return (Array.isArray(criterios) ? criterios : []).filter((criterio) =>
+    (porCriterio?.[criterio?.id]?.marcados ?? []).some(
+      (item) => item?.inicio === trecho.inicio && item?.fim === trecho.fim,
+    ),
+  )
+}
