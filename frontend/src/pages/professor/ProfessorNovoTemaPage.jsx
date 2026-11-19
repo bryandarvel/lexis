@@ -305,9 +305,18 @@ export default function ProfessorNovoTemaPage() {
         </section>
 
         <fieldset className="surface-card rounded-cartao p-5 sm:p-7">
-          <legend className="px-2 text-xl font-semibold text-texto">
+          {/*
+            * O <legend> nativo é posicionado sobre a borda superior do
+            * fieldset e ignora o padding: era ele que deixava o título em
+            * cima da aresta do cartão, e não uma falta de sombra. Ele
+            * permanece, porque é o que faz o leitor de tela anunciar o grupo
+            * em cada campo, mas só para a leitura; o título visível é um h2
+            * dentro do cartão, alinhado como o da seção acima.
+            */}
+          <legend className="sr-only">Critérios de avaliação</legend>
+          <h2 className="text-xl font-semibold text-texto">
             Critérios de avaliação
-          </legend>
+          </h2>
           <p className="max-w-2xl text-sm leading-6 text-texto-suave">
             Base fixa da Competência II. Os critérios personalizados aparecem depois da base na análise e na correção do professor.
           </p>
