@@ -1,4 +1,6 @@
-function normalizarBusca(valor) {
+// Exportada para a busca de propostas da turma usar a mesma regra de acentos
+// e caixa que a busca de turmas (Issue #175).
+export function normalizarBusca(valor) {
   return valor.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').trim()
 }
 

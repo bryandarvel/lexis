@@ -11,11 +11,13 @@ export default function DialogoConfirmacao({
   aberto,
   titulo,
   descricao,
+  resumo,
   efeitos = [],
   confirmarRotulo,
   cancelarRotulo = 'Cancelar',
   perigo = false,
   ocupado = false,
+  rodapeSeparado = false,
   onConfirmar,
   onCancelar,
   children,
@@ -26,6 +28,8 @@ export default function DialogoConfirmacao({
       onFechar={ocupado ? undefined : onCancelar}
       titulo={titulo}
       descricao={descricao}
+      resumo={resumo}
+      rodapeSeparado={rodapeSeparado}
       rodape={
         <>
           <Botao
