@@ -64,16 +64,48 @@
 }
 .login-description { margin: 6px 0 0; font-size: 14px; line-height: 22px; color: var(--login-muted); }
 .login-tabs {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  height: 44px;
-  margin-top: 16px;
-  padding: 4px;
+  height: 52px;
+  margin-top: 20px;
+  padding: 5px;
   border-radius: var(--raio-cartao);
   background: var(--login-soft);
 }
-.login-tabs > * { display: grid; place-items: center; border-radius: var(--raio-controle); font-size: 13px; font-weight: 600; text-decoration: none; color: var(--login-muted); }
-.login-tabs [aria-current] { background: var(--login-surface); color: var(--login-action); }
+/* Fundo da aba atual. Fica sempre na aba marcada e, quando a troca veio de um
+   clique na outra, chega deslizando de lá. O deslocamento é a largura da
+   própria pílula, que é metade da área interna do seletor. */
+.login-tabs__pilula {
+  position: absolute;
+  z-index: 0;
+  top: 5px;
+  left: 5px;
+  width: calc((100% - 10px) / 2);
+  height: calc(100% - 10px);
+  border-radius: var(--raio-controle);
+  background: var(--login-surface);
+  transform: translateX(calc(var(--aba-visivel, 0) * 100%));
+}
+.login-tabs__pilula[data-deslizar] {
+  animation: login-aba-desliza var(--painel) var(--curva);
+}
+@keyframes login-aba-desliza {
+  from { transform: translateX(calc(var(--aba-partida, 0) * 100%)); }
+}
+.login-tabs__aba {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  border-radius: var(--raio-controle);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--login-muted);
+  transition: color var(--painel) var(--curva);
+}
+.login-tabs [aria-current] { color: var(--login-action); }
 .login-form { display: grid; gap: 20px; margin-top: 24px; }
 .login-password { position: relative; }
 .login-forgot { position: absolute; top: 0; right: 0; z-index: 1; min-height: 24px; font-size: 12px; line-height: 18px; color: var(--login-action); cursor: pointer; }
@@ -89,4 +121,8 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .login-page *, .login-page *::before, .login-page *::after { transition: none; animation: none; }
+  /* O seletor da pílula é mais específico que `.login-page *`: sem esta linha
+     a alternância continuaria deslizando. A pílula já nasce na aba certa, só
+     o deslocamento é dispensado. */
+  .login-tabs__pilula[data-deslizar] { animation: none; }
 }
