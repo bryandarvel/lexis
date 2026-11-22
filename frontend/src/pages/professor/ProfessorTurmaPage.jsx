@@ -418,7 +418,7 @@ export default function ProfessorTurmaPage() {
 
             <div className="turma-contexto">
               <span>Código de acesso: <strong ref={codigoRef}>{turma.codigoAcesso}</strong></span>
-              <Botao type="button" variante="secundario" className="turma-copiar" onClick={copiarCodigo}>
+              <Botao type="button" variante="secundario" onClick={copiarCodigo}>
                 {copiado ? 'Copiado' : 'Copiar'}
               </Botao>
             </div>
