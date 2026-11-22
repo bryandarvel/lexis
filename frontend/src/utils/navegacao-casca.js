@@ -6,8 +6,11 @@
  * O menu do professor tem três destinos. "Redações", "Propostas" e
  * "Notificações" saíram: as páginas continuam existindo, mas o acesso mudou.
  * As propostas vivem dentro de Turmas, os avisos abrem pelo sino da barra e as
- * redações pendentes continuam no Painel. A decisão D4 da auditoria (Feedbacks
- * dentro de Minhas redações) é do aluno e não entra aqui.
+ * redações pendentes continuam no Painel.
+ *
+ * O menu do aluno tem quatro destinos. "Feedbacks" saiu (Issue #180): a lista
+ * das correções publicadas vive em Minhas redações, que já mostrava a mesma
+ * nota e o mesmo link, e /aluno/feedbacks redireciona para lá.
  */
 
 export function rotaInicialDoPapel(papel) {
@@ -54,7 +57,6 @@ function itensDoAluno({ caminho, rotaEnviarRedacao }) {
           atual: false,
         },
     link('redacoes', 'Minhas redações', '/aluno/redacoes', caminho),
-    link('feedbacks', 'Feedbacks', '/aluno/feedbacks', caminho),
     link('perfil', 'Perfil', '/aluno/perfil', caminho),
   ]
 }

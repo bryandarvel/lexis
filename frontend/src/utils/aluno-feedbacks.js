@@ -5,15 +5,9 @@ import {
   mesmaConta,
 } from './identidade-sessao.js'
 
-// Lista "Feedbacks": só as redações com nota publicada, vindas de
-// GET /api/aluno/redacoes (status AVALIADA, notaPublicada e publicadoEm).
-
-export const ORDENACOES_FEEDBACK = [
-  { valor: 'recentes', rotulo: 'Publicação mais recente' },
-  { valor: 'antigas', rotulo: 'Publicação mais antiga' },
-  { valor: 'maior-nota', rotulo: 'Maior nota' },
-  { valor: 'menor-nota', rotulo: 'Menor nota' },
-]
+// Feedbacks publicados, vindos de GET /api/aluno/redacoes (status AVALIADA,
+// notaPublicada e publicadoEm). A página própria saiu (Issue #180): estes
+// helpers alimentam o resumo e os itens de Minhas redações.
 
 export function temFeedbackPublicado(redacao) {
   return (
@@ -27,36 +21,6 @@ export function selecionarFeedbacks(redacoes) {
   return (Array.isArray(redacoes) ? redacoes : []).filter(
     temFeedbackPublicado,
   )
-}
-
-function momentoDaPublicacao(redacao) {
-  const data = converterData(redacao.publicadoEm)
-
-  return data ? data.getTime() : 0
-}
-
-export function ordenarFeedbacks(feedbacks, ordenacao = 'recentes') {
-  const lista = Array.isArray(feedbacks) ? [...feedbacks] : []
-  const porData = (a, b) =>
-    momentoDaPublicacao(b) - momentoDaPublicacao(a)
-
-  if (ordenacao === 'antigas') {
-    return lista.sort((a, b) => -porData(a, b))
-  }
-
-  if (ordenacao === 'maior-nota') {
-    return lista.sort(
-      (a, b) => b.notaPublicada - a.notaPublicada || porData(a, b),
-    )
-  }
-
-  if (ordenacao === 'menor-nota') {
-    return lista.sort(
-      (a, b) => a.notaPublicada - b.notaPublicada || porData(a, b),
-    )
-  }
-
-  return lista.sort(porData)
 }
 
 // Resumo do que o Painel mostra. O backend (GET /api/aluno/desempenho, desempenho.service.js) devolve
@@ -95,16 +59,6 @@ export function resumirFeedbacks(feedbacks, desempenho = null) {
   }
 }
 
-export function descreverQuantidade(quantidade) {
-  if (quantidade === 0) {
-    return 'Nenhum feedback publicado.'
-  }
-
-  return quantidade === 1
-    ? '1 feedback publicado.'
-    : `${quantidade} feedbacks publicados.`
-}
-
 export function formatarPublicacao(redacao) {
   const data = converterData(redacao?.publicadoEm)
 
@@ -113,10 +67,6 @@ export function formatarPublicacao(redacao) {
   }
 
   return `Publicado em ${formatarData(data, 'data')}`
-}
-
-export function caminhoDoFeedback(redacao) {
-  return `/aluno/redacoes/${encodeURIComponent(redacao.id)}/feedback`
 }
 
 // Nome do professor da turma da redação, como o backend entrega em tema.turma.professor. Sem o dado,
@@ -136,4 +86,17 @@ export function aplicarRespostaDaConta(estadoAtual, proximo, contaDaResposta) {
   }
 
   return marcarConta(proximo, contaDaResposta)
+}
+
+// Linha do item de Minhas redações com quem corrigiu e quando (Issue #180).
+// Só existe com nota publicada, e cada metade some sozinha sem o dado: nada é
+// inventado, nem sobra um separador solto.
+export function descreverAutoriaDoFeedback(redacao) {
+  if (!temFeedbackPublicado(redacao)) return ''
+
+  const professor = obterProfessorDoFeedback(redacao)
+
+  return [professor && `Professor: ${professor}`, formatarPublicacao(redacao)]
+    .filter(Boolean)
+    .join(' · ')
 }

@@ -6,14 +6,21 @@ import { Link } from 'react-router'
 
 import AppShell from '../../layouts/AppShell.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
+import { obterDesempenhoAluno } from '../../services/desempenho.js'
 import { listarMinhasRedacoes } from '../../services/redacoes.js'
 import { listarTemasDoAluno } from '../../services/temas.js'
 import { obterMinhaMatricula } from '../../services/turmas.js'
 import { obterRotaEnviarRedacao } from '../../utils/aluno-feedback.js'
 import {
+  aplicarRespostaDaConta,
+  descreverAutoriaDoFeedback,
+  resumirFeedbacks,
+  selecionarFeedbacks,
+} from '../../utils/aluno-feedbacks.js'
+import { formatarIndicador } from '../../utils/aluno-painel.js'
+import {
   estadoDaContaAtual,
   marcarConta,
-  mesmaConta,
 } from '../../utils/identidade-sessao.js'
 import {
   FILTROS_SITUACAO,
@@ -35,6 +42,9 @@ function ItemRedacao({ redacao, turmaAtualId }) {
   const data = formatarDataRedacao(redacao)
   const tema = redacao.tema?.enunciado ?? 'Proposta de redação'
   const turma = redacao.tema?.turma?.nome
+  // Issue #180: o que a página Feedbacks mostrava de cada correção — quem
+  // corrigiu e quando — passa a viver no item. Só aparece com nota publicada.
+  const autoria = descreverAutoriaDoFeedback(redacao)
 
   return (
     <li className="aluno-redacao">
@@ -46,6 +56,7 @@ function ItemRedacao({ redacao, turmaAtualId }) {
 
         <h2 className="aluno-redacao-titulo">{tema}</h2>
         {turma && <p className="aluno-redacao-turma">{turma}</p>}
+        {autoria && <p className="aluno-redacao-turma">{autoria}</p>}
 
         {destino.tipo === 'nenhum' && destino.motivo && (
           <p className="aluno-redacao-motivo">{destino.motivo}</p>
@@ -86,6 +97,7 @@ const CARREGANDO = {
   redacoes: [],
   turmaAtualId: null,
   rotaEnviar: null,
+  desempenho: null,
   usuarioId: null,
 }
 
@@ -109,14 +121,21 @@ export default function AlunoRedacoesPage() {
 
     if (!contaDaConsulta) return undefined
 
-    // A lista é o que a página existe para mostrar; a turma atual e as
-    // propostas só refinam o link e o item "Enviar redação" da sidebar, então a
-    // falha delas não derruba a tela.
+    // A lista é o que a página existe para mostrar; a turma atual, as
+    // propostas e o desempenho só refinam o link, o item "Enviar redação" da
+    // sidebar e a média do resumo, então a falha deles não derruba a tela. Sem
+    // o desempenho, a média sai da própria lista (resumirFeedbacks).
     Promise.allSettled([
       listarMinhasRedacoes(),
       obterMinhaMatricula(),
       listarTemasDoAluno(),
-    ]).then(([listaResultado, matriculaResultado, temasResultado]) => {
+      obterDesempenhoAluno(),
+    ]).then(([
+      listaResultado,
+      matriculaResultado,
+      temasResultado,
+      desempenhoResultado,
+    ]) => {
       if (!ativo) return
 
       if (listaResultado.status === 'rejected') {
@@ -132,23 +151,26 @@ export default function AlunoRedacoesPage() {
 
       setCarregamento((atual) =>
         // Descarta a resposta se a conta mudou entre o pedido e a chegada.
-        mesmaConta(atual.usuarioId, contaDaConsulta)
-          ? marcarConta(
-              {
-                status: 'pronto',
-                redacoes,
-                turmaAtualId:
-                  matriculaResultado.status === 'fulfilled'
-                    ? matriculaResultado.value?.turma?.id ?? null
-                    : null,
-                rotaEnviar:
-                  temasResultado.status === 'fulfilled'
-                    ? obterRotaEnviarRedacao(temasResultado.value, redacoes)
-                    : null,
-              },
-              contaDaConsulta,
-            )
-          : atual,
+        aplicarRespostaDaConta(
+          atual,
+          {
+            status: 'pronto',
+            redacoes,
+            turmaAtualId:
+              matriculaResultado.status === 'fulfilled'
+                ? matriculaResultado.value?.turma?.id ?? null
+                : null,
+            rotaEnviar:
+              temasResultado.status === 'fulfilled'
+                ? obterRotaEnviarRedacao(temasResultado.value, redacoes)
+                : null,
+            desempenho:
+              desempenhoResultado.status === 'fulfilled'
+                ? desempenhoResultado.value
+                : null,
+          },
+          contaDaConsulta,
+        ),
       )
     })
 
@@ -158,12 +180,10 @@ export default function AlunoRedacoesPage() {
   }, [tentativa, usuarioId])
 
   // O render nunca usa estado de outra conta: na troca, volta ao carregando.
-  const { status, redacoes, turmaAtualId, rotaEnviar } = estadoDaContaAtual(
-    carregamento,
-    usuarioId,
-    CARREGANDO,
-  )
+  const { status, redacoes, turmaAtualId, rotaEnviar, desempenho } =
+    estadoDaContaAtual(carregamento, usuarioId, CARREGANDO)
   const resumo = resumirRedacoes(redacoes)
+  const media = resumirFeedbacks(selecionarFeedbacks(redacoes), desempenho).media
   const visiveis = ordenarRedacoes(
     filtrarRedacoes(redacoes, filtro),
     ordenacao,
@@ -179,7 +199,7 @@ export default function AlunoRedacoesPage() {
           Minhas redações
         </h1>
         <p className="mt-[11px] text-base leading-[25px] text-texto-suave">
-          Acompanhe tudo o que você escreveu, com a situação de cada texto.
+          Acompanhe tudo o que você escreveu, com a situação de cada texto e os feedbacks já publicados.
         </p>
       </header>
 
@@ -232,6 +252,17 @@ export default function AlunoRedacoesPage() {
             <div><dt>Rascunhos</dt><dd>{resumo.rascunhos}</dd></div>
             <div><dt>Aguardando correção</dt><dd>{resumo.aguardando}</dd></div>
             <div><dt>Corrigidas</dt><dd>{resumo.corrigidas}</dd></div>
+            <div>
+              <dt>Média das notas publicadas</dt>
+              <dd>
+                {formatarIndicador(media) ?? (
+                  <>
+                    <span aria-hidden="true">—</span>
+                    <span className="sr-only">Ainda sem nota publicada</span>
+                  </>
+                )}
+              </dd>
+            </div>
           </dl>
 
           <div className="aluno-redacoes-controles">

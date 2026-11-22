@@ -26,9 +26,6 @@ const AlunoNotificacoesPage = lazy(() =>
 const AlunoRedacoesPage = lazy(() =>
   import('../pages/aluno/AlunoRedacoesPage.jsx'),
 )
-const AlunoFeedbacksPage = lazy(() =>
-  import('../pages/aluno/AlunoFeedbacksPage.jsx'),
-)
 const AlunoPerfilPage = lazy(() =>
   import('../pages/aluno/AlunoPerfilPage.jsx'),
 )
@@ -162,9 +159,16 @@ export default function AppRoutes() {
             path="/aluno/redacoes"
             element={<AlunoRedacoesPage />}
           />
+          {/* Issue #180: a lista de feedbacks vive em Minhas redações. O
+              endereço antigo continua valendo para favoritos e links salvos. */}
           <Route
             path="/aluno/feedbacks"
-            element={<AlunoFeedbacksPage />}
+            element={
+              <Navigate
+                to="/aluno/redacoes"
+                replace
+              />
+            }
           />
           <Route
             path="/aluno/perfil"
