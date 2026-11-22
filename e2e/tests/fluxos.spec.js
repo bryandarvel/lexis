@@ -105,8 +105,12 @@ test('OCR exige revisão; professor publica feedback humano e só o aluno respon
     const professorPage = await professorContext.newPage()
     await entrar(professorPage, cenario.professor)
     await professorPage.goto('/professor/redacoes/' + redacao.id)
-    await professorPage.getByRole('button', { name: 'Analisar com IA', exact: true }).click()
-    await expect(professorPage.getByRole('button', { name: 'Analisar novamente com IA', exact: true })).toBeEnabled()
+    // Issue #179: com resultado na tela, a ação vira "Gerar nova análise".
+    await professorPage.getByRole('button', { name: 'Analisar redação com IA', exact: true }).click()
+    await expect(professorPage.getByRole('button', { name: 'Gerar nova análise', exact: true })).toBeEnabled()
+    // Por texto: o papel de <summary> varia entre navegadores e não é o que
+    // esta asserção quer fixar — e sim que a faixa das sugestões apareceu.
+    await expect(professorPage.getByText('Mostrar sugestões da IA', { exact: true })).toBeVisible()
     expect(await cenario.prisma.feedback.count({ where: { redacaoId: redacao.id } })).toBe(0)
     expect(await cenario.prisma.analiseIA.count({ where: { redacaoId: redacao.id, status: 'CONCLUIDA' } })).toBe(1)
     for (const numero of ['I', 'II', 'III', 'IV', 'V']) {

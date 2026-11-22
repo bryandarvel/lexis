@@ -1,6 +1,7 @@
 import { formatarData } from '../../utils/formatar-data.js'
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import Botao from '../base/Botao.jsx'
+import { IconeAnalisar, IconeRecarregar } from './icones-correcao.jsx'
 import { classificarEvidencia } from '../../utils/ai-evidence.js'
 import { avisoAnaliseDuplicado, avisoAtualDaAnalise, mensagemErroAnalise, segundosRestantesAnalise } from '../../utils/external-request.js'
 
@@ -27,11 +28,30 @@ export default function AnalysisPanel({ analysis, resultAnalysis = analysis, fal
   const dataTentativa = formatarData(analysis?.solicitadaEm, 'dataHora')
   const dataFalhaAnterior = formatarData(falhaAnterior?.concluidaEm ?? falhaAnterior?.solicitadaEm, 'dataHora')
   const dataAvisoAnterior = formatarData(avisoAnterior?.ocorridaEm, 'dataHora')
-  return <section className="review-analysis" aria-label="Análise consultiva por IA" aria-busy={isRequesting || pendente}>
-    <Botao type="button" variante="secundario" disabled={disabled || isRequesting || pendente || espera > 0} onClick={onRequest}>
-      {isRequesting ? 'Analisando…' : analysis ? 'Analisar novamente com IA' : 'Analisar com IA'}
+  const idTitulo = useId()
+  /*
+   * Issue #179: o card ganhou título visível — antes só existia o aria-label,
+   * então o painel não se anunciava na tela. O botão de pedir a análise é a
+   * ação principal enquanto não há resultado; com resultado, ele vira a ação
+   * secundária "Gerar nova análise", abaixo das sugestões.
+   */
+  const acao = (
+    <Botao type="button" className="review-analysis-acao"
+      variante={result ? 'secundario' : 'primario'}
+      disabled={disabled || isRequesting || pendente || espera > 0} onClick={onRequest}>
+      {result ? <IconeRecarregar /> : <IconeAnalisar />}
+      {isRequesting ? 'Analisando…' : result ? 'Gerar nova análise' : 'Analisar redação com IA'}
     </Botao>
-    <p className="review-caption">A IA não atribui nota. Revise cada sugestão antes de usá-la no feedback.</p>
+  )
+
+  return <section className="review-card review-analysis" aria-labelledby={idTitulo} aria-busy={isRequesting || pendente}>
+    <h2 id={idTitulo} className="review-section-title">Análise de apoio da IA</h2>
+    <p className="review-caption">
+      {result
+        ? 'Revise as sugestões. A nota é atribuída pelo professor.'
+        : 'A IA sugere pontos para sua revisão. A nota é atribuída pelo professor.'}
+    </p>
+    {!result && acao}
     {espera > 0 && <p className="review-notice">Nova solicitação disponível em pelo menos {espera} s. A disponibilidade e os limites do serviço de IA ainda podem impedir a análise; não haverá nova tentativa automática.</p>}
     {(isRequesting || pendente) && <div role="status" className="review-notice"><progress aria-label="Análise por IA em andamento" /><p>Análise em andamento. A conclusão depende do serviço de IA.</p>{!isRequesting && <Botao type="button" variante="secundario" onClick={onRefresh}>Atualizar análise</Botao>}</div>}
     {!analysis && !isRequesting && <p className="review-caption">Nenhuma análise solicitada para esta redação.</p>}
@@ -44,7 +64,11 @@ export default function AnalysisPanel({ analysis, resultAnalysis = analysis, fal
       {avisoAnterior && !avisoAnaliseDuplicado(falhaAnterior, avisoAnterior) && <p>{dataAvisoAnterior && <><strong>{dataAvisoAnterior}</strong><br /></>}{avisoAnterior.message}</p>}
     </details>}
     {anterior && <p role="status" className="review-notice">Exibindo a última análise concluída{dataResultado ? `, de ${dataResultado}` : ''}. A tentativa mais recente não substituiu esse resultado. Revise as sugestões antes de usá-las.</p>}
-    {result && <details className="review-card review-analysis-details"><summary>Detalhes da análise{dataResultado ? ` salva em ${dataResultado}` : ''}</summary>
+    {result && <details className="review-analysis-details">
+      <summary>
+        <span className="review-analysis-sumario">Mostrar sugestões da IA</span>
+        {dataResultado && <span className="review-analysis-data">Análise salva em {dataResultado}</span>}
+      </summary>
       <h3>Resumo geral</h3><p>{result.resumoGeral}</p>
       <h3>Pontos fortes</h3><ul>{result.pontosFortes?.map((t, i) => <li key={i}>{t}</li>)}</ul>
       <h3>Pontos de atenção</h3><ul>{result.pontosDeAtencao?.map((t, i) => <li key={i}>{t}</li>)}</ul>
@@ -54,5 +78,6 @@ export default function AnalysisPanel({ analysis, resultAnalysis = analysis, fal
       </section>)}
       <h3>Observações finais</h3><p>{result.observacoesFinais}</p>
     </details>}
+    {result && acao}
   </section>
 }
