@@ -1,5 +1,5 @@
 import { listarTurmas } from './turmas.js'
-import { listarRedacoesDaTurma } from './redacoes.js'
+import { listarRedacoesDaTurmaComResumo } from './redacoes.js'
 import { obterFeedbackProfessor } from './feedbacks.js'
 import { resumirPainelProfessor } from '../utils/professor-dashboard.js'
 
@@ -14,13 +14,20 @@ async function consultarEmLotes(itens, consultar) {
 export async function carregarPainelProfessor({ aoCarregarFila, signal } = {}) {
   const turmas = await listarTurmas()
   if (signal?.aborted) return null
+  // Mesma rota de antes: a variante com resumo só deixa de descartar o
+  // resumoEntregas, que dá a taxa de entrega sem nenhuma requisição a mais.
   const grupos = await consultarEmLotes(turmas, async (turma) => {
-    const redacoes = await listarRedacoesDaTurma(turma.id)
-    return redacoes.map((redacao) => ({ ...redacao, turma }))
+    const { redacoes, resumoEntregas } = await listarRedacoesDaTurmaComResumo(turma.id)
+    return {
+      turmaId: turma.id,
+      resumoEntregas,
+      redacoes: redacoes.map((redacao) => ({ ...redacao, turma })),
+    }
   })
-  const redacoes = grupos.flat()
+  const redacoes = grupos.flatMap((grupo) => grupo.redacoes)
+  const entregas = Object.fromEntries(grupos.map((grupo) => [grupo.turmaId, grupo.resumoEntregas]))
   if (signal?.aborted) return null
-  aoCarregarFila?.({ turmas, ...resumirPainelProfessor(turmas, redacoes, null) })
+  aoCarregarFila?.({ turmas, ...resumirPainelProfessor(turmas, redacoes, null, new Date(), entregas) })
   let feedbacks = []
   try {
     feedbacks = await consultarEmLotes(
@@ -31,5 +38,5 @@ export async function carregarPainelProfessor({ aoCarregarFila, signal } = {}) {
     // Uma falha no histórico não deve aparecer como zero publicações.
     feedbacks = null
   }
-  return { turmas, ...resumirPainelProfessor(turmas, redacoes, feedbacks) }
+  return { turmas, ...resumirPainelProfessor(turmas, redacoes, feedbacks, new Date(), entregas) }
 }

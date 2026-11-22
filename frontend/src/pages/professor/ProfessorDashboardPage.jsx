@@ -6,7 +6,12 @@ import { Link } from 'react-router'
 
 import AppShell from '../../layouts/AppShell.jsx'
 import { carregarPainelProfessor } from '../../services/professor-dashboard.js'
-import { diasDesdeEnvio, obterIniciais } from '../../utils/professor-dashboard.js'
+import {
+  descreverIndicadoresDoPainel,
+  descreverSituacaoDaTurma,
+  diasDesdeEnvio,
+  obterIniciais,
+} from '../../utils/professor-dashboard.js'
 import { interpretarErroApi } from '../../utils/api-error.js'
 import './professor-dashboard.css'
 
@@ -27,7 +32,7 @@ function PainelSkeleton() {
 }
 
 export default function ProfessorDashboardPage() {
-  const [pagina, setPagina] = useState({ status: 'carregando', turmas: [], pendentes: [] })
+  const [pagina, setPagina] = useState({ status: 'carregando', turmas: [], pendentes: [], porTurma: [] })
   const [tentativa, setTentativa] = useState(0)
   const [indiceFila, setIndiceFila] = useState(0)
   const attentionRef = useRef(null)
@@ -35,7 +40,7 @@ export default function ProfessorDashboardPage() {
   useEffect(() => {
     let ativo = true
     const controle = new AbortController()
-    setPagina({ status: 'carregando', turmas: [], pendentes: [] })
+    setPagina({ status: 'carregando', turmas: [], pendentes: [], porTurma: [] })
     carregarPainelProfessor({
       signal: controle.signal,
       aoCarregarFila: (dados) => {
@@ -47,7 +52,7 @@ export default function ProfessorDashboardPage() {
       })
       .catch((error) => {
         if (ativo) setPagina({
-          status: 'erro', turmas: [], pendentes: [],
+          status: 'erro', turmas: [], pendentes: [], porTurma: [],
           mensagem: interpretarErroApi(error, 'Não foi possível carregar o painel. Tente novamente.').mensagem,
         })
       })
@@ -82,6 +87,16 @@ export default function ProfessorDashboardPage() {
           </section>
         ) : (
           <>
+            {/* Issue #178: os quatro indicadores voltam como cards acima da
+                fila, no lugar da linha de texto que ficava abaixo dela. */}
+            <dl className="panel-stats">
+              {descreverIndicadoresDoPainel(pagina).map((item) => (
+                <div key={item.rotulo} className="panel-stat">
+                  <dt>{item.rotulo}</dt>
+                  <dd>{item.valor}</dd>
+                </div>
+              ))}
+            </dl>
             <section className="panel-attention" aria-labelledby="panel-attention-title">
               <h2 id="panel-attention-title" ref={attentionRef} tabIndex={-1}>Para corrigir ({pagina.pendentes.length})</h2>
               <p>Redações aguardando correção há mais tempo</p>
@@ -118,11 +133,34 @@ export default function ProfessorDashboardPage() {
                 <Botao variante="secundario" disabled={indice + 1 >= totalPaginas} onClick={() => irParaFila(indice + 1)}>Próxima</Botao>
               </nav>}
             </section>
-            <p className="panel-subtitle">
-              {pagina.turmasAtivas} {pagina.turmasAtivas === 1 ? 'turma ativa' : 'turmas ativas'}
-              {' · '}{pagina.alunosCadastrados} {pagina.alunosCadastrados === 1 ? 'aluno' : 'alunos'}
-              {pagina.publicadasNoMes !== null && <> · {pagina.publicadasNoMes} {pagina.publicadasNoMes === 1 ? 'correção publicada neste mês' : 'correções publicadas neste mês'}</>}
-            </p>
+            <section className="panel-turmas" aria-labelledby="panel-turmas-title">
+              <h2 id="panel-turmas-title">Situação por turma</h2>
+              <p>Onde está a espera, turma a turma.</p>
+              {pagina.porTurma.length ? (
+                <ul className="panel-turmas-lista">
+                  {pagina.porTurma.map((turma) => (
+                    <li key={turma.id} className="panel-turma">
+                      <Link to={`/professor/turmas/${turma.id}`}>{turma.nome}</Link>
+                      <dl>
+                        {descreverSituacaoDaTurma(turma).map((item) => (
+                          <div key={item.rotulo} data-tom={item.tom}>
+                            <dt>{item.rotulo}</dt>
+                            <dd>{item.valor}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <EstadoVazio
+                  nivel={3}
+                  titulo="Nenhuma turma ativa"
+                  descricao="Turmas arquivadas não aparecem aqui. Crie uma turma para acompanhar a situação das redações."
+                  acao={<Botao as={Link} to="/professor/turmas" variante="secundario">Ver turmas</Botao>}
+                />
+              )}
+            </section>
             {pagina.carregandoPublicadas && <p role="status" className="panel-publication-warning">Carregando histórico de publicações…</p>}
             {!pagina.carregandoPublicadas && pagina.publicadasNoMes === null && (
               <p role="status" className="panel-publication-warning">

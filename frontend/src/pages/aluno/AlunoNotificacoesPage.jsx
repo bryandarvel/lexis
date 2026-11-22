@@ -1,3 +1,4 @@
+import EstadoVazio from '../../components/base/EstadoVazio.jsx'
 import { formatarData } from '../../utils/formatar-data.js'
 import {
   useEffect,
@@ -235,14 +236,11 @@ export default function AlunoNotificacoesPage() {
 
           {visivel.status === 'pronto' &&
             visivel.notificacoes.length === 0 && (
-              <div className="surface-card mt-8 rounded-cartao p-10 text-center">
-                <h2 className="text-xl font-bold text-texto">
-                  Nenhuma notificação
-                </h2>
-                <p className="mt-3 text-texto-suave">
-                  Avisos sobre suas correções e sua turma aparecem aqui.
-                </p>
-              </div>
+              <EstadoVazio
+                className="mt-8"
+                titulo="Nenhuma notificação"
+                descricao="Avisos sobre suas correções e sua turma aparecem aqui."
+              />
             )}
 
           {visivel.status === 'pronto' &&

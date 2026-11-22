@@ -1,5 +1,6 @@
 import { useEffect, useId, useState } from 'react'
 import Botao from '../../components/base/Botao.jsx'
+import EstadoVazio from '../../components/base/EstadoVazio.jsx'
 import { Link } from 'react-router'
 
 import AppShell from '../../layouts/AppShell.jsx'
@@ -197,19 +198,12 @@ export default function AlunoFeedbacksPage() {
       )}
 
       {status === 'pronto' && feedbacks.length === 0 && (
-        <section className="aluno-elevacao-1 mt-[25px] max-w-[720px] rounded-cartao border border-[var(--surface-border)] bg-superficie px-6 py-6">
-          <h2 className="text-lg font-semibold leading-6 text-texto">
-            Você ainda não recebeu nenhum feedback
-          </h2>
-          <p className="mt-2 text-sm leading-[22px] text-texto-suave">
-            O feedback aparece aqui depois que o professor corrige e
-            publica a nota da sua redação. Acompanhe o andamento de
-            cada texto em Minhas redações.
-          </p>
-          <Botao as={Link} to="/aluno/redacoes" variante="secundario" className="mt-4">
-            Ir para Minhas redações
-          </Botao>
-        </section>
+        <EstadoVazio
+          className="mt-[25px] max-w-[720px]"
+          titulo="Você ainda não recebeu nenhum feedback"
+          descricao="O feedback aparece aqui depois que o professor corrige e publica a nota da sua redação. Acompanhe o andamento de cada texto em Minhas redações."
+          acao={<Botao as={Link} to="/aluno/redacoes" variante="secundario">Ir para Minhas redações</Botao>}
+        />
       )}
 
       {status === 'pronto' && feedbacks.length > 0 && (
