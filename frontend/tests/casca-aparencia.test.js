@@ -50,6 +50,14 @@ test('o item atual é marcado pela moldura, que inverte de cor', () => {
   assert.match(ativo, /color:\s*var\(--trilho-icone-ativo\)/)
 })
 
+test('o item atual também tem a marca na borda, na cor da moldura', () => {
+  const marca = bloco('.casca-item[aria-current="page"]::before {')
+
+  assert.match(marca, /width:\s*3px/)
+  // Mesma cor da moldura cheia: acompanha o tema sem valor próprio.
+  assert.match(marca, /background:\s*var\(--trilho-moldura-ativa\)/)
+})
+
 test('o anel de foco do menu volta ao padrão, que é o legível na superfície nova', () => {
   const foco = bloco('.casca-barra :focus-visible {')
 
