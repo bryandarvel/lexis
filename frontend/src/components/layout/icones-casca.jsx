@@ -7,7 +7,8 @@ const PROPS = {
   viewBox: '0 0 24 24',
   fill: 'none',
   stroke: 'currentColor',
-  strokeWidth: 2,
+  // Traço leve (Issue #188): 2 pesava dentro da moldura do item de navegação.
+  strokeWidth: 1.75,
   strokeLinecap: 'round',
   strokeLinejoin: 'round',
   'aria-hidden': true,

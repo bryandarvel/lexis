@@ -83,9 +83,17 @@ const CLASSES_DE_CONTEUDO = {
 }
 
 function ItemDeNavegacao({ item, onNavegar }) {
+  /*
+   * Issue #188: o ícone ganha uma moldura arredondada própria, que é o que
+   * marca o item atual. O <span> existe para a moldura ter caixa própria: dar
+   * fundo e respiro ao <svg> direto depende de como o viewBox escala dentro do
+   * padding, e quebra com ícones de proporções diferentes.
+   */
   const conteudo = (
     <>
-      <IconeDaNavegacao chave={item.chave} />
+      <span aria-hidden="true" className="casca-item-icone">
+        <IconeDaNavegacao chave={item.chave} />
+      </span>
       {item.rotulo}
     </>
   )
