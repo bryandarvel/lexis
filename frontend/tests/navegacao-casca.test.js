@@ -16,7 +16,7 @@ const rotulos = (itens) => itens.map((item) => item.rotulo)
 const ativos = (itens) => itens.filter((item) => item.atual).map((item) => item.chave)
 const porChave = (itens, chave) => itens.find((item) => item.chave === chave)
 
-test('o aluno mantém os cinco itens e os mesmos destinos', () => {
+test('o aluno fica com quatro itens, todos links', () => {
   const itens = montarNavegacao({
     papel: 'ALUNO',
     caminho: '/aluno',
@@ -27,7 +27,6 @@ test('o aluno mantém os cinco itens e os mesmos destinos', () => {
     'Início',
     'Escrever redação',
     'Minhas redações',
-    'Feedbacks',
     'Perfil',
   ])
   assert.deepEqual(
@@ -36,11 +35,18 @@ test('o aluno mantém os cinco itens e os mesmos destinos', () => {
       '/aluno',
       '/aluno/temas/t1/redacao',
       '/aluno/redacoes',
-      '/aluno/feedbacks',
       '/aluno/perfil',
     ],
   )
   assert.ok(itens.every((item) => item.tipo === 'link'))
+})
+
+test('Feedbacks saiu do menu do aluno e não marca nenhum item', () => {
+  const itens = montarNavegacao({ papel: 'ALUNO', caminho: '/aluno/feedbacks' })
+
+  assert.equal(porChave(itens, 'feedbacks'), undefined)
+  // O endereço antigo só redireciona; enquanto ele durar, nada fica marcado.
+  assert.deepEqual(ativos(itens), [])
 })
 
 test('sem proposta pendente, "Enviar redação" fica indisponível e sem destino', () => {
@@ -121,7 +127,6 @@ test('cada rota do aluno marca o mesmo item de antes', () => {
   assert.deepEqual(ativo('/aluno/temas/t2/redacao'), [])
   assert.deepEqual(ativo('/aluno/redacoes'), ['redacoes'])
   assert.deepEqual(ativo('/aluno/redacoes/r1/feedback'), ['redacoes'])
-  assert.deepEqual(ativo('/aluno/feedbacks'), ['feedbacks'])
   assert.deepEqual(ativo('/aluno/notificacoes'), [])
   assert.deepEqual(ativo('/aluno/perfil'), ['perfil'])
 })

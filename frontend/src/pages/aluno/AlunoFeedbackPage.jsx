@@ -1,5 +1,6 @@
 import { formatarData } from '../../utils/formatar-data.js'
 import Botao from '../../components/base/Botao.jsx'
+import { IconeBaixar } from '../../components/base/icones.jsx'
 import {
   useEffect,
   useId,
@@ -113,25 +114,33 @@ function Cabecalho({ origem = [], acao = null }) {
   )
 }
 
+/*
+ * Issue #180. O botão chamava "Baixar em PDF", mas não baixa arquivo: abre a
+ * impressão do navegador, e é lá que se escolhe salvar como PDF. O rótulo agora
+ * usa o nome da própria opção do diálogo ("Salvar como PDF") e a linha logo
+ * abaixo diz o que acontece, visível para todos — antes só um leitor de tela
+ * recebia essa explicação. É a ação principal da tela, então é preenchido.
+ */
 function BotaoImprimir() {
   const idDescricao = useId()
 
   return (
-    <>
+    <div className="flex shrink-0 flex-col gap-1.5 sm:mt-1 sm:items-end print:hidden">
       <Botao
         type="button"
         aria-describedby={idDescricao}
         onClick={() => window.print()}
-        variante="secundario" className="w-40 shrink-0 sm:mt-1 print:hidden">
-        Baixar em PDF
+        className="w-full sm:w-auto">
+        <IconeBaixar />
+        Salvar como PDF
       </Botao>
       <span
         id={idDescricao}
-        className="sr-only"
+        className="text-xs leading-[17px] text-texto-suave"
       >
-        Abre a impressão do navegador. Escolha salvar como PDF.
+        Abre a impressão do navegador.
       </span>
-    </>
+    </div>
   )
 }
 

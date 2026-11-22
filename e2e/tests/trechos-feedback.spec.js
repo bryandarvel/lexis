@@ -122,7 +122,7 @@ test('professor, aluno e A4 preservam números, cores e vínculos de trechos sob
     const textoVisivel = await estudante.locator('.feedback-texto-redacao').evaluate((elemento) => elemento.textContent)
     expect(textoVisivel).toBe(texto)
     await estudante.evaluate(() => { window.print = () => { document.documentElement.dataset.imprimir = 'aberto' } })
-    await estudante.getByRole('button', { name: 'Baixar em PDF' }).click()
+    await estudante.getByRole('button', { name: 'Salvar como PDF' }).click()
     await expect(estudante.locator('html')).toHaveAttribute('data-imprimir', 'aberto')
 
     if (process.env.LEXIS_LOTE7_EVIDENCIAS === '1') {
@@ -136,7 +136,7 @@ test('professor, aluno e A4 preservam números, cores e vínculos de trechos sob
     await expect(identidade).toContainText('LÉXIS')
     await expect(identidade).toContainText(aluno.nome)
     await expect(identidade).toContainText(turma.nome)
-    await expect(estudante.getByRole('button', { name: 'Baixar em PDF' })).toHaveCount(0)
+    await expect(estudante.getByRole('button', { name: 'Salvar como PDF' })).toHaveCount(0)
     await expect(selosAluno.first()).toBeHidden()
     await expect(impressos).toHaveCount(3)
     await expect(impressos.first()).toBeVisible()

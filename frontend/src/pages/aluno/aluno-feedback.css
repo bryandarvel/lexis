@@ -33,7 +33,7 @@
 .feedback-so-impressao { display: none; }
 
 /*
- * "Baixar em PDF" usa a impressão do navegador. As regras só valem quando a
+ * "Salvar como PDF" usa a impressão do navegador. As regras só valem quando a
  * página de feedback está montada: o shell do aluno, os botões e os
  * controles somem. Os trechos mantêm a cor e o número do feedback.
  */

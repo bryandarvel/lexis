@@ -5,9 +5,9 @@
  */
 .aluno-redacoes-resumo {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
-  max-width: 720px;
+  max-width: 960px;
   margin: 25px 0 0;
 }
 
@@ -175,6 +175,13 @@
 
 @keyframes aluno-esqueleto-pulso {
   50% { opacity: 0.55; }
+}
+
+/* Quatro indicadores não cabem em linha numa tela média (Issue #180). */
+@media (max-width: 1023px) {
+  .aluno-redacoes-resumo {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 767px) {

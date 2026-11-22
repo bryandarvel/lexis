@@ -83,3 +83,13 @@ export function IconeEngrenagem() {
     </svg>
   )
 }
+
+export function IconeBaixar() {
+  return (
+    <svg {...PROPS}>
+      <path d="M12 4v10" />
+      <path d="m8 10.5 4 4 4-4" />
+      <path d="M5 19h14" />
+    </svg>
+  )
+}

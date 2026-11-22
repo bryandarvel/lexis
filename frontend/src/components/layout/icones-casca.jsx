@@ -42,15 +42,6 @@ function IconeRedacoes() {
   )
 }
 
-function IconeFeedbacks() {
-  return (
-    <svg {...PROPS}>
-      <path d="M21 12a8 8 0 0 1-11.5 7.2L3 21l1.8-6A8 8 0 1 1 21 12Z" />
-      <path d="m9 12 2 2 4-4" />
-    </svg>
-  )
-}
-
 function IconePerfil() {
   return (
     <svg {...PROPS}>
@@ -104,7 +95,6 @@ const ICONES_DA_NAVEGACAO = {
   inicio: IconeInicio,
   escrever: IconeEscrever,
   redacoes: IconeRedacoes,
-  feedbacks: IconeFeedbacks,
   perfil: IconePerfil,
   painel: IconePainel,
   turmas: IconeTurmas,
