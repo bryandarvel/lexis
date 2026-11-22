@@ -6,7 +6,6 @@
 .turma-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .turma-contexto { display: flex; align-items: center; flex-wrap: wrap; column-gap: 12px; row-gap: 6px; font-size: 14px; color: var(--panel-muted); }
 .turma-contexto strong { color: var(--panel-text); overflow-wrap: anywhere; }
-.turma-copiar { min-width: 0; min-height: 44px; padding: 6px 16px; }
 /* Ações do cabeçalho: Gerenciar ao lado de Nova proposta (Issue #175). */
 .turma-heading-acoes { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px; }
 .turma-heading-acoes > * { min-height: 44px; margin-top: 4px; }

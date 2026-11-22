@@ -48,7 +48,7 @@
 .topic-criterion p { margin: 5px 0 0; font-size: 12px; line-height: 19px; color: var(--panel-muted); overflow-wrap: anywhere; }
 .topic-criterion.custom { min-height: 56px; background: var(--panel-surface); }
 .topic-criterion button { margin: -8px 0; min-height: 36px; color: var(--panel-action); font-size: 13px; cursor: pointer; }
-.topic-add { width: 100%; margin-top: 12px; min-height: 42px; }
+.topic-add { width: 100%; margin-top: 12px; }
 .topic-limit, .topic-rule { margin: 10px 0 0; font-size: 12px; line-height: 19px; color: var(--panel-muted); }
 .topic-rule { padding: 10px; border-left: 3px solid var(--panel-attention); background: var(--panel-bg); border-radius: var(--raio-marca); }
 .topic-rule > p { margin: 0; }

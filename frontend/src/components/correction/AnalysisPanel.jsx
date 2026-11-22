@@ -36,8 +36,8 @@ export default function AnalysisPanel({ analysis, resultAnalysis = analysis, fal
    * secundária "Gerar nova análise", abaixo das sugestões.
    */
   const acao = (
-    <Botao type="button" className="review-analysis-acao"
-      variante={result ? 'secundario' : 'primario'}
+    <Botao type="button" className="review-analysis-acao" forma="pilula"
+      variante={result ? 'contorno' : 'primario'}
       disabled={disabled || isRequesting || pendente || espera > 0} onClick={onRequest}>
       {result ? <IconeRecarregar /> : <IconeAnalisar />}
       {isRequesting ? 'Analisando…' : result ? 'Gerar nova análise' : 'Analisar redação com IA'}

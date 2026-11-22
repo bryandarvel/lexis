@@ -84,7 +84,9 @@
 .review-text-link { display: inline-flex; align-items: center; justify-self: start; min-height: 44px; color: var(--panel-action); font-size: 13px; text-decoration: underline; }
 /* Card de análise da IA (Issue #179): título visível, ação de largura cheia e
    a abertura das sugestões como uma faixa destacada, não como outro cartão. */
-.review-analysis-acao { width: 100%; margin-top: 12px; }
+/* Botões da IA (Issue #186): em pílula, com o ícone ao lado do texto e do
+   tamanho do conteúdo, alinhados à esquerda como na referência. */
+.review-analysis-acao { margin-top: 12px; }
 .review-analysis-details { margin-top: 12px; font-size: 13px; line-height: 21px; }
 .review-analysis-details > summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; min-height: 44px; padding: 10px 14px; border-radius: var(--raio-cartao); background: var(--panel-soft); }
 .review-analysis-details[open] > summary { border-end-start-radius: 0; border-end-end-radius: 0; }

@@ -10,6 +10,9 @@
 .trechos-sugestoes summary { cursor: pointer; padding-block: 12px; font-size: 13px; font-weight: 600; }
 .trechos-sugestoes .trechos-lista > li { border-style: dashed; }
 .trechos-bordas, .review-mark-actions { display: flex; flex-wrap: wrap; gap: 6px; }
-.trechos-bordas button, .review-mark-actions button { min-height: 44px; min-width: 44px; }
+/* Só a altura: o min-width: 44px que havia aqui, fora de camada, anulava o piso
+   de largura do Botao e deixava "Salvar" e os demais mais estreitos que o
+   padrão (Issue #186). A largura vem do componente. */
+.trechos-bordas button, .review-mark-actions button { min-height: 44px; }
 .trechos-preview { margin: 6px 0; font-size: 13px; }
 .trechos-edicao { border-top: 1px solid var(--panel-border); margin-top: 8px; padding-top: 6px; }

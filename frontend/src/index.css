@@ -225,14 +225,25 @@ a {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Links no texto corrido mantêm a leitura; os isolados ganham área de alvo. */
-:where(a[href]):not(:where(p a, .sr-only, .casca-pular)) {
-  display: inline-flex;
-  align-items: center;
-  min-width: 24px;
-  min-height: 24px;
+/*
+ * Piso de área de toque (24 px). Fica em @layer base de propósito (Issue #186):
+ * CSS fora de camada vence qualquer utilitário do Tailwind, então, sem a
+ * camada, estas duas regras viravam o TAMANHO dos botões em vez do mínimo e
+ * anulavam o min-h-11 / min-h-12 do componente Botao em toda tela com 768 px
+ * ou mais — era isso que deixava "Entrar", "Criar conta" e os demais finos.
+ * Em camada, o utilitário maior vence e o piso só vale para o que não declara
+ * altura nenhuma.
+ */
+@layer base {
+  /* Links no texto corrido mantêm a leitura; os isolados ganham área de alvo. */
+  :where(a[href]):not(:where(p a, .sr-only, .casca-pular)) {
+    display: inline-flex;
+    align-items: center;
+    min-width: 24px;
+    min-height: 24px;
+  }
+  button { min-height: 24px; }
 }
-button { min-height: 24px; }
 /* O conteúdo de um details fechado não participa de layout nem de transições.
    A ocultação nativa por content-visibility pode reter transições concluídas. */
 details:not([open]) > :not(summary) { display: none; }
