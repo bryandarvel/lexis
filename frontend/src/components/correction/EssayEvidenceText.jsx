@@ -7,12 +7,13 @@ import { obterTomDaMarca } from '../../utils/criterio-cores.js'
 import { AjusteBordas } from './SelecaoTrechos.jsx'
 import VinculosDoTrecho from './VinculosDoTrecho.jsx'
 
-export default function EssayEvidenceText({ texto = '', criterios, marcacoes, analise, onMark, onEvidence, disabled, vinculo }) {
+export default function EssayEvidenceText({ texto = '', criterios, marcacoes, analise, onMark, onUnmark, onEvidence, disabled, vinculo }) {
   const instrucao = useId()
   const area = useRef(null)
   const modoRef = useRef(null)
   const barra = useRef(null)
   const ultimaSelecao = useRef(null)
+  const apontouNaBarra = useRef(false)
   const [nativa, setNativa] = useState(null)
   const [teclado, setTeclado] = useState(null)
   const [ajuste, setAjuste] = useState(null)
@@ -30,20 +31,43 @@ export default function EssayEvidenceText({ texto = '', criterios, marcacoes, an
   const mostrarBarra = Boolean(intervalo && intervalo.inicio !== intervalo.fim)
   const jaMarcadoEm = criteriosComOTrecho(criterios, porCriterio, pronto)
 
+  /*
+   * A barra acompanha a seleção: aparece quando há uma e sai quando ela
+   * acaba. Perder a seleção não podia fechá-la enquanto o clique era dentro
+   * da própria barra — o navegador limpa a seleção já no apontar, e a barra
+   * sumiria antes de o clique chegar ao botão. Por isso o apontar marca onde
+   * começou, e só aí a ausência de seleção conta.
+   */
   useEffect(() => {
     if (teclado || disabled) return undefined
     const consultar = () => {
       const selecionado = lerIntervaloSelecionado(area.current, document.getSelection())
-      if (!selecionado) return
+      if (!selecionado) {
+        if (apontouNaBarra.current || !ultimaSelecao.current) return
+        ultimaSelecao.current = null
+        setNativa(null)
+        setAjuste(null)
+        setAviso('')
+        return
+      }
       if (ultimaSelecao.current?.inicio === selecionado.inicio && ultimaSelecao.current?.fim === selecionado.fim) return
       ultimaSelecao.current = selecionado
       setNativa(selecionado)
       setAjuste(null)
       setAviso('')
     }
+    const aoApontar = (evento) => {
+      apontouNaBarra.current = Boolean(barra.current?.contains(evento.target))
+      // Clique em qualquer outro lugar da tela fecha a barra (Issue #179).
+      if (!apontouNaBarra.current && !area.current?.contains(evento.target)) limpar()
+    }
     const eventos = ['selectionchange', 'pointerup', 'touchend', 'keyup']
     eventos.forEach((evento) => document.addEventListener(evento, consultar))
-    return () => eventos.forEach((evento) => document.removeEventListener(evento, consultar))
+    document.addEventListener('pointerdown', aoApontar, true)
+    return () => {
+      eventos.forEach((evento) => document.removeEventListener(evento, consultar))
+      document.removeEventListener('pointerdown', aoApontar, true)
+    }
   }, [teclado, disabled])
 
   useEffect(() => {
@@ -53,6 +77,7 @@ export default function EssayEvidenceText({ texto = '', criterios, marcacoes, an
   function limpar(foco) {
     if (lerIntervaloSelecionado(area.current, document.getSelection())) document.getSelection().removeAllRanges()
     ultimaSelecao.current = null
+    apontouNaBarra.current = false
     setNativa(null); setTeclado(null); setAjuste(null); setAviso('')
     if (foco === 'modo') modoRef.current?.focus()
     if (foco === 'texto') area.current?.focus()
@@ -162,13 +187,21 @@ export default function EssayEvidenceText({ texto = '', criterios, marcacoes, an
           </Botao>
         })}
       </div>
+      {/*
+        * Issue #179: "Cancelar marcação" saiu. Ele cancelava o ato de marcar,
+        * fechando a barra, mas era lido como "cancelar a marcação que existe"
+        * — e a remoção só morava no painel de trechos. Agora o trecho já
+        * marcado é removido daqui, e fechar a barra é clicar fora (ou Escape).
+        */}
+      {jaMarcadoEm.length > 0 && <div className="review-mark-actions">
+        {jaMarcadoEm.map((c) => <Botao key={c.id} variante="perigo" disabled={disabled} onClick={() => {
+          onUnmark(c.id, pronto); limpar(teclado ? 'modo' : 'texto')
+        }}>Remover de {c.nome}</Botao>)}
+      </div>}
       <details className="review-mark-bordas" open={Boolean(erroBorda)}>
         <summary>Ajustar bordas</summary>
         <AjusteBordas texto={texto} intervalo={proposta} limites={limites} onChange={setAjuste} disabled={disabled} />
       </details>
-      <div className="review-mark-actions">
-        <Botao variante="secundario" onClick={() => limpar(teclado ? 'modo' : 'texto')}>Cancelar marcação</Botao>
-      </div>
     </section>}
   </figure>
 }

@@ -192,7 +192,10 @@ test('trechos manuais sem IA: teclado, cancelamento, falha de gravação, retorn
   })
   await page.mouse.dblclick(inicioDaLinha.x, inicioDaLinha.y)
   await expect(barra).toBeVisible()
-  await barra.getByRole('button', { name: 'Cancelar marcação' }).click()
+  // Issue #179: "Cancelar marcação" saiu; clicar fora da barra é o que fecha.
+  await expect(barra.getByRole('button', { name: /Cancelar/ })).toHaveCount(0)
+  await page.getByRole('heading', { level: 1 }).click()
+  await expect(barra).toHaveCount(0)
   await teclado.click()
   await expect(textoDaRedacao).toBeFocused()
   await page.keyboard.press('Shift+ArrowRight')

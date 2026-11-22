@@ -82,3 +82,58 @@ test('nova proposta distingue título, comando e critérios sem sair da turma', 
   await expect(page.getByRole('heading', { name: 'Legitimação · fixo' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Criar proposta', exact: true })).toBeVisible()
 })
+
+/*
+ * Issue #179: "Cancelar marcação" não removia marcação nenhuma — cancelava o
+ * ato de marcar, fechando a barra. Agora o trecho já marcado é removido pela
+ * própria barra, e fechá-la é clicar fora.
+ */
+test('o trecho já marcado é removido pela barra, que fecha ao clicar fora', async ({ page, cenario }) => {
+  const turma = await novaTurma(cenario, 'Turma da remoção')
+  const tema = await novaProposta(cenario, turma, 'Proposta da remoção')
+  const aluno = await cenario.criarConta('ALUNO')
+  await matricular(cenario, aluno, turma)
+  const redacao = await enviarRedacaoPorApi(cenario, aluno, tema.id, 'Repertório fictício para marcar e remover.')
+
+  await entrar(page, cenario.professor)
+  await page.goto('/professor/redacoes/' + redacao.id)
+
+  const texto = page.locator('.review-essay-text')
+  const barra = page.getByRole('region', { name: 'Marcar este trecho em' })
+  const selos = page.getByRole('button', { name: /^Trecho \d+:/ })
+  await expect(texto).toBeVisible()
+
+  // Marcar insere o selo antes do fragmento e desloca o texto, então a
+  // posição é recalculada a cada clique em vez de guardada.
+  const clicarNaPalavra = async () => {
+    const palavra = await texto.evaluate((el) => {
+      const faixa = document.createRange()
+      const no = el.querySelector('[data-inicio="0"]').firstChild
+      faixa.setStart(no, 0)
+      faixa.setEnd(no, 10)
+      const caixa = faixa.getBoundingClientRect()
+      return { x: caixa.left + caixa.width / 2, y: caixa.top + caixa.height / 2 }
+    })
+    await page.mouse.dblclick(palavra.x, palavra.y)
+  }
+
+  // Marca o trecho.
+  await clicarNaPalavra()
+  await expect(barra).toBeVisible()
+  await barra.getByRole('button', { name: 'Legitimação', exact: true }).click()
+  await expect(selos).toHaveCount(1)
+
+  // Selecionar o mesmo trecho oferece a remoção, e não um "Cancelar".
+  await clicarNaPalavra()
+  await expect(barra).toBeVisible()
+  await expect(barra.getByRole('button', { name: /Cancelar/ })).toHaveCount(0)
+  await barra.getByRole('button', { name: 'Remover de Legitimação', exact: true }).click()
+  await expect(selos).toHaveCount(0)
+  await expect(barra).toHaveCount(0)
+
+  // Com o trecho já sem marcação, clicar fora fecha a barra.
+  await clicarNaPalavra()
+  await expect(barra).toBeVisible()
+  await page.getByRole('heading', { level: 1 }).click()
+  await expect(barra).toHaveCount(0)
+})
