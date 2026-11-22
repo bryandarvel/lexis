@@ -21,8 +21,8 @@ async function conferirMenu(page, atual) {
   const menu = page.getByRole('navigation', { name: 'Navegação do professor' })
 
   await expect(menu.getByRole('link')).toHaveText(ITENS)
-  // Nenhuma ação: todo item leva a algum lugar e nenhum pode vir desabilitado.
-  await expect(menu.getByRole('button')).toHaveCount(0)
+  // Nenhum item de navegação é ação: o único botão é o "Sair" do fim do menu (Issue #190).
+  await expect(menu.getByRole('button')).toHaveText(['Sair'])
 
   for (const rotulo of ITENS) {
     const item = menu.getByRole('link', { name: rotulo, exact: true })
@@ -74,4 +74,22 @@ test('do sino até Notificações, nenhum item do menu fica sem destino', async 
 
   // A página não é destino do menu: nenhum item marcado, e nenhum morto.
   await conferirMenu(page, null)
+})
+
+test('o menu tem "Sair" no fim, e ele encerra a sessão do professor', async ({ page, cenario }) => {
+  await entrar(page, cenario.professor)
+  await page.goto('/professor')
+
+  const menu = page.getByRole('navigation', { name: 'Navegação do professor' })
+  const sair = menu.getByRole('button', { name: 'Sair', exact: true })
+
+  // Fica depois do último destino de navegação.
+  const [ultimoLink, botao] = await Promise.all([
+    menu.getByRole('link').last().boundingBox(),
+    sair.boundingBox(),
+  ])
+  expect(botao.y).toBeGreaterThan(ultimoLink.y)
+
+  await sair.click()
+  await expect(page).toHaveURL(/\/login$/)
 })

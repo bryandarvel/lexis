@@ -193,11 +193,15 @@ export default function EssayEvidenceText({ texto = '', criterios, marcacoes, an
         * — e a remoção só morava no painel de trechos. Agora o trecho já
         * marcado é removido daqui, e fechar a barra é clicar fora (ou Escape).
         */}
-      {jaMarcadoEm.length > 0 && <div className="review-mark-actions">
-        {jaMarcadoEm.map((c) => <Botao key={c.id} variante="perigo" disabled={disabled} onClick={() => {
-          onUnmark(c.id, pronto); limpar(teclado ? 'modo' : 'texto')
-        }}>Remover de {c.nome}</Botao>)}
-      </div>}
+      <div className="review-mark-actions">
+        <Botao variante="perigo" disabled={disabled || jaMarcadoEm.length === 0}
+          title={jaMarcadoEm.length === 0 ? 'Este trecho ainda não está marcado em nenhum critério.' : undefined}
+          onClick={() => {
+            // Issue #190: um só botão para o trecho inteiro, em vez de um por critério.
+            jaMarcadoEm.forEach((c) => onUnmark(c.id, pronto))
+            limpar(teclado ? 'modo' : 'texto')
+          }}>Remover trecho</Botao>
+      </div>
       <details className="review-mark-bordas" open={Boolean(erroBorda)}>
         <summary>Ajustar bordas</summary>
         <AjusteBordas texto={texto} intervalo={proposta} limites={limites} onChange={setAjuste} disabled={disabled} />

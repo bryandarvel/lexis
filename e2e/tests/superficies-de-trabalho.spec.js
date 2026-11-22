@@ -117,9 +117,12 @@ test('o trecho já marcado é removido pela barra, que fecha ao clicar fora', as
     await page.mouse.dblclick(palavra.x, palavra.y)
   }
 
-  // Marca o trecho.
+  // Sem marcação, "Remover trecho" já aparece na barra, mas inerte (Issue #190).
   await clicarNaPalavra()
   await expect(barra).toBeVisible()
+  await expect(barra.getByRole('button', { name: 'Remover trecho', exact: true })).toBeDisabled()
+
+  // Marca o trecho.
   await barra.getByRole('button', { name: 'Legitimação', exact: true }).click()
   await expect(selos).toHaveCount(1)
 
@@ -127,9 +130,20 @@ test('o trecho já marcado é removido pela barra, que fecha ao clicar fora', as
   await clicarNaPalavra()
   await expect(barra).toBeVisible()
   await expect(barra.getByRole('button', { name: /Cancelar/ })).toHaveCount(0)
-  await barra.getByRole('button', { name: 'Remover de Legitimação', exact: true }).click()
+  await expect(barra.getByRole('button', { name: /^Remover de/ })).toHaveCount(0)
+  await barra.getByRole('button', { name: 'Remover trecho', exact: true }).click()
   await expect(selos).toHaveCount(0)
   await expect(barra).toHaveCount(0)
+
+  // Marcado em dois critérios, um clique remove o trecho de todos (Issue #190).
+  await clicarNaPalavra()
+  await barra.locator('.review-mark-opcao').nth(0).click()
+  await clicarNaPalavra()
+  await barra.locator('.review-mark-opcao').nth(1).click()
+  await expect(selos).toHaveCount(1)
+  await clicarNaPalavra()
+  await barra.getByRole('button', { name: 'Remover trecho', exact: true }).click()
+  await expect(selos).toHaveCount(0)
 
   // Com o trecho já sem marcação, clicar fora fecha a barra.
   await clicarNaPalavra()

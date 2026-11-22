@@ -27,7 +27,7 @@ test('sessão real restaura após reload, respeita papel e é encerrada no logou
   await page.goto('/professor/turmas')
   await expect(page).toHaveURL(/\/aluno$/)
   await page.getByRole('button', { name: /Menu do usuário/ }).click()
-  await page.getByRole('button', { name: 'Sair', exact: true }).click()
+  await page.getByRole('banner').getByRole('button', { name: 'Sair', exact: true }).click()
   await expect(page).toHaveURL(/\/login$/)
   expect((await context.cookies()).some((c) => c.httpOnly)).toBe(false)
   await page.goto('/aluno')
