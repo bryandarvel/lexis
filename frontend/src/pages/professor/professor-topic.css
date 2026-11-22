@@ -87,3 +87,8 @@
   .topic-acoes { width: 100%; }
   .topic-acoes > button { flex: 1 1 100%; }
 }
+
+/* Confirmação de arquivar proposta (Issue #175): enunciado em destaque e a
+   consequência secundária separada da frase principal. */
+.topic-dialogo-resumo { margin: 0; font-size: 15px; line-height: 22px; color: var(--texto); overflow-wrap: anywhere; }
+.topic-dialogo-nota { margin: 0; font-size: 14px; line-height: 22px; color: var(--texto-suave); }
