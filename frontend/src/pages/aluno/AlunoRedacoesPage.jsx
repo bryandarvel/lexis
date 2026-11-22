@@ -1,6 +1,7 @@
 import Etiqueta from '../../components/base/Etiqueta.jsx'
 import { useEffect, useId, useState } from 'react'
 import Botao from '../../components/base/Botao.jsx'
+import EstadoVazio from '../../components/base/EstadoVazio.jsx'
 import { Link } from 'react-router'
 
 import AppShell from '../../layouts/AppShell.jsx'
@@ -217,21 +218,12 @@ export default function AlunoRedacoesPage() {
       )}
 
       {status === 'pronto' && redacoes.length === 0 && (
-        <section className="aluno-elevacao-1 mt-[25px] max-w-[720px] rounded-cartao border border-[var(--surface-border)] bg-superficie px-6 py-6">
-          <h2 className="text-lg font-semibold leading-6 text-texto">
-            Você ainda não escreveu nenhuma redação
-          </h2>
-          <p className="mt-2 text-sm leading-[22px] text-texto-suave">
-            Quando você começar um rascunho ou enviar uma redação, ela
-            aparece aqui.
-          </p>
-          <Botao as={Link}
-            to="/aluno"
-            variante="secundario" className="mt-4"
-          >
-            Ver propostas no painel
-          </Botao>
-        </section>
+        <EstadoVazio
+          className="mt-[25px] max-w-[720px]"
+          titulo="Você ainda não escreveu nenhuma redação"
+          descricao="Quando você começar um rascunho ou enviar uma redação, ela aparece aqui."
+          acao={<Botao as={Link} to="/aluno" variante="secundario">Ver propostas no painel</Botao>}
+        />
       )}
 
       {status === 'pronto' && redacoes.length > 0 && (
@@ -289,17 +281,12 @@ export default function AlunoRedacoesPage() {
               ))}
             </ul>
           ) : (
-            <section className="aluno-elevacao-1 mt-4 max-w-[720px] rounded-cartao border border-[var(--surface-border)] bg-superficie px-6 py-5">
-              <h2 className="text-base font-semibold leading-6 text-texto">
-                Nenhuma redação nesta situação
-              </h2>
-              <Botao
-                type="button"
-                onClick={() => setFiltro('todas')}
-                variante="secundario" className="mt-3">
-                Mostrar todas
-              </Botao>
-            </section>
+            <EstadoVazio
+              className="mt-4 max-w-[720px]"
+              titulo="Nenhuma redação nesta situação"
+              descricao="Troque o filtro para ver as outras redações."
+              acao={<Botao type="button" variante="secundario" onClick={() => setFiltro('todas')}>Mostrar todas</Botao>}
+            />
           )}
         </>
       )}
