@@ -73,9 +73,20 @@ export const redefinirSenhaSchema = z.object({
 
 export const atualizarPerfilSchema = z.object({
   nome: cadastroSchema.shape.nome,
+  senhaAtual: senhaLoginSchema,
 }).strict()
 
 export const alterarSenhaSchema = z.object({
   senhaAtual: senhaLoginSchema,
-  novaSenha: senhaCadastroSchema,
+}).strict()
+
+export const excluirContaSchema = z.object({ senhaAtual: senhaLoginSchema }).strict()
+
+export const solicitarAlteracaoEmailSchema = z.object({
+  senhaAtual: senhaLoginSchema,
+  novoEmail: emailSchema,
+}).strict()
+
+export const confirmarAlteracaoEmailSchema = z.object({
+  token: z.string().regex(/^[a-f0-9]{64}$/, 'Link de confirmação inválido.'),
 }).strict()

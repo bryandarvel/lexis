@@ -9,8 +9,10 @@ import {
   buscarTurmaDoProfessor,
   criarMatriculaAtivaComExclusividade,
   criarTurma,
+  consultarElegibilidadeExclusaoTurma,
   encerrarMatriculaAtivaDoAluno,
   encerrarMatriculaPeloProfessor,
+  excluirTurmaSemHistorico,
   listarMatriculasAtivasDaTurma,
   listarTurmasDoProfessor,
   reabrirTurma,
@@ -27,6 +29,21 @@ function criarErroTurmaNaoEncontrada() {
     statusCode: 404,
     code: 'CLASS_NOT_FOUND',
   })
+}
+
+export async function excluirTurmaParaProfessor({ turmaId, professorId }) {
+  const resultado = await excluirTurmaSemHistorico({ turmaId, professorId })
+  if (resultado === 'NAO_ENCONTRADA') throw criarErroTurmaNaoEncontrada()
+  if (resultado === 'ATIVA') {
+    throw new AppError('Arquive a turma antes de excluí-la definitivamente.', {
+      statusCode: 409, code: 'CLASS_NOT_ARCHIVED',
+    })
+  }
+  if (resultado === 'COM_HISTORICO') {
+    throw new AppError('Esta turma possui matrículas ou propostas no histórico. Use o arquivamento.', {
+      statusCode: 409, code: 'CLASS_HAS_HISTORY',
+    })
+  }
 }
 
 function criarErroTurmaArquivada() {
@@ -197,7 +214,8 @@ export async function obterTurmaParaProfessor({
     professorId,
   })
 
-  return prepararTurmaParaResposta(turma)
+  const podeExcluirDefinitivamente = await consultarElegibilidadeExclusaoTurma({ turmaId, professorId })
+  return { ...prepararTurmaParaResposta(turma), podeExcluirDefinitivamente }
 }
 
 export async function renomearTurmaParaProfessor({

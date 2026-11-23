@@ -69,6 +69,10 @@ export async function reabrirTurma(turmaId) {
   return resposta.data.data.turma
 }
 
+export async function excluirTurma(turmaId) {
+  await api.delete(`/api/turmas/${prepararId(turmaId)}`, { naoReenviarAposRenovacao: true })
+}
+
 export async function listarAlunosDaTurma(
   turmaId,
 ) {

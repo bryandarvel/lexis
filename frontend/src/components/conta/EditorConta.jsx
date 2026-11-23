@@ -1,343 +1,237 @@
-import Aviso from '../../components/base/Aviso.jsx'
-import { useEffect, useRef, useState } from 'react'
-import Botao from '../../components/base/Botao.jsx'
-import { useNavigate } from 'react-router'
+import { startTransition, useLayoutEffect, useRef, useState } from 'react'
+import { Link, useNavigate } from 'react-router'
 
-import Campo from '../../components/base/Campo.jsx'
+import Aviso from '../base/Aviso.jsx'
+import Botao from '../base/Botao.jsx'
+import Campo from '../base/Campo.jsx'
+import Dialogo from '../base/Dialogo.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
 import {
-  alterarMinhaSenha,
   atualizarMeuNome,
+  excluirMinhaConta,
+  solicitarTrocaMeuEmail,
+  solicitarTrocaMinhaSenha,
 } from '../../services/conta.js'
-import {
-  mapearErroDaConta,
-  prepararNovoNome,
-  prepararTrocaDeSenha,
-  reiniciarCamposDaConta,
-  respostaAindaVale,
-  SENHA_VAZIA,
-} from '../../utils/conta-formulario.js'
-import { REGRA_SENHA } from '../../utils/senha.js'
+import { mapearErroDaConta, prepararNovoNome } from '../../utils/conta-formulario.js'
 import './conta-perfil.css'
 
-const PAPEIS = {
-  PROFESSOR: 'Professor',
-  ALUNO: 'Aluno',
+const PAPEIS = { PROFESSOR: 'Professor', ALUNO: 'Aluno' }
+const ACOES = {
+  nome: { titulo: 'Confirmar alteração do nome', botao: 'Confirmar novo nome' },
+  email: { titulo: 'Alterar e-mail', botao: 'Enviar link de confirmação' },
+  senha: { titulo: 'Redefinir senha por e-mail', botao: 'Enviar link de redefinição' },
+  excluir: { titulo: 'Excluir sua conta?', botao: 'Excluir minha conta' },
 }
 
-export default function EditorConta({ exibirSessao = true, membroDesde }) {
-  const { usuario, atualizarSessao, sair } = useAuth()
+export default function EditorConta(props) {
+  const auth = useAuth()
+  return <EditorDaConta key={auth.usuario?.id} {...props} {...auth} />
+}
+
+function EditorDaConta({ exibirSessao = true, membroDesde, usuario, atualizarSessao, sair, encerrarSessaoLocal }) {
   const navigate = useNavigate()
+  const [nome, setNome] = useState(usuario?.nome ?? '')
+  const [erroNome, setErroNome] = useState('')
+  const [dialogo, setDialogo] = useState(null)
+  const [senhaAtual, setSenhaAtual] = useState('')
+  const [novoEmail, setNovoEmail] = useState('')
+  const [erro, setErro] = useState(null)
+  const [aviso, setAviso] = useState(null)
+  const [enviando, setEnviando] = useState(false)
   const [saindo, setSaindo] = useState(false)
   const nomeRef = useRef(null)
-  const senhaAtualRef = useRef(null)
-  const novaSenhaRef = useRef(null)
+  const senhaRef = useRef(null)
+  const emailRef = useRef(null)
+  const cancelarRef = useRef(null)
+  const vigente = useRef(false)
+  const enviandoRef = useRef(false)
+  const professor = usuario?.papel === 'PROFESSOR'
+  const acao = ACOES[dialogo?.tipo]
 
-  const [nome, setNome] = useState(usuario?.nome ?? '')
-  const [nomeEstado, setNomeEstado] = useState({
-    enviando: false,
-    erro: '',
-    mensagem: '',
-    sucesso: '',
-  })
+  // A chave acima reinicia os campos na troca efetiva de conta. A limpeza
+  // síncrona também invalida respostas de uma conta que já deixou a tela.
+  useLayoutEffect(() => {
+    vigente.current = true
+    return () => { vigente.current = false }
+  }, [])
 
-  const [senha, setSenha] = useState(SENHA_VAZIA)
-  const [senhaEstado, setSenhaEstado] = useState({
-    enviando: false,
-    erros: {},
-    mensagem: '',
-    sucesso: '',
-  })
+  useLayoutEffect(() => {
+    if (enviando) return
+    if (erro?.campos?.senhaAtual) senhaRef.current?.focus()
+    else if (erro?.campos?.novoEmail) emailRef.current?.focus()
+  }, [enviando, erro])
 
-  // Conta dona do que está nos campos. Quando entra outra pessoa pela
-  // reautenticação, o formulário é reiniciado ainda neste render, antes de a
-  // tela aparecer para ela. Reautenticar na mesma conta não mexe em nada.
-  const [contaDoFormulario, setContaDoFormulario] = useState(usuario?.id)
-  const reinicio = reiniciarCamposDaConta({
-    contaDoFormulario,
-    usuario,
-    nome,
-    senha,
-  })
-
-  if (reinicio.trocou) {
-    setContaDoFormulario(usuario?.id)
-    setNome(reinicio.nome)
-    setSenha(reinicio.senha)
-    setNomeEstado({ enviando: false, erro: '', mensagem: '', sucesso: '' })
-    setSenhaEstado({ enviando: false, erros: {}, mensagem: '', sucesso: '' })
+  function abrir(tipo, nomeConfirmado) {
+    setSenhaAtual('')
+    setNovoEmail('')
+    setErro(null)
+    setAviso(null)
+    setDialogo({ tipo, nomeConfirmado })
   }
 
-  // Lido no momento da resposta: diz de quem é a sessão agora.
-  const contaAtual = useRef(usuario?.id)
-  contaAtual.current = usuario?.id
-  useEffect(() => {
-    contaAtual.current = usuario?.id
-    // O perfil do aluno desmonta o formulário ao trocar a conta/carregar.
-    // Nenhuma resposta pendente pode então atualizar a sessão seguinte.
-    return () => { contaAtual.current = null }
-  }, [usuario?.id])
-
-  // O nome pode mudar por outra via (a própria troca de senha devolve o
-  // usuário); o campo acompanha enquanto não está sendo editado.
-  useEffect(() => {
-    if (!nomeEstado.enviando) {
-      setNome((atual) => (atual === '' ? usuario?.nome ?? '' : atual))
-    }
-  }, [usuario?.nome, nomeEstado.enviando])
-
-  // Depois do render: durante o envio o campo está desabilitado, e focar antes
-  // do commit deixaria o foco no body.
-  useEffect(() => {
-    if (senhaEstado.enviando) return
-    if (senhaEstado.sucesso || senhaEstado.erros.senhaAtual) {
-      senhaAtualRef.current?.focus()
-    } else if (senhaEstado.erros.novaSenha || senhaEstado.erros.confirmacao) {
-      novaSenhaRef.current?.focus()
-    }
-  }, [senhaEstado])
-
-  useEffect(() => {
-    if (!nomeEstado.enviando && nomeEstado.erro) nomeRef.current?.focus()
-  }, [nomeEstado])
-
-  async function encerrarSessao() {
-    if (saindo) return
-
-    setSaindo(true)
-
-    try {
-      await sair()
-    } catch {
-      // O AuthProvider limpa a sessão local mesmo sem resposta do servidor.
-    }
-
-    navigate('/login', { replace: true })
+  function fechar() {
+    if (enviandoRef.current) return
+    setDialogo(null)
+    setSenhaAtual('')
+    setNovoEmail('')
+    setErro(null)
   }
 
-  async function salvarNome(evento) {
+  function confirmarNome(evento) {
     evento.preventDefault()
-
-    if (nomeEstado.enviando) return
-
-    // Conta que pediu a alteração: a resposta não pode mexer na sessão de
-    // quem entrar depois.
-    const contaDaAcao = usuario?.id
-    const { nome: nomeValido, erro } = prepararNovoNome(nome, usuario?.nome)
-
-    if (!nomeValido) {
-      setNomeEstado({ enviando: false, erro, mensagem: '', sucesso: '' })
+    const resultado = prepararNovoNome(nome, usuario?.nome)
+    if (resultado.erro) {
+      setErroNome(resultado.erro)
       nomeRef.current?.focus()
       return
     }
-
-    setNomeEstado({ enviando: true, erro: '', mensagem: '', sucesso: '' })
-
-    try {
-      const atualizado = await atualizarMeuNome(nomeValido)
-
-      if (!respostaAindaVale(contaDaAcao, contaAtual.current)) return
-
-      atualizarSessao({ usuario: atualizado })
-      setNome(atualizado.nome)
-      setNomeEstado({
-        enviando: false,
-        erro: '',
-        mensagem: '',
-        sucesso: 'Nome atualizado.',
-      })
-    } catch (erroApi) {
-      if (!respostaAindaVale(contaDaAcao, contaAtual.current)) return
-
-      const tratado = mapearErroDaConta(erroApi)
-
-      setNomeEstado({
-        enviando: false,
-        erro: tratado.campos.nome ?? '',
-        // 401 fica com o interceptor, que abre a reautenticação.
-        mensagem: tratado.sessaoExpirada ? '' : tratado.mensagem,
-        sucesso: '',
-      })
-
-      if (tratado.campos.nome) nomeRef.current?.focus()
-    }
+    abrir('nome', resultado.nome)
   }
 
-  async function trocarSenha(evento) {
+  async function confirmar(evento) {
     evento.preventDefault()
-
-    if (senhaEstado.enviando) return
-
-    const contaDaAcao = usuario?.id
-    const { dados, erros } = prepararTrocaDeSenha(senha)
-
-    if (!dados) {
-      setSenhaEstado({ enviando: false, erros, mensagem: '', sucesso: '' })
-
-      if (erros.senhaAtual) senhaAtualRef.current?.focus()
-      else novaSenhaRef.current?.focus()
-
+    if (!dialogo || enviandoRef.current) return
+    if (!senhaAtual) {
+      setErro({ campos: { senhaAtual: 'Informe a senha atual.' } })
       return
     }
 
-    setSenhaEstado({ enviando: true, erros: {}, mensagem: '', sucesso: '' })
+    const tipo = dialogo.tipo
+    enviandoRef.current = true
+    setEnviando(true)
+    setErro(null)
 
     try {
-      const sessao = await alterarMinhaSenha(dados)
-
-      if (!respostaAindaVale(contaDaAcao, contaAtual.current)) return
-
-      // O token novo entra na hora: a sessão atual continua valendo.
-      atualizarSessao({
-        usuario: sessao.usuario,
-        accessToken: sessao.accessToken,
-      })
-      setSenha(SENHA_VAZIA)
-      setSenhaEstado({
-        enviando: false,
-        erros: {},
-        mensagem: '',
-        sucesso:
-          'Senha alterada. Você continua conectado; as outras sessões foram encerradas.',
-      })
+      let mensagem
+      if (tipo === 'nome') {
+        const atualizado = await atualizarMeuNome({ nome: dialogo.nomeConfirmado, senhaAtual })
+        if (!vigente.current) return
+        atualizarSessao({ usuario: atualizado })
+        setNome(atualizado.nome)
+        mensagem = 'Nome atualizado.'
+      } else if (tipo === 'email') {
+        const resposta = await solicitarTrocaMeuEmail({ novoEmail: novoEmail.trim(), senhaAtual })
+        mensagem = resposta.mensagem
+      } else if (tipo === 'senha') {
+        const resposta = await solicitarTrocaMinhaSenha(senhaAtual)
+        mensagem = resposta.mensagem ?? 'Solicitação registrada. Confira seu e-mail para redefinir a senha.'
+      } else {
+        await excluirMinhaConta(senhaAtual)
+        if (!vigente.current) return
+        // A navegação e a mudança de sessão precisam chegar juntas. Sem isso,
+        // o RouteGuard pode redirecionar antes e perder o aviso de exclusão.
+        startTransition(() => {
+          navigate('/login', { replace: true, state: { contaExcluida: true } })
+          encerrarSessaoLocal()
+        })
+        return
+      }
+      if (!vigente.current) return
+      setAviso({ tipo, mensagem })
+      enviandoRef.current = false
+      fechar()
     } catch (erroApi) {
-      if (!respostaAindaVale(contaDaAcao, contaAtual.current)) return
-
+      if (!vigente.current) return
       const tratado = mapearErroDaConta(erroApi)
-
-      setSenhaEstado({
-        enviando: false,
-        erros: tratado.campos,
-        mensagem: tratado.sessaoExpirada ? '' : tratado.mensagem,
-        sucesso: '',
+      const codigo = erroApi?.response?.data?.error?.code
+      setErro({
+        campos: tratado.campos,
+        mensagem: tratado.sessaoExpirada
+          ? 'Confirme sua sessão e solicite esta alteração novamente.'
+          : tratado.campos.nome ?? tratado.mensagem,
+        arquivar: codigo === 'ACCOUNT_HAS_ACTIVE_CLASSES',
       })
-
-      if (tratado.campos.senhaAtual) senhaAtualRef.current?.focus()
-      else if (tratado.campos.novaSenha) novaSenhaRef.current?.focus()
+      setSenhaAtual('')
+    } finally {
+      enviandoRef.current = false
+      if (vigente.current) setEnviando(false)
     }
   }
 
-  const campoSenha = (chave) => ({
-    type: 'password',
-    'aria-describedby': 'perfil-regra-senha',
-    autoComplete:
-      chave === 'senhaAtual' ? 'current-password' : 'new-password',
-    value: senha[chave],
-    disabled: senhaEstado.enviando,
-    onChange: (evento) =>
-      setSenha((atual) => ({ ...atual, [chave]: evento.target.value })),
-  })
+  async function encerrarSessao() {
+    if (saindo) return
+    setSaindo(true)
+    try {
+      await sair()
+    } catch {
+      // O AuthProvider encerra a sessão local mesmo sem resposta do servidor.
+    }
+    navigate('/login', { replace: true })
+  }
 
   return (
     <div className="conta-formularios">
-        <section className="perfil-cartao" aria-labelledby="perfil-conta">
-          <h2 id="perfil-conta">Conta</h2>
-          <dl className="perfil-dados">
-            <div>
-              <dt>E-mail</dt>
-              <dd>{usuario?.email ?? '—'}</dd>
-            </div>
-            <div>
-              <dt>Papel</dt>
-              <dd>{PAPEIS[usuario?.papel] ?? 'Não informado'}</dd>
-            </div>
-            {membroDesde && <div><dt>Membro desde</dt><dd>{membroDesde}</dd></div>}
-          </dl>
-          <p className="perfil-nota">
-            O e-mail não pode ser alterado por aqui.
-          </p>
+      <section className="perfil-cartao" aria-labelledby="perfil-conta">
+        <h2 id="perfil-conta">Conta</h2>
+        <dl className="perfil-dados">
+          <div><dt>E-mail</dt><dd>{usuario?.email ?? '—'}</dd></div>
+          <div><dt>Papel</dt><dd>{PAPEIS[usuario?.papel] ?? 'Não informado'}</dd></div>
+          {membroDesde && <div><dt>Membro desde</dt><dd>{membroDesde}</dd></div>}
+        </dl>
+        <Botao type="button" variante="secundario" onClick={() => abrir('email')}>Alterar e-mail</Botao>
+        <form onSubmit={confirmarNome} noValidate>
+          <Campo ref={nomeRef} id="perfil-nome" label="Nome" maxLength={120} autoComplete="name"
+            value={nome} error={erroNome} onChange={(evento) => {
+              setNome(evento.target.value)
+              setErroNome('')
+              if (aviso?.tipo === 'nome') setAviso(null)
+            }} />
+          <Botao type="submit">Salvar nome</Botao>
+        </form>
+        {['nome', 'email'].includes(aviso?.tipo) && <Aviso tipo="sucesso" className="mt-4">{aviso.mensagem}</Aviso>}
+      </section>
 
-          <form onSubmit={salvarNome} noValidate>
-            <Campo
-              ref={nomeRef}
-              id="perfil-nome"
-              label="Nome"
-              type="text"
-              maxLength={120}
-              autoComplete="name"
-              value={nome}
-              disabled={nomeEstado.enviando}
-              error={nomeEstado.erro}
-              onChange={(evento) => setNome(evento.target.value)}
-            />
+      <section className="perfil-cartao" aria-labelledby="perfil-senha-titulo">
+        <h2 id="perfil-senha-titulo">Senha</h2>
+        <p className="perfil-nota">Enviaremos um link ao e-mail da conta. Suas sessões só serão encerradas quando você definir a nova senha.</p>
+        <Botao type="button" variante="secundario" onClick={() => abrir('senha')}>Redefinir senha por e-mail</Botao>
+        {aviso?.tipo === 'senha' && <Aviso tipo="sucesso" className="mt-4">{aviso.mensagem}</Aviso>}
+      </section>
 
-            {nomeEstado.mensagem && (
-              <Aviso tipo="erro" className="mt-4">{nomeEstado.mensagem}</Aviso>
-            )}
-            {nomeEstado.sucesso && (
-              <Aviso tipo="sucesso" className="mt-4">{nomeEstado.sucesso}</Aviso>
-            )}
+      {exibirSessao && <section className="perfil-cartao" aria-labelledby="perfil-sessao">
+        <h2 id="perfil-sessao">Sessão</h2>
+        <p className="perfil-nota">Encerra esta sessão neste navegador.</p>
+        <Botao type="button" variante="secundario" className="perfil-sair"
+          carregando={saindo} rotuloCarregando="Saindo…" onClick={encerrarSessao}>Sair da conta</Botao>
+      </section>}
 
-            <Botao
-              type="submit"
-              disabled={nomeEstado.enviando}
-            >
-              {nomeEstado.enviando ? 'Salvando…' : 'Salvar nome'}
-            </Botao>
-          </form>
-        </section>
+      <section className="perfil-cartao perfil-cartao--exclusao" aria-labelledby="perfil-exclusao">
+        <h2 id="perfil-exclusao">Excluir conta</h2>
+        <p className="perfil-nota">Você perderá o acesso permanentemente. Redações e correções serão preservadas no histórico.</p>
+        {professor && <p className="perfil-nota">Antes de excluir, arquive todas as suas turmas ativas.</p>}
+        <Botao type="button" variante="perigo" onClick={() => abrir('excluir')}>Excluir minha conta</Botao>
+      </section>
 
-        <section className="perfil-cartao" aria-labelledby="perfil-senha-titulo">
-          <h2 id="perfil-senha-titulo">Trocar senha</h2>
-          <p id="perfil-regra-senha" className="perfil-nota">
-            {REGRA_SENHA}{' '}
-            As outras sessões são encerradas; esta continua aberta.
-          </p>
-
-          <form onSubmit={trocarSenha} noValidate>
-            <Campo
-              ref={senhaAtualRef}
-              id="perfil-senhaAtual"
-              label="Senha atual"
-              {...campoSenha('senhaAtual')}
-              error={senhaEstado.erros.senhaAtual}
-            />
-
-            <Campo
-              ref={novaSenhaRef}
-              id="perfil-novaSenha"
-              label="Nova senha"
-              {...campoSenha('novaSenha')}
-              error={senhaEstado.erros.novaSenha}
-            />
-
-            <Campo
-              id="perfil-confirmacao"
-              label="Confirme a nova senha"
-              {...campoSenha('confirmacao')}
-              error={senhaEstado.erros.confirmacao}
-            />
-
-            {senhaEstado.mensagem && (
-              <Aviso tipo="erro" className="mt-4">{senhaEstado.mensagem}</Aviso>
-            )}
-            {senhaEstado.sucesso && (
-              <Aviso tipo="sucesso" className="mt-4">{senhaEstado.sucesso}</Aviso>
-            )}
-
-            <Botao
-              type="submit"
-              disabled={senhaEstado.enviando}
-            >
-              {senhaEstado.enviando ? 'Alterando…' : 'Alterar senha'}
-            </Botao>
-          </form>
-        </section>
-
-        {exibirSessao && <section className="perfil-cartao" aria-labelledby="perfil-sessao">
-          <h2 id="perfil-sessao">Sessão</h2>
-          <p className="perfil-nota">
-            Encerra esta sessão neste navegador.
-          </p>
-          <Botao
-            type="button"
-            variante="secundario" className="perfil-sair"
-            disabled={saindo}
-            onClick={encerrarSessao}
-          >
-            {saindo ? 'Saindo…' : 'Sair da conta'}
-          </Botao>
-        </section>}
+      <Dialogo aberto={Boolean(acao)} titulo={acao?.titulo} onFechar={fechar} ocupado={enviando}
+        focoInicialRef={dialogo?.tipo === 'excluir' ? cancelarRef : dialogo?.tipo === 'email' ? emailRef : senhaRef}
+        resumo={dialogo?.tipo === 'nome' ? dialogo.nomeConfirmado : undefined}
+        rodapeSeparado
+        rodape={<>
+          <Botao ref={cancelarRef} type="button" variante="secundario" disabled={enviando} onClick={fechar}>Cancelar</Botao>
+          <Botao type="submit" form="perfil-confirmar" variante={dialogo?.tipo === 'excluir' ? 'perigo' : 'primario'}
+            carregando={enviando} rotuloCarregando="Aguarde…">{acao?.botao}</Botao>
+        </>}>
+        <form id="perfil-confirmar" className="perfil-confirmacao" onSubmit={confirmar} autoComplete="off">
+          {dialogo?.tipo === 'email' && <>
+            <p>O endereço atual continua válido até você confirmar a troca pelo link enviado ao novo endereço.</p>
+            <Campo ref={emailRef} id="perfil-novo-email" label="Novo e-mail" type="email"
+              autoComplete="email" autoCapitalize="none" maxLength={191} required value={novoEmail}
+              disabled={enviando} error={erro?.campos?.novoEmail} onChange={(evento) => setNovoEmail(evento.target.value)} />
+          </>}
+          {dialogo?.tipo === 'senha' && <p>O link de redefinição irá para o endereço atual da conta.</p>}
+          {dialogo?.tipo === 'excluir' && <ul className="perfil-efeitos">
+            <li>O acesso será encerrado em todos os dispositivos. Esta ação não pode ser desfeita.</li>
+            <li>Redações e correções permanecem no histórico.</li>
+            {professor && <li>Todas as turmas ativas precisam estar arquivadas.</li>}
+          </ul>}
+          <Campo ref={senhaRef}
+            id="perfil-senha-atual" label="Senha atual" type="password" autoComplete="current-password"
+            value={senhaAtual} disabled={enviando} error={erro?.campos?.senhaAtual}
+            onChange={(evento) => setSenhaAtual(evento.target.value)} />
+          {erro?.mensagem && <Aviso tipo="erro">{erro.mensagem}</Aviso>}
+          {erro?.arquivar && <Botao as={Link} variante="fantasma" to="/professor/turmas">Ver minhas turmas</Botao>}
+        </form>
+      </Dialogo>
     </div>
   )
 }

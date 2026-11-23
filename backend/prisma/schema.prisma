@@ -71,6 +71,7 @@ model Usuario {
 
   refreshTokens       RefreshToken[]
   recuperacoesSenha   RecuperacaoSenha[]
+  alteracaoEmail      AlteracaoEmail?
   turmasLecionadas    Turma[]          @relation("ProfessorTurmas")
   matriculas          Matricula[]
   redacoesEnviadas    Redacao[]        @relation("AlunoRedacoes")
@@ -80,6 +81,18 @@ model Usuario {
 
   @@index([papel, ativo])
   @@map("usuarios")
+}
+
+model AlteracaoEmail {
+  usuarioId    String   @id
+  usuario      Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  novoEmail    String   @db.VarChar(191)
+  tokenHash    String   @unique @db.VarChar(64)
+  sessaoVersao Int
+  expiraEm     DateTime
+
+  @@index([expiraEm])
+  @@map("alteracoes_email")
 }
 
 model RecuperacaoSenha {

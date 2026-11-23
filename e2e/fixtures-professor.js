@@ -13,6 +13,7 @@ import { API_URL, configurarAmbiente } from './runtime.js'
 
 configurarAmbiente()
 const { prisma } = await import('../backend/src/config/prisma.js')
+const { cadastrarUsuario } = await import('../backend/src/modules/auth/auth.service.js')
 export { expect }
 
 async function confirmarBanco() {
@@ -35,16 +36,20 @@ export const test = base.extend({
       expect(resposta.status(), metodo + ' ' + rota).toBe(status)
       return (await resposta.json()).data
     }
-    async function criarConta(papel) {
+    async function criarConta(papel, { prepararNoBanco = false } = {}) {
       const dados = {
         nome: 'Fixture B34 ' + papel,
         email: 'e2e.' + randomUUID() + '@lexis.example.com',
         senha: 'Ficticia!' + randomUUID(), papel,
       }
-      const cadastro = await chamada(null, 'post', '/api/auth/cadastro', dados, 201)
-      usuarios.push(cadastro.usuario.id)
+      // Cenários que não testam cadastro podem preparar contas no banco
+      // descartável sem consumir a cota HTTP do IP da suíte inteira.
+      const usuario = prepararNoBanco
+        ? await cadastrarUsuario(dados)
+        : (await chamada(null, 'post', '/api/auth/cadastro', dados, 201)).usuario
+      usuarios.push(usuario.id)
       const login = await chamada(null, 'post', '/api/auth/login', { email: dados.email, senha: dados.senha })
-      return { ...dados, id: cadastro.usuario.id, token: login.accessToken }
+      return { ...dados, id: usuario.id, token: login.accessToken }
     }
     const registrarTurma = (id) => { turmas.push(id) }
 

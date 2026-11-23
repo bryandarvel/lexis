@@ -3,6 +3,7 @@ import { env } from '../../config/env.js'
 import { AppError } from '../../utils/app-error.js'
 import { enviarEmailComResend } from '../../integrations/resend.client.js'
 import { buscarUsuarioPorEmail } from './auth.repository.js'
+import { confirmarSenhaAtual } from './auth.service.js'
 import { criarHashToken } from './auth-token.service.js'
 import { criarHashSenha } from './password.service.js'
 import { concluirEnvioRecuperacao, consumirRecuperacao, enfileirarRecuperacao, registrarTokenRecuperacao, reservarRecuperacao } from './password-recovery.repository.js'
@@ -15,9 +16,28 @@ export async function solicitarRecuperacaoSenha({ email }, {
   const usuario = await buscar(email)
   if (usuario?.ativo) {
     const instante = agora()
-    await enfileirar({ usuarioId: usuario.id, agora: instante, expiraEm: new Date(instante.getTime() + ttlMinutos * 60000) })
+    await enfileirar({ usuarioId: usuario.id, emailEsperado: usuario.email, sessaoVersao: usuario.sessaoVersao,
+      agora: instante, expiraEm: new Date(instante.getTime() + ttlMinutos * 60000) })
   }
   return { mensagem: 'Se houver uma conta com esse e-mail, você receberá as instruções de recuperação.' }
+}
+
+export async function solicitarAlteracaoSenha(dados, {
+  habilitado = env.EMAIL_ENABLED, enfileirar = enfileirarRecuperacao, confirmar = confirmarSenhaAtual,
+  agora = () => new Date(),
+} = {}) {
+  const usuario = await confirmar(dados)
+  if (!habilitado) throw new AppError('Envio de e-mail temporariamente indisponível.', {
+    statusCode: 503, code: 'PASSWORD_RECOVERY_UNAVAILABLE',
+  })
+  const instante = agora()
+  if (!await enfileirar({ usuarioId: usuario.id, emailEsperado: usuario.email, sessaoVersao: usuario.sessaoVersao,
+    agora: instante, expiraEm: new Date(instante.getTime() + env.PASSWORD_RESET_TTL_MINUTES * 60000) })) {
+    throw new AppError('A sessão mudou. Entre novamente antes de alterar seus dados.', {
+      statusCode: 401, code: 'AUTHENTICATION_REQUIRED',
+    })
+  }
+  return { mensagem: 'A solicitação foi recebida. Confira seu e-mail para definir a nova senha.' }
 }
 
 export async function redefinirSenha({ token, senha }, { consumir = consumirRecuperacao, criarHash = criarHashSenha, agora = () => new Date() } = {}) {

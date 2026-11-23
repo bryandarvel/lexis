@@ -15,6 +15,7 @@ import {
   arquivarTurmaController,
   criarTurmaController,
   entrarEmTurmaController,
+  excluirTurmaController,
   listarTurmasController,
   obterMinhaMatriculaController,
   obterTurmaController,
@@ -207,7 +208,7 @@ turmasRouter.get(
  *           format: uuid
  *     responses:
  *       '200':
- *         description: Turma encontrada
+ *         description: Turma encontrada. data.turma.podeExcluirDefinitivamente indica se está arquivada e sem matrículas ou propostas, mesmo encerradas ou arquivadas.
  *       '401':
  *         description: Autenticação necessária
  *       '403':
@@ -505,3 +506,22 @@ turmasRouter.post(
   validarParams(turmaParamsSchema),
   reabrirTurmaController,
 )
+
+/**
+ * @openapi
+ * /api/turmas/{turmaId}:
+ *   delete:
+ *     summary: Exclui definitivamente uma turma própria sem matrículas ou propostas
+ *     tags: [Turmas]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - { in: path, name: turmaId, required: true, schema: { type: string, format: uuid } }
+ *     responses:
+ *       '204': { description: Turma excluída }
+ *       '401': { description: Autenticação necessária }
+ *       '403': { description: Exclusivo para professor }
+ *       '404': { description: Turma indisponível para o professor }
+ *       '409': { description: CLASS_NOT_ARCHIVED ou CLASS_HAS_HISTORY }
+ *       '422': { description: Identificador inválido }
+ */
+turmasRouter.delete('/:turmaId', autenticarAccessToken, somenteProfessor, validarParams(turmaParamsSchema), excluirTurmaController)

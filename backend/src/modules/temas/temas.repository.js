@@ -108,6 +108,27 @@ export function buscarTurmaAtivaDoProfessor({
   })
 }
 
+export async function excluirTemaSemHistorico({ temaId, professorId }) {
+  try {
+    return await prisma.$transaction(async tx => {
+      // A trava do tema serializa a exclusão com rascunhos e envios de redação.
+      const [tema] = await tx.$queryRaw`SELECT tema.id, tema.ativo FROM temas_redacao tema
+        INNER JOIN turmas turma ON turma.id = tema.turmaId
+        WHERE tema.id = ${temaId} AND turma.professorId = ${professorId} FOR UPDATE OF tema`
+      if (!tema) return 'NAO_ENCONTRADO'
+      if (tema.ativo) return 'ATIVO'
+      if (await tx.redacao.findFirst({ where: { temaId }, select: { id: true } })) return 'COM_HISTORICO'
+      // Critérios configurados integram a proposta, não são entregas/histórico.
+      await tx.criterioAvaliacao.deleteMany({ where: { temaId } })
+      await tx.temaRedacao.delete({ where: { id: temaId } })
+      return 'EXCLUIDO'
+    })
+  } catch (error) {
+    if (error.code === 'P2003') return 'COM_HISTORICO'
+    throw error
+  }
+}
+
 export function criarTemaComCriterios({
   turmaId,
   enunciado,

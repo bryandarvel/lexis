@@ -88,6 +88,9 @@ export default function LoginPage() {
         {cadastroConcluido && (
           <Aviso tipo="sucesso">Conta criada com sucesso. Agora você já pode entrar.</Aviso>
         )}
+        {location.state?.emailConfirmado && <Aviso tipo="sucesso">E-mail confirmado. Entre com o novo endereço.</Aviso>}
+        {location.state?.senhaRedefinida && <Aviso tipo="sucesso">Senha redefinida. Entre com a nova senha.</Aviso>}
+        {location.state?.contaExcluida && <Aviso tipo="sucesso">Conta excluída. O acesso foi encerrado.</Aviso>}
         {erro && <Aviso tipo="erro">{erro}</Aviso>}
 
         <Campo

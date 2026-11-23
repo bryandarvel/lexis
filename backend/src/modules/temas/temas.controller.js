@@ -2,6 +2,7 @@ import {
   arquivarTemaParaProfessor,
   atualizarTemaParaProfessor,
   criarTemaParaProfessor,
+  excluirTemaParaProfessor,
   listarTemasParaAluno,
   listarTemasParaProfessor,
   obterTemaParaAluno,
@@ -12,6 +13,11 @@ import {
 import {
   obterModeloCompetenciaDois,
 } from './temas.competencia-dois.js'
+
+export async function excluirTemaController(req, res) {
+  await excluirTemaParaProfessor({ temaId: req.params.temaId, professorId: req.auth.usuarioId })
+  return res.status(204).send()
+}
 
 export function obterModeloCompetenciaDoisController(
   _req,

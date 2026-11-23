@@ -39,6 +39,7 @@ const LoginPage = lazy(() =>
   import('../pages/auth/LoginPage.jsx'),
 )
 const RedefinirSenhaPage = lazy(() => import('../pages/auth/RedefinirSenhaPage.jsx'))
+const ConfirmarEmailPage = lazy(() => import('../pages/auth/ConfirmarEmailPage.jsx'))
 const NaoEncontradoPage = lazy(() =>
   import('../pages/NaoEncontradoPage.jsx'),
 )
@@ -72,6 +73,7 @@ export default function AppRoutes() {
     <Suspense fallback={<RouteLoading />}>
       <Routes>
         <Route path="/redefinir-senha" element={<RedefinirSenhaPage />} />
+        <Route path="/confirmar-email" element={<ConfirmarEmailPage />} />
         <Route
           element={
             <RouteGuard apenasVisitantes />

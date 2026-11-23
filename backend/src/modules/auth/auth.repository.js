@@ -31,17 +31,17 @@ export function buscarEstadoSessao(id) {
   return prisma.usuario.findUnique({ where: { id }, select: { ativo: true, papel: true, sessaoVersao: true } })
 }
 
-export function buscarUsuarioParaAlterarSenha(id) {
+export function buscarUsuarioParaConfirmarSenha(id) {
   return prisma.usuario.findUnique({
     where: { id },
     select: { ...usuarioPublicoSelect, senhaHash: true, sessaoVersao: true },
   })
 }
 
-export function atualizarNomeUsuario({ usuarioId, nome, sessaoVersao }) {
+export function atualizarNomeUsuario({ usuarioId, nome, sessaoVersao, senhaHashEsperada }) {
   return prisma.$transaction(async tx => {
     const alteracao = await tx.usuario.updateMany({
-      where: { id: usuarioId, ativo: true, sessaoVersao },
+      where: { id: usuarioId, ativo: true, sessaoVersao, senhaHash: senhaHashEsperada },
       data: { nome },
     })
     if (alteracao.count !== 1) return null
@@ -49,23 +49,38 @@ export function atualizarNomeUsuario({ usuarioId, nome, sessaoVersao }) {
   })
 }
 
-export function trocarSenhaComNovaSessao({ usuarioId, sessaoVersao, senhaHashEsperada, senhaHash, tokenHash, familiaId, expiraEm }) {
+export function excluirPropriaConta({ usuarioId, sessaoVersao, senhaHashEsperada, emailSubstituto, senhaHashSubstituta }) {
   return prisma.$transaction(async tx => {
-    // Mesma ordem de login, refresh e recuperação: usuário antes das sessões.
+    // Criação e reabertura de turma também adquirem a trava do professor.
     await tx.$queryRaw`SELECT id FROM usuarios WHERE id = ${usuarioId} FOR UPDATE`
     const atual = await tx.usuario.findUnique({ where: { id: usuarioId } })
-    if (!atual?.ativo || atual.sessaoVersao !== sessaoVersao || atual.senhaHash !== senhaHashEsperada) return null
+    if (!atual?.ativo || atual.sessaoVersao !== sessaoVersao || atual.senhaHash !== senhaHashEsperada) {
+      return 'SESSAO_INVALIDA'
+    }
+    if (atual.papel === 'PROFESSOR' && await tx.turma.findFirst({
+      where: { professorId: usuarioId, ativa: true }, select: { id: true },
+    })) return 'TURMAS_ATIVAS'
 
-    const usuario = await tx.usuario.update({
-      where: { id: usuarioId },
-      data: { senhaHash, sessaoVersao: { increment: 1 } },
-      select: usuarioPublicoSelect,
-    })
     const agora = new Date()
-    await tx.refreshToken.updateMany({ where: { usuarioId, revogadoEm: null }, data: { revogadoEm: agora } })
-    await tx.recuperacaoSenha.updateMany({ where: { usuarioId, consumidoEm: null }, data: { consumidoEm: agora } })
-    await tx.refreshToken.create({ data: { usuarioId, tokenHash, familiaId, expiraEm } })
-    return usuario
+    await tx.usuario.update({
+      where: { id: usuarioId },
+      data: {
+        nome: 'Conta excluída', email: emailSubstituto, senhaHash: senhaHashSubstituta,
+        ativo: false, desativadoEm: agora, sessaoVersao: { increment: 1 },
+      },
+    })
+    await tx.refreshToken.deleteMany({ where: { usuarioId } })
+    await tx.recuperacaoSenha.deleteMany({ where: { usuarioId } })
+    await tx.alteracaoEmail.deleteMany({ where: { usuarioId } })
+    await tx.notificacao.updateMany({
+      where: { usuarioId, emailDestino: { not: null } },
+      data: { emailDestino: null, proximaTentativaEm: null },
+    })
+    await tx.matricula.updateMany({
+      where: { alunoId: usuarioId, status: 'ATIVA' },
+      data: { status: 'ENCERRADA', encerradaEm: agora },
+    })
+    return 'EXCLUIDA'
   })
 }
 

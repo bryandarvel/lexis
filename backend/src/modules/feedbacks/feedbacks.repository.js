@@ -514,6 +514,10 @@ export function publicarFeedback({
       })
 
       const corrigida = Boolean(versaoPublicadaAnterior)
+      // Uma exclusão concorrente limpa avisos anteriores ou impede uma nova cópia do e-mail.
+      const [destinatario] = await transaction.$queryRaw`SELECT ativo, email
+        FROM usuarios WHERE id = ${redacao.aluno.id} FOR UPDATE`
+      const emailDestino = destinatario?.ativo ? destinatario.email : null
       const notificacao = await transaction.notificacao.create({
         data: {
           usuarioId: redacao.aluno.id,
@@ -527,8 +531,8 @@ export function publicarFeedback({
           mensagem: corrigida
             ? 'A correção da sua redação foi atualizada pelo professor.'
             : 'A correção da sua redação está disponível.',
-          emailDestino: redacao.aluno.email,
-          statusEmail: 'PENDENTE',
+          emailDestino,
+          statusEmail: emailDestino ? 'PENDENTE' : null,
         },
         select: notificacaoSelect,
       })
