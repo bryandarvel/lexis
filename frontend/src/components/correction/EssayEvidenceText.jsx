@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useId, useMemo, useRef, useState } from 'react'
 import Botao from '../base/Botao.jsx'
-import { chaveTrecho, criarTrechoDaSelecao, criteriosComOTrecho, descreverTrechoJaMarcado, lerIntervaloSelecionado, limitesDeGrafemas, moverGrafema, podeAcrescentarTrecho } from '../../utils/trechos-feedback.js'
+import { chaveTrecho, criarTrechoDaSelecao, criteriosComOTrecho, descreverTrechoJaMarcado, LIMITE_TRECHOS_POR_CRITERIO, lerIntervaloSelecionado, limitesDeGrafemas, marcacoesQueASelecaoToca, moverGrafema, podeAcrescentarTrecho, recortarMarcacoes } from '../../utils/trechos-feedback.js'
 import { tomCriterio } from '../../utils/professor-correction.js'
 import { resumirEvidencias } from '../../utils/ai-evidence.js'
 import { obterTomDaMarca } from '../../utils/criterio-cores.js'
@@ -14,6 +14,7 @@ export default function EssayEvidenceText({ texto = '', criterios, marcacoes, an
   const barra = useRef(null)
   const ultimaSelecao = useRef(null)
   const apontouNaBarra = useRef(false)
+  const arrastando = useRef(false)
   const [nativa, setNativa] = useState(null)
   const [teclado, setTeclado] = useState(null)
   const [ajuste, setAjuste] = useState(null)
@@ -30,6 +31,8 @@ export default function EssayEvidenceText({ texto = '', criterios, marcacoes, an
   const pronto = candidato?.trecho && !erroBorda ? candidato.trecho : null
   const mostrarBarra = Boolean(intervalo && intervalo.inicio !== intervalo.fim)
   const jaMarcadoEm = criteriosComOTrecho(criterios, porCriterio, pronto)
+  // "Remover trecho" age sobre tudo que a seleção toca, idêntico ou não (Issue #190).
+  const aRemover = marcacoesQueASelecaoToca(criterios, porCriterio, pronto)
 
   /*
    * A barra acompanha a seleção: aparece quando há uma e sai quando ela
@@ -40,7 +43,16 @@ export default function EssayEvidenceText({ texto = '', criterios, marcacoes, an
    */
   useEffect(() => {
     if (teclado || disabled) return undefined
-    const consultar = () => {
+    /*
+     * Issue #190. Durante o arrasto do mouse a seleção ainda não terminou, e a
+     * barra (sticky, no pé da área rolável) aparecia por cima do texto no meio
+     * do gesto. O ponteiro passava a ficar sobre ela, o fim da seleção caía fora
+     * do texto, a leitura devolvia nulo, a barra sumia, a seleção voltava e a
+     * barra reaparecia: a tela tremia e o scroll pulava. Enquanto o botão está
+     * apertado dentro do texto, a seleção só é lida quando ele é solto.
+     */
+    const consultar = (evento) => {
+      if (arrastando.current && evento?.type === 'selectionchange') return
       const selecionado = lerIntervaloSelecionado(area.current, document.getSelection())
       if (!selecionado) {
         if (apontouNaBarra.current || !ultimaSelecao.current) return
@@ -58,14 +70,24 @@ export default function EssayEvidenceText({ texto = '', criterios, marcacoes, an
     }
     const aoApontar = (evento) => {
       apontouNaBarra.current = Boolean(barra.current?.contains(evento.target))
+      arrastando.current = evento.button === 0 && Boolean(area.current?.contains(evento.target))
       // Clique em qualquer outro lugar da tela fecha a barra (Issue #179).
       if (!apontouNaBarra.current && !area.current?.contains(evento.target)) limpar()
     }
-    const eventos = ['selectionchange', 'pointerup', 'touchend', 'keyup']
+    const soltou = (evento) => { arrastando.current = false; consultar(evento) }
+    const desistiu = () => { arrastando.current = false }
+    const eventos = ['selectionchange', 'touchend', 'keyup']
     eventos.forEach((evento) => document.addEventListener(evento, consultar))
+    document.addEventListener('pointerup', soltou)
+    document.addEventListener('pointercancel', desistiu)
+    window.addEventListener('blur', desistiu)
     document.addEventListener('pointerdown', aoApontar, true)
     return () => {
+      arrastando.current = false
       eventos.forEach((evento) => document.removeEventListener(evento, consultar))
+      document.removeEventListener('pointerup', soltou)
+      document.removeEventListener('pointercancel', desistiu)
+      window.removeEventListener('blur', desistiu)
       document.removeEventListener('pointerdown', aoApontar, true)
     }
   }, [teclado, disabled])
@@ -193,11 +215,22 @@ export default function EssayEvidenceText({ texto = '', criterios, marcacoes, an
         * — e a remoção só morava no painel de trechos. Agora o trecho já
         * marcado é removido daqui, e fechar a barra é clicar fora (ou Escape).
         */}
-      {jaMarcadoEm.length > 0 && <div className="review-mark-actions">
-        {jaMarcadoEm.map((c) => <Botao key={c.id} variante="perigo" disabled={disabled} onClick={() => {
-          onUnmark(c.id, pronto); limpar(teclado ? 'modo' : 'texto')
-        }}>Remover de {c.nome}</Botao>)}
-      </div>}
+      <div className="review-mark-actions">
+        <Botao variante="perigo" disabled={disabled || aRemover.length === 0}
+          title={aRemover.length === 0 ? 'A seleção não toca em nenhum trecho marcado.' : undefined}
+          onClick={() => {
+            // Issue #190: um só botão; recorta a seleção de toda marcação que ela toca, em
+            // qualquer critério, e o que ficar fora dela continua marcado.
+            const planos = aRemover.map(({ criterio }) => ({ criterio, lista: recortarMarcacoes(texto, porCriterio[criterio.id].marcados, pronto) }))
+            const estoura = planos.find((plano) => plano.lista.length > LIMITE_TRECHOS_POR_CRITERIO)
+            if (estoura) {
+              setAviso(`Remover só essa parte deixaria ${estoura.criterio.nome} com mais de ${LIMITE_TRECHOS_POR_CRITERIO} trechos. Remova algum antes.`)
+              return
+            }
+            planos.forEach(({ criterio, lista }) => onUnmark(criterio.id, lista))
+            limpar(teclado ? 'modo' : 'texto')
+          }}>Remover trecho</Botao>
+      </div>
       <details className="review-mark-bordas" open={Boolean(erroBorda)}>
         <summary>Ajustar bordas</summary>
         <AjusteBordas texto={texto} intervalo={proposta} limites={limites} onChange={setAjuste} disabled={disabled} />

@@ -13,6 +13,7 @@ import MinhaTurmaDialogo from '../components/aluno/MinhaTurmaDialogo.jsx'
 import {
   IconeDaNavegacao,
   IconeMenu,
+  IconeSair,
 } from '../components/layout/icones-casca.jsx'
 import MenuUsuario from '../components/layout/MenuUsuario.jsx'
 import Sino from '../components/layout/Sino.jsx'
@@ -330,6 +331,28 @@ export default function AppShell({
                 />
               </li>
             ))}
+          </ul>
+          {/*
+            * Issue #190: "Sair" no fim do menu reaproveita o handleSair do
+            * AppShell, o mesmo do menu do usuário: sem segunda lógica de logout.
+            */}
+          <ul className="casca-trilho-fim">
+            <li>
+              <button
+                type="button"
+                disabled={saindo}
+                onClick={() => {
+                  fecharGaveta()
+                  handleSair()
+                }}
+                className="casca-item"
+              >
+                <span aria-hidden="true" className="casca-item-icone">
+                  <IconeSair />
+                </span>
+                {saindo ? 'Saindo…' : 'Sair'}
+              </button>
+            </li>
           </ul>
         </nav>
       )}

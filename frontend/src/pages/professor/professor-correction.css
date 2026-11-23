@@ -87,6 +87,8 @@
 /* Botões da IA (Issue #186): em pílula, com o ícone ao lado do texto e do
    tamanho do conteúdo, alinhados à esquerda como na referência. */
 .review-analysis-acao { margin-top: 12px; }
+/* Issue #190: o aviso de análise em andamento não pode colar no botão. */
+.review-analysis-acao + .review-notice { margin-top: 12px; }
 .review-analysis-details { margin-top: 12px; font-size: 13px; line-height: 21px; }
 .review-analysis-details > summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; min-height: 44px; padding: 10px 14px; border-radius: var(--raio-cartao); background: var(--panel-soft); }
 .review-analysis-details[open] > summary { border-end-start-radius: 0; border-end-end-radius: 0; }

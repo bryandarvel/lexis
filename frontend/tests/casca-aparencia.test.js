@@ -72,3 +72,11 @@ test('todo item de navegação desenha a moldura do ícone', () => {
   assert.match(shell, /<span aria-hidden="true" className="casca-item-icone">/)
   assert.match(shell, /<IconeDaNavegacao chave=\{item\.chave\} \/>/)
 })
+
+test('"Sair" fica no fim do menu e reaproveita o handleSair da casca (Issue #190)', () => {
+  assert.match(shell, /<ul className="casca-trilho-fim">/)
+  assert.match(shell, /handleSair\(\)/)
+  // Uma só lógica de logout: o menu do usuário e o menu lateral chamam a mesma função.
+  assert.equal((shell.match(/await sair\(\)/g) ?? []).length, 1)
+  assert.match(bloco('.casca-trilho .casca-trilho-fim {'), /margin-top:\s*auto/)
+})
