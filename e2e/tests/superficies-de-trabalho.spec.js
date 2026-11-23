@@ -178,8 +178,19 @@ test('o trecho já marcado é removido pela barra, que fecha ao clicar fora', as
   // Uma faixa que só encosta no fim da marcação não a toca.
   await selecionarFaixa(tamanho, tamanho + 10)
   await expect(barra.getByRole('button', { name: 'Remover trecho', exact: true })).toBeDisabled()
-  await selecionarFaixa(5, tamanho + 10)
+  // Remover recorta: só a parte selecionada sai, e o que fica fora continua marcado.
+  // No meio da marcação (3–6), ela vira dois trechos.
+  await selecionarFaixa(3, 6)
   await expect(barra.getByRole('button', { name: 'Remover trecho', exact: true })).toBeEnabled()
+  await barra.getByRole('button', { name: 'Remover trecho', exact: true }).click()
+  await expect(selos).toHaveCount(2)
+  await expect(barra).toHaveCount(0)
+  // Numa ponta, sobra uma parte: 5 até depois do fim das duas deixa só [0, 3).
+  await selecionarFaixa(5, tamanho + 10)
+  await barra.getByRole('button', { name: 'Remover trecho', exact: true }).click()
+  await expect(selos).toHaveCount(1)
+  // Cobrindo o que resta por inteiro, remove tudo.
+  await selecionarFaixa(0, tamanho + 10)
   await barra.getByRole('button', { name: 'Remover trecho', exact: true }).click()
   await expect(selos).toHaveCount(0)
   await expect(barra).toHaveCount(0)

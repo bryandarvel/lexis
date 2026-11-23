@@ -256,7 +256,7 @@ function Correcao({ redacaoId, usuarioId }) {
             <div className="review-essay-heading"><h2 id="review-essay-title" tabIndex={-1}>Redação do aluno</h2><span className="review-caption">{texto.trim() ? texto.trim().split(/\s+/u).length : 0} palavras</span></div>
             <EssayEvidenceText texto={texto} criterios={criterios} marcacoes={marcacoes} analise={analise} disabled={bloqueado} vinculo={vinculo}
               onMark={(id, trecho) => mudarTrechos(id, [...marcacoes.porCriterio[id].marcados, trecho])}
-              onUnmark={(id, trechos) => mudarTrechos(id, marcacoes.porCriterio[id].marcados.filter((t) => !trechos.some((r) => r.inicio === t.inicio && r.fim === t.fim)))}
+              onUnmark={mudarTrechos}
               onEvidence={abrirComentarios} />
             <details className="review-submission"><summary>Informações da entrega</summary><p>{redacao.origemTexto === 'OCR' ? 'Texto digitalizado por OCR' : 'Texto digitado'} · {redacao.enviadaComAtraso ? 'Enviada com atraso' : 'Enviada no prazo'}</p><p>Enviada em {formatarData(redacao.enviadaEm, 'dataHora', { vazio: 'Não informada' })}. Prazo: {formatarData(redacao.prazoConsideradoEm, 'dataHora', { vazio: 'Não informada' })}.</p></details>
           </article>

@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useId, useMemo, useRef, useState } from 'react'
 import Botao from '../base/Botao.jsx'
-import { chaveTrecho, criarTrechoDaSelecao, criteriosComOTrecho, descreverTrechoJaMarcado, lerIntervaloSelecionado, limitesDeGrafemas, marcacoesQueASelecaoToca, moverGrafema, podeAcrescentarTrecho } from '../../utils/trechos-feedback.js'
+import { chaveTrecho, criarTrechoDaSelecao, criteriosComOTrecho, descreverTrechoJaMarcado, LIMITE_TRECHOS_POR_CRITERIO, lerIntervaloSelecionado, limitesDeGrafemas, marcacoesQueASelecaoToca, moverGrafema, podeAcrescentarTrecho, recortarMarcacoes } from '../../utils/trechos-feedback.js'
 import { tomCriterio } from '../../utils/professor-correction.js'
 import { resumirEvidencias } from '../../utils/ai-evidence.js'
 import { obterTomDaMarca } from '../../utils/criterio-cores.js'
@@ -219,8 +219,15 @@ export default function EssayEvidenceText({ texto = '', criterios, marcacoes, an
         <Botao variante="perigo" disabled={disabled || aRemover.length === 0}
           title={aRemover.length === 0 ? 'A seleção não toca em nenhum trecho marcado.' : undefined}
           onClick={() => {
-            // Issue #190: um só botão; remove toda marcação que a seleção toca, em qualquer critério.
-            aRemover.forEach(({ criterio, trechos }) => onUnmark(criterio.id, trechos))
+            // Issue #190: um só botão; recorta a seleção de toda marcação que ela toca, em
+            // qualquer critério, e o que ficar fora dela continua marcado.
+            const planos = aRemover.map(({ criterio }) => ({ criterio, lista: recortarMarcacoes(texto, porCriterio[criterio.id].marcados, pronto) }))
+            const estoura = planos.find((plano) => plano.lista.length > LIMITE_TRECHOS_POR_CRITERIO)
+            if (estoura) {
+              setAviso(`Remover só essa parte deixaria ${estoura.criterio.nome} com mais de ${LIMITE_TRECHOS_POR_CRITERIO} trechos. Remova algum antes.`)
+              return
+            }
+            planos.forEach(({ criterio, lista }) => onUnmark(criterio.id, lista))
             limpar(teclado ? 'modo' : 'texto')
           }}>Remover trecho</Botao>
       </div>
