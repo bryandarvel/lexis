@@ -71,6 +71,7 @@
 .review-scores label.is-c2 { border: 2px solid #1c6eba; padding: 7px 3px; background: var(--panel-soft); }
 .review-scores span { font-size: 11px; line-height: 17px; color: var(--panel-muted); text-align: center; }
 .review-scores input { width: 100%; padding: 0; background: transparent; color: var(--panel-text); font-size: 20px; line-height: 26px; font-weight: 600; text-align: center; appearance: textfield; -moz-appearance: textfield; }
+.review-scores input::placeholder { color: var(--panel-muted); }
 .review-scores input::-webkit-inner-spin-button, .review-scores input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .review-scores .review-total { background: #002049; border-color: #002049; color: white; }
 .review-total span { color: #93c4f7; }
