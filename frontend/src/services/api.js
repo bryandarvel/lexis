@@ -101,6 +101,10 @@ api.interceptors.response.use(
     try {
       const sessao = await renovarSessaoApi()
 
+      if (requisicaoOriginal.naoReenviarAposRenovacao) {
+        return Promise.reject(error)
+      }
+
       requisicaoOriginal.headers.Authorization =
         `Bearer ${sessao.accessToken}`
 

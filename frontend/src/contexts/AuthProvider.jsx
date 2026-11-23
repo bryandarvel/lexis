@@ -132,22 +132,24 @@ export default function AuthProvider({ children }) {
     [],
   )
 
+  const encerrarSessaoLocal = useCallback(() => {
+    limparRascunhosUsuario(usuarioIdRef.current)
+    descartarRevisaoOcr()
+    limparAccessToken()
+    notificarSessaoRestaurada()
+    setUsuario(null)
+    setStatus('pronto')
+    setReautenticacaoAberta(false)
+  }, [])
+
   const sair = useCallback(async () => {
     try {
       await apiPublica.post('/api/auth/logout')
     } finally {
-      limparRascunhosUsuario(usuario?.id)
-      descartarRevisaoOcr()
-      limparAccessToken()
-      notificarSessaoRestaurada()
-      setUsuario(null)
-      setStatus('pronto')
-      setReautenticacaoAberta(false)
+      encerrarSessaoLocal()
     }
-  }, [usuario?.id])
+  }, [encerrarSessaoLocal])
 
-  // Usado depois de PATCH /auth/me e POST /auth/alterar-senha: a troca de
-  // senha devolve um access token novo, e a sessão atual continua valendo.
   const atualizarSessao = useCallback(
     ({ usuario: usuarioAtualizado, accessToken } = {}) => {
       if (accessToken) {
@@ -169,6 +171,7 @@ export default function AuthProvider({ children }) {
       entrar,
       cadastrar,
       sair,
+      encerrarSessaoLocal,
       atualizarSessao,
     }),
     [
@@ -177,6 +180,7 @@ export default function AuthProvider({ children }) {
       entrar,
       cadastrar,
       sair,
+      encerrarSessaoLocal,
       atualizarSessao,
     ],
   )

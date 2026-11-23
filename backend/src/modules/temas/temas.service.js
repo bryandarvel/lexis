@@ -7,6 +7,7 @@ import {
   buscarTurmaAtivaDoAluno,
   buscarTurmaAtivaDoProfessor,
   criarTemaComCriterios,
+  excluirTemaSemHistorico,
   listarTemasAtivosParaAluno,
   listarTemasDoProfessor,
   reabrirTemaDoProfessor,
@@ -31,6 +32,21 @@ function criarErroTemaNaoEncontrado() {
       code: 'ESSAY_TOPIC_NOT_FOUND',
     },
   )
+}
+
+export async function excluirTemaParaProfessor({ temaId, professorId }) {
+  const resultado = await excluirTemaSemHistorico({ temaId, professorId })
+  if (resultado === 'NAO_ENCONTRADO') throw criarErroTemaNaoEncontrado()
+  if (resultado === 'ATIVO') {
+    throw new AppError('Arquive a proposta antes de excluí-la definitivamente.', {
+      statusCode: 409, code: 'ESSAY_TOPIC_NOT_ARCHIVED',
+    })
+  }
+  if (resultado === 'COM_HISTORICO') {
+    throw new AppError('Esta proposta possui rascunhos ou redações no histórico. Use o arquivamento.', {
+      statusCode: 409, code: 'ESSAY_TOPIC_HAS_HISTORY',
+    })
+  }
 }
 
 function criarErroTemaArquivado() {
@@ -155,16 +171,23 @@ export async function criarTemaParaProfessor({
     throw criarErroTurmaInvalida()
   }
 
-  const tema = await criarTemaComCriterios({
-    turmaId,
-    enunciado,
-    descricao,
-    instrucoes,
-    prazoEntrega,
-    criterios,
-  })
-
-  return prepararTemaParaResposta(tema)
+  try {
+    const tema = await criarTemaComCriterios({
+      turmaId,
+      enunciado,
+      descricao,
+      instrucoes,
+      prazoEntrega,
+      criterios,
+    })
+    return prepararTemaParaResposta(tema)
+  } catch (error) {
+    // A turma pode ter sido excluída depois da verificação inicial.
+    if (error.code === 'P2003' && !await buscarTurmaAtivaDoProfessor({ turmaId, professorId })) {
+      throw criarErroTurmaInvalida()
+    }
+    throw error
+  }
 }
 
 export async function listarTemasParaProfessor({

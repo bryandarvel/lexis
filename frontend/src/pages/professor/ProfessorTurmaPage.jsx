@@ -1,18 +1,21 @@
 import { formatarData } from '../../utils/formatar-data.js'
 import Etiqueta from '../../components/base/Etiqueta.jsx'
 import EstadoVazio from '../../components/base/EstadoVazio.jsx'
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useParams, useSearchParams } from 'react-router'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import Aviso from '../../components/base/Aviso.jsx'
 import Botao from '../../components/base/Botao.jsx'
 import Campo from '../../components/base/Campo.jsx'
 import Dialogo from '../../components/base/Dialogo.jsx'
 import DialogoConfirmacao from '../../components/base/DialogoConfirmacao.jsx'
+import { AcaoExclusaoDefinitiva, ConfirmarExclusaoDefinitiva } from '../../components/professor/ExclusaoDefinitiva.jsx'
+import { useAuth } from '../../hooks/useAuth.js'
 import AppShell from '../../layouts/AppShell.jsx'
 import { listarTemasDaTurma } from '../../services/temas.js'
 import {
   arquivarTurma,
   desvincularAlunoDaTurma,
+  excluirTurma,
   listarAlunosDaTurma,
   obterTurma,
   reabrirTurma,
@@ -139,6 +142,18 @@ function TemaCard({ tema }) {
 
 export default function ProfessorTurmaPage() {
   const { turmaId } = useParams()
+  const { usuario } = useAuth()
+  return <ProfessorTurmaDetalhe key={`${usuario?.id}:${turmaId}`} turmaId={turmaId} />
+}
+
+function ProfessorTurmaDetalhe({ turmaId }) {
+  const { state } = useLocation()
+  const navigate = useNavigate()
+  const telaAtual = useRef(null)
+  useLayoutEffect(() => {
+    telaAtual.current = {}
+    return () => { telaAtual.current = null }
+  }, [])
   const [parametros] = useSearchParams()
   const aba = parametros.get('aba') === 'alunos' ? 'alunos' : 'propostas'
   const [copiado, setCopiado] = useState(false)
@@ -190,6 +205,10 @@ export default function ProfessorTurmaPage() {
   const turma = pagina.turma
   const situacao = descreverSituacaoTurma(turma)
   const pronto = pagina.status === 'pronto'
+  const motivoExclusao = turma?.ativa ? 'Arquive a turma antes de excluí-la.'
+    : turma?.podeExcluirDefinitivamente === false ? 'Esta turma tem matrículas ou propostas no histórico e não pode ser excluída.'
+      : turma?.podeExcluirDefinitivamente !== true ? 'Ainda não foi possível verificar se a turma pode ser excluída.'
+        : ''
 
   const carregarAlunos = useCallback(() => {
     // O backend exige turma ativa em GET /turmas/:id/alunos: numa turma
@@ -262,10 +281,49 @@ export default function ProfessorTurmaPage() {
 
   function arquivar() {
     executar(() => arquivarTurma(turmaId), (atualizada) => {
+      const tela = telaAtual.current
       setPagina((atual) => ({ ...atual, turma: atualizada }))
       setAlunos({ status: 'indisponivel', lista: [], mensagem: '' })
       setAviso('Turma arquivada. As matrículas ativas foram encerradas.')
+      devolverFocoAGestao()
+      obterTurma(turmaId).then((turmaAtual) => {
+        if (tela === telaAtual.current) setPagina((atual) => ({ ...atual, turma: turmaAtual }))
+      }).catch(() => {})
     })
+  }
+
+  async function excluir() {
+    if (acaoRef.current || motivoExclusao) return
+    const tela = telaAtual.current
+    acaoRef.current = true
+    setAcao({ enviando: true, erro: '' })
+    try {
+      await excluirTurma(turmaId)
+      if (tela === telaAtual.current) navigate('/professor/turmas', { replace: true, state: { turmaExcluida: true } })
+    } catch (error) {
+      if (tela !== telaAtual.current) return
+      const mensagem = interpretarErroApi(error, 'Não foi possível excluir a turma. Tente novamente.').mensagem
+      if (error?.response?.status !== 409) {
+        setAcao({ enviando: false, erro: mensagem })
+        return
+      }
+      setPagina((atual) => ({ ...atual, turma: {
+        ...atual.turma,
+        podeExcluirDefinitivamente: error.response.data?.error?.code === 'CLASS_HAS_HISTORY' ? false : undefined,
+      } }))
+      setAcao({ enviando: false, erro: '' })
+      setDialogo(null)
+      setAviso(mensagem)
+      devolverFocoAGestao()
+      try {
+        const [turmaAtual, temas] = await Promise.all([obterTurma(turmaId), listarTemasDaTurma(turmaId)])
+        if (tela === telaAtual.current) setPagina({ status: 'pronto', turma: turmaAtual, temas, mensagem: '' })
+      } catch {
+        // O aviso e o bloqueio continuam visíveis mesmo se a atualização falhar.
+      }
+    } finally {
+      acaoRef.current = false
+    }
   }
 
   // O efeito roda depois da limpeza do diálogo, que devolve o foco ao botão que
@@ -414,7 +472,7 @@ export default function ProfessorTurmaPage() {
               </div>
             </div>
 
-            <p role="status" className="turma-aviso">{aviso}</p>
+            <p role="status" className="turma-aviso">{aviso || (state?.propostaExcluida ? 'Proposta excluída definitivamente.' : '')}</p>
 
             <div className="turma-contexto">
               <span>Código de acesso: <strong ref={codigoRef}>{turma.codigoAcesso}</strong></span>
@@ -432,6 +490,8 @@ export default function ProfessorTurmaPage() {
                   </p>
                   <div className="turma-acoes">
                     <Botao type="button" onClick={() => setDialogo({ tipo: 'reabrir' })}>Reabrir turma</Botao>
+                    <AcaoExclusaoDefinitiva motivo={motivoExclusao} idMotivo="turma-motivo-exclusao"
+                      ocupado={acao.enviando} onAbrir={() => setDialogo({ tipo: 'excluir' })} />
                   </div>
                 </section>
             )}
@@ -558,6 +618,7 @@ export default function ProfessorTurmaPage() {
                   <Botao type="button" variante="secundario" onClick={() => setDialogo({ tipo: 'renomear' })}>Renomear turma</Botao>
                   <Botao type="button" variante="secundario" onClick={() => setDialogo({ tipo: 'regenerar' })}>Gerar novo código</Botao>
                   <Botao type="button" variante="perigo" onClick={() => setDialogo({ tipo: 'arquivar' })}>Arquivar turma</Botao>
+                  <AcaoExclusaoDefinitiva motivo={motivoExclusao} idMotivo="turma-motivo-exclusao" />
                 </div>
               </Dialogo>
             )}
@@ -618,6 +679,9 @@ export default function ProfessorTurmaPage() {
                 onClose={fecharDialogo}
               />
             )}
+
+            {dialogo?.tipo === 'excluir' && <ConfirmarExclusaoDefinitiva tipo="turma" nome={turma.nome}
+              ocupado={acao.enviando} erro={acao.erro} onConfirmar={excluir} onCancelar={fecharDialogo} />}
 
             {dialogo?.tipo === 'desvincular' && (
               <ConfirmarAcaoDialog

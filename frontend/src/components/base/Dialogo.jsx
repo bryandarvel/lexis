@@ -6,7 +6,8 @@ import { useEffect, useId, useRef } from 'react'
  * quem o abriu (ou a `retornoFocoRef`, quando a tela informa um destino: use
  * quando o controle que abriu o diálogo deixa de existir ou de ser focável
  * antes de ele fechar, como um botão dentro de uma gaveta). Escape e clique fora chamam `onFechar`; quem decide se o
- * diálogo de fato fecha é a tela, mudando `aberto`.
+ * diálogo de fato fecha é a tela, mudando `aberto`. `focoInicialRef` é opcional
+ * quando o primeiro controle não for o destino desejado.
  *
  * O título é um h2 em Inter (regra de títulos, D2). Ações vão em `rodape`.
  *
@@ -27,6 +28,7 @@ export default function Dialogo({
   largo = false,
   fecharAoClicarFora = false,
   ocupado = false,
+  focoInicialRef,
   retornoFocoRef,
   className = '',
 }) {
@@ -48,6 +50,7 @@ export default function Dialogo({
     if (!dialogo.open) {
       dialogo.showModal()
     }
+    focoInicialRef?.current?.focus()
 
     return () => {
       if (dialogo.open) {
@@ -59,7 +62,7 @@ export default function Dialogo({
 
       destino?.focus?.()
     }
-  }, [aberto, retornoFocoRef])
+  }, [aberto, focoInicialRef, retornoFocoRef])
 
   return (
     <dialog

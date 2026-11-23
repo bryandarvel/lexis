@@ -80,6 +80,10 @@ export async function reabrirTema(temaId) {
   return resposta.data.data.tema
 }
 
+export async function excluirTema(temaId) {
+  await api.delete(`/api/temas/${prepararId(temaId)}`, { naoReenviarAposRenovacao: true })
+}
+
 export async function listarTemasDoAluno() {
   const resposta = await api.get(
     '/api/aluno/temas',
