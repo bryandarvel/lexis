@@ -145,6 +145,57 @@ test('o trecho já marcado é removido pela barra, que fecha ao clicar fora', as
   await barra.getByRole('button', { name: 'Remover trecho', exact: true }).click()
   await expect(selos).toHaveCount(0)
 
+  // Issue #190: a seleção não precisa ser idêntica à marcação, basta tocá-la.
+  await clicarNaPalavra()
+  await barra.locator('.review-mark-opcao').nth(0).click()
+  await expect(selos).toHaveCount(1)
+  const selecionarFaixa = (inicio, fim) => texto.evaluate((el, [i, f]) => {
+    const andar = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+    const ponto = (alvo) => {
+      let acumulado = 0
+      for (let no = andar.nextNode(); no; no = andar.nextNode()) {
+        if (acumulado + no.length >= alvo) return [no, alvo - acumulado]
+        acumulado += no.length
+      }
+      return null
+    }
+    const [noI, offI] = ponto(i)
+    andar.currentNode = el
+    const [noF, offF] = ponto(f)
+    const faixa = document.createRange()
+    faixa.setStart(noI, offI)
+    faixa.setEnd(noF, offF)
+    document.getSelection().removeAllRanges()
+    document.getSelection().addRange(faixa)
+  }, [inicio, fim])
+  // O tamanho da marcação vem do rótulo do selo (o duplo clique leva o espaço junto).
+  const rotulo = await selos.first().getAttribute('aria-label')
+  const tamanho = /. (.*)$/s.exec(rotulo)[1].length
+  // A faixa 5–(fim+10) sobrepõe a marcação em parte, sem ser idêntica a ela.
+  await selecionarFaixa(5, tamanho + 10)
+  await expect(barra).toBeVisible()
+  await expect(barra.getByRole('button', { name: 'Remover trecho', exact: true })).toBeEnabled()
+  // Uma faixa que só encosta no fim da marcação não a toca.
+  await selecionarFaixa(tamanho, tamanho + 10)
+  await expect(barra.getByRole('button', { name: 'Remover trecho', exact: true })).toBeDisabled()
+  await selecionarFaixa(5, tamanho + 10)
+  await expect(barra.getByRole('button', { name: 'Remover trecho', exact: true })).toBeEnabled()
+  await barra.getByRole('button', { name: 'Remover trecho', exact: true }).click()
+  await expect(selos).toHaveCount(0)
+  await expect(barra).toHaveCount(0)
+
+  // Issue #190: durante o arrasto a barra não aparece (ela é sticky e ficava por
+  // cima do texto no meio do gesto, fazendo a tela tremer); aparece ao soltar.
+  const area = await texto.boundingBox()
+  await page.mouse.move(area.x + 10, area.y + 10)
+  await page.mouse.down()
+  await page.mouse.move(area.x + area.width * 0.6, area.y + 12, { steps: 8 })
+  await expect(barra).toHaveCount(0)
+  await page.mouse.up()
+  await expect(barra).toBeVisible()
+  await page.getByRole('heading', { level: 1 }).click()
+  await expect(barra).toHaveCount(0)
+
   // Com o trecho já sem marcação, clicar fora fecha a barra.
   await clicarNaPalavra()
   await expect(barra).toBeVisible()

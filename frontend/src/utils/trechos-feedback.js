@@ -169,6 +169,24 @@ export function guardarIntervalos(trechos) {
 }
 
 /*
+ * Issue #190. Marcações que a seleção atual toca, por critério, sem exigir
+ * que sejam idênticas a ela: basta haver sobreposição. Encostar só na borda
+ * (fim de um == início do outro) não conta. Devolve só critérios com algo a
+ * remover, cada um com as marcações que se sobrepõem.
+ */
+export function marcacoesQueASelecaoToca(criterios, porCriterio, selecao) {
+  if (!selecao || !(selecao.inicio < selecao.fim)) return []
+
+  return (Array.isArray(criterios) ? criterios : []).flatMap((criterio) => {
+    const tocadas = (porCriterio?.[criterio?.id]?.marcados ?? []).filter(
+      (item) => item.inicio < selecao.fim && selecao.inicio < item.fim,
+    )
+
+    return tocadas.length ? [{ criterio, trechos: tocadas }] : []
+  })
+}
+
+/*
  * Issue #179. Marcar o mesmo trecho em mais de um critério é intencional: o
  * texto desenha uma listra por critério e o aluno vê os vínculos. O que não
  * pode é repetir no mesmo critério, e o professor precisa enxergar onde o

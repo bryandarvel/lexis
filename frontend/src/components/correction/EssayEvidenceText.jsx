@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useId, useMemo, useRef, useState } from 'react'
 import Botao from '../base/Botao.jsx'
-import { chaveTrecho, criarTrechoDaSelecao, criteriosComOTrecho, descreverTrechoJaMarcado, lerIntervaloSelecionado, limitesDeGrafemas, moverGrafema, podeAcrescentarTrecho } from '../../utils/trechos-feedback.js'
+import { chaveTrecho, criarTrechoDaSelecao, criteriosComOTrecho, descreverTrechoJaMarcado, lerIntervaloSelecionado, limitesDeGrafemas, marcacoesQueASelecaoToca, moverGrafema, podeAcrescentarTrecho } from '../../utils/trechos-feedback.js'
 import { tomCriterio } from '../../utils/professor-correction.js'
 import { resumirEvidencias } from '../../utils/ai-evidence.js'
 import { obterTomDaMarca } from '../../utils/criterio-cores.js'
@@ -14,6 +14,7 @@ export default function EssayEvidenceText({ texto = '', criterios, marcacoes, an
   const barra = useRef(null)
   const ultimaSelecao = useRef(null)
   const apontouNaBarra = useRef(false)
+  const arrastando = useRef(false)
   const [nativa, setNativa] = useState(null)
   const [teclado, setTeclado] = useState(null)
   const [ajuste, setAjuste] = useState(null)
@@ -30,6 +31,8 @@ export default function EssayEvidenceText({ texto = '', criterios, marcacoes, an
   const pronto = candidato?.trecho && !erroBorda ? candidato.trecho : null
   const mostrarBarra = Boolean(intervalo && intervalo.inicio !== intervalo.fim)
   const jaMarcadoEm = criteriosComOTrecho(criterios, porCriterio, pronto)
+  // "Remover trecho" age sobre tudo que a seleção toca, idêntico ou não (Issue #190).
+  const aRemover = marcacoesQueASelecaoToca(criterios, porCriterio, pronto)
 
   /*
    * A barra acompanha a seleção: aparece quando há uma e sai quando ela
@@ -40,7 +43,16 @@ export default function EssayEvidenceText({ texto = '', criterios, marcacoes, an
    */
   useEffect(() => {
     if (teclado || disabled) return undefined
-    const consultar = () => {
+    /*
+     * Issue #190. Durante o arrasto do mouse a seleção ainda não terminou, e a
+     * barra (sticky, no pé da área rolável) aparecia por cima do texto no meio
+     * do gesto. O ponteiro passava a ficar sobre ela, o fim da seleção caía fora
+     * do texto, a leitura devolvia nulo, a barra sumia, a seleção voltava e a
+     * barra reaparecia: a tela tremia e o scroll pulava. Enquanto o botão está
+     * apertado dentro do texto, a seleção só é lida quando ele é solto.
+     */
+    const consultar = (evento) => {
+      if (arrastando.current && evento?.type === 'selectionchange') return
       const selecionado = lerIntervaloSelecionado(area.current, document.getSelection())
       if (!selecionado) {
         if (apontouNaBarra.current || !ultimaSelecao.current) return
@@ -58,14 +70,24 @@ export default function EssayEvidenceText({ texto = '', criterios, marcacoes, an
     }
     const aoApontar = (evento) => {
       apontouNaBarra.current = Boolean(barra.current?.contains(evento.target))
+      arrastando.current = evento.button === 0 && Boolean(area.current?.contains(evento.target))
       // Clique em qualquer outro lugar da tela fecha a barra (Issue #179).
       if (!apontouNaBarra.current && !area.current?.contains(evento.target)) limpar()
     }
-    const eventos = ['selectionchange', 'pointerup', 'touchend', 'keyup']
+    const soltou = (evento) => { arrastando.current = false; consultar(evento) }
+    const desistiu = () => { arrastando.current = false }
+    const eventos = ['selectionchange', 'touchend', 'keyup']
     eventos.forEach((evento) => document.addEventListener(evento, consultar))
+    document.addEventListener('pointerup', soltou)
+    document.addEventListener('pointercancel', desistiu)
+    window.addEventListener('blur', desistiu)
     document.addEventListener('pointerdown', aoApontar, true)
     return () => {
+      arrastando.current = false
       eventos.forEach((evento) => document.removeEventListener(evento, consultar))
+      document.removeEventListener('pointerup', soltou)
+      document.removeEventListener('pointercancel', desistiu)
+      window.removeEventListener('blur', desistiu)
       document.removeEventListener('pointerdown', aoApontar, true)
     }
   }, [teclado, disabled])
@@ -194,11 +216,11 @@ export default function EssayEvidenceText({ texto = '', criterios, marcacoes, an
         * marcado é removido daqui, e fechar a barra é clicar fora (ou Escape).
         */}
       <div className="review-mark-actions">
-        <Botao variante="perigo" disabled={disabled || jaMarcadoEm.length === 0}
-          title={jaMarcadoEm.length === 0 ? 'Este trecho ainda não está marcado em nenhum critério.' : undefined}
+        <Botao variante="perigo" disabled={disabled || aRemover.length === 0}
+          title={aRemover.length === 0 ? 'A seleção não toca em nenhum trecho marcado.' : undefined}
           onClick={() => {
-            // Issue #190: um só botão para o trecho inteiro, em vez de um por critério.
-            jaMarcadoEm.forEach((c) => onUnmark(c.id, pronto))
+            // Issue #190: um só botão; remove toda marcação que a seleção toca, em qualquer critério.
+            aRemover.forEach(({ criterio, trechos }) => onUnmark(criterio.id, trechos))
             limpar(teclado ? 'modo' : 'texto')
           }}>Remover trecho</Botao>
       </div>

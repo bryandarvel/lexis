@@ -5,6 +5,7 @@ import {
   LIMITE_TRECHOS_POR_CRITERIO,
   criarTrechoDaSelecao,
   criteriosComOTrecho,
+  marcacoesQueASelecaoToca,
   descreverTrechoJaMarcado,
   montarCriterioParaEnvio,
   montarTrechosParaEnvio,
@@ -258,4 +259,39 @@ test('sem trecho pronto, nada é apontado como já marcado', () => {
   // Critério ainda sem lista não pode quebrar a barra de marcação.
   assert.deepEqual(criteriosComOTrecho(criterios, {}, marcado(10, 20)), [])
   assert.deepEqual(criteriosComOTrecho(undefined, porCriterio, marcado(10, 20)), [])
+})
+
+test('Issue #190: a seleção que apenas toca uma marcação já a alcança, em qualquer critério', () => {
+  const criterios = [criterio('a', 'Legitimação'), criterio('b', 'Pertinência'), criterio('c', 'Coesão')]
+  const porCriterio = {
+    a: { marcados: [marcado(10, 20), marcado(40, 50)] },
+    b: { marcados: [marcado(15, 30)] },
+    c: { marcados: [marcado(60, 70)] },
+  }
+  const achadas = marcacoesQueASelecaoToca(criterios, porCriterio, marcado(18, 45))
+
+  // Não precisa ser idêntica: pega as duas de "a" e a de "b", e deixa "c".
+  assert.deepEqual(achadas.map(({ criterio }) => criterio.id), ['a', 'b'])
+  assert.deepEqual(achadas[0].trechos.map((t) => [t.inicio, t.fim]), [[10, 20], [40, 50]])
+  assert.deepEqual(achadas[1].trechos.map((t) => [t.inicio, t.fim]), [[15, 30]])
+})
+
+test('Issue #190: encostar só na borda, ou ficar fora, não conta como tocar', () => {
+  const criterios = [criterio('a', 'Legitimação')]
+  const porCriterio = { a: { marcados: [marcado(10, 20)] } }
+
+  assert.deepEqual(marcacoesQueASelecaoToca(criterios, porCriterio, marcado(20, 30)), [])
+  assert.deepEqual(marcacoesQueASelecaoToca(criterios, porCriterio, marcado(0, 10)), [])
+  assert.deepEqual(marcacoesQueASelecaoToca(criterios, porCriterio, marcado(30, 40)), [])
+  // Uma seleção dentro da marcação, ou que a contém, toca.
+  assert.equal(marcacoesQueASelecaoToca(criterios, porCriterio, marcado(12, 14)).length, 1)
+  assert.equal(marcacoesQueASelecaoToca(criterios, porCriterio, marcado(0, 99)).length, 1)
+})
+
+test('Issue #190: sem seleção pronta ou sem listas, nada a remover e nada quebra', () => {
+  const criterios = [criterio('a', 'Legitimação')]
+
+  assert.deepEqual(marcacoesQueASelecaoToca(criterios, { a: { marcados: [marcado(10, 20)] } }, null), [])
+  assert.deepEqual(marcacoesQueASelecaoToca(criterios, {}, marcado(10, 20)), [])
+  assert.deepEqual(marcacoesQueASelecaoToca(undefined, {}, marcado(10, 20)), [])
 })
