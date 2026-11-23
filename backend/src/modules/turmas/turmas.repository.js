@@ -1,4 +1,12 @@
 import { prisma } from '../../config/prisma.js'
+import { AppError } from '../../utils/app-error.js'
+
+async function bloquearProfessorAtivo(tx, professorId) {
+  const [professor] = await tx.$queryRaw`SELECT ativo FROM usuarios WHERE id = ${professorId} FOR UPDATE`
+  if (!professor?.ativo) throw new AppError('O usuário desta sessão não está disponível.', {
+    statusCode: 401, code: 'AUTHENTICATION_REQUIRED',
+  })
+}
 
 const turmaProfessorSelect = {
   id: true,
@@ -37,14 +45,32 @@ export function criarTurma({
   codigoAcesso,
   professorId,
 }) {
-  return prisma.turma.create({
-    data: {
-      nome,
-      codigoAcesso,
-      professorId,
-    },
-    select: turmaProfessorSelect,
+  return prisma.$transaction(async tx => {
+    await bloquearProfessorAtivo(tx, professorId)
+    return tx.turma.create({
+      data: { nome, codigoAcesso, professorId },
+      select: turmaProfessorSelect,
+    })
   })
+}
+
+export async function excluirTurmaSemHistorico({ turmaId, professorId }) {
+  try {
+    return await prisma.$transaction(async tx => {
+      // INSERTs de matrículas/propostas também precisam da linha-pai pela FK.
+      const [turma] = await tx.$queryRaw`SELECT id, ativa FROM turmas
+        WHERE id = ${turmaId} AND professorId = ${professorId} FOR UPDATE`
+      if (!turma) return 'NAO_ENCONTRADA'
+      if (turma.ativa) return 'ATIVA'
+      if (await tx.matricula.findFirst({ where: { turmaId }, select: { id: true } }) ||
+          await tx.temaRedacao.findFirst({ where: { turmaId }, select: { id: true } })) return 'COM_HISTORICO'
+      await tx.turma.delete({ where: { id: turmaId } })
+      return 'EXCLUIDA'
+    })
+  } catch (error) {
+    if (error.code === 'P2003') return 'COM_HISTORICO'
+    throw error
+  }
 }
 
 export function listarTurmasDoProfessor(professorId) {
@@ -75,6 +101,13 @@ export function buscarTurmaDoProfessor({
     },
     select: turmaProfessorSelect,
   })
+}
+
+export async function consultarElegibilidadeExclusaoTurma({ turmaId, professorId }) {
+  return Boolean(await prisma.turma.findFirst({
+    where: { id: turmaId, professorId, ativa: false, matriculas: { none: {} }, temas: { none: {} } },
+    select: { id: true },
+  }))
 }
 
 export async function atualizarNomeDaTurma({
@@ -190,6 +223,7 @@ export async function arquivarTurma({
 }
 export function reabrirTurma({ turmaId, professorId }) {
   return prisma.$transaction(async (transaction) => {
+    await bloquearProfessorAtivo(transaction, professorId)
     const resultado = await transaction.turma.updateMany({
       where: { id: turmaId, professorId, ativa: false },
       data: { ativa: true, arquivadaEm: null },
@@ -276,12 +310,15 @@ export function criarMatriculaAtivaComExclusividade({
   turmaId,
 }) {
   return prisma.$transaction(async (transaction) => {
-    await transaction.$queryRaw`
-      SELECT id
+    const [aluno] = await transaction.$queryRaw`
+      SELECT ativo
       FROM usuarios
       WHERE id = ${alunoId}
       FOR UPDATE
     `
+    if (!aluno?.ativo) throw new AppError('O usuário desta sessão não está disponível.', {
+      statusCode: 401, code: 'AUTHENTICATION_REQUIRED',
+    })
 
     // Ordem: usuário -> turma -> matrícula. Arquivamento bloqueia primeiro
     // usuários em ordem crescente, depois turma/matrículas/avisos.

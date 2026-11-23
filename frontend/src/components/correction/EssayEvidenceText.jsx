@@ -1,18 +1,20 @@
 import { Fragment, useEffect, useId, useMemo, useRef, useState } from 'react'
 import Botao from '../base/Botao.jsx'
-import { chaveTrecho, criarTrechoDaSelecao, lerIntervaloSelecionado, limitesDeGrafemas, moverGrafema, podeAcrescentarTrecho } from '../../utils/trechos-feedback.js'
+import { chaveTrecho, criarTrechoDaSelecao, criteriosComOTrecho, descreverTrechoJaMarcado, LIMITE_TRECHOS_POR_CRITERIO, lerIntervaloSelecionado, limitesDeGrafemas, marcacoesQueASelecaoToca, moverGrafema, podeAcrescentarTrecho, recortarMarcacoes } from '../../utils/trechos-feedback.js'
 import { tomCriterio } from '../../utils/professor-correction.js'
 import { resumirEvidencias } from '../../utils/ai-evidence.js'
 import { obterTomDaMarca } from '../../utils/criterio-cores.js'
 import { AjusteBordas } from './SelecaoTrechos.jsx'
 import VinculosDoTrecho from './VinculosDoTrecho.jsx'
 
-export default function EssayEvidenceText({ texto = '', criterios, marcacoes, analise, onMark, onEvidence, disabled, vinculo }) {
+export default function EssayEvidenceText({ texto = '', criterios, marcacoes, analise, onMark, onUnmark, onEvidence, disabled, vinculo }) {
   const instrucao = useId()
   const area = useRef(null)
   const modoRef = useRef(null)
   const barra = useRef(null)
   const ultimaSelecao = useRef(null)
+  const apontouNaBarra = useRef(false)
+  const arrastando = useRef(false)
   const [nativa, setNativa] = useState(null)
   const [teclado, setTeclado] = useState(null)
   const [ajuste, setAjuste] = useState(null)
@@ -28,21 +30,66 @@ export default function EssayEvidenceText({ texto = '', criterios, marcacoes, an
   const erroBorda = candidato?.trecho && (!limites.includes(proposta.inicio) || !limites.includes(proposta.fim))
   const pronto = candidato?.trecho && !erroBorda ? candidato.trecho : null
   const mostrarBarra = Boolean(intervalo && intervalo.inicio !== intervalo.fim)
+  const jaMarcadoEm = criteriosComOTrecho(criterios, porCriterio, pronto)
+  // "Remover trecho" age sobre tudo que a seleção toca, idêntico ou não (Issue #190).
+  const aRemover = marcacoesQueASelecaoToca(criterios, porCriterio, pronto)
 
+  /*
+   * A barra acompanha a seleção: aparece quando há uma e sai quando ela
+   * acaba. Perder a seleção não podia fechá-la enquanto o clique era dentro
+   * da própria barra — o navegador limpa a seleção já no apontar, e a barra
+   * sumiria antes de o clique chegar ao botão. Por isso o apontar marca onde
+   * começou, e só aí a ausência de seleção conta.
+   */
   useEffect(() => {
     if (teclado || disabled) return undefined
-    const consultar = () => {
+    /*
+     * Issue #190. Durante o arrasto do mouse a seleção ainda não terminou, e a
+     * barra (sticky, no pé da área rolável) aparecia por cima do texto no meio
+     * do gesto. O ponteiro passava a ficar sobre ela, o fim da seleção caía fora
+     * do texto, a leitura devolvia nulo, a barra sumia, a seleção voltava e a
+     * barra reaparecia: a tela tremia e o scroll pulava. Enquanto o botão está
+     * apertado dentro do texto, a seleção só é lida quando ele é solto.
+     */
+    const consultar = (evento) => {
+      if (arrastando.current && evento?.type === 'selectionchange') return
       const selecionado = lerIntervaloSelecionado(area.current, document.getSelection())
-      if (!selecionado) return
+      if (!selecionado) {
+        if (apontouNaBarra.current || !ultimaSelecao.current) return
+        ultimaSelecao.current = null
+        setNativa(null)
+        setAjuste(null)
+        setAviso('')
+        return
+      }
       if (ultimaSelecao.current?.inicio === selecionado.inicio && ultimaSelecao.current?.fim === selecionado.fim) return
       ultimaSelecao.current = selecionado
       setNativa(selecionado)
       setAjuste(null)
       setAviso('')
     }
-    const eventos = ['selectionchange', 'pointerup', 'touchend', 'keyup']
+    const aoApontar = (evento) => {
+      apontouNaBarra.current = Boolean(barra.current?.contains(evento.target))
+      arrastando.current = evento.button === 0 && Boolean(area.current?.contains(evento.target))
+      // Clique em qualquer outro lugar da tela fecha a barra (Issue #179).
+      if (!apontouNaBarra.current && !area.current?.contains(evento.target)) limpar()
+    }
+    const soltou = (evento) => { arrastando.current = false; consultar(evento) }
+    const desistiu = () => { arrastando.current = false }
+    const eventos = ['selectionchange', 'touchend', 'keyup']
     eventos.forEach((evento) => document.addEventListener(evento, consultar))
-    return () => eventos.forEach((evento) => document.removeEventListener(evento, consultar))
+    document.addEventListener('pointerup', soltou)
+    document.addEventListener('pointercancel', desistiu)
+    window.addEventListener('blur', desistiu)
+    document.addEventListener('pointerdown', aoApontar, true)
+    return () => {
+      arrastando.current = false
+      eventos.forEach((evento) => document.removeEventListener(evento, consultar))
+      document.removeEventListener('pointerup', soltou)
+      document.removeEventListener('pointercancel', desistiu)
+      window.removeEventListener('blur', desistiu)
+      document.removeEventListener('pointerdown', aoApontar, true)
+    }
   }, [teclado, disabled])
 
   useEffect(() => {
@@ -52,6 +99,7 @@ export default function EssayEvidenceText({ texto = '', criterios, marcacoes, an
   function limpar(foco) {
     if (lerIntervaloSelecionado(area.current, document.getSelection())) document.getSelection().removeAllRanges()
     ultimaSelecao.current = null
+    apontouNaBarra.current = false
     setNativa(null); setTeclado(null); setAjuste(null); setAviso('')
     if (foco === 'modo') modoRef.current?.focus()
     if (foco === 'texto') area.current?.focus()
@@ -136,16 +184,57 @@ export default function EssayEvidenceText({ texto = '', criterios, marcacoes, an
       <p className="review-caption">Evidências sem localização confirmada ficam nos detalhes da análise.</p>}
     {mostrarBarra && <section ref={barra} tabIndex={-1} className="review-mark-bar" aria-label="Marcar este trecho em">
       <h3>Marcar este trecho em</h3>
-      <AjusteBordas texto={texto} intervalo={proposta} limites={limites} onChange={setAjuste} disabled={disabled} />
+      {/*
+        * Issue #179: a barra mostra primeiro as opções de critério, cada uma
+        * com a cor que o trecho vai receber no texto. O ajuste de bordas
+        * continua disponível, recolhido, e abre sozinho quando a seleção corta
+        * um caractere — que é quando ele é necessário.
+        */}
+      {jaMarcadoEm.length > 0 && <p role="status" className="review-caption">{descreverTrechoJaMarcado(jaMarcadoEm)}</p>}
       {(!pronto || aviso) && <p role="status" className="review-caption">{aviso || (erroBorda ? 'Ajuste as bordas para não cortar um caractere.' : candidato?.erro)}</p>}
-      <div className="review-mark-actions">
-        {criterios.map((c) => <Botao key={c.id} variante="secundario" disabled={disabled || !pronto} onClick={() => {
-          const motivo = podeAcrescentarTrecho(porCriterio[c.id].marcados, pronto)
-          if (motivo) { setAviso(motivo); return }
-          onMark(c.id, pronto); limpar(teclado ? 'modo' : 'texto')
-        }}>{c.nome}</Botao>)}
-        <Botao variante="secundario" onClick={() => limpar(teclado ? 'modo' : 'texto')}>Cancelar marcação</Botao>
+      <div className="review-mark-actions review-mark-opcoes">
+        {criterios.map((c) => {
+          const repetido = jaMarcadoEm.some((item) => item.id === c.id)
+
+          return <Botao key={c.id} variante="secundario" className={`review-mark-opcao review-tone-${tomCriterio(c)}`}
+            disabled={disabled || !pronto || repetido}
+            title={repetido ? 'Este trecho já está marcado neste critério.' : undefined}
+            onClick={() => {
+              const motivo = podeAcrescentarTrecho(porCriterio[c.id].marcados, pronto)
+              if (motivo) { setAviso(motivo); return }
+              onMark(c.id, pronto); limpar(teclado ? 'modo' : 'texto')
+            }}>
+            <span aria-hidden="true" className="review-color" />{c.nome}
+            {repetido && <span className="sr-only">, já marcado neste critério</span>}
+          </Botao>
+        })}
       </div>
+      {/*
+        * Issue #179: "Cancelar marcação" saiu. Ele cancelava o ato de marcar,
+        * fechando a barra, mas era lido como "cancelar a marcação que existe"
+        * — e a remoção só morava no painel de trechos. Agora o trecho já
+        * marcado é removido daqui, e fechar a barra é clicar fora (ou Escape).
+        */}
+      <div className="review-mark-actions">
+        <Botao variante="perigo" disabled={disabled || aRemover.length === 0}
+          title={aRemover.length === 0 ? 'A seleção não toca em nenhum trecho marcado.' : undefined}
+          onClick={() => {
+            // Issue #190: um só botão; recorta a seleção de toda marcação que ela toca, em
+            // qualquer critério, e o que ficar fora dela continua marcado.
+            const planos = aRemover.map(({ criterio }) => ({ criterio, lista: recortarMarcacoes(texto, porCriterio[criterio.id].marcados, pronto) }))
+            const estoura = planos.find((plano) => plano.lista.length > LIMITE_TRECHOS_POR_CRITERIO)
+            if (estoura) {
+              setAviso(`Remover só essa parte deixaria ${estoura.criterio.nome} com mais de ${LIMITE_TRECHOS_POR_CRITERIO} trechos. Remova algum antes.`)
+              return
+            }
+            planos.forEach(({ criterio, lista }) => onUnmark(criterio.id, lista))
+            limpar(teclado ? 'modo' : 'texto')
+          }}>Remover trecho</Botao>
+      </div>
+      <details className="review-mark-bordas" open={Boolean(erroBorda)}>
+        <summary>Ajustar bordas</summary>
+        <AjusteBordas texto={texto} intervalo={proposta} limites={limites} onChange={setAjuste} disabled={disabled} />
+      </details>
     </section>}
   </figure>
 }

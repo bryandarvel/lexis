@@ -13,12 +13,12 @@ import MinhaTurmaDialogo from '../components/aluno/MinhaTurmaDialogo.jsx'
 import {
   IconeDaNavegacao,
   IconeMenu,
+  IconeSair,
 } from '../components/layout/icones-casca.jsx'
 import MenuUsuario from '../components/layout/MenuUsuario.jsx'
 import Sino from '../components/layout/Sino.jsx'
 import ThemeToggle from '../components/layout/ThemeToggle.jsx'
 import Trilha from '../components/layout/Trilha.jsx'
-import DialogoPropostasPorTurma from '../components/professor/DialogoPropostasPorTurma.jsx'
 import { useAuth } from '../hooks/useAuth.js'
 import { useNotificacoesNaoLidas } from '../hooks/useNotificacoesNaoLidas.js'
 import {
@@ -83,10 +83,18 @@ const CLASSES_DE_CONTEUDO = {
   livre: '',
 }
 
-function ItemDeNavegacao({ item, onNavegar, onAcao }) {
+function ItemDeNavegacao({ item, onNavegar }) {
+  /*
+   * Issue #188: o ícone ganha uma moldura arredondada própria, que é o que
+   * marca o item atual. O <span> existe para a moldura ter caixa própria: dar
+   * fundo e respiro ao <svg> direto depende de como o viewBox escala dentro do
+   * padding, e quebra com ícones de proporções diferentes.
+   */
   const conteudo = (
     <>
-      <IconeDaNavegacao chave={item.chave} />
+      <span aria-hidden="true" className="casca-item-icone">
+        <IconeDaNavegacao chave={item.chave} />
+      </span>
       {item.rotulo}
     </>
   )
@@ -102,20 +110,6 @@ function ItemDeNavegacao({ item, onNavegar, onAcao }) {
         {conteudo}
         <span className="sr-only"> ({item.motivo})</span>
       </span>
-    )
-  }
-
-  if (item.tipo === 'acao') {
-    return (
-      <button
-        type="button"
-        aria-current={item.atual ? 'page' : undefined}
-        disabled={item.desabilitado}
-        onClick={() => onAcao(item.acao)}
-        className="casca-item"
-      >
-        {conteudo}
-      </button>
     )
   }
 
@@ -141,8 +135,8 @@ function ItemDeNavegacao({ item, onNavegar, onAcao }) {
  *   margem) ou "livre" (a tela cuida do próprio espaçamento).
  * - `imersivo`: sem menu lateral, para a correção.
  * - `indicador`: nó extra na barra, antes do sino.
- * - `rotaEnviarRedacao` (aluno); `turmas`, `pronto` e `onRedacoes` (professor)
- *   alimentam os itens de navegação que dependem dos dados da tela.
+ * - `rotaEnviarRedacao` (aluno) alimenta o único item de navegação que
+ *   depende dos dados da tela.
  */
 export default function AppShell({
   trilha = [],
@@ -150,9 +144,6 @@ export default function AppShell({
   imersivo = false,
   indicador = null,
   rotaEnviarRedacao = null,
-  turmas,
-  pronto = false,
-  onRedacoes,
   children,
 }) {
   const { usuario, sair } = useAuth()
@@ -170,10 +161,7 @@ export default function AppShell({
   const [saindo, setSaindo] = useState(false)
   const [gavetaAberta, setGavetaAberta] = useState(false)
   const [minhaTurmaAberta, setMinhaTurmaAberta] = useState(false)
-  const [propostasAbertas, setPropostasAbertas] = useState(false)
   const botaoGavetaRef = useRef(null)
-  // Para onde o foco volta quando o diálogo de Propostas fecha (ver executarAcao).
-  const propostasFocoRetornoRef = useRef(null)
   const navegacaoRef = useRef(null)
   const botaoAvatarRef = useRef(null)
 
@@ -181,7 +169,6 @@ export default function AppShell({
     papel,
     caminho: pathname,
     rotaEnviarRedacao,
-    propostasDisponiveis: pronto,
   })
 
   // A gaveta só existe abaixo de 1024 px. Enquanto está aberta, o resto da
@@ -220,29 +207,6 @@ export default function AppShell({
 
   function fecharGaveta() {
     setGavetaAberta(false)
-  }
-
-  function executarAcao(acao) {
-    // O elemento de origem e o estado da gaveta precisam ser lidos antes de
-    // fechá-la: o botão clicado dentro da gaveta fica oculto antes de o
-    // diálogo fechar e já não poderia receber o foco de volta.
-    const origem = document.activeElement
-    const veioDaGaveta = gavetaAberta
-
-    fecharGaveta()
-
-    if (acao === 'propostas') {
-      propostasFocoRetornoRef.current = veioDaGaveta
-        ? botaoGavetaRef.current
-        : origem
-      setPropostasAbertas(true)
-      return
-    }
-
-    if (acao === 'redacoes') {
-      if (onRedacoes) onRedacoes()
-      else navigate('/professor')
-    }
   }
 
   function concluirSaidaDaTurma(turma) {
@@ -364,10 +328,31 @@ export default function AppShell({
                 <ItemDeNavegacao
                   item={item}
                   onNavegar={fecharGaveta}
-                  onAcao={executarAcao}
                 />
               </li>
             ))}
+          </ul>
+          {/*
+            * Issue #190: "Sair" no fim do menu reaproveita o handleSair do
+            * AppShell, o mesmo do menu do usuário: sem segunda lógica de logout.
+            */}
+          <ul className="casca-trilho-fim">
+            <li>
+              <button
+                type="button"
+                disabled={saindo}
+                onClick={() => {
+                  fecharGaveta()
+                  handleSair()
+                }}
+                className="casca-item"
+              >
+                <span aria-hidden="true" className="casca-item-icone">
+                  <IconeSair />
+                </span>
+                {saindo ? 'Saindo…' : 'Sair'}
+              </button>
+            </li>
           </ul>
         </nav>
       )}
@@ -391,15 +376,6 @@ export default function AppShell({
           onFechar={() => setMinhaTurmaAberta(false)}
           onSaiu={concluirSaidaDaTurma}
           retornoFocoRef={botaoAvatarRef}
-        />
-      )}
-
-      {papel === 'PROFESSOR' && (
-        <DialogoPropostasPorTurma
-          aberto={propostasAbertas}
-          turmas={turmas}
-          retornoFocoRef={propostasFocoRetornoRef}
-          onFechar={() => setPropostasAbertas(false)}
         />
       )}
     </div>

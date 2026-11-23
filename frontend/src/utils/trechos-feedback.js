@@ -167,3 +167,97 @@ export function materializarTrechos(texto, intervalos = []) {
 export function guardarIntervalos(trechos) {
   return trechos.map(({ inicio, fim, analiseIaId }) => ({ inicio, fim, ...(analiseIaId ? { analiseIaId } : {}) }))
 }
+
+/*
+ * Issue #190. Marcações que a seleção atual toca, por critério, sem exigir
+ * que sejam idênticas a ela: basta haver sobreposição. Encostar só na borda
+ * (fim de um == início do outro) não conta. Devolve só critérios com algo a
+ * remover, cada um com as marcações que se sobrepõem.
+ */
+export function marcacoesQueASelecaoToca(criterios, porCriterio, selecao) {
+  if (!selecao || !(selecao.inicio < selecao.fim)) return []
+
+  return (Array.isArray(criterios) ? criterios : []).flatMap((criterio) => {
+    const tocadas = (porCriterio?.[criterio?.id]?.marcados ?? []).filter(
+      (item) => item.inicio < selecao.fim && selecao.inicio < item.fim,
+    )
+
+    return tocadas.length ? [{ criterio, trechos: tocadas }] : []
+  })
+}
+
+/*
+ * Issue #190. Recorta a seleção das marcações de um critério: o que fica fora
+ * dela continua marcado, e só a parte selecionada deixa de estar. Uma seleção
+ * no meio parte a marcação em duas; numa ponta, sobra uma; cobrindo-a por
+ * inteiro, nada sobra. Os pedaços nascem pelo mesmo caminho de um trecho novo
+ * (criarTrechoDaSelecao), então a regra de não cortar um caractere ao meio é a
+ * mesma: um pedaço que cortaria é descartado em vez de enviado ao servidor, que
+ * o recusaria. O pedaço deixa de ser a evidência da IA que originou a marcação
+ * inteira, por isso perde o analiseIaId; o que não foi tocado o mantém. Dois
+ * pedaços não podem repetir o mesmo intervalo no critério (o servidor recusa).
+ */
+export function recortarMarcacoes(texto, marcados, selecao) {
+  const lista = Array.isArray(marcados) ? marcados : []
+  if (!selecao || !(selecao.inicio < selecao.fim)) return lista
+
+  const resultado = []
+  const vistos = new Set()
+  const acrescentar = (item) => {
+    const chave = chaveTrecho(item)
+    if (vistos.has(chave)) return
+    vistos.add(chave)
+    resultado.push(item)
+  }
+
+  for (const item of lista) {
+    if (!(item.inicio < selecao.fim && selecao.inicio < item.fim)) {
+      acrescentar(item)
+      continue
+    }
+
+    const pedacos = [
+      item.inicio < selecao.inicio ? [item.inicio, selecao.inicio] : null,
+      selecao.fim < item.fim ? [selecao.fim, item.fim] : null,
+    ]
+
+    for (const pedaco of pedacos) {
+      if (!pedaco) continue
+      const { trecho } = criarTrechoDaSelecao(texto, pedaco[0], pedaco[1])
+      if (trecho) acrescentar(trecho)
+    }
+  }
+
+  return resultado
+}
+
+/*
+ * Issue #179. Marcar o mesmo trecho em mais de um critério é intencional: o
+ * texto desenha uma listra por critério e o aluno vê os vínculos. O que não
+ * pode é repetir no mesmo critério, e o professor precisa enxergar onde o
+ * trecho já está antes de decidir. Daí o aviso, e não um bloqueio.
+ */
+export function descreverTrechoJaMarcado(criterios) {
+  const nomes = (Array.isArray(criterios) ? criterios : [])
+    .map((criterio) => String(criterio?.nome ?? '').trim())
+    .filter(Boolean)
+
+  if (nomes.length === 0) return ''
+
+  const lista = nomes.length === 1
+    ? nomes[0]
+    : `${nomes.slice(0, -1).join(', ')} e ${nomes[nomes.length - 1]}`
+
+  return `Este trecho já está marcado em ${lista}. Um mesmo trecho pode apoiar mais de um critério.`
+}
+
+// Critérios que já têm exatamente este intervalo marcado.
+export function criteriosComOTrecho(criterios, porCriterio, trecho) {
+  if (!trecho) return []
+
+  return (Array.isArray(criterios) ? criterios : []).filter((criterio) =>
+    (porCriterio?.[criterio?.id]?.marcados ?? []).some(
+      (item) => item?.inicio === trecho.inicio && item?.fim === trecho.fim,
+    ),
+  )
+}

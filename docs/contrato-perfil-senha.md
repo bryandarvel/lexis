@@ -1,5 +1,7 @@
 # Perfil e troca de senha — backend da #71
 
+> Registro histórico da #71. O contrato mais recente exige senha atual na edição de nome e troca a mutação direta de senha por um link de redefinição enviado por e-mail. Consulte [Alterações na própria conta](contrato-exclusoes.md#alterações-na-própria-conta).
+
 Válido para ALUNO e PROFESSOR autenticados. Esta entrega não altera as telas nem o AuthProvider do frontend. E-mail, papel, desativação de conta e edição de dados de outra pessoa ficam fora do contrato.
 
 ## Nome

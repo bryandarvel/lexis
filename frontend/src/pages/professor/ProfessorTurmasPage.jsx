@@ -1,7 +1,7 @@
 import Etiqueta from '../../components/base/Etiqueta.jsx'
 import EstadoVazio from '../../components/base/EstadoVazio.jsx'
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useLocation } from 'react-router'
 import Aviso from '../../components/base/Aviso.jsx'
 import Botao from '../../components/base/Botao.jsx'
 import Campo from '../../components/base/Campo.jsx'
@@ -102,12 +102,18 @@ function TurmaCard({ turma }) {
 }
 
 export default function ProfessorTurmasPage() {
+  const { state } = useLocation()
+  const tituloRef = useRef(null)
   const [pagina, setPagina] = useState({ status: 'carregando', turmas: [] })
   const [tentativa, setTentativa] = useState(0)
   const [busca, setBusca] = useState('')
   const [filtro, setFiltro] = useState('todas')
   const [criando, setCriando] = useState(false)
-  const [sucesso, setSucesso] = useState('')
+  const [sucesso, setSucesso] = useState(() => state?.turmaExcluida ? 'Turma excluída definitivamente.' : '')
+
+  useEffect(() => {
+    if (state?.turmaExcluida) tituloRef.current?.focus()
+  }, [state?.turmaExcluida])
 
   useEffect(() => {
     let ativo = true
@@ -132,10 +138,10 @@ export default function ProfessorTurmasPage() {
   const pronto = pagina.status === 'pronto'
 
   return (
-    <AppShell conteudo="amplo" trilha={['Turmas']} turmas={pagina.turmas} pronto={pronto}>
+    <AppShell conteudo="amplo" trilha={['Turmas']}>
       <div className="panel-main classes-main">
         <div className="classes-heading">
-          <div><h1>Turmas</h1><p className="panel-subtitle">Gerencie turmas, códigos de acesso e propostas.</p></div>
+          <div><h1 ref={tituloRef} tabIndex={-1}>Turmas</h1><p className="panel-subtitle">Gerencie turmas, códigos de acesso e propostas.</p></div>
           <Botao type="button" className="classes-create" disabled={!pronto} onClick={() => { setSucesso(''); setCriando(true) }}>+ Nova turma</Botao>
         </div>
         <div className="classes-toolbar">

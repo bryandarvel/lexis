@@ -15,6 +15,7 @@ import {
   arquivarTemaController,
   atualizarTemaController,
   criarTemaController,
+  excluirTemaController,
   listarTemasAlunoController,
   listarTemasController,
   obterModeloCompetenciaDoisController,
@@ -472,3 +473,22 @@ temasRouter.post(
   validarParams(temaParamsSchema),
   reabrirTemaController,
 )
+
+/**
+ * @openapi
+ * /api/temas/{temaId}:
+ *   delete:
+ *     summary: Exclui definitivamente uma proposta própria sem rascunhos ou redações
+ *     tags: [Temas de redação]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - { in: path, name: temaId, required: true, schema: { type: string, format: uuid } }
+ *     responses:
+ *       '204': { description: Proposta excluída }
+ *       '401': { description: Autenticação necessária }
+ *       '403': { description: Exclusivo para professor }
+ *       '404': { description: Proposta indisponível para o professor }
+ *       '409': { description: ESSAY_TOPIC_NOT_ARCHIVED ou ESSAY_TOPIC_HAS_HISTORY }
+ *       '422': { description: Identificador inválido }
+ */
+temasRouter.delete('/temas/:temaId', autenticarAccessToken, somenteProfessor, validarParams(temaParamsSchema), excluirTemaController)

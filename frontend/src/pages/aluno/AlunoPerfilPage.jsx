@@ -7,15 +7,12 @@ import EditorConta from '../../components/conta/EditorConta.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
 import { useRotaEnviarRedacao } from '../../hooks/useRotaEnviarRedacao.js'
 import { obterMinhaConta } from '../../services/conta.js'
-import { obterDesempenhoAluno } from '../../services/desempenho.js'
 import { obterMinhaMatricula } from '../../services/turmas.js'
 import {
-  NOTA_DESEMPENHO,
   descreverConta,
   descreverTurma,
   aplicarBlocosDaConta,
   resolverBloco,
-  resumirDesempenho,
 } from '../../utils/aluno-perfil.js'
 import {
   estadoDaContaAtual,
@@ -43,12 +40,6 @@ const BLOCOS = {
       indicaSemMatricula(motivo)
         ? { status: 'sem-turma', dados: null }
         : null,
-  },
-  desempenho: {
-    titulo: 'Desempenho',
-    carregando: 'Carregando seu desempenho',
-    erro: 'Não foi possível carregar seu desempenho.',
-    carregar: obterDesempenhoAluno,
   },
 }
 
@@ -144,44 +135,15 @@ function BlocoTurma({ estado, onTentar }) {
   )
 }
 
-function BlocoDesempenho({ estado, onTentar }) {
-  const resumo = resumirDesempenho(estado.dados)
-
-  return (
-    <Bloco chave="desempenho" estado={estado} onTentar={onTentar} largo>
-      <dl className="aluno-pf-indicadores">
-        {resumo.itens.map((item) => (
-          <div key={item.rotulo}>
-            <dt>{item.rotulo}</dt>
-            <dd>
-              {item.valor ?? (
-                <>
-                  <span aria-hidden="true">—</span>
-                  <span className="sr-only">Sem valor ainda</span>
-                </>
-              )}
-              {item.unidade && (
-                <span className="aluno-pf-unidade"> {item.unidade}</span>
-              )}
-            </dd>
-          </div>
-        ))}
-      </dl>
-
-      <p className="aluno-pf-texto">
-        {resumo.semCorrecao
-          ? 'Nenhuma correção publicada ainda. As notas aparecem aqui depois que um professor publica uma correção. '
-          : ''}
-        {NOTA_DESEMPENHO}
-      </p>
-    </Bloco>
-  )
-}
+/*
+ * Issue #178: o bloco "Desempenho" saiu daqui e vive no Início, acima das
+ * propostas da turma, com os mesmos indicadores. `resumirDesempenho` continua
+ * em utils/aluno-perfil.js, agora consumido por lá.
+ */
 
 const BLOCOS_CARREGANDO = {
   conta: CARREGANDO,
   turma: CARREGANDO,
-  desempenho: CARREGANDO,
 }
 
 const ESTADO_INICIAL = marcarConta({ blocos: BLOCOS_CARREGANDO }, null)
@@ -295,10 +257,6 @@ export default function AlunoPerfilPage() {
         <BlocoTurma
           estado={blocos.turma}
           onTentar={() => tentarNovamente('turma')}
-        />
-        <BlocoDesempenho
-          estado={blocos.desempenho}
-          onTentar={() => tentarNovamente('desempenho')}
         />
 
         <section

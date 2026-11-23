@@ -6,12 +6,12 @@ import {
   buscarUsuarioPorEmail,
   buscarUsuarioPublicoPorId,
   criarUsuario,
+  excluirPropriaConta,
   revogarFamiliaRefreshTokens,
   rotacionarRefreshToken,
   salvarRefreshToken,
   atualizarNomeUsuario,
-  buscarUsuarioParaAlterarSenha,
-  trocarSenhaComNovaSessao,
+  buscarUsuarioParaConfirmarSenha,
 } from './auth.repository.js'
 
 import {
@@ -276,15 +276,8 @@ function criarErroSessaoDesatualizada() {
   })
 }
 
-export async function atualizarPerfilUsuario({ usuarioId, sessaoVersao, nome }) {
-  if (!Number.isSafeInteger(sessaoVersao) || sessaoVersao < 0) throw criarErroSessaoDesatualizada()
-  const usuario = await atualizarNomeUsuario({ usuarioId, sessaoVersao, nome })
-  if (!usuario) throw criarErroSessaoDesatualizada()
-  return usuario
-}
-
-export async function alterarSenhaUsuario({ usuarioId, sessaoVersao, senhaAtual, novaSenha }) {
-  const usuario = await buscarUsuarioParaAlterarSenha(usuarioId)
+export async function confirmarSenhaAtual({ usuarioId, sessaoVersao, senhaAtual }) {
+  const usuario = await buscarUsuarioParaConfirmarSenha(usuarioId)
   if (!usuario?.ativo || usuario.sessaoVersao !== sessaoVersao) throw criarErroSessaoDesatualizada()
   if (!await verificarSenha(senhaAtual, usuario.senhaHash)) {
     throw new AppError('A senha atual está incorreta.', {
@@ -294,15 +287,27 @@ export async function alterarSenhaUsuario({ usuarioId, sessaoVersao, senhaAtual,
     })
   }
 
-  const senhaHash = await criarHashSenha(novaSenha)
-  const familiaId = randomUUID()
-  const accessToken = criarAccessToken({ usuarioId, papel: usuario.papel, sessaoVersao: sessaoVersao + 1 })
-  const refreshToken = criarRefreshToken({ usuarioId, familiaId })
-  const refreshTokenExpiraEm = obterExpiracaoToken(refreshToken)
-  const atualizado = await trocarSenhaComNovaSessao({
-    usuarioId, sessaoVersao, senhaHashEsperada: usuario.senhaHash, senhaHash,
-    tokenHash: criarHashToken(refreshToken), familiaId, expiraEm: refreshTokenExpiraEm,
+  return usuario
+}
+
+export async function atualizarPerfilUsuario({ usuarioId, sessaoVersao, nome, senhaAtual }) {
+  const atual = await confirmarSenhaAtual({ usuarioId, sessaoVersao, senhaAtual })
+  const usuario = await atualizarNomeUsuario({ usuarioId, sessaoVersao, nome, senhaHashEsperada: atual.senhaHash })
+  if (!usuario) throw criarErroSessaoDesatualizada()
+  return usuario
+}
+
+export async function excluirContaUsuario({ usuarioId, sessaoVersao, senhaAtual }) {
+  const usuario = await confirmarSenhaAtual({ usuarioId, sessaoVersao, senhaAtual })
+  const resultado = await excluirPropriaConta({
+    usuarioId, sessaoVersao, senhaHashEsperada: usuario.senhaHash,
+    emailSubstituto: `${randomUUID()}@conta-excluida.invalid`,
+    senhaHashSubstituta: await criarHashSenha(randomUUID()),
   })
-  if (!atualizado) throw criarErroSessaoDesatualizada()
-  return { usuario: atualizado, accessToken, refreshToken, refreshTokenExpiraEm }
+  if (resultado === 'TURMAS_ATIVAS') {
+    throw new AppError('Arquive todas as suas turmas antes de excluir a conta.', {
+      statusCode: 409, code: 'ACCOUNT_HAS_ACTIVE_CLASSES',
+    })
+  }
+  if (resultado !== 'EXCLUIDA') throw criarErroSessaoDesatualizada()
 }

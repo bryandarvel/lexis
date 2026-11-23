@@ -1,13 +1,14 @@
 import { prisma } from '../../config/prisma.js'
 
-export function enfileirarRecuperacao({ usuarioId, agora, expiraEm }) {
+export function enfileirarRecuperacao({ usuarioId, emailEsperado, sessaoVersao, agora, expiraEm }) {
   return prisma.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT id FROM usuarios WHERE id = ${usuarioId} FOR UPDATE`
+    const [usuario] = await tx.$queryRaw`SELECT ativo, email, sessaoVersao FROM usuarios WHERE id = ${usuarioId} FOR UPDATE`
+    if (!usuario?.ativo || usuario.email !== emailEsperado || usuario.sessaoVersao !== sessaoVersao) return false
     const recente = await tx.recuperacaoSenha.findFirst({ where: {
-      usuarioId, criadoEm: { gt: new Date(agora.getTime() - 60000) },
+      usuarioId, consumidoEm: null, expiraEm: { gt: agora }, criadoEm: { gt: new Date(agora.getTime() - 60000) },
     } })
-    if (recente) return
-    await tx.recuperacaoSenha.create({ data: { usuarioId, expiraEm, criadoEm: agora } })
+    if (!recente) await tx.recuperacaoSenha.create({ data: { usuarioId, expiraEm, criadoEm: agora } })
+    return true
   })
 }
 
@@ -63,6 +64,7 @@ export async function consumirRecuperacao({ tokenHash, senhaHash, agora }) {
     await tx.usuario.update({ where: { id: registro.usuarioId }, data: { senhaHash, sessaoVersao: { increment: 1 } } })
     await tx.refreshToken.updateMany({ where: { usuarioId: registro.usuarioId, revogadoEm: null }, data: { revogadoEm: agora } })
     await tx.recuperacaoSenha.updateMany({ where: { usuarioId: registro.usuarioId, consumidoEm: null }, data: { consumidoEm: agora } })
+    await tx.alteracaoEmail.deleteMany({ where: { usuarioId: registro.usuarioId } })
     return true
   })
 }

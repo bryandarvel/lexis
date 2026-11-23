@@ -238,7 +238,7 @@ function Correcao({ redacaoId, usuarioId }) {
     'Correção',
   ]
 
-  return <AppShell imersivo trilha={trilha} pronto={pronto} turmas={pronto ? [redacao.tema.turma] : []}
+  return <AppShell imersivo trilha={trilha}
     indicador={pagina.fila?.posicao ? <span className="review-position">Redação {pagina.fila.posicao} de {pagina.fila.total}</span> : null}>
     <div className="review-main" onKeyDown={aoPressionarTecla}>
       {pagina.status === 'carregando' && <div className="review-loading"><h1>Correção do professor</h1><p role="status">Carregando redação e avaliação…</p><div aria-hidden="true" className="review-loading-grid"><div className="skeleton-block" /><div className="skeleton-block" /><div className="skeleton-block" /></div></div>}
@@ -255,7 +255,9 @@ function Correcao({ redacaoId, usuarioId }) {
           <article className="review-card review-essay">
             <div className="review-essay-heading"><h2 id="review-essay-title" tabIndex={-1}>Redação do aluno</h2><span className="review-caption">{texto.trim() ? texto.trim().split(/\s+/u).length : 0} palavras</span></div>
             <EssayEvidenceText texto={texto} criterios={criterios} marcacoes={marcacoes} analise={analise} disabled={bloqueado} vinculo={vinculo}
-              onMark={(id, trecho) => mudarTrechos(id, [...marcacoes.porCriterio[id].marcados, trecho])} onEvidence={abrirComentarios} />
+              onMark={(id, trecho) => mudarTrechos(id, [...marcacoes.porCriterio[id].marcados, trecho])}
+              onUnmark={mudarTrechos}
+              onEvidence={abrirComentarios} />
             <details className="review-submission"><summary>Informações da entrega</summary><p>{redacao.origemTexto === 'OCR' ? 'Texto digitalizado por OCR' : 'Texto digitado'} · {redacao.enviadaComAtraso ? 'Enviada com atraso' : 'Enviada no prazo'}</p><p>Enviada em {formatarData(redacao.enviadaEm, 'dataHora', { vazio: 'Não informada' })}. Prazo: {formatarData(redacao.prazoConsideradoEm, 'dataHora', { vazio: 'Não informada' })}.</p></details>
           </article>
           <Link className="review-text-link" to={`/professor/temas/${redacao.tema.id}`}>Consultar proposta e critérios</Link>

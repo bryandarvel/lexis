@@ -57,12 +57,28 @@
   list-style: disc;
 }
 
+/*
+ * Cartão de resumo do diálogo (Issue #175): o dado que a pessoa precisa
+ * conferir antes de confirmar, em destaque e fora do corpo de texto.
+ */
+.dialogo-base__resumo {
+  margin-top: 1rem;
+  padding: 0.875rem 1rem;
+  border-radius: var(--raio-cartao);
+  background: var(--superficie-rebaixada);
+}
+
 .dialogo-base__rodape {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 0.75rem;
   margin-top: 1.5rem;
+}
+
+.dialogo-base__rodape--separado {
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--borda);
 }
 
 @keyframes dialogo-base-entrada {

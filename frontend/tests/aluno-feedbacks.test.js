@@ -3,11 +3,9 @@ import test from 'node:test'
 
 import {
   aplicarRespostaDaConta,
-  caminhoDoFeedback,
-  descreverQuantidade,
+  descreverAutoriaDoFeedback,
   formatarPublicacao,
   obterProfessorDoFeedback,
-  ordenarFeedbacks,
   resumirFeedbacks,
   selecionarFeedbacks,
   temFeedbackPublicado,
@@ -44,68 +42,6 @@ test('só entra quem está avaliada, com id e nota publicada', () => {
   assert.deepEqual(selecionarFeedbacks(undefined), [])
 })
 
-test('ordena por data de publicação, mais recente primeiro por padrão', () => {
-  const lista = [
-    redacao('antiga', { publicadoEm: '2026-01-01T00:00:00.000Z' }),
-    redacao('nova', { publicadoEm: '2026-05-01T00:00:00.000Z' }),
-    redacao('meio', { publicadoEm: '2026-03-01T00:00:00.000Z' }),
-  ]
-
-  assert.deepEqual(
-    ordenarFeedbacks(lista).map((item) => item.id),
-    ['nova', 'meio', 'antiga'],
-  )
-  assert.deepEqual(
-    ordenarFeedbacks(lista, 'antigas').map((item) => item.id),
-    ['antiga', 'meio', 'nova'],
-  )
-})
-
-test('ordena por nota e desempata pela publicação mais recente', () => {
-  const lista = [
-    redacao('a', { notaPublicada: 600 }),
-    redacao('b', {
-      notaPublicada: 800,
-      publicadoEm: '2026-01-01T00:00:00.000Z',
-    }),
-    redacao('c', {
-      notaPublicada: 800,
-      publicadoEm: '2026-04-01T00:00:00.000Z',
-    }),
-  ]
-
-  assert.deepEqual(
-    ordenarFeedbacks(lista, 'maior-nota').map((item) => item.id),
-    ['c', 'b', 'a'],
-  )
-  assert.deepEqual(
-    ordenarFeedbacks(lista, 'menor-nota').map((item) => item.id),
-    ['a', 'c', 'b'],
-  )
-})
-
-test('ordenar não altera a lista original e aceita entrada inválida', () => {
-  const lista = [
-    redacao('a', { publicadoEm: '2026-01-01T00:00:00.000Z' }),
-    redacao('b', { publicadoEm: '2026-02-01T00:00:00.000Z' }),
-  ]
-
-  ordenarFeedbacks(lista)
-
-  assert.deepEqual(lista.map((item) => item.id), ['a', 'b'])
-  assert.deepEqual(ordenarFeedbacks(null), [])
-})
-
-test('data de publicação ausente ou inválida vai para o fim', () => {
-  const lista = [
-    redacao('sem', { publicadoEm: null }),
-    redacao('ok'),
-    redacao('ruim', { publicadoEm: 'não é data' }),
-  ]
-
-  assert.equal(ordenarFeedbacks(lista)[0].id, 'ok')
-})
-
 test('resume quantidade e média arredondada das notas publicadas', () => {
   assert.deepEqual(resumirFeedbacks([]), { quantidade: 0, media: null })
   assert.deepEqual(resumirFeedbacks(undefined), {
@@ -125,12 +61,6 @@ test('resume quantidade e média arredondada das notas publicadas', () => {
   )
 })
 
-test('descreve a quantidade no singular e no plural', () => {
-  assert.equal(descreverQuantidade(0), 'Nenhum feedback publicado.')
-  assert.equal(descreverQuantidade(1), '1 feedback publicado.')
-  assert.equal(descreverQuantidade(3), '3 feedbacks publicados.')
-})
-
 test('formata a data de publicação e devolve null sem data válida', () => {
   assert.match(
     formatarPublicacao(redacao('a')),
@@ -138,13 +68,6 @@ test('formata a data de publicação e devolve null sem data válida', () => {
   )
   assert.equal(formatarPublicacao(redacao('a', { publicadoEm: null })), null)
   assert.equal(formatarPublicacao(undefined), null)
-})
-
-test('monta o caminho do feedback com o id codificado', () => {
-  assert.equal(
-    caminhoDoFeedback({ id: 'abc/1' }),
-    '/aluno/redacoes/abc%2F1/feedback',
-  )
 })
 
 // Revisão do PR #84: o resumo precisa bater com o Painel. O backend (desempenho.service.js) arredonda a
@@ -293,4 +216,34 @@ test('sem conta autenticada os feedbacks somem', () => {
   const deA = prontoDe('aluno-a', 'r1')
 
   assert.deepEqual(estadoDaContaAtual(deA, null, CARREGANDO).feedbacks, [])
+})
+
+// Issue #180: a lista de feedbacks vive em Minhas redações; a linha do item
+// reaproveita o professor e a data de publicação que a página própria mostrava.
+const comProfessor = (nome, extra = {}) =>
+  redacao('p', { tema: { turma: { professor: { nome } } }, ...extra })
+
+test('a autoria junta professor e data de publicação', () => {
+  assert.match(
+    descreverAutoriaDoFeedback(comProfessor('Helena')),
+    /^Professor: Helena · Publicado em \d{2}\/\d{2}\/\d{4}$/,
+  )
+})
+
+test('a autoria perde só a metade que falta, sem separador solto', () => {
+  assert.match(
+    descreverAutoriaDoFeedback(comProfessor('Helena', { publicadoEm: null })),
+    /^Professor: Helena$/,
+  )
+  assert.match(
+    descreverAutoriaDoFeedback(redacao('a')),
+    /^Publicado em \d{2}\/\d{2}\/\d{4}$/,
+  )
+  assert.doesNotMatch(descreverAutoriaDoFeedback(comProfessor('Helena', { publicadoEm: null })), /·/)
+})
+
+test('sem nota publicada não há autoria para mostrar', () => {
+  assert.equal(descreverAutoriaDoFeedback(comProfessor('Helena', { status: 'ENVIADA' })), '')
+  assert.equal(descreverAutoriaDoFeedback(comProfessor('Helena', { notaPublicada: null })), '')
+  assert.equal(descreverAutoriaDoFeedback(undefined), '')
 })

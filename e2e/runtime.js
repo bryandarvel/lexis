@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto'
 
 export const API_URL = 'http://127.0.0.1:3100'
 export const WEB_URL = 'http://127.0.0.1:5180'
+export const CAIXA_FICTICIA = 'e2e.confirmacao@lexis.example.com'
 
 export function configurarAmbiente() {
   let url

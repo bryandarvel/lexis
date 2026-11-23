@@ -27,7 +27,7 @@ test('sessão real restaura após reload, respeita papel e é encerrada no logou
   await page.goto('/professor/turmas')
   await expect(page).toHaveURL(/\/aluno$/)
   await page.getByRole('button', { name: /Menu do usuário/ }).click()
-  await page.getByRole('button', { name: 'Sair', exact: true }).click()
+  await page.getByRole('banner').getByRole('button', { name: 'Sair', exact: true }).click()
   await expect(page).toHaveURL(/\/login$/)
   expect((await context.cookies()).some((c) => c.httpOnly)).toBe(false)
   await page.goto('/aluno')
@@ -105,8 +105,12 @@ test('OCR exige revisão; professor publica feedback humano e só o aluno respon
     const professorPage = await professorContext.newPage()
     await entrar(professorPage, cenario.professor)
     await professorPage.goto('/professor/redacoes/' + redacao.id)
-    await professorPage.getByRole('button', { name: 'Analisar com IA', exact: true }).click()
-    await expect(professorPage.getByRole('button', { name: 'Analisar novamente com IA', exact: true })).toBeEnabled()
+    // Issue #179: com resultado na tela, a ação vira "Gerar nova análise".
+    await professorPage.getByRole('button', { name: 'Analisar redação com IA', exact: true }).click()
+    await expect(professorPage.getByRole('button', { name: 'Gerar nova análise', exact: true })).toBeEnabled()
+    // Por texto: o papel de <summary> varia entre navegadores e não é o que
+    // esta asserção quer fixar — e sim que a faixa das sugestões apareceu.
+    await expect(professorPage.getByText('Mostrar sugestões da IA', { exact: true })).toBeVisible()
     expect(await cenario.prisma.feedback.count({ where: { redacaoId: redacao.id } })).toBe(0)
     expect(await cenario.prisma.analiseIA.count({ where: { redacaoId: redacao.id, status: 'CONCLUIDA' } })).toBe(1)
     for (const numero of ['I', 'II', 'III', 'IV', 'V']) {
@@ -188,7 +192,10 @@ test('trechos manuais sem IA: teclado, cancelamento, falha de gravação, retorn
   })
   await page.mouse.dblclick(inicioDaLinha.x, inicioDaLinha.y)
   await expect(barra).toBeVisible()
-  await barra.getByRole('button', { name: 'Cancelar marcação' }).click()
+  // Issue #179: "Cancelar marcação" saiu; clicar fora da barra é o que fecha.
+  await expect(barra.getByRole('button', { name: /Cancelar/ })).toHaveCount(0)
+  await page.getByRole('heading', { level: 1 }).click()
+  await expect(barra).toHaveCount(0)
   await teclado.click()
   await expect(textoDaRedacao).toBeFocused()
   await page.keyboard.press('Shift+ArrowRight')

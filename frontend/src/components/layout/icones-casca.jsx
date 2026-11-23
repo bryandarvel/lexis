@@ -7,7 +7,8 @@ const PROPS = {
   viewBox: '0 0 24 24',
   fill: 'none',
   stroke: 'currentColor',
-  strokeWidth: 2,
+  // Traço leve (Issue #188): 2 pesava dentro da moldura do item de navegação.
+  strokeWidth: 1.75,
   strokeLinecap: 'round',
   strokeLinejoin: 'round',
   'aria-hidden': true,
@@ -38,15 +39,6 @@ function IconeRedacoes() {
       <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" />
       <path d="M14 3v5h5" />
       <path d="M9 13h6M9 17h4" />
-    </svg>
-  )
-}
-
-function IconeFeedbacks() {
-  return (
-    <svg {...PROPS}>
-      <path d="M21 12a8 8 0 0 1-11.5 7.2L3 21l1.8-6A8 8 0 1 1 21 12Z" />
-      <path d="m9 12 2 2 4-4" />
     </svg>
   )
 }
@@ -82,16 +74,6 @@ function IconeTurmas() {
   )
 }
 
-function IconePropostas() {
-  return (
-    <svg {...PROPS}>
-      <rect x="5" y="4" width="14" height="17" rx="2" />
-      <path d="M9 4V3h6v1" />
-      <path d="M9 10h6M9 14h6M9 18h3" />
-    </svg>
-  )
-}
-
 export function IconeSino() {
   return (
     <svg {...PROPS} strokeWidth={1.8}>
@@ -114,12 +96,9 @@ const ICONES_DA_NAVEGACAO = {
   inicio: IconeInicio,
   escrever: IconeEscrever,
   redacoes: IconeRedacoes,
-  feedbacks: IconeFeedbacks,
   perfil: IconePerfil,
   painel: IconePainel,
   turmas: IconeTurmas,
-  notificacoes: IconeSino,
-  propostas: IconePropostas,
 }
 
 export function IconeSol() {
@@ -143,4 +122,14 @@ export function IconeDaNavegacao({ chave }) {
   const Icone = ICONES_DA_NAVEGACAO[chave]
 
   return Icone ? <Icone /> : null
+}
+
+export function IconeSair() {
+  return (
+    <svg {...PROPS}>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <path d="m16 17 5-5-5-5" />
+      <path d="M21 12H9" />
+    </svg>
+  )
 }

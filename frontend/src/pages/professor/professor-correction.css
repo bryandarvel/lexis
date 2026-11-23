@@ -83,8 +83,20 @@
 .review-actions .review-notice { margin-bottom: 6px; max-height: 22svh; overflow: auto; }
 .review-color { display: inline-block; width: 12px; height: 12px; border-radius: var(--raio-marca); flex: 0 0 auto; background: var(--review-tone); }
 .review-text-link { display: inline-flex; align-items: center; justify-self: start; min-height: 44px; color: var(--panel-action); font-size: 13px; text-decoration: underline; }
-.review-analysis > button { width: 100%; }
-.review-analysis-details { margin-top: 12px; padding: 16px; font-size: 13px; line-height: 21px; }
+/* Card de análise da IA (Issue #179): título visível, ação de largura cheia e
+   a abertura das sugestões como uma faixa destacada, não como outro cartão. */
+/* Botões da IA (Issue #186): em pílula, com o ícone ao lado do texto e do
+   tamanho do conteúdo, alinhados à esquerda como na referência. */
+.review-analysis-acao { margin-top: 12px; }
+/* Issue #190: o aviso de análise em andamento não pode colar no botão. */
+.review-analysis-acao + .review-notice { margin-top: 12px; }
+.review-analysis-details { margin-top: 12px; font-size: 13px; line-height: 21px; }
+.review-analysis-details > summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; min-height: 44px; padding: 10px 14px; border-radius: var(--raio-cartao); background: var(--panel-soft); }
+.review-analysis-details[open] > summary { border-end-start-radius: 0; border-end-end-radius: 0; }
+.review-analysis-sumario { color: var(--panel-action); font-size: 14px; font-weight: 600; }
+.review-analysis-data { color: var(--panel-muted); font-size: 12px; font-weight: 400; }
+.review-analysis-details[open] { padding-bottom: 4px; }
+.review-analysis-details > *:not(summary) { margin-inline: 14px; }
 .review-analysis-details h3, .review-analysis-details h4 { margin: 18px 0 6px; font-weight: 600; }
 .review-analysis-details p { white-space: pre-wrap; }
 .review-analysis-details li { margin-top: 8px; }
@@ -134,3 +146,12 @@
 
 /* Folha da redação: a única superfície de papel, sem raio (REV-013). */
 .review-essay { border-radius: var(--raio-folha); box-shadow: none; }
+
+/* Barra de marcação (Issue #179): as opções de critério vêm primeiro, cada
+   uma com a cor que o trecho recebe no texto. O ajuste de bordas fica
+   recolhido, porque só importa quando a seleção corta um caractere. */
+.review-mark-opcoes { gap: 8px; }
+.review-mark-opcao { gap: 8px; border-color: var(--review-tone); }
+.review-mark-opcao:hover:not(:disabled) { background: var(--review-highlight); }
+.review-mark-bordas { margin-top: 10px; font-size: 13px; }
+.review-mark-bordas > summary { min-height: 44px; align-content: center; color: var(--panel-action); cursor: pointer; }

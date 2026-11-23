@@ -36,6 +36,7 @@ import {
   listarPropostasDoAluno,
   organizarPropostasDoInicio,
 } from '../../utils/aluno-painel.js'
+import { resumirDesempenho } from '../../utils/aluno-perfil.js'
 import { normalizarCodigoAcesso } from '../../utils/class-code.js'
 
 const CODIGO_SEM_MATRICULA = 'ACTIVE_ENROLLMENT_NOT_FOUND'
@@ -208,24 +209,12 @@ function CartaoProposta({
     )
   }
 
-  if (!proposta) {
-    return (
-      <section
-        aria-labelledby="titulo-proposta"
-        className={`${classeCartao} flex min-h-[236px] flex-col justify-center p-6`}
-      >
-        <h2
-          id="titulo-proposta"
-          className="text-lg font-semibold leading-6"
-        >
-          Nenhuma proposta pendente
-        </h2>
-        <p className="mt-2 max-w-[520px] text-sm leading-[22px] text-texto-suave">
-          Quando houver uma proposta para escrever, ela aparecerá aqui. Consulte abaixo as propostas da sua turma e acompanhe as redações já enviadas.
-        </p>
-      </section>
-    )
-  }
+  /*
+   * Issue #178: sem proposta pendente o cartão não aparece. "Propostas da
+   * turma", logo abaixo, já diz quando não há nenhuma disponível, e o quadro
+   * vazio só empurrava o resto da página para baixo.
+   */
+  if (!proposta) return null
 
   const turma = descreverTurma(proposta.turma)
   const tempoRascunho = rascunho
@@ -396,25 +385,18 @@ function CartaoDesempenho({ bloco }) {
   }
 
   const desempenho = bloco.dados
-  const mediaGeral = formatarIndicador(
-    desempenho.mediaGeral,
-  )
-  const ultimaNota = formatarIndicador(
-    desempenho.ultimaNota,
-  )
   const mediaCompetencia2 = formatarIndicador(
     desempenho.mediaCompetencia2,
   )
   const possuiMediaCompetencia2 =
     mediaCompetencia2 !== null
 
-  if (mediaGeral === null && ultimaNota === null && !possuiMediaCompetencia2) {
-    const total = desempenho.totalEnviadas ?? 0
-    return <p className="mt-4 text-sm text-texto-suave">
-      <strong>Seu desempenho:</strong> {total} {total === 1 ? 'redação enviada' : 'redações enviadas'} · Ainda sem nota publicada.
-    </p>
-  }
-
+  /*
+   * Issue #178: o bloco subiu para antes das propostas e passou a mostrar os
+   * quatro indicadores que só existiam no Perfil, de onde o bloco foi
+   * removido. A linha compacta de "ainda sem nota" saiu junto: com os quatro
+   * indicadores, o cartão já diz quantas redações foram enviadas.
+   */
   return (
     <section
       aria-labelledby="titulo-desempenho"
@@ -427,28 +409,15 @@ function CartaoDesempenho({ bloco }) {
         Seu desempenho
       </h2>
 
-      <dl className="mt-3 grid grid-cols-3 gap-2">
-        <Indicador
-          rotulo="Média geral"
-          valor={mediaGeral}
-          unidade="/1000"
-        />
-        <Indicador
-          rotulo="Última nota"
-          valor={ultimaNota}
-          unidade="/1000"
-        />
-        <Indicador
-          rotulo="Enviadas"
-          valor={formatarIndicador(
-            desempenho.totalEnviadas,
-          )}
-          unidade={
-            desempenho.totalEnviadas === 1
-              ? 'redação'
-              : 'redações'
-          }
-        />
+      <dl className="mt-3 grid grid-cols-2 gap-x-2 gap-y-4 sm:grid-cols-4">
+        {resumirDesempenho(desempenho).itens.map((item) => (
+          <Indicador
+            key={item.rotulo}
+            rotulo={item.rotulo}
+            valor={item.valor}
+            unidade={item.unidade ?? ''}
+          />
+        ))}
       </dl>
 
       <div className="mt-[13px] border-t border-[var(--surface-border)] pt-[13px]">
@@ -922,15 +891,20 @@ export default function AlunoDashboardPage() {
         </>
       ) : (
         <>
-          <div className="mt-[25px]">
-            <CartaoProposta
-              status={statusProposta}
-              proposta={proposta}
-              rascunho={rascunhoProposta}
-              agora={agora}
-              descricao={descricaoProposta}
-            />
-          </div>
+          {(proposta || statusProposta !== 'pronto') && (
+            <div className="mt-[25px]">
+              <CartaoProposta
+                status={statusProposta}
+                proposta={proposta}
+                rascunho={rascunhoProposta}
+                agora={agora}
+                descricao={descricaoProposta}
+              />
+            </div>
+          )}
+
+          {/* Issue #178: o desempenho vem antes das propostas da turma. */}
+          <div className="mt-6 max-w-2xl"><CartaoDesempenho bloco={painel.desempenho} /></div>
 
           <ListaPropostas status={statusProposta} propostas={propostasDaLista} />
 
@@ -938,7 +912,6 @@ export default function AlunoDashboardPage() {
             bloco={blocoCorrigidas}
             turmaAtivaId={turmaAtivaId}
           />
-          <div className="mt-6 max-w-2xl"><CartaoDesempenho bloco={painel.desempenho} /></div>
         </>
       )}
     </AppShell>

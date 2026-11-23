@@ -1,18 +1,21 @@
 import { formatarData } from '../../utils/formatar-data.js'
 import Etiqueta from '../../components/base/Etiqueta.jsx'
 import EstadoVazio from '../../components/base/EstadoVazio.jsx'
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useParams, useSearchParams } from 'react-router'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import Aviso from '../../components/base/Aviso.jsx'
 import Botao from '../../components/base/Botao.jsx'
 import Campo from '../../components/base/Campo.jsx'
 import Dialogo from '../../components/base/Dialogo.jsx'
 import DialogoConfirmacao from '../../components/base/DialogoConfirmacao.jsx'
+import { AcaoExclusaoDefinitiva, ConfirmarExclusaoDefinitiva } from '../../components/professor/ExclusaoDefinitiva.jsx'
+import { useAuth } from '../../hooks/useAuth.js'
 import AppShell from '../../layouts/AppShell.jsx'
 import { listarTemasDaTurma } from '../../services/temas.js'
 import {
   arquivarTurma,
   desvincularAlunoDaTurma,
+  excluirTurma,
   listarAlunosDaTurma,
   obterTurma,
   reabrirTurma,
@@ -29,25 +32,16 @@ import {
 import {
   descreverSituacaoAluno,
   descreverSituacaoTurma,
+  descreverResultadoDasPropostas,
+  FILTROS_DE_PROPOSTA,
+  obterStatusTema,
   ordenarAlunosDaTurma,
+  organizarPropostasDaTurma,
   resumirAlunosDaTurma,
 } from '../../utils/professor-turma.js'
+import { IconeEngrenagem } from '../../components/base/icones.jsx'
 import './professor-turmas.css'
 import './professor-turma.css'
-
-function obterStatusTema(tema) {
-  if (!tema.ativo) {
-    return 'Arquivado'
-  }
-
-  const prazo = new Date(tema.prazoEntrega).getTime()
-
-  if (Number.isFinite(prazo) && prazo < Date.now()) {
-    return 'Prazo encerrado'
-  }
-
-  return 'Recebendo redações'
-}
 
 function RenomearTurmaDialog({ nomeAtual, enviando, erro, onSave, onClose }) {
   const nomeRef = useRef(null)
@@ -148,6 +142,18 @@ function TemaCard({ tema }) {
 
 export default function ProfessorTurmaPage() {
   const { turmaId } = useParams()
+  const { usuario } = useAuth()
+  return <ProfessorTurmaDetalhe key={`${usuario?.id}:${turmaId}`} turmaId={turmaId} />
+}
+
+function ProfessorTurmaDetalhe({ turmaId }) {
+  const { state } = useLocation()
+  const navigate = useNavigate()
+  const telaAtual = useRef(null)
+  useLayoutEffect(() => {
+    telaAtual.current = {}
+    return () => { telaAtual.current = null }
+  }, [])
   const [parametros] = useSearchParams()
   const aba = parametros.get('aba') === 'alunos' ? 'alunos' : 'propostas'
   const [copiado, setCopiado] = useState(false)
@@ -165,6 +171,8 @@ export default function ProfessorTurmaPage() {
   const [tentativa, setTentativa] = useState(0)
   const [alunos, setAlunos] = useState({ status: 'carregando', lista: [], mensagem: '' })
   const [dialogo, setDialogo] = useState(null)
+  const [buscaProposta, setBuscaProposta] = useState('')
+  const [filtroProposta, setFiltroProposta] = useState('todas')
   const [acao, setAcao] = useState({ enviando: false, erro: '' })
   const [aviso, setAviso] = useState('')
   const acaoRef = useRef(false)
@@ -197,6 +205,10 @@ export default function ProfessorTurmaPage() {
   const turma = pagina.turma
   const situacao = descreverSituacaoTurma(turma)
   const pronto = pagina.status === 'pronto'
+  const motivoExclusao = turma?.ativa ? 'Arquive a turma antes de excluí-la.'
+    : turma?.podeExcluirDefinitivamente === false ? 'Esta turma tem matrículas ou propostas no histórico e não pode ser excluída.'
+      : turma?.podeExcluirDefinitivamente !== true ? 'Ainda não foi possível verificar se a turma pode ser excluída.'
+        : ''
 
   const carregarAlunos = useCallback(() => {
     // O backend exige turma ativa em GET /turmas/:id/alunos: numa turma
@@ -269,10 +281,49 @@ export default function ProfessorTurmaPage() {
 
   function arquivar() {
     executar(() => arquivarTurma(turmaId), (atualizada) => {
+      const tela = telaAtual.current
       setPagina((atual) => ({ ...atual, turma: atualizada }))
       setAlunos({ status: 'indisponivel', lista: [], mensagem: '' })
       setAviso('Turma arquivada. As matrículas ativas foram encerradas.')
+      devolverFocoAGestao()
+      obterTurma(turmaId).then((turmaAtual) => {
+        if (tela === telaAtual.current) setPagina((atual) => ({ ...atual, turma: turmaAtual }))
+      }).catch(() => {})
     })
+  }
+
+  async function excluir() {
+    if (acaoRef.current || motivoExclusao) return
+    const tela = telaAtual.current
+    acaoRef.current = true
+    setAcao({ enviando: true, erro: '' })
+    try {
+      await excluirTurma(turmaId)
+      if (tela === telaAtual.current) navigate('/professor/turmas', { replace: true, state: { turmaExcluida: true } })
+    } catch (error) {
+      if (tela !== telaAtual.current) return
+      const mensagem = interpretarErroApi(error, 'Não foi possível excluir a turma. Tente novamente.').mensagem
+      if (error?.response?.status !== 409) {
+        setAcao({ enviando: false, erro: mensagem })
+        return
+      }
+      setPagina((atual) => ({ ...atual, turma: {
+        ...atual.turma,
+        podeExcluirDefinitivamente: error.response.data?.error?.code === 'CLASS_HAS_HISTORY' ? false : undefined,
+      } }))
+      setAcao({ enviando: false, erro: '' })
+      setDialogo(null)
+      setAviso(mensagem)
+      devolverFocoAGestao()
+      try {
+        const [turmaAtual, temas] = await Promise.all([obterTurma(turmaId), listarTemasDaTurma(turmaId)])
+        if (tela === telaAtual.current) setPagina({ status: 'pronto', turma: turmaAtual, temas, mensagem: '' })
+      } catch {
+        // O aviso e o bloqueio continuam visíveis mesmo se a atualização falhar.
+      }
+    } finally {
+      acaoRef.current = false
+    }
   }
 
   // O efeito roda depois da limpeza do diálogo, que devolve o foco ao botão que
@@ -354,9 +405,18 @@ export default function ProfessorTurmaPage() {
   }
 
   const resumo = resumirAlunosDaTurma(alunos.lista)
+  const propostasVisiveis = organizarPropostasDaTurma(pagina.temas, {
+    busca: buscaProposta,
+    filtro: filtroProposta,
+  })
+
+  function limparFiltrosDePropostas() {
+    setBuscaProposta('')
+    setFiltroProposta('todas')
+  }
 
   return (
-    <AppShell conteudo="amplo" trilha={[{ rotulo: 'Turmas', para: '/professor/turmas' }, pronto ? turma.nome : 'Turma']} turmas={pronto ? [turma] : []} pronto={pronto}>
+    <AppShell conteudo="amplo" trilha={[{ rotulo: 'Turmas', para: '/professor/turmas' }, pronto ? turma.nome : 'Turma']}>
       <div
         className="panel-main turma-main"
         aria-busy={pagina.status === 'carregando'}
@@ -397,28 +457,28 @@ export default function ProfessorTurmaPage() {
                   Acompanhe as propostas, entregas e matrículas.
                 </p>
               </div>
-              {situacao.ativa && (
-                <Botao as={Link} to={`/professor/turmas/${turmaId}/temas/novo`} className="turma-create">
-                  Nova proposta
-                </Botao>
-              )}
+              <div className="turma-heading-acoes">
+                {situacao.podeGerenciar && (
+                  <Botao type="button" variante="secundario" ref={gestaoTituloRef}
+                    onClick={() => setDialogo({ tipo: 'gerenciar' })}>
+                    <IconeEngrenagem />Gerenciar
+                  </Botao>
+                )}
+                {situacao.ativa && (
+                  <Botao as={Link} to={`/professor/turmas/${turmaId}/temas/novo`} className="turma-create">
+                    Nova proposta
+                  </Botao>
+                )}
+              </div>
             </div>
 
-            <p role="status" className="turma-aviso">{aviso}</p>
+            <p role="status" className="turma-aviso">{aviso || (state?.propostaExcluida ? 'Proposta excluída definitivamente.' : '')}</p>
 
             <div className="turma-contexto">
               <span>Código de acesso: <strong ref={codigoRef}>{turma.codigoAcesso}</strong></span>
-              <Botao type="button" variante="secundario" className="turma-copiar" onClick={copiarCodigo}>
+              <Botao type="button" variante="secundario" onClick={copiarCodigo}>
                 {copiado ? 'Copiado' : 'Copiar'}
               </Botao>
-              {situacao.podeGerenciar && <details className="turma-gestao">
-                  <summary ref={gestaoTituloRef}>Gerenciar</summary>
-                  <div className="turma-acoes">
-                    <Botao type="button" variante="secundario" onClick={() => setDialogo({ tipo: 'renomear' })}>Renomear turma</Botao>
-                    <Botao type="button" variante="secundario" onClick={() => setDialogo({ tipo: 'regenerar' })}>Gerar novo código</Botao>
-                    <Botao type="button" variante="perigo" onClick={() => setDialogo({ tipo: 'arquivar' })}>Arquivar turma</Botao>
-                  </div>
-                </details>}
             </div>
             {!situacao.podeGerenciar && (
                 <section className="turma-arquivada" aria-labelledby="turma-gestao-title">
@@ -430,6 +490,8 @@ export default function ProfessorTurmaPage() {
                   </p>
                   <div className="turma-acoes">
                     <Botao type="button" onClick={() => setDialogo({ tipo: 'reabrir' })}>Reabrir turma</Botao>
+                    <AcaoExclusaoDefinitiva motivo={motivoExclusao} idMotivo="turma-motivo-exclusao"
+                      ocupado={acao.enviando} onAbrir={() => setDialogo({ tipo: 'excluir' })} />
                   </div>
                 </section>
             )}
@@ -507,14 +569,59 @@ export default function ProfessorTurmaPage() {
             {aba === 'propostas' && <section className="panel-attention turma-temas" aria-labelledby="turma-temas-title">
               <h2 id="turma-temas-title">Propostas da turma</h2>
               <p>Acompanhe os prazos e a quantidade de redações recebidas em cada proposta.</p>
-              {pagina.temas.length ? (
-                <ul className="classes-grid">
-                  {pagina.temas.map((tema) => <TemaCard key={tema.id} tema={tema} />)}
-                </ul>
-              ) : (
+              {pagina.temas.length > 0 && (
+                <div className="classes-toolbar turma-temas-toolbar">
+                  <label className="classes-search"><span className="sr-only">Buscar proposta pelo enunciado</span>
+                    <input type="search" className="class-input" placeholder="Buscar proposta pelo enunciado…"
+                      value={buscaProposta} onChange={(evento) => setBuscaProposta(evento.target.value)} />
+                  </label>
+                  <div className="classes-filters" role="group" aria-label="Filtrar propostas por situação">
+                    {FILTROS_DE_PROPOSTA.map(([valor, rotulo]) => (
+                      <button key={valor} type="button" aria-pressed={filtroProposta === valor}
+                        onClick={() => setFiltroProposta(valor)}>{rotulo}</button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {pagina.temas.length === 0 ? (
                 <EstadoVazio nivel={3} titulo="Esta turma ainda não possui propostas de redação." />
+              ) : propostasVisiveis.length ? (
+                <>
+                  <p role="status" className="turma-temas-resultado">
+                    {descreverResultadoDasPropostas(propostasVisiveis.length, pagina.temas.length)}
+                  </p>
+                  <ul className="classes-grid">
+                    {propostasVisiveis.map((tema) => <TemaCard key={tema.id} tema={tema} />)}
+                  </ul>
+                </>
+              ) : (
+                <EstadoVazio
+                  nivel={3}
+                  titulo="Nenhuma proposta nesta busca"
+                  descricao="Tente outro trecho do enunciado ou outro filtro."
+                  acao={<Botao type="button" variante="secundario" onClick={limparFiltrosDePropostas}>Limpar filtros</Botao>}
+                />
               )}
             </section>}
+
+            {dialogo?.tipo === 'gerenciar' && (
+              <Dialogo
+                aberto
+                titulo="Gerenciar turma"
+                descricao="Escolha o que deseja fazer. Cada ação pede uma confirmação antes de valer."
+                resumo={<p className="turma-gerenciar-resumo"><strong>{turma.nome}</strong><span>Código de acesso: {turma.codigoAcesso}</span></p>}
+                onFechar={fecharDialogo}
+                rodape={<Botao type="button" variante="secundario" onClick={fecharDialogo}>Fechar</Botao>}
+                rodapeSeparado
+              >
+                <div className="turma-gerenciar-acoes">
+                  <Botao type="button" variante="secundario" onClick={() => setDialogo({ tipo: 'renomear' })}>Renomear turma</Botao>
+                  <Botao type="button" variante="secundario" onClick={() => setDialogo({ tipo: 'regenerar' })}>Gerar novo código</Botao>
+                  <Botao type="button" variante="perigo" onClick={() => setDialogo({ tipo: 'arquivar' })}>Arquivar turma</Botao>
+                  <AcaoExclusaoDefinitiva motivo={motivoExclusao} idMotivo="turma-motivo-exclusao" />
+                </div>
+              </Dialogo>
+            )}
 
             {dialogo?.tipo === 'renomear' && (
               <RenomearTurmaDialog
@@ -572,6 +679,9 @@ export default function ProfessorTurmaPage() {
                 onClose={fecharDialogo}
               />
             )}
+
+            {dialogo?.tipo === 'excluir' && <ConfirmarExclusaoDefinitiva tipo="turma" nome={turma.nome}
+              ocupado={acao.enviando} erro={acao.erro} onConfirmar={excluir} onCancelar={fecharDialogo} />}
 
             {dialogo?.tipo === 'desvincular' && (
               <ConfirmarAcaoDialog

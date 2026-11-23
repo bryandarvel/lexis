@@ -6,9 +6,15 @@
 .turma-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .turma-contexto { display: flex; align-items: center; flex-wrap: wrap; column-gap: 12px; row-gap: 6px; font-size: 14px; color: var(--panel-muted); }
 .turma-contexto strong { color: var(--panel-text); overflow-wrap: anywhere; }
-.turma-copiar { min-width: 0; min-height: 44px; padding: 6px 16px; }
-.turma-gestao { max-width: 100%; }
-.turma-gestao > summary { min-height: 44px; align-content: center; color: var(--panel-action); cursor: pointer; }
+/* Ações do cabeçalho: Gerenciar ao lado de Nova proposta (Issue #175). */
+.turma-heading-acoes { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px; }
+.turma-heading-acoes > * { min-height: 44px; margin-top: 4px; }
+.turma-gerenciar-acoes { display: grid; gap: 12px; }
+.turma-gerenciar-acoes > * { min-height: 44px; }
+.turma-gerenciar-resumo { display: grid; gap: 2px; margin: 0; font-size: 14px; color: var(--texto-suave); }
+.turma-gerenciar-resumo strong { font-size: 16px; color: var(--texto); overflow-wrap: anywhere; }
+.turma-temas-toolbar { margin-top: 19px; }
+.turma-temas-resultado { margin: 12px 0 0; font-size: 13px; color: var(--panel-muted); }
 .turma-arquivada { margin-block: 16px; padding: 16px; border: 1px solid var(--panel-border); border-radius: var(--raio-controle); background: var(--panel-surface); }
 .turma-arquivada p { color: var(--panel-muted); }
 .turma-abas { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px; border-bottom: 1px solid var(--panel-border); }
@@ -40,6 +46,8 @@
   .turma-heading { flex-wrap: wrap; gap: 0; }
   .turma-heading .panel-subtitle { margin-bottom: 12px; }
   .turma-create { width: 100%; margin-top: 0; }
+  .turma-heading-acoes { width: 100%; }
+  .turma-heading-acoes > * { flex: 1 1 100%; margin-top: 0; }
   .turma-stats { grid-template-columns: minmax(0, 1fr); }
   .turma-acoes > * { flex: 1 1 100%; }
   .turma-aluno { padding: 16px; }

@@ -1,10 +1,52 @@
 import { test, expect, entrar } from '../fixtures-professor.js'
-import { bloquearRedeExterna, matricular, novaTurma } from '../professor-helpers.js'
+import { bloquearRedeExterna, matricular, novaProposta, novaTurma } from '../professor-helpers.js'
 
 test.beforeEach(async ({ context }) => { await bloquearRedeExterna(context) })
 
 const dialogo = (page, nome) => page.getByRole('dialog', { name: nome })
 const gerenciar = (page) => page.getByText('Gerenciar', { exact: true }).click()
+
+test('exclusão exige arquivar e revalida o histórico na confirmação', async ({ page, cenario }) => {
+  const livre = await novaTurma(cenario, 'Turma fictícia vazia')
+  const emDisputa = await novaTurma(cenario, 'Turma fictícia com vínculo novo')
+  await entrar(page, cenario.professor)
+  await page.goto('/professor/turmas/' + livre.id)
+  await gerenciar(page)
+  const remover = page.getByRole('button', { name: 'Excluir definitivamente', exact: true })
+  await expect(remover).toBeDisabled()
+  await expect(page.getByText('Arquive a turma antes de excluí-la.')).toBeVisible()
+  await page.getByRole('button', { name: 'Arquivar turma', exact: true }).click()
+  await dialogo(page, /Arquivar a turma/).getByRole('button', { name: 'Arquivar turma' }).click()
+  await expect(remover).toBeEnabled()
+  await remover.click()
+  let caixa = dialogo(page, 'Excluir esta turma?')
+  await expect(caixa).toContainText(livre.nome)
+  await expect(caixa.getByRole('button', { name: 'Cancelar' })).toBeFocused()
+  await page.keyboard.press('Escape')
+  await expect(remover).toBeFocused()
+  await remover.click()
+  await caixa.getByRole('button', { name: 'Excluir definitivamente' }).click()
+  await expect(page).toHaveURL('/professor/turmas')
+  await expect(page.getByText('Turma excluída definitivamente.')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Abrir turma ' + livre.nome })).toHaveCount(0)
+
+  const url = '/api/turmas/' + emDisputa.id
+  const post = (acao) => cenario.chamada(cenario.professor, 'post', url + '/' + acao)
+  await post('arquivar')
+  await page.goto('/professor/turmas/' + emDisputa.id)
+  await remover.click()
+  caixa = dialogo(page, 'Excluir esta turma?')
+  // Outra sessão reabre, cria um vínculo e arquiva de novo depois da consulta.
+  await post('reabrir')
+  await novaProposta(cenario, emDisputa, 'Proposta vinculada durante a confirmação')
+  await post('arquivar')
+  await caixa.getByRole('button', { name: 'Excluir definitivamente' }).click()
+  await expect(caixa).toHaveCount(0)
+  await expect(page).toHaveURL('/professor/turmas/' + emDisputa.id)
+  await expect(page.getByText(/possui matrículas ou propostas no histórico/)).toBeVisible()
+  await expect(remover).toBeDisabled()
+  await expect(page.getByText(/tem matrículas ou propostas no histórico e não pode/)).toBeVisible()
+})
 
 test('renomear a turma muda o nome em toda parte e preserva código e alunos', async ({ page, cenario }) => {
   const turma = await novaTurma(cenario, 'Turma para renomear')
@@ -135,4 +177,70 @@ test('arquivar a turma encerra as matrículas, avisa o aluno e bloqueia qualquer
   await expect(page.getByRole('link', { name: 'Abrir turma Turma para arquivar', exact: true })).toHaveCount(0)
   await page.getByRole('button', { name: 'Arquivadas', exact: true }).click()
   await expect(page.getByRole('link', { name: 'Abrir turma Turma para arquivar', exact: true })).toBeVisible()
+})
+
+/*
+ * Issue #175: a lista de propostas da turma ganhou busca pelo enunciado,
+ * filtro por situação e uma ordem própria — a que ainda recebe redações vem
+ * antes da arquivada.
+ */
+test('propostas da turma filtram por situação, buscam pelo enunciado e ordenam', async ({ page, cenario }) => {
+  const turma = await novaTurma(cenario, 'Turma das propostas')
+  const aberta = await novaProposta(cenario, turma, 'Inclusão digital nas escolas')
+  const guardada = await novaProposta(cenario, turma, 'Mobilidade urbana nas capitais')
+  await cenario.chamada(cenario.professor, 'post', `/api/temas/${guardada.id}/arquivar`, undefined, 200)
+
+  await entrar(page, cenario.professor)
+  await page.goto('/professor/turmas/' + turma.id)
+
+  const cartoes = page.locator('.turma-temas .class-card h3')
+  const busca = page.getByRole('searchbox', { name: 'Buscar proposta pelo enunciado' })
+  const filtro = (nome) => page.getByRole('group', { name: 'Filtrar propostas por situação' })
+    .getByRole('button', { name: nome, exact: true })
+
+  // A arquivada existe, mas fica depois da que ainda recebe redações.
+  await expect(cartoes).toHaveText([aberta.enunciado, guardada.enunciado])
+
+  await filtro('Ativas').click()
+  await expect(cartoes).toHaveText([aberta.enunciado])
+
+  await filtro('Arquivadas').click()
+  await expect(cartoes).toHaveText([guardada.enunciado])
+
+  await filtro('Todas').click()
+  await busca.fill('MOBILIDADE')
+  await expect(cartoes).toHaveText([guardada.enunciado])
+  await expect(page.getByRole('status').filter({ hasText: '1 proposta de 2.' })).toBeVisible()
+
+  // Sem resultado, o estado vazio devolve a lista inteira.
+  await busca.fill('repertório sociocultural')
+  await expect(cartoes).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: 'Nenhuma proposta nesta busca' })).toBeVisible()
+  await page.getByRole('button', { name: 'Limpar filtros', exact: true }).click()
+  await expect(cartoes).toHaveText([aberta.enunciado, guardada.enunciado])
+})
+
+/*
+ * Issue #175: as três ações de gestão saíram da linha do código de acesso e
+ * passaram a viver num diálogo aberto pelo botão "Gerenciar" do cabeçalho.
+ */
+test('o botão Gerenciar abre o diálogo com as três ações e devolve o foco', async ({ page, cenario }) => {
+  const turma = await novaTurma(cenario, 'Turma da gestão')
+
+  await entrar(page, cenario.professor)
+  await page.goto('/professor/turmas/' + turma.id)
+
+  const botao = page.getByRole('button', { name: 'Gerenciar', exact: true })
+  await botao.click()
+
+  const caixa = dialogo(page, 'Gerenciar turma')
+  await expect(caixa).toContainText(turma.nome)
+  await expect(caixa).toContainText(turma.codigoAcesso)
+  for (const nome of ['Renomear turma', 'Gerar novo código', 'Arquivar turma']) {
+    await expect(caixa.getByRole('button', { name: nome, exact: true })).toBeVisible()
+  }
+
+  await page.keyboard.press('Escape')
+  await expect(caixa).toHaveCount(0)
+  await expect(botao).toBeFocused()
 })
