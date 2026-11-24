@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Botao from '../../components/base/Botao.jsx'
-import { Link, useNavigate } from 'react-router'
+import { Link } from 'react-router'
+import IconePerfil from '../../components/conta/IconePerfil.jsx'
 
 import AppShell from '../../layouts/AppShell.jsx'
 import EditorConta from '../../components/conta/EditorConta.jsx'
@@ -54,7 +55,7 @@ function Bloco({ chave, estado, onTentar, largo = false, children }) {
         estado.status === 'erro' ? ' aluno-pf-erro' : ''
       }`}
     >
-      <h2 id={idTitulo}>{titulo}</h2>
+      <h2 id={idTitulo}><IconePerfil tipo={chave} />{titulo}</h2>
 
       {estado.status === 'carregando' && (
         <div role="status" aria-label={carregando}>
@@ -94,15 +95,15 @@ function Campos({ itens }) {
   )
 }
 
-function BlocoConta({ estado, onTentar }) {
+function BlocoConta({ estado, onTentar, children }) {
   const conta = descreverConta(estado.dados)
 
   if (estado.status === 'pronto' && conta) {
-    return <div className="aluno-pf-largo"><EditorConta exibirSessao={false} membroDesde={conta.membroDesde} /></div>
+    return <div className="aluno-pf-largo"><EditorConta membroDesde={conta.membroDesde}>{children}</EditorConta></div>
   }
 
   return (
-    <Bloco chave="conta" estado={estado} onTentar={onTentar} />
+    <><Bloco chave="conta" estado={estado} onTentar={onTentar} />{children}</>
   )
 }
 
@@ -150,11 +151,9 @@ const ESTADO_INICIAL = marcarConta({ blocos: BLOCOS_CARREGANDO }, null)
 
 export default function AlunoPerfilPage() {
   const rotaEnviarRedacao = useRotaEnviarRedacao()
-  const { usuario, sair } = useAuth()
+  const { usuario } = useAuth()
   const usuarioId = usuario?.id ?? null
-  const navigate = useNavigate()
   const [estado, setEstado] = useState(ESTADO_INICIAL)
-  const [saindo, setSaindo] = useState(false)
 
   // A regra está em aplicarBlocosDaConta, com testes: a resposta de outra conta é ignorada.
   const aplicarSeForDaConta = useCallback((conta, atualizar) => {
@@ -224,20 +223,6 @@ export default function AlunoPerfilPage() {
   // O render nunca usa dados de outra conta: na troca, tudo volta ao carregando.
   const { blocos } = estadoDaContaAtual(estado, usuarioId, ESTADO_INICIAL)
 
-  async function handleSair() {
-    if (saindo) return
-
-    setSaindo(true)
-
-    try {
-      await sair()
-    } catch {
-      // A sessão local já é removida pelo AuthProvider.
-    }
-
-    navigate('/login', { replace: true })
-  }
-
   return (
     <AppShell rotaEnviarRedacao={rotaEnviarRedacao} trilha={['Perfil']}>
       <header>
@@ -245,7 +230,7 @@ export default function AlunoPerfilPage() {
           Perfil
         </h1>
         <p className="mt-[11px] text-base leading-[25px] text-texto-suave">
-          Seus dados de conta, sua turma e o resumo das suas correções.
+          Seus dados de conta e sua turma atual.
         </p>
       </header>
 
@@ -253,27 +238,12 @@ export default function AlunoPerfilPage() {
         <BlocoConta
           estado={blocos.conta}
           onTentar={() => tentarNovamente('conta')}
-        />
-        <BlocoTurma
-          estado={blocos.turma}
-          onTentar={() => tentarNovamente('turma')}
-        />
-
-        <section
-          aria-labelledby="perfil-sessao"
-          className="aluno-pf-cartao aluno-pf-largo"
         >
-          <h2 id="perfil-sessao">Sessão</h2>
-          <div className="aluno-pf-sessao">
-            <Botao
-              type="button"
-              onClick={handleSair}
-              disabled={saindo}
-              variante="secundario">
-              {saindo ? 'Saindo…' : 'Sair da conta'}
-            </Botao>
-          </div>
-        </section>
+          <BlocoTurma
+            estado={blocos.turma}
+            onTentar={() => tentarNovamente('turma')}
+          />
+        </BlocoConta>
       </div>
     </AppShell>
   )

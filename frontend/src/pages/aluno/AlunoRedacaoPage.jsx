@@ -922,15 +922,9 @@ export default function AlunoRedacaoPage() {
       >
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1">
           <div className="min-w-0">
-            <p
-              id="rotulo-tema"
-              className="text-xs font-semibold leading-5 text-[var(--aluno-acao-suave-texto)]"
-            >
-              Tema da proposta
-            </p>
-            <p className="mt-1.5 text-lg font-semibold leading-6 tracking-[-0.09px] text-texto">
+            <h2 id="rotulo-tema" className="text-lg font-semibold leading-6 tracking-[-0.09px] text-texto [overflow-wrap:anywhere]">
               {tema.enunciado}
-            </p>
+            </h2>
           </div>
           <div className="flex flex-col items-start gap-1 sm:items-end">
             <p className="text-[13px] font-semibold leading-[18px] text-texto">
@@ -953,7 +947,7 @@ export default function AlunoRedacaoPage() {
               onClick={() =>
                 setPropostaAberta((atual) => !atual)
               }
-              className="text-xs font-semibold leading-[17px] text-[var(--aluno-acao-suave-texto)] underline-offset-4 hover:underline"
+              className="min-h-11 text-sm font-semibold text-[var(--aluno-acao-suave-texto)] underline-offset-4 hover:underline"
             >
               {propostaAberta
                 ? 'Ocultar proposta completa'
@@ -967,17 +961,23 @@ export default function AlunoRedacaoPage() {
             id="proposta-completa"
             className="mt-2 space-y-3 border-t border-[var(--color-brand-accent)]/30 pb-2 pt-3 text-sm leading-[22px] text-texto"
           >
-            <p>{tema.descricao}</p>
             {tema.instrucoes && (
-              <p className="text-texto-suave">
-                {tema.instrucoes}
-              </p>
-            )}
-            {tema.criterios?.length > 0 && (
               <div>
-                <p className="text-xs font-semibold leading-[17px] text-texto">
+                <h3 className="font-semibold">Orientações de escrita</h3>
+                <p className="mt-1 max-w-[74ch] whitespace-pre-wrap [overflow-wrap:anywhere]">{tema.instrucoes}</p>
+              </div>
+            )}
+            {tema.descricao && <div>
+              <h3 className="font-semibold">Enunciado</h3>
+              <p className="mt-1 max-w-[74ch] whitespace-pre-wrap [overflow-wrap:anywhere]">{tema.descricao}</p>
+            </div>}
+          </div>
+        )}
+            {tema.criterios?.length > 0 && (
+              <details className="mt-2 border-t border-[var(--surface-border)] text-texto">
+                <summary className="cursor-pointer py-3 text-sm font-semibold">
                   Critérios da Competência II
-                </p>
+                </summary>
                 <ol className="mt-1 list-decimal space-y-1 pl-5 text-xs leading-[17px] text-texto-suave">
                   {tema.criterios.map((criterio) => (
                     <li key={criterio.id}>
@@ -988,10 +988,8 @@ export default function AlunoRedacaoPage() {
                     </li>
                   ))}
                 </ol>
-              </div>
+              </details>
             )}
-          </div>
-        )}
       </section>
 
       {!redacaoImutavel && (
@@ -1067,6 +1065,7 @@ export default function AlunoRedacaoPage() {
           ) : (
             <>
               <RevisaoLinguisticaCard
+                textoVazio={!texto.trim()}
                 estado={revisaoLinguistica}
                 desabilitado={
                   ocupado ||

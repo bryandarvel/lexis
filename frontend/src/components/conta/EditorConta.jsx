@@ -14,6 +14,7 @@ import {
 } from '../../services/conta.js'
 import { mapearErroDaConta, prepararNovoNome } from '../../utils/conta-formulario.js'
 import './conta-perfil.css'
+import IconePerfil from './IconePerfil.jsx'
 
 const PAPEIS = { PROFESSOR: 'Professor', ALUNO: 'Aluno' }
 const ACOES = {
@@ -28,7 +29,7 @@ export default function EditorConta(props) {
   return <EditorDaConta key={auth.usuario?.id} {...props} {...auth} />
 }
 
-function EditorDaConta({ exibirSessao = true, membroDesde, usuario, atualizarSessao, sair, encerrarSessaoLocal }) {
+function EditorDaConta({ children, membroDesde, usuario, atualizarSessao, encerrarSessaoLocal }) {
   const navigate = useNavigate()
   const [nome, setNome] = useState(usuario?.nome ?? '')
   const [erroNome, setErroNome] = useState('')
@@ -38,7 +39,6 @@ function EditorDaConta({ exibirSessao = true, membroDesde, usuario, atualizarSes
   const [erro, setErro] = useState(null)
   const [aviso, setAviso] = useState(null)
   const [enviando, setEnviando] = useState(false)
-  const [saindo, setSaindo] = useState(false)
   const nomeRef = useRef(null)
   const senhaRef = useRef(null)
   const emailRef = useRef(null)
@@ -148,21 +148,10 @@ function EditorDaConta({ exibirSessao = true, membroDesde, usuario, atualizarSes
     }
   }
 
-  async function encerrarSessao() {
-    if (saindo) return
-    setSaindo(true)
-    try {
-      await sair()
-    } catch {
-      // O AuthProvider encerra a sessão local mesmo sem resposta do servidor.
-    }
-    navigate('/login', { replace: true })
-  }
-
   return (
     <div className="conta-formularios">
       <section className="perfil-cartao" aria-labelledby="perfil-conta">
-        <h2 id="perfil-conta">Conta</h2>
+        <h2 id="perfil-conta"><IconePerfil tipo="conta" />Conta</h2>
         <dl className="perfil-dados">
           <div><dt>E-mail</dt><dd>{usuario?.email ?? '—'}</dd></div>
           <div><dt>Papel</dt><dd>{PAPEIS[usuario?.papel] ?? 'Não informado'}</dd></div>
@@ -182,21 +171,16 @@ function EditorDaConta({ exibirSessao = true, membroDesde, usuario, atualizarSes
       </section>
 
       <section className="perfil-cartao" aria-labelledby="perfil-senha-titulo">
-        <h2 id="perfil-senha-titulo">Senha</h2>
+        <h2 id="perfil-senha-titulo"><IconePerfil tipo="senha" />Senha</h2>
         <p className="perfil-nota">Enviaremos um link ao e-mail da conta. Suas sessões só serão encerradas quando você definir a nova senha.</p>
         <Botao type="button" variante="secundario" onClick={() => abrir('senha')}>Redefinir senha por e-mail</Botao>
         {aviso?.tipo === 'senha' && <Aviso tipo="sucesso" className="mt-4">{aviso.mensagem}</Aviso>}
       </section>
 
-      {exibirSessao && <section className="perfil-cartao" aria-labelledby="perfil-sessao">
-        <h2 id="perfil-sessao">Sessão</h2>
-        <p className="perfil-nota">Encerra esta sessão neste navegador.</p>
-        <Botao type="button" variante="secundario" className="perfil-sair"
-          carregando={saindo} rotuloCarregando="Saindo…" onClick={encerrarSessao}>Sair da conta</Botao>
-      </section>}
+      {children}
 
       <section className="perfil-cartao perfil-cartao--exclusao" aria-labelledby="perfil-exclusao">
-        <h2 id="perfil-exclusao">Excluir conta</h2>
+        <h2 id="perfil-exclusao"><IconePerfil tipo="excluir" />Excluir conta</h2>
         <p className="perfil-nota">Você perderá o acesso permanentemente. Redações e correções serão preservadas no histórico.</p>
         {professor && <p className="perfil-nota">Antes de excluir, arquive todas as suas turmas ativas.</p>}
         <Botao type="button" variante="perigo" onClick={() => abrir('excluir')}>Excluir minha conta</Botao>
