@@ -7,6 +7,53 @@ test.beforeEach(async ({ context }) => { await bloquearRedeExterna(context) })
 
 const dialogo = (page, nome) => page.getByRole('dialog', { name: nome })
 
+/*
+ * Issue #194: trocar de proposta deixou de remontar a página inteira. O
+ * cabeçalho e a régua de temas ficam de pé — e a régua é justamente o que se
+ * está clicando — enquanto só o detalhe é substituído. Em troca disso, nada da
+ * proposta anterior pode sobreviver: nem diálogo aberto, nem aviso.
+ */
+test('trocar de proposta preserva a régua e não carrega nada da anterior', async ({ page, cenario }) => {
+  const turma = await novaTurma(cenario, 'Turma da troca de proposta')
+  const primeira = await novaProposta(cenario, turma, 'Primeira proposta da régua')
+  const segunda = await novaProposta(cenario, turma, 'Segunda proposta da régua')
+
+  await entrar(page, cenario.professor)
+  await page.goto('/professor/temas/' + primeira.id)
+
+  const regua = page.getByRole('navigation', { name: 'Temas desta turma' })
+
+  await expect(page.getByRole('heading', { level: 1, name: primeira.enunciado })).toBeVisible()
+
+  // O mesmo nó da régua precisa sobreviver à troca: se a página remontasse,
+  // ele seria descartado e a navegação piscaria a cada clique.
+  const noDaRegua = await regua.elementHandle()
+
+  await regua.getByRole('link', { name: segunda.enunciado, exact: true }).click()
+  await expect(page.getByRole('heading', { level: 1, name: segunda.enunciado })).toBeVisible()
+  await expect(page).toHaveURL(new RegExp(segunda.id + '$'))
+  expect(await noDaRegua.evaluate((no) => no.isConnected)).toBe(true)
+  await expect(regua.getByRole('link', { name: segunda.enunciado, exact: true }))
+    .toHaveAttribute('aria-current', 'page')
+
+  // Voltar pelo navegador devolve a primeira inteira, não um esqueleto preso.
+  await page.goBack()
+  await expect(page.getByRole('heading', { level: 1, name: primeira.enunciado })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Enunciado', exact: true })).toBeVisible()
+
+  /*
+   * O diálogo é modal e bloqueia a régua, então a única forma de trocar de
+   * proposta com ele aberto é pelo histórico do navegador — e por ali ele não
+   * pode atravessar para a proposta seguinte.
+   */
+  await page.getByRole('button', { name: 'Editar proposta', exact: true }).click()
+  await expect(page.getByRole('dialog', { name: 'Editar proposta' })).toBeVisible()
+  await page.goForward()
+  await expect(page.getByRole('heading', { level: 1, name: segunda.enunciado })).toBeVisible()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Editar proposta', exact: true })).toBeEnabled()
+})
+
 test('exclui proposta arquivada vazia, mas um rascunho já bloqueia a ação', async ({ page, cenario }) => {
   const turma = await novaTurma(cenario, 'Turma das propostas fictícias')
   const livre = await novaProposta(cenario, turma, 'Proposta vazia para excluir')

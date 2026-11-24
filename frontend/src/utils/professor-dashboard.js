@@ -101,3 +101,32 @@ export function descreverSituacaoDaTurma(turma) {
     },
   ]
 }
+
+/*
+ * Fila filtrada por turma (Issue #194). O filtro sai de "Situação por turma",
+ * que já tem os números reais: a fila é a mesma lista, recortada, sem nova
+ * chamada e sem reordenar — a mais antiga continua na frente.
+ */
+export function filtrarFilaPorTurma(pendentes, turmaId) {
+  const lista = Array.isArray(pendentes) ? pendentes : []
+
+  return turmaId ? lista.filter((redacao) => redacao?.turma?.id === turmaId) : lista
+}
+
+// O filtro guardado precisa morrer quando a turma sai do painel (arquivada,
+// excluída ou trocada de conta): senão a fila ficaria vazia sem explicação.
+export function turmaDoFiltroAindaExiste(porTurma, turmaId) {
+  return Boolean(turmaId) && (Array.isArray(porTurma) ? porTurma : []).some((turma) => turma?.id === turmaId)
+}
+
+export function descreverFilaFiltrada(porTurma, turmaId, quantidade) {
+  if (!turmaDoFiltroAindaExiste(porTurma, turmaId)) return null
+
+  const turma = porTurma.find((item) => item.id === turmaId)
+
+  return {
+    nome: turma.nome,
+    titulo: `Para corrigir (${quantidade}) · ${turma.nome}`,
+    descricao: `Só as redações de ${turma.nome}, da mais antiga para a mais recente.`,
+  }
+}

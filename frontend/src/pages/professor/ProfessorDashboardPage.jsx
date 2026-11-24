@@ -7,10 +7,13 @@ import { Link } from 'react-router'
 import AppShell from '../../layouts/AppShell.jsx'
 import { carregarPainelProfessor } from '../../services/professor-dashboard.js'
 import {
+  descreverFilaFiltrada,
   descreverIndicadoresDoPainel,
   descreverSituacaoDaTurma,
   diasDesdeEnvio,
+  filtrarFilaPorTurma,
   obterIniciais,
+  turmaDoFiltroAindaExiste,
 } from '../../utils/professor-dashboard.js'
 import { interpretarErroApi } from '../../utils/api-error.js'
 import './professor-dashboard.css'
@@ -35,6 +38,9 @@ export default function ProfessorDashboardPage() {
   const [pagina, setPagina] = useState({ status: 'carregando', turmas: [], pendentes: [], porTurma: [] })
   const [tentativa, setTentativa] = useState(0)
   const [indiceFila, setIndiceFila] = useState(0)
+  // Issue #194: a fila pode ser recortada por turma. Guarda-se o id; a turma
+  // em si sai sempre de porTurma, que o painel ja carregou.
+  const [turmaFiltro, setTurmaFiltro] = useState(null)
   const attentionRef = useRef(null)
 
   useEffect(() => {
@@ -65,10 +71,33 @@ export default function ProfessorDashboardPage() {
     attentionRef.current?.scrollIntoView({ block: 'nearest' })
   }
 
+  /*
+   * O filtro vem de "Situacao por turma", que fica abaixo da fila: ligar sem
+   * levar o professor ate la pareceria que nada aconteceu. Desligar nao move
+   * ninguem, para o botao que se acabou de soltar continuar sob a mao.
+   */
+  function alternarTurma(id) {
+    const ligando = turmaFiltro !== id
+
+    setTurmaFiltro(ligando ? id : null)
+    if (ligando) irParaFila(0)
+    else setIndiceFila(0)
+  }
+
+  function verTodasAsTurmas() {
+    setTurmaFiltro(null)
+    irParaFila(0)
+  }
+
   const data = formatarSaudacaoData()
-  const totalPaginas = Math.max(1, Math.ceil(pagina.pendentes.length / POR_PAGINA))
+  // Uma turma que saiu do painel (arquivada, excluida ou de outra conta) nao
+  // pode deixar a fila vazia sem explicacao: o filtro morre com ela.
+  const filtroAtivo = turmaDoFiltroAindaExiste(pagina.porTurma, turmaFiltro) ? turmaFiltro : null
+  const fila = filtrarFilaPorTurma(pagina.pendentes, filtroAtivo)
+  const recorte = descreverFilaFiltrada(pagina.porTurma, filtroAtivo, fila.length)
+  const totalPaginas = Math.max(1, Math.ceil(fila.length / POR_PAGINA))
   const indice = Math.min(indiceFila, totalPaginas - 1)
-  const exibidas = pagina.pendentes.slice(indice * POR_PAGINA, (indice + 1) * POR_PAGINA)
+  const exibidas = fila.slice(indice * POR_PAGINA, (indice + 1) * POR_PAGINA)
 
   return (
     <AppShell conteudo="amplo" trilha={['Painel']}>
@@ -98,8 +127,17 @@ export default function ProfessorDashboardPage() {
               ))}
             </dl>
             <section className="panel-attention" aria-labelledby="panel-attention-title">
-              <h2 id="panel-attention-title" ref={attentionRef} tabIndex={-1}>Para corrigir ({pagina.pendentes.length})</h2>
-              <p>Redações aguardando correção há mais tempo</p>
+              <div className="panel-fila-cabecalho">
+                <div>
+                  <h2 id="panel-attention-title" ref={attentionRef} tabIndex={-1}>
+                    {recorte ? recorte.titulo : `Para corrigir (${fila.length})`}
+                  </h2>
+                  <p>{recorte ? recorte.descricao : 'Redações aguardando correção há mais tempo'}</p>
+                </div>
+                {recorte && (
+                  <Botao type="button" variante="secundario" onClick={verTodasAsTurmas}>Ver todas as turmas</Botao>
+                )}
+              </div>
               {exibidas.length ? (
                 <ul className="panel-pending-list">
                   {exibidas.map((redacao) => {
@@ -120,12 +158,21 @@ export default function ProfessorDashboardPage() {
                   })}
                 </ul>
               ) : (
-                <EstadoVazio
-                  nivel={3}
-                  titulo={pagina.turmas.length ? 'Nenhuma redação aguardando correção' : 'Comece pelas suas turmas'}
-                  descricao={pagina.turmas.length ? 'As redações enviadas pelos alunos aparecerão aqui para correção.' : 'Acesse Turmas para organizar alunos e propostas de redação.'}
-                  acao={<Botao as={Link} to="/professor/turmas" variante="secundario">Ver turmas</Botao>}
-                />
+                recorte ? (
+                  <EstadoVazio
+                    nivel={3}
+                    titulo={`Nenhuma redação de ${recorte.nome} aguardando correção`}
+                    descricao="As outras turmas podem ter redações na fila."
+                    acao={<Botao type="button" variante="secundario" onClick={verTodasAsTurmas}>Ver todas as turmas</Botao>}
+                  />
+                ) : (
+                  <EstadoVazio
+                    nivel={3}
+                    titulo={pagina.turmas.length ? 'Nenhuma redação aguardando correção' : 'Comece pelas suas turmas'}
+                    descricao={pagina.turmas.length ? 'As redações enviadas pelos alunos aparecerão aqui para correção.' : 'Acesse Turmas para organizar alunos e propostas de redação.'}
+                    acao={<Botao as={Link} to="/professor/turmas" variante="secundario">Ver turmas</Botao>}
+                  />
+                )
               )}
               {totalPaginas > 1 && <nav className="panel-pagination" aria-label="Páginas de redações pendentes">
                 <Botao variante="secundario" disabled={indice === 0} onClick={() => irParaFila(indice - 1)}>Anterior</Botao>
@@ -135,11 +182,11 @@ export default function ProfessorDashboardPage() {
             </section>
             <section className="panel-turmas" aria-labelledby="panel-turmas-title">
               <h2 id="panel-turmas-title">Situação por turma</h2>
-              <p>Onde está a espera, turma a turma.</p>
+              <p>Onde está a espera, turma a turma. Use “Filtrar a fila” para ver só as redações de uma delas.</p>
               {pagina.porTurma.length ? (
                 <ul className="panel-turmas-lista">
                   {pagina.porTurma.map((turma) => (
-                    <li key={turma.id} className="panel-turma">
+                    <li key={turma.id} className="panel-turma" data-filtrada={filtroAtivo === turma.id || undefined}>
                       <Link to={`/professor/turmas/${turma.id}`}>{turma.nome}</Link>
                       <dl>
                         {descreverSituacaoDaTurma(turma).map((item) => (
@@ -149,6 +196,19 @@ export default function ProfessorDashboardPage() {
                           </div>
                         ))}
                       </dl>
+                      {/* A fila sai dos mesmos dados ja carregados: filtrar nao
+                          faz chamada nenhuma. Sem nada aguardando nao ha o que
+                          mostrar, e o botao diria o contrario. */}
+                      <button
+                        type="button"
+                        className="panel-turma-filtro"
+                        aria-pressed={filtroAtivo === turma.id}
+                        disabled={turma.aguardando === 0}
+                        title={turma.aguardando === 0 ? 'Nenhuma redação aguardando nesta turma.' : undefined}
+                        onClick={() => alternarTurma(turma.id)}
+                      >
+                        Filtrar a fila<span className="sr-only"> por {turma.nome}</span>
+                      </button>
                     </li>
                   ))}
                 </ul>
