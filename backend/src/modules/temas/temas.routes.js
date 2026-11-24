@@ -9,6 +9,7 @@ import {
 import {
   validarBody,
   validarParams,
+  validarQuery,
 } from '../../middlewares/validate-request.js'
 
 import {
@@ -16,6 +17,7 @@ import {
   atualizarTemaController,
   criarTemaController,
   excluirTemaController,
+  listarPrazosProfessorController,
   listarTemasAlunoController,
   listarTemasController,
   obterModeloCompetenciaDoisController,
@@ -28,6 +30,7 @@ import {
 import {
   atualizarTemaSchema,
   criarTemaSchema,
+  prazosProfessorQuerySchema,
   substituirCriteriosSchema,
   temaParamsSchema,
   turmaTemaParamsSchema,
@@ -37,6 +40,50 @@ export const temasRouter = Router()
 
 const somenteProfessor = autorizarPapeis('PROFESSOR')
 const somenteAluno = autorizarPapeis('ALUNO')
+
+/**
+ * @openapi
+ * /api/professor/prazos:
+ *   get:
+ *     summary: Lista propostas com prazo nos próximos sete dias
+ *     description: Janela inclusiva de 168 horas a partir da consulta, em ordem de vencimento. Só inclui propostas e turmas ativas do professor autenticado. As contagens consideram alunos distintos com matrícula ativa e entregas enviadas ou avaliadas da própria proposta. Inclui propostas sem entregas. Não aceita parâmetros.
+ *     tags: [Temas de redação]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: Prazos e contagens por proposta
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     prazos:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id: { type: string, format: uuid }
+ *                           enunciado: { type: string }
+ *                           prazoEntrega: { type: string, format: date-time }
+ *                           turmaId: { type: string, format: uuid }
+ *                           turmaNome: { type: string }
+ *                           alunosAtivos: { type: integer, minimum: 0 }
+ *                           entregaram: { type: integer, minimum: 0 }
+ *       '401': { description: Autenticação necessária }
+ *       '403': { description: Recurso exclusivo para professores }
+ *       '422': { description: Parâmetro não aceito }
+ */
+temasRouter.get(
+  '/professor/prazos',
+  autenticarAccessToken,
+  somenteProfessor,
+  validarQuery(prazosProfessorQuerySchema),
+  listarPrazosProfessorController,
+)
 
 /**
  * @openapi

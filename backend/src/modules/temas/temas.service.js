@@ -9,10 +9,21 @@ import {
   criarTemaComCriterios,
   excluirTemaSemHistorico,
   listarTemasAtivosParaAluno,
+  listarPrazosDoProfessor,
   listarTemasDoProfessor,
   reabrirTemaDoProfessor,
   substituirCriteriosDoTema,
 } from './temas.repository.js'
+
+const SETE_DIAS_MS = 7 * 24 * 60 * 60 * 1000
+
+export function listarPrazosParaProfessor(professorId, agora = new Date()) {
+  return listarPrazosDoProfessor({
+    professorId,
+    inicio: agora,
+    fim: new Date(agora.getTime() + SETE_DIAS_MS),
+  })
+}
 
 function criarErroTurmaInvalida() {
   return new AppError(

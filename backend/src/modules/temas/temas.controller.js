@@ -3,6 +3,7 @@ import {
   atualizarTemaParaProfessor,
   criarTemaParaProfessor,
   excluirTemaParaProfessor,
+  listarPrazosParaProfessor,
   listarTemasParaAluno,
   listarTemasParaProfessor,
   obterTemaParaAluno,
@@ -13,6 +14,11 @@ import {
 import {
   obterModeloCompetenciaDois,
 } from './temas.competencia-dois.js'
+
+export async function listarPrazosProfessorController(req, res) {
+  const prazos = await listarPrazosParaProfessor(req.auth.usuarioId)
+  return res.status(200).json({ data: { prazos } })
+}
 
 export async function excluirTemaController(req, res) {
   await excluirTemaParaProfessor({ temaId: req.params.temaId, professorId: req.auth.usuarioId })

@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import {
+  contarEntregasPorTema,
   descreverResultadoDasPropostas,
   descreverSituacaoAluno,
   descreverSituacaoTurma,
@@ -14,6 +15,16 @@ import {
   resumirAlunosDaTurma,
 } from '../src/utils/professor-turma.js'
 import { prepararNomeTurma } from '../src/utils/professor-classes.js'
+
+test('conta apenas envios por proposta, inclusive os já avaliados', () => {
+  assert.deepEqual([...contarEntregasPorTema([
+    { temaId: 'a', status: 'RASCUNHO' },
+    { temaId: 'a', status: 'ENVIADA' },
+    { tema: { id: 'a' }, status: 'AVALIADA' },
+    { temaId: 'b', status: 'AVALIADA' },
+    { status: 'ENVIADA' },
+  ])], [['a', 2], ['b', 1]])
+})
 
 test('situação da turma libera a gestão apenas com turma ativa', () => {
   assert.deepEqual(descreverSituacaoTurma({ ativa: true }), {

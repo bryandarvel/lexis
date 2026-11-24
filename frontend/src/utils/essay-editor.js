@@ -62,21 +62,17 @@ export function calcularProgressoUpload(
   return Math.min(100, percentual)
 }
 
-export function aplicarSugestaoLinguistica(
-  texto,
-  sugestao,
-  substituicao,
-) {
-  if (
-    typeof substituicao !== 'string' ||
-    !Number.isInteger(sugestao?.inicio) ||
-    !Number.isInteger(sugestao?.fim) ||
-    sugestao.inicio < 0 ||
-    sugestao.fim <= sugestao.inicio ||
-    sugestao.fim > texto.length ||
-    texto.slice(sugestao.inicio, sugestao.fim) !==
-      sugestao.trecho
-  ) {
+function intervaloDaSugestaoValido(texto, sugestao) {
+  return Number.isInteger(sugestao?.inicio) &&
+    Number.isInteger(sugestao?.fim) &&
+    sugestao.inicio >= 0 &&
+    sugestao.fim > sugestao.inicio &&
+    sugestao.fim <= texto.length &&
+    texto.slice(sugestao.inicio, sugestao.fim) === sugestao.trecho
+}
+
+export function aplicarSugestaoLinguistica(texto, sugestao, substituicao) {
+  if (typeof substituicao !== 'string' || !intervaloDaSugestaoValido(texto, sugestao)) {
     return null
   }
 
@@ -85,6 +81,30 @@ export function aplicarSugestaoLinguistica(
     substituicao,
     texto.slice(sugestao.fim),
   ].join('')
+}
+
+// Intervalos sobrepostos compartilham a marca, mas o cartão conserva as
+// sugestões individuais. Não buscamos por palavra: repetições podem ser válidas.
+export function segmentarSugestoesLinguisticas(texto, sugestoes) {
+  const ordenadas = sugestoes
+    .filter((sugestao) => intervaloDaSugestaoValido(texto, sugestao))
+    .sort((a, b) => a.inicio - b.inicio || a.fim - b.fim)
+  const intervalos = []
+  for (const { inicio, fim } of ordenadas) {
+    const anterior = intervalos.at(-1)
+    if (anterior && inicio < anterior.fim) anterior.fim = Math.max(anterior.fim, fim)
+    else intervalos.push({ inicio, fim })
+  }
+
+  const partes = []
+  let cursor = 0
+  for (const { inicio, fim } of intervalos) {
+    if (inicio > cursor) partes.push({ inicio: cursor, texto: texto.slice(cursor, inicio), marcada: false })
+    partes.push({ inicio, texto: texto.slice(inicio, fim), marcada: true })
+    cursor = fim
+  }
+  if (cursor < texto.length) partes.push({ inicio: cursor, texto: texto.slice(cursor), marcada: false })
+  return partes
 }
 
 // Conferência pessoal do aluno: não é validada pela API e não bloqueia o envio.

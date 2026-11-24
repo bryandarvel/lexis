@@ -11,6 +11,7 @@ import DialogoConfirmacao from '../../components/base/DialogoConfirmacao.jsx'
 import { AcaoExclusaoDefinitiva, ConfirmarExclusaoDefinitiva } from '../../components/professor/ExclusaoDefinitiva.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
 import AppShell from '../../layouts/AppShell.jsx'
+import { listarRedacoesDaTurma } from '../../services/redacoes.js'
 import { listarTemasDaTurma } from '../../services/temas.js'
 import {
   arquivarTurma,
@@ -30,6 +31,7 @@ import {
   MENSAGENS_SUCESSO_REABERTURA,
 } from '../../utils/reabertura.js'
 import {
+  contarEntregasPorTema,
   descreverResultadoDasPropostas,
   descreverResultadoDosAlunos,
   descreverSituacaoAluno,
@@ -123,9 +125,7 @@ function ConfirmarAcaoDialog({ titulo, efeitos, rotulo, rotuloEnviando, enviando
  * tela. Fica o que serve para escolher: enunciado, situação, prazo e entregas.
  * O enunciado completo continua na página da proposta.
  */
-function TemaCard({ tema, busca }) {
-  const redacoes = tema.quantidadeRedacoes ?? 0
-  const criterios = tema.criterios?.length ?? 0
+function TemaCard({ tema, busca, entregas }) {
   const achado = ondeABuscaEncontrou(tema, busca)
 
   return (
@@ -137,9 +137,9 @@ function TemaCard({ tema, busca }) {
           Prazo: {formatarData(tema.prazoEntrega, 'dataHora', { vazio: 'sem prazo definido' })}
         </p>
         <p className="tema-card-contagens">
-          {redacoes} {redacoes === 1 ? 'redação' : 'redações'}
-          <span aria-hidden="true"> · </span>
-          {criterios} {criterios === 1 ? 'critério' : 'critérios'}
+          {entregas === undefined ? 'Carregando entregas…'
+            : entregas === null ? 'Entregas indisponíveis'
+              : `${entregas} ${entregas === 1 ? 'entrega' : 'entregas'}`}
         </p>
         {/* A busca olha dentro da descrição e das orientações, que o cartão não
             mostra: sem esta linha a proposta apareceria sem o termo à vista. */}
@@ -299,6 +299,7 @@ function ProfessorTurmaDetalhe({ turmaId }) {
   const [alunos, setAlunos] = useState({ status: 'carregando', lista: [], mensagem: '' })
   const [dialogo, setDialogo] = useState(null)
   const [buscaProposta, setBuscaProposta] = useState('')
+  const [entregasPorTema, setEntregasPorTema] = useState(undefined)
   const [buscaAluno, setBuscaAluno] = useState('')
   const [filtroProposta, setFiltroProposta] = useState('todas')
   const [acao, setAcao] = useState({ enviando: false, erro: '' })
@@ -333,6 +334,18 @@ function ProfessorTurmaDetalhe({ turmaId }) {
   const turma = pagina.turma
   const situacao = descreverSituacaoTurma(turma)
   const pronto = pagina.status === 'pronto'
+  const temPropostas = pagina.temas.length > 0
+  useEffect(() => {
+    if (!pronto || !temPropostas || aba !== 'propostas') return undefined
+    let ativo = true
+    setEntregasPorTema(undefined)
+    // Uma consulta de metadados para a turma inteira. A contagem do tema
+    // também inclui rascunhos e é preservada nas regras de exclusão.
+    listarRedacoesDaTurma(turmaId)
+      .then((redacoes) => { if (ativo) setEntregasPorTema(contarEntregasPorTema(redacoes)) })
+      .catch(() => { if (ativo) setEntregasPorTema(null) })
+    return () => { ativo = false }
+  }, [aba, pronto, temPropostas, turmaId])
   const motivoExclusao = turma?.ativa ? 'Arquive a turma antes de excluí-la.'
     : turma?.podeExcluirDefinitivamente === false ? 'Esta turma tem matrículas ou propostas no histórico e não pode ser excluída.'
       : turma?.podeExcluirDefinitivamente !== true ? 'Ainda não foi possível verificar se a turma pode ser excluída.'
@@ -725,7 +738,10 @@ function ProfessorTurmaDetalhe({ turmaId }) {
                     {descreverResultadoDasPropostas(propostasVisiveis.length, pagina.temas.length)}
                   </p>
                   <ul className="turma-temas-grade">
-                    {propostasVisiveis.map((tema) => <TemaCard key={tema.id} tema={tema} busca={buscaProposta} />)}
+                    {propostasVisiveis.map((tema) => (
+                      <TemaCard key={tema.id} tema={tema} busca={buscaProposta}
+                        entregas={entregasPorTema ? (entregasPorTema.get(tema.id) ?? 0) : entregasPorTema} />
+                    ))}
                   </ul>
                 </>
               ) : (

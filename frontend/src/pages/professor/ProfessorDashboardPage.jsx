@@ -1,11 +1,12 @@
-import { formatarSaudacaoData } from '../../utils/formatar-data.js'
+import { formatarData, formatarSaudacaoData } from '../../utils/formatar-data.js'
 import EstadoVazio from '../../components/base/EstadoVazio.jsx'
 import { useEffect, useRef, useState } from 'react'
 import Botao from '../../components/base/Botao.jsx'
 import { Link } from 'react-router'
 
 import AppShell from '../../layouts/AppShell.jsx'
-import { carregarPainelProfessor } from '../../services/professor-dashboard.js'
+import { useAuth } from '../../hooks/useAuth.js'
+import { carregarPainelProfessor, listarPrazosProfessor } from '../../services/professor-dashboard.js'
 import {
   descreverFilaFiltrada,
   descreverIndicadoresDoPainel,
@@ -34,9 +35,79 @@ function PainelSkeleton() {
   )
 }
 
+function descreverEspera(dias) {
+  return dias === null ? 'Data indisponível' : dias === 0 ? 'hoje' : dias === 1 ? 'há 1 dia' : `há ${dias} dias`
+}
+
+function Prioridade({ redacao, onIrParaFila }) {
+  return (
+    <section className="panel-resumo-card panel-prioridade" aria-labelledby="panel-prioridade-title">
+      <h2 id="panel-prioridade-title">Correção mais antiga</h2>
+      {redacao ? (
+        <>
+          <p className="panel-prioridade-espera">Aguardando correção · {descreverEspera(diasDesdeEnvio(redacao.enviadaEm))}</p>
+          <strong className="panel-prioridade-aluno">{redacao.aluno?.nome ?? 'Aluno'}</strong>
+          <p className="panel-prioridade-proposta">{redacao.turma.nome} · {redacao.tema?.enunciado ?? 'Proposta de redação'}</p>
+          <div className="panel-prioridade-acoes">
+            <Botao as={Link} to={`/professor/redacoes/${redacao.id}`}>Corrigir</Botao>
+            <Botao type="button" variante="secundario" onClick={onIrParaFila}>Ir para a fila</Botao>
+          </div>
+        </>
+      ) : (
+        <p className="panel-resumo-mensagem">Nenhuma redação aguarda correção.</p>
+      )}
+    </section>
+  )
+}
+
+function Prazos({ resultado, onTentar }) {
+  return (
+    <section className="panel-resumo-card" aria-labelledby="panel-prazos-title">
+      <h2 id="panel-prazos-title">Prazos dos próximos 7 dias</h2>
+      {resultado.status === 'carregando' ? (
+        <p className="panel-resumo-mensagem" role="status">Carregando prazos…</p>
+      ) : resultado.status === 'erro' ? (
+        <>
+          <p className="panel-resumo-mensagem" role="status">Não foi possível carregar os prazos.</p>
+          <Botao type="button" variante="secundario" onClick={onTentar}>Tentar carregar prazos novamente</Botao>
+        </>
+      ) : resultado.itens.length ? (
+        <ul className="panel-prazos">
+          {resultado.itens.map((prazo) => {
+            const dataHora = formatarData(prazo.prazoEntrega, 'dataHora')
+            const [data, hora] = dataHora.split(', ')
+            return (
+              <li key={prazo.id}>
+                <time dateTime={prazo.prazoEntrega}>
+                  <span className="sr-only">{dataHora}</span>
+                  <strong aria-hidden="true">{data.slice(0, 5)}</strong>
+                  <span aria-hidden="true">{hora}</span>
+                </time>
+                <div>
+                  <Link to={`/professor/temas/${prazo.id}`}>{prazo.enunciado}</Link>
+                  <p>{prazo.turmaNome} · {prazo.entregaram} de {prazo.alunosAtivos} entregaram</p>
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      ) : (
+        <p className="panel-resumo-mensagem" role="status">Nenhuma proposta vence nos próximos 7 dias.</p>
+      )}
+    </section>
+  )
+}
+
 export default function ProfessorDashboardPage() {
+  const { usuario } = useAuth()
+  return <PainelProfessor key={usuario?.id} />
+}
+
+function PainelProfessor() {
   const [pagina, setPagina] = useState({ status: 'carregando', turmas: [], pendentes: [], porTurma: [] })
   const [tentativa, setTentativa] = useState(0)
+  const [tentativaPrazos, setTentativaPrazos] = useState(0)
+  const [prazos, setPrazos] = useState({ status: 'carregando' })
   const [indiceFila, setIndiceFila] = useState(0)
   // Issue #194: a fila pode ser recortada por turma. Guarda-se o id; a turma
   // em si sai sempre de porTurma, que o painel ja carregou.
@@ -65,6 +136,18 @@ export default function ProfessorDashboardPage() {
     return () => { ativo = false; controle.abort() }
   }, [tentativa])
 
+  useEffect(() => {
+    const controle = new AbortController()
+    listarPrazosProfessor({ signal: controle.signal })
+      .then((itens) => {
+        if (!controle.signal.aborted) setPrazos({ status: 'pronto', itens })
+      })
+      .catch(() => {
+        if (!controle.signal.aborted) setPrazos({ status: 'erro' })
+      })
+    return () => controle.abort()
+  }, [tentativaPrazos])
+
   function irParaFila(indice = 0) {
     setIndiceFila(indice)
     attentionRef.current?.focus()
@@ -87,6 +170,11 @@ export default function ProfessorDashboardPage() {
   function verTodasAsTurmas() {
     setTurmaFiltro(null)
     irParaFila(0)
+  }
+
+  function escolherFiltro(id) {
+    setTurmaFiltro(id)
+    setIndiceFila(0)
   }
 
   const data = formatarSaudacaoData()
@@ -116,8 +204,6 @@ export default function ProfessorDashboardPage() {
           </section>
         ) : (
           <>
-            {/* Issue #178: os quatro indicadores voltam como cards acima da
-                fila, no lugar da linha de texto que ficava abaixo dela. */}
             <dl className="panel-stats">
               {descreverIndicadoresDoPainel(pagina).map((item) => (
                 <div key={item.rotulo} className="panel-stat">
@@ -126,6 +212,13 @@ export default function ProfessorDashboardPage() {
                 </div>
               ))}
             </dl>
+            <div className="panel-resumo">
+              <Prioridade redacao={pagina.pendentes[0]} onIrParaFila={verTodasAsTurmas} />
+              <Prazos resultado={prazos} onTentar={() => {
+                setPrazos({ status: 'carregando' })
+                setTentativaPrazos((valor) => valor + 1)
+              }} />
+            </div>
             <section className="panel-attention" aria-labelledby="panel-attention-title">
               <div className="panel-fila-cabecalho">
                 <div>
@@ -138,6 +231,22 @@ export default function ProfessorDashboardPage() {
                   <Botao type="button" variante="secundario" onClick={verTodasAsTurmas}>Ver todas as turmas</Botao>
                 )}
               </div>
+              {pagina.porTurma.length > 1 && (
+                <div className="panel-fila-filtros" role="group" aria-label="Filtrar a fila por turma">
+                  <button type="button" className="panel-turma-filtro" aria-pressed={filtroAtivo === null} onClick={() => escolherFiltro(null)}>Todas as turmas</button>
+                  {pagina.porTurma.map((turma) => (
+                    <button
+                      key={turma.id}
+                      type="button"
+                      className="panel-turma-filtro"
+                      aria-pressed={filtroAtivo === turma.id}
+                      onClick={() => escolherFiltro(turma.id)}
+                    >
+                      {turma.nome}
+                    </button>
+                  ))}
+                </div>
+              )}
               {exibidas.length ? (
                 <ul className="panel-pending-list">
                   {exibidas.map((redacao) => {
@@ -150,7 +259,7 @@ export default function ProfessorDashboardPage() {
                           <span>{redacao.turma.nome} · {redacao.tema?.enunciado ?? 'Proposta de redação'}</span>
                         </div>
                         <span className={`panel-wait ${dias >= 5 ? 'overdue' : dias >= 3 ? 'attention' : ''}`}>
-                          {dias === null ? 'Data indisponível' : dias === 0 ? 'hoje' : dias === 1 ? 'há 1 dia' : `há ${dias} dias`}
+                          {descreverEspera(dias)}
                         </span>
                         <Botao as={Link} variante="secundario" to={`/professor/redacoes/${redacao.id}`} aria-label={`Corrigir redação de ${redacao.aluno?.nome ?? 'aluno'}`}>Corrigir</Botao>
                       </li>
