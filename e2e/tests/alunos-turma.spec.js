@@ -55,6 +55,23 @@ test('a lista mostra só os alunos com matrícula ativa da turma, e o resumo aco
   await page.getByRole('button', { name: 'Limpar busca', exact: true }).click()
   await expect(secao.locator('.aluno-card')).toHaveCount(2)
 
+  // O menu de ações do cartão fecha com Escape, devolvendo o foco a quem o
+  // abriu, e fecha também ao clicar em qualquer outro lugar da tela.
+  const menu = linhaDoAluno(page, primeiro).getByRole('button', { name: /^Ações de/ })
+  const acao = linhaDoAluno(page, primeiro).getByRole('button', { name: 'Desvincular da turma', exact: true })
+
+  await expect(acao).toHaveCount(0)
+  await menu.click()
+  await expect(acao).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(acao).toHaveCount(0)
+  await expect(menu).toBeFocused()
+
+  await menu.click()
+  await expect(acao).toBeVisible()
+  await page.getByRole('heading', { name: 'Alunos da turma' }).click()
+  await expect(acao).toHaveCount(0)
+
   // Mesma informação na API: duas matrículas ativas, só dessa turma.
   const matriculas = (await cenario.chamada(cenario.professor, 'get', `/api/turmas/${turma.id}/alunos`)).matriculas
   expect(matriculas.map((m) => m.aluno.id).sort()).toEqual([primeiro.id, segundo.id].sort())
@@ -85,7 +102,13 @@ test('desvincular encerra a matrícula, avisa o aluno, tira o acesso e preserva 
   await page.goto('/professor/turmas/' + turma.id)
   await page.getByRole('link', { name: 'Alunos (2)', exact: true }).click()
   await expect(linhaDoAluno(page, saindo)).toBeVisible()
-  await linhaDoAluno(page, saindo).getByRole('button', { name: /Desvincular/ }).click()
+  // Issue #194: a ação vive num menu por cartão, e a confirmação é a de sempre.
+  const menuDoCartao = linhaDoAluno(page, saindo).getByRole('button', { name: /^Ações de/ })
+
+  await expect(menuDoCartao).toHaveAttribute('aria-expanded', 'false')
+  await menuDoCartao.click()
+  await expect(menuDoCartao).toHaveAttribute('aria-expanded', 'true')
+  await linhaDoAluno(page, saindo).getByRole('button', { name: 'Desvincular da turma', exact: true }).click()
   const caixa = page.getByRole('dialog', { name: /Desvincular .* da turma\?/ })
   await expect(caixa).toContainText('A matrícula é encerrada e o aluno deixa de ver as propostas desta turma.')
   await caixa.getByRole('button', { name: 'Desvincular aluno', exact: true }).click()

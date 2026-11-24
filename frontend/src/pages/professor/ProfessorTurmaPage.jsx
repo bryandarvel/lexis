@@ -1,7 +1,7 @@
 import { formatarData } from '../../utils/formatar-data.js'
 import Etiqueta from '../../components/base/Etiqueta.jsx'
 import EstadoVazio from '../../components/base/EstadoVazio.jsx'
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import Aviso from '../../components/base/Aviso.jsx'
 import Botao from '../../components/base/Botao.jsx'
@@ -150,11 +150,102 @@ function TemaCard({ tema, busca }) {
   )
 }
 
+// Desenhado aqui, e não em components/base/icones.jsx, para a mudança não sair
+// das telas desta Issue. Os três pontos são cheios: de traço virariam anéis.
+function IconeMaisAcoes() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+      <circle cx="12" cy="5" r="1.7" />
+      <circle cx="12" cy="12" r="1.7" />
+      <circle cx="12" cy="19" r="1.7" />
+    </svg>
+  )
+}
+
+/*
+ * Menu de ações do cartão do aluno (Issue #194). Mesmo padrão do menu do
+ * usuário da casca: um botão com aria-expanded, Escape que fecha e devolve o
+ * foco, e clique fora que fecha. Não declara o papel de menu da ARIA: sem
+ * navegação por setas, seria uma promessa que a tela não cumpre.
+ */
+function MenuDoAluno({ nome, ocupado, onDesvincular }) {
+  const [aberto, setAberto] = useState(false)
+  const botaoRef = useRef(null)
+  const painelRef = useRef(null)
+  const idPainel = useId()
+
+  useEffect(() => {
+    if (!aberto) return undefined
+
+    function fecharComEscape(evento) {
+      if (evento.key === 'Escape') {
+        setAberto(false)
+        botaoRef.current?.focus()
+      }
+    }
+
+    function fecharAoClicarFora(evento) {
+      if (
+        !painelRef.current?.contains(evento.target) &&
+        !botaoRef.current?.contains(evento.target)
+      ) {
+        setAberto(false)
+      }
+    }
+
+    document.addEventListener('keydown', fecharComEscape)
+    document.addEventListener('pointerdown', fecharAoClicarFora)
+
+    return () => {
+      document.removeEventListener('keydown', fecharComEscape)
+      document.removeEventListener('pointerdown', fecharAoClicarFora)
+    }
+  }, [aberto])
+
+  return (
+    <div className="aluno-card-menu">
+      <button
+        ref={botaoRef}
+        type="button"
+        className="aluno-card-menu-botao"
+        aria-expanded={aberto}
+        aria-controls={idPainel}
+        aria-label={`Ações de ${nome}`}
+        onClick={() => setAberto((atual) => !atual)}
+      >
+        <IconeMaisAcoes />
+      </button>
+
+      {aberto && (
+        <div ref={painelRef} id={idPainel} className="aluno-card-menu-painel">
+          <button
+            type="button"
+            className="aluno-card-menu-item"
+            disabled={ocupado}
+            onClick={() => {
+              /*
+               * O foco volta ao botão do menu antes de o item sumir: o diálogo
+               * guarda quem estava com o foco para devolvê-lo ao fechar, e um
+               * item já desmontado devolveria o foco ao corpo da página.
+               */
+              botaoRef.current?.focus()
+              setAberto(false)
+              onDesvincular()
+            }}
+          >
+            Desvincular da turma
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 /*
  * Issue #194: os alunos saíram da lista de linhas largas para uma grade de
- * cartões. "Desvincular" continua no cartão, com a mesma confirmação, mas
- * como ação discreta: deixou de competir com o nome do aluno, e só ganha a
- * cor de perigo ao receber o ponteiro ou o foco.
+ * cartões, com as ações recolhidas num menu por cartão. "Desvincular" continua
+ * pedindo a mesma confirmação; o que mudou é que ele parou de competir com o
+ * nome do aluno em todos os cartões ao mesmo tempo.
  */
 function AlunoCard({ matricula, ocupado, onDesvincular }) {
   const estado = descreverSituacaoAluno(matricula)
@@ -162,26 +253,16 @@ function AlunoCard({ matricula, ocupado, onDesvincular }) {
 
   return (
     <li className="aluno-card">
-      <div className="aluno-card-topo">
-        <span aria-hidden="true" className="aluno-card-iniciais">{obterIniciais(nome)}</span>
-        <div className="aluno-card-info">
-          <strong>{nome}</strong>
-          {/* Cabe uma linha só; o title devolve o endereço inteiro ao ponteiro,
-              e o texto continua completo para o leitor de tela e para a busca. */}
-          <span className="aluno-card-email" title={matricula.aluno?.email}>{matricula.aluno?.email}</span>
-          <span>Entrou em {formatarData(matricula.iniciadaEm, 'data', { vazio: 'Data indisponível' })}</span>
-          <span className={estado.atencao ? 'attention' : undefined}>{estado.rotulo}</span>
-        </div>
+      <span aria-hidden="true" className="aluno-card-iniciais">{obterIniciais(nome)}</span>
+      <div className="aluno-card-info">
+        <strong>{nome}</strong>
+        {/* Cabe uma linha só; o title devolve o endereço inteiro ao ponteiro,
+            e o texto continua completo para o leitor de tela e para a busca. */}
+        <span className="aluno-card-email" title={matricula.aluno?.email}>{matricula.aluno?.email}</span>
+        <span>Entrou em {formatarData(matricula.iniciadaEm, 'data', { vazio: 'Data indisponível' })}</span>
+        <span className={estado.atencao ? 'attention' : undefined}>{estado.rotulo}</span>
       </div>
-      <button
-        type="button"
-        className="aluno-card-desvincular"
-        disabled={ocupado}
-        onClick={onDesvincular}
-        aria-label={`Desvincular ${nome} da turma`}
-      >
-        Desvincular
-      </button>
+      <MenuDoAluno nome={nome} ocupado={ocupado} onDesvincular={onDesvincular} />
     </li>
   )
 }

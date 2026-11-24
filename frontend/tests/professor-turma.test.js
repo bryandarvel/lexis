@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import {
   descreverResultadoDasPropostas,
   descreverSituacaoAluno,
@@ -248,4 +249,30 @@ test('Issue #194: a pista diz onde a busca encontrou, e cala quando foi no enunc
   assert.equal(ondeABuscaEncontrou(PROPOSTA, 'calçadas'), 'Encontrada nas orientações da proposta.')
   assert.equal(ondeABuscaEncontrou(PROPOSTA, 'inexistente'), '')
   assert.equal(ondeABuscaEncontrou(undefined, 'x'), '')
+})
+
+/*
+ * Issue #194: as acoes do cartao vivem num menu, e o item so existe enquanto
+ * ele esta aberto. O teste olha o JSX porque o que se fixa aqui e o contrato
+ * do padrao, que e o mesmo do menu do usuario da casca.
+ */
+test('Issue #194: o menu do cartão segue o padrão do menu da casca', () => {
+  // O repositório tem finais de linha dos dois tipos: comparar texto exige normalizar.
+  const pagina = readFileSync(new URL('../src/pages/professor/ProfessorTurmaPage.jsx', import.meta.url), 'utf8')
+    .replace(/\r\n/g, '\n')
+  const contem = (trecho) => assert.ok(pagina.includes(trecho), 'não achei: ' + JSON.stringify(trecho))
+
+  contem('aria-expanded={aberto}')
+  contem('aria-controls={idPainel}')
+  // Escape fecha e devolve o foco a quem abriu, como no menu do usuário.
+  contem("if (evento.key === 'Escape') {")
+  contem("document.addEventListener('pointerdown', fecharAoClicarFora)")
+  /*
+   * O foco volta ao botão antes de o item sumir: o diálogo guarda quem estava
+   * com o foco para devolvê-lo ao fechar, e um item já desmontado devolveria
+   * o foco ao corpo da página.
+   */
+  contem('botaoRef.current?.focus()\n              setAberto(false)\n              onDesvincular()')
+  // Sem navegação por setas, declarar role="menu" seria uma promessa vazia.
+  assert.ok(!pagina.includes('role="menu"'))
 })

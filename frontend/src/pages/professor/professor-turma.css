@@ -51,12 +51,10 @@
 
 .aluno-card {
   display: flex;
-  flex-direction: column;
-  min-height: 9.5rem;
-  padding: 16px 18px 8px;
+  gap: 12px;
+  min-height: 7.5rem;
+  padding: 16px 12px 16px 18px;
 }
-
-.aluno-card-topo { display: flex; gap: 12px; min-width: 0; }
 
 .aluno-card-iniciais {
   display: grid;
@@ -72,7 +70,7 @@
   line-height: 18px;
 }
 
-.aluno-card-info { min-width: 0; }
+.aluno-card-info { min-width: 0; flex: 1; }
 .aluno-card-info strong { display: block; font-size: 14px; font-weight: 600; line-height: 20px; overflow-wrap: anywhere; }
 .aluno-card-info > span { display: block; margin-top: 3px; color: var(--panel-muted); font-size: 12px; line-height: 17px; }
 /*
@@ -83,35 +81,63 @@
 .aluno-card-email { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /*
- * "Desvincular" continua no cartao e continua pedindo confirmacao, mas em voz
- * baixa: separado dos dados por um fio, sempre visivel (nao so no hover, que
- * o teclado e o toque nao tem) e com a cor de perigo reservada para quando o
- * ponteiro ou o foco chegam.
+ * Menu de acoes do cartao (Issue #194). Mesma superficie flutuante e mesma
+ * sombra do menu do usuario da casca: os dois menus do sistema sao um so.
  */
-.aluno-card-desvincular {
-  min-height: 44px;
-  margin-top: auto;
-  padding: 8px 10px;
+.aluno-card-menu { position: relative; flex: none; }
+
+.aluno-card-menu-botao {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-top: -4px;
   border: 1px solid transparent;
-  border-top: 1px solid var(--panel-border);
-  border-radius: 0 0 var(--raio-controle) var(--raio-controle);
+  border-radius: var(--raio-controle);
   color: var(--panel-muted);
+  cursor: pointer;
+  transition: background-color var(--rapido), border-color var(--rapido), color var(--rapido);
+}
+
+.aluno-card-menu-botao:hover,
+.aluno-card-menu-botao[aria-expanded="true"] {
+  border-color: var(--panel-border);
+  background: var(--panel-soft);
+  color: var(--panel-action);
+}
+
+.aluno-card-menu-painel {
+  position: absolute;
+  top: calc(100% - 2px);
+  right: 0;
+  z-index: 50;
+  min-width: 13rem;
+  padding: 6px;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-cartao);
+  background: var(--superficie-flutuante);
+  box-shadow: var(--sombra-flutuante);
+}
+
+.aluno-card-menu-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: var(--raio-controle);
+  color: var(--texto);
   font-size: 13px;
   font-weight: 600;
   line-height: 18px;
   text-align: left;
   cursor: pointer;
-  transition: background-color var(--rapido), border-color var(--rapido), color var(--rapido);
+  transition: background-color var(--rapido), color var(--rapido);
 }
 
-.aluno-card-desvincular:hover, .aluno-card-desvincular:focus-visible {
-  border-color: var(--panel-error);
-  background: var(--panel-bg);
-  color: var(--panel-error);
-}
-
-.aluno-card-desvincular:disabled { opacity: .6; cursor: not-allowed; }
-.aluno-card-desvincular:disabled:hover { border-color: transparent; border-top-color: var(--panel-border); background: none; color: var(--panel-muted); }
+.aluno-card-menu-item:hover, .aluno-card-menu-item:focus-visible { background: var(--erro-fundo); color: var(--perigo); }
+.aluno-card-menu-item:disabled { opacity: .6; cursor: not-allowed; }
+.aluno-card-menu-item:disabled:hover { background: none; color: var(--texto); }
 
 .tema-card-link {
   display: flex;
