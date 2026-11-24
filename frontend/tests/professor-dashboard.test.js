@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
+  descreverFilaFiltrada,
+  filtrarFilaPorTurma,
+  turmaDoFiltroAindaExiste,
   descreverEspera,
   descreverIndicadoresDoPainel,
   descreverSituacaoDaTurma,
@@ -149,4 +152,36 @@ test('a situação da turma destaca o que está esperando e o que atrasou', () =
   assert.equal(emDia[0].tom, 'neutro')
   assert.equal(emDia[2].valor, '—')
   assert.equal(emDia[3].valor, '—')
+})
+
+/*
+ * Issue #194. O filtro da fila sai de "Situacao por turma", que ja tem os
+ * numeros reais: e a mesma lista recortada, sem chamada nova.
+ */
+const naFila = (id, turmaId) => ({ id, status: 'ENVIADA', turma: { id: turmaId } })
+const FILA = [naFila('r1', 't1'), naFila('r2', 't2'), naFila('r3', 't1')]
+const POR_TURMA = [{ id: 't1', nome: '3º A' }, { id: 't2', nome: '3º B' }]
+
+test('Issue #194: a fila filtrada mantem a ordem das mais antigas e nao perde ninguem sem filtro', () => {
+  assert.deepEqual(filtrarFilaPorTurma(FILA, 't1').map((r) => r.id), ['r1', 'r3'])
+  assert.equal(filtrarFilaPorTurma(FILA, null), FILA)
+  assert.equal(filtrarFilaPorTurma(FILA, undefined), FILA)
+  assert.deepEqual(filtrarFilaPorTurma(FILA, 'inexistente'), [])
+  assert.deepEqual(filtrarFilaPorTurma(undefined, 't1'), [])
+})
+
+test('Issue #194: o filtro morre junto com a turma que saiu do painel', () => {
+  assert.equal(turmaDoFiltroAindaExiste(POR_TURMA, 't2'), true)
+  assert.equal(turmaDoFiltroAindaExiste(POR_TURMA, 'arquivada'), false)
+  assert.equal(turmaDoFiltroAindaExiste(POR_TURMA, null), false)
+  assert.equal(turmaDoFiltroAindaExiste(undefined, 't1'), false)
+  assert.equal(descreverFilaFiltrada(POR_TURMA, 'arquivada', 0), null)
+})
+
+test('Issue #194: o cabecalho da fila nomeia a turma em vista', () => {
+  const recorte = descreverFilaFiltrada(POR_TURMA, 't1', 2)
+
+  assert.equal(recorte.nome, '3º A')
+  assert.equal(recorte.titulo, 'Para corrigir (2) · 3º A')
+  assert.match(recorte.descricao, /3º A/)
 })

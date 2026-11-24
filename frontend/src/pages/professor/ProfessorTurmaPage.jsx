@@ -1,7 +1,7 @@
 import { formatarData } from '../../utils/formatar-data.js'
 import Etiqueta from '../../components/base/Etiqueta.jsx'
 import EstadoVazio from '../../components/base/EstadoVazio.jsx'
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import Aviso from '../../components/base/Aviso.jsx'
 import Botao from '../../components/base/Botao.jsx'
@@ -30,15 +30,19 @@ import {
   MENSAGENS_SUCESSO_REABERTURA,
 } from '../../utils/reabertura.js'
 import {
+  descreverResultadoDasPropostas,
+  descreverResultadoDosAlunos,
   descreverSituacaoAluno,
   descreverSituacaoTurma,
-  descreverResultadoDasPropostas,
+  filtrarAlunosDaTurma,
   FILTROS_DE_PROPOSTA,
   obterStatusTema,
+  ondeABuscaEncontrou,
   ordenarAlunosDaTurma,
   organizarPropostasDaTurma,
   resumirAlunosDaTurma,
 } from '../../utils/professor-turma.js'
+import { obterIniciais } from '../../utils/professor-dashboard.js'
 import { IconeEngrenagem } from '../../components/base/icones.jsx'
 import './professor-turmas.css'
 import './professor-turma.css'
@@ -113,29 +117,152 @@ function ConfirmarAcaoDialog({ titulo, efeitos, rotulo, rotuloEnviando, enviando
   )
 }
 
-function TemaCard({ tema }) {
+/*
+ * Issue #194: o cartão da proposta perdeu a descrição integral, que ocupava
+ * dezenas de linhas na listagem e empurrava as outras propostas para fora da
+ * tela. Fica o que serve para escolher: enunciado, situação, prazo e entregas.
+ * O enunciado completo continua na página da proposta.
+ */
+function TemaCard({ tema, busca }) {
   const redacoes = tema.quantidadeRedacoes ?? 0
   const criterios = tema.criterios?.length ?? 0
+  const achado = ondeABuscaEncontrou(tema, busca)
 
   return (
-    <li className="class-card">
-      <Link to={`/professor/temas/${tema.id}`} className="class-card-link" aria-label={`Abrir tema ${tema.enunciado}`}>
-        <div className="class-card-info">
-          <h3>{tema.enunciado}</h3>
-          <p>{tema.descricao ?? 'Nenhuma descrição adicional foi cadastrada.'}</p>
-          <p>
-            {redacoes} {redacoes === 1 ? 'redação' : 'redações'}
-            <span aria-hidden="true"> · </span>
-            {criterios} {criterios === 1 ? 'critério' : 'critérios'}
-            <span aria-hidden="true"> · </span>
-            Prazo: {formatarData(tema.prazoEntrega, 'dataHora', { vazio: 'Prazo indisponível' })}
-          </p>
-        </div>
-        <div className="class-card-actions">
-          <Etiqueta className="min-w-[120px] justify-center">{obterStatusTema(tema)}</Etiqueta>
-          <span className="class-open" aria-hidden="true">Abrir ›</span>
-        </div>
+    <li className="tema-card">
+      <Link to={`/professor/temas/${tema.id}`} className="tema-card-link" aria-label={`Abrir proposta ${tema.enunciado}`}>
+        <Etiqueta className="tema-card-status">{obterStatusTema(tema)}</Etiqueta>
+        <h3>{tema.enunciado}</h3>
+        <p className="tema-card-prazo">
+          Prazo: {formatarData(tema.prazoEntrega, 'dataHora', { vazio: 'sem prazo definido' })}
+        </p>
+        <p className="tema-card-contagens">
+          {redacoes} {redacoes === 1 ? 'redação' : 'redações'}
+          <span aria-hidden="true"> · </span>
+          {criterios} {criterios === 1 ? 'critério' : 'critérios'}
+        </p>
+        {/* A busca olha dentro da descrição e das orientações, que o cartão não
+            mostra: sem esta linha a proposta apareceria sem o termo à vista. */}
+        {achado && <p className="tema-card-achado">{achado}</p>}
+        <span className="tema-card-abrir" aria-hidden="true">Abrir ›</span>
       </Link>
+    </li>
+  )
+}
+
+// Desenhado aqui, e não em components/base/icones.jsx, para a mudança não sair
+// das telas desta Issue. Os três pontos são cheios: de traço virariam anéis.
+function IconeMaisAcoes() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+      <circle cx="12" cy="5" r="1.7" />
+      <circle cx="12" cy="12" r="1.7" />
+      <circle cx="12" cy="19" r="1.7" />
+    </svg>
+  )
+}
+
+/*
+ * Menu de ações do cartão do aluno (Issue #194). Mesmo padrão do menu do
+ * usuário da casca: um botão com aria-expanded, Escape que fecha e devolve o
+ * foco, e clique fora que fecha. Não declara o papel de menu da ARIA: sem
+ * navegação por setas, seria uma promessa que a tela não cumpre.
+ */
+function MenuDoAluno({ nome, ocupado, onDesvincular }) {
+  const [aberto, setAberto] = useState(false)
+  const botaoRef = useRef(null)
+  const painelRef = useRef(null)
+  const idPainel = useId()
+
+  useEffect(() => {
+    if (!aberto) return undefined
+
+    function fecharComEscape(evento) {
+      if (evento.key === 'Escape') {
+        setAberto(false)
+        botaoRef.current?.focus()
+      }
+    }
+
+    function fecharAoClicarFora(evento) {
+      if (
+        !painelRef.current?.contains(evento.target) &&
+        !botaoRef.current?.contains(evento.target)
+      ) {
+        setAberto(false)
+      }
+    }
+
+    document.addEventListener('keydown', fecharComEscape)
+    document.addEventListener('pointerdown', fecharAoClicarFora)
+
+    return () => {
+      document.removeEventListener('keydown', fecharComEscape)
+      document.removeEventListener('pointerdown', fecharAoClicarFora)
+    }
+  }, [aberto])
+
+  return (
+    <div className="aluno-card-menu">
+      <button
+        ref={botaoRef}
+        type="button"
+        className="aluno-card-menu-botao"
+        aria-expanded={aberto}
+        aria-controls={idPainel}
+        aria-label={`Ações de ${nome}`}
+        onClick={() => setAberto((atual) => !atual)}
+      >
+        <IconeMaisAcoes />
+      </button>
+
+      {aberto && (
+        <div ref={painelRef} id={idPainel} className="aluno-card-menu-painel">
+          <button
+            type="button"
+            className="aluno-card-menu-item"
+            disabled={ocupado}
+            onClick={() => {
+              /*
+               * O foco volta ao botão do menu antes de o item sumir: o diálogo
+               * guarda quem estava com o foco para devolvê-lo ao fechar, e um
+               * item já desmontado devolveria o foco ao corpo da página.
+               */
+              botaoRef.current?.focus()
+              setAberto(false)
+              onDesvincular()
+            }}
+          >
+            Desvincular da turma
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/*
+ * Issue #194: os alunos saíram da lista de linhas largas para uma grade de
+ * cartões, com as ações recolhidas num menu por cartão. "Desvincular" continua
+ * pedindo a mesma confirmação; o que mudou é que ele parou de competir com o
+ * nome do aluno em todos os cartões ao mesmo tempo.
+ */
+function AlunoCard({ matricula, ocupado, onDesvincular }) {
+  const estado = descreverSituacaoAluno(matricula)
+  const nome = matricula.aluno?.nome ?? 'Aluno'
+
+  return (
+    <li className="aluno-card">
+      <span aria-hidden="true" className="aluno-card-iniciais">{obterIniciais(nome)}</span>
+      <div className="aluno-card-info">
+        <strong>{nome}</strong>
+        {/* Cabe uma linha só; o title devolve o endereço inteiro ao ponteiro,
+            e o texto continua completo para o leitor de tela e para a busca. */}
+        <span className="aluno-card-email" title={matricula.aluno?.email}>{matricula.aluno?.email}</span>
+        <span>Entrou em {formatarData(matricula.iniciadaEm, 'data', { vazio: 'Data indisponível' })}</span>
+        <span className={estado.atencao ? 'attention' : undefined}>{estado.rotulo}</span>
+      </div>
+      <MenuDoAluno nome={nome} ocupado={ocupado} onDesvincular={onDesvincular} />
     </li>
   )
 }
@@ -172,6 +299,7 @@ function ProfessorTurmaDetalhe({ turmaId }) {
   const [alunos, setAlunos] = useState({ status: 'carregando', lista: [], mensagem: '' })
   const [dialogo, setDialogo] = useState(null)
   const [buscaProposta, setBuscaProposta] = useState('')
+  const [buscaAluno, setBuscaAluno] = useState('')
   const [filtroProposta, setFiltroProposta] = useState('todas')
   const [acao, setAcao] = useState({ enviando: false, erro: '' })
   const [aviso, setAviso] = useState('')
@@ -405,6 +533,7 @@ function ProfessorTurmaDetalhe({ turmaId }) {
   }
 
   const resumo = resumirAlunosDaTurma(alunos.lista)
+  const alunosVisiveis = filtrarAlunosDaTurma(alunos.lista, buscaAluno)
   const propostasVisiveis = organizarPropostasDaTurma(pagina.temas, {
     busca: buscaProposta,
     filtro: filtroProposta,
@@ -428,8 +557,8 @@ function ProfessorTurmaDetalhe({ turmaId }) {
             <div className="panel-stats turma-stats" aria-hidden="true">
               {[0, 1, 2].map((item) => <div key={item} className="panel-stat skeleton-block" />)}
             </div>
-            <ul className="classes-grid" aria-hidden="true">
-              {[0, 1, 2].map((item) => <li key={item} className="class-card skeleton-block" />)}
+            <ul className="turma-temas-grade" aria-hidden="true">
+              {[0, 1, 2].map((item) => <li key={item} className="tema-card skeleton-block" />)}
             </ul>
           </>
         )}
@@ -509,8 +638,8 @@ function ProfessorTurmaDetalhe({ turmaId }) {
               </p>
 
               {alunos.status === 'carregando' && (
-                <ul className="turma-alunos-lista" role="status" aria-label="Carregando alunos">
-                  {[0, 1, 2].map((item) => <li key={item} className="turma-aluno skeleton-block" aria-hidden="true" />)}
+                <ul className="turma-alunos-grade" role="status" aria-label="Carregando alunos">
+                  {[0, 1, 2].map((item) => <li key={item} className="aluno-card skeleton-block" aria-hidden="true" />)}
                 </ul>
               )}
 
@@ -530,34 +659,39 @@ function ProfessorTurmaDetalhe({ turmaId }) {
                 />
               )}
 
-              {alunos.status === 'pronto' && (alunos.lista.length ? (
-                <ul className="turma-alunos-lista">
-                  {alunos.lista.map((matricula) => {
-                    const estado = descreverSituacaoAluno(matricula)
-                    return (
-                      <li key={matricula.id} className="turma-aluno">
-                        <div className="turma-aluno-info">
-                          <strong>{matricula.aluno?.nome ?? 'Aluno'}</strong>
-                          <span>{matricula.aluno?.email}</span>
-                          <span>
-                            Entrou em {formatarData(matricula.iniciadaEm, 'data', { vazio: 'Data indisponível' })}
-                            <span aria-hidden="true"> · </span>
-                            <span className={estado.atencao ? 'attention' : undefined}>{estado.rotulo}</span>
-                          </span>
-                        </div>
-                        <Botao
-                          type="button"
-                          variante="secundario"
-                          onClick={() => setDialogo({ tipo: 'desvincular', matricula })}
-                          aria-label={`Desvincular ${matricula.aluno?.nome ?? 'aluno'} da turma`}
-                        >
-                          Desvincular
-                        </Botao>
-                      </li>
-                    )
-                  })}
-                </ul>
+              {alunos.status === 'pronto' && alunos.lista.length > 0 && (
+                <div className="classes-toolbar turma-alunos-toolbar">
+                  <label className="classes-search"><span className="sr-only">Buscar aluno por nome ou e-mail</span>
+                    <input type="search" className="class-input" placeholder="Buscar aluno por nome ou e-mail…"
+                      value={buscaAluno} onChange={(evento) => setBuscaAluno(evento.target.value)} />
+                  </label>
+                </div>
+              )}
+
+              {alunos.status === 'pronto' && (alunos.lista.length ? (alunosVisiveis.length ? (
+                <>
+                  <p role="status" className="turma-temas-resultado">
+                    {descreverResultadoDosAlunos(alunosVisiveis.length, alunos.lista.length)}
+                  </p>
+                  <ul className="turma-alunos-grade">
+                    {alunosVisiveis.map((matricula) => (
+                      <AlunoCard
+                        key={matricula.id}
+                        matricula={matricula}
+                        ocupado={acao.enviando}
+                        onDesvincular={() => setDialogo({ tipo: 'desvincular', matricula })}
+                      />
+                    ))}
+                  </ul>
+                </>
               ) : (
+                <EstadoVazio
+                  nivel={3}
+                  titulo="Nenhum aluno nesta busca"
+                  descricao="Tente outra parte do nome ou do e-mail."
+                  acao={<Botao type="button" variante="secundario" onClick={() => setBuscaAluno('')}>Limpar busca</Botao>}
+                />
+              )) : (
                 <EstadoVazio
                   nivel={3}
                   titulo="Nenhum aluno nesta turma"
@@ -571,8 +705,8 @@ function ProfessorTurmaDetalhe({ turmaId }) {
               <p>Acompanhe os prazos e a quantidade de redações recebidas em cada proposta.</p>
               {pagina.temas.length > 0 && (
                 <div className="classes-toolbar turma-temas-toolbar">
-                  <label className="classes-search"><span className="sr-only">Buscar proposta pelo enunciado</span>
-                    <input type="search" className="class-input" placeholder="Buscar proposta pelo enunciado…"
+                  <label className="classes-search"><span className="sr-only">Buscar proposta por enunciado, descrição ou orientações</span>
+                    <input type="search" className="class-input" placeholder="Buscar por enunciado, descrição ou orientações…"
                       value={buscaProposta} onChange={(evento) => setBuscaProposta(evento.target.value)} />
                   </label>
                   <div className="classes-filters" role="group" aria-label="Filtrar propostas por situação">
@@ -590,15 +724,15 @@ function ProfessorTurmaDetalhe({ turmaId }) {
                   <p role="status" className="turma-temas-resultado">
                     {descreverResultadoDasPropostas(propostasVisiveis.length, pagina.temas.length)}
                   </p>
-                  <ul className="classes-grid">
-                    {propostasVisiveis.map((tema) => <TemaCard key={tema.id} tema={tema} />)}
+                  <ul className="turma-temas-grade">
+                    {propostasVisiveis.map((tema) => <TemaCard key={tema.id} tema={tema} busca={buscaProposta} />)}
                   </ul>
                 </>
               ) : (
                 <EstadoVazio
                   nivel={3}
                   titulo="Nenhuma proposta nesta busca"
-                  descricao="Tente outro trecho do enunciado ou outro filtro."
+                  descricao="A busca já olha o enunciado, a descrição e as orientações. Tente outro trecho ou outro filtro."
                   acao={<Botao type="button" variante="secundario" onClick={limparFiltrosDePropostas}>Limpar filtros</Botao>}
                 />
               )}

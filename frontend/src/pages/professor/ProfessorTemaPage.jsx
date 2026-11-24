@@ -19,6 +19,7 @@ import {
   descreverEdicaoTema,
   descreverEntregasProposta,
   formatarPrazoParaInput,
+  iniciarTrocaDeProposta,
   prepararCriterioPersonalizado,
   prepararEdicaoTema,
 } from '../../utils/professor-topic.js'
@@ -131,19 +132,21 @@ function ReabrirPropostaDialog({ tema, enviando, erro, onConfirm, onClose }) {
   )
 }
 
+/*
+ * Issue #194: a troca de proposta deixou de remontar a pagina. A chave ficou
+ * so na conta: trocar de pessoa continua jogando fora tudo o que a sessao
+ * anterior tinha na tela. Trocar de proposta e tratado dentro, preservando o
+ * cabecalho e a regua de temas, que e o que se esta clicando.
+ */
 export default function ProfessorTemaPage() {
   const { temaId } = useParams()
   const { usuario } = useAuth()
-  return <ProfessorTemaDetalhe key={`${usuario?.id}:${temaId}`} temaId={temaId} />
+  return <ProfessorTemaDetalhe key={usuario?.id} temaId={temaId} />
 }
 
 function ProfessorTemaDetalhe({ temaId }) {
   const navigate = useNavigate()
   const telaAtual = useRef(null)
-  useLayoutEffect(() => {
-    telaAtual.current = {}
-    return () => { telaAtual.current = null }
-  }, [])
   const [pagina, setPagina] = useState({ status: 'carregando' })
   const [tentativa, setTentativa] = useState(0)
   const [todas, setTodas] = useState(false)
@@ -165,17 +168,38 @@ function ProfessorTemaDetalhe({ temaId }) {
   // limpeza do diálogo e leva o foco a Editar proposta, não a uma ação destrutiva.
   const [focoEditar, setFocoEditar] = useState(0)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     let ativo = true
-    setPagina({ status: 'carregando' })
+    /*
+     * Sem a remontagem, e aqui que a proposta anterior acaba. A identidade
+     * nova de telaAtual e o que faz uma resposta atrasada de A nao escrever
+     * em B: toda acao guarda a identidade de quando comecou e desiste se ela
+     * mudou. O resto e o estado da tela, que precisa voltar ao zero: um
+     * dialogo aberto, um criterio em edicao ou um aviso de A nao podem
+     * sobreviver à troca; a invalidação acontece antes da pintura da rota nova.
+     */
+    telaAtual.current = {}
+    acaoPropostaRef.current = false
+    salvandoRef.current = false
+    origemEditor.current = null
+    origemProposta.current = null
     setProposta(null)
+    setAcaoProposta({ enviando: false, erro: '', erros: {} })
+    setSalvando(false)
     setEditor(null); setTodas(false); setAviso(''); setErroEditor('')
+    // Enquanto a proposta nova carrega, a regua de temas e o cabecalho ficam
+    // de pe e so o detalhe vira esqueleto. Uma proposta de outra turma nao
+    // tem essa estrutura aproveitavel e volta ao carregamento inteiro.
+    setPagina((atual) => iniciarTrocaDeProposta(atual, temaId))
     carregarPropostaProfessor(temaId).then((dados) => {
       if (ativo) setPagina({ status: 'pronto', ...dados })
     }).catch((error) => {
       if (ativo) setPagina({ status: 'erro', mensagem: error?.response?.data?.error?.message ?? 'Não foi possível carregar a proposta. Tente novamente.' })
     })
-    return () => { ativo = false }
+    return () => {
+      ativo = false
+      telaAtual.current = null
+    }
   }, [temaId, tentativa])
 
   useEffect(() => {
@@ -190,6 +214,11 @@ function ProfessorTemaDetalhe({ temaId }) {
   }, [focoExclusao])
 
   const pronto = pagina.status === 'pronto'
+  // Durante a troca o titulo e a regua saem da lista de temas ja carregada,
+  // que e da mesma turma: nenhum dado da proposta anterior fica a vista.
+  const temaDaAba = pagina.temas?.find((item) => item.id === temaId)
+  const trocando = pagina.status === 'trocando' && Boolean(temaDaAba)
+  const estrutura = pronto || trocando
   // As duas contagens da tela usam o mesmo resumo do backend.
   const entregas = descreverEntregasProposta(pronto ? pagina.resumoEntregas : null)
   const grupos = pronto ? agruparCriteriosProposta(pagina.tema.criterios, pagina.modelo) : null
@@ -211,8 +240,10 @@ function ProfessorTemaDetalhe({ temaId }) {
     setEditor({ indice }); setErroEditor(''); setAviso('')
   }
   function fecharEditor() {
+    const tela = telaAtual.current
     setEditor(null); setErroEditor('')
     requestAnimationFrame(() => {
+      if (tela !== telaAtual.current) return
       const origem = origemEditor.current
       if (origem?.isConnected && !origem.disabled) origem.focus()
       else criteriosRef.current?.focus()
@@ -222,16 +253,24 @@ function ProfessorTemaDetalhe({ temaId }) {
     if (salvandoRef.current || !podeEditar) return
     const preparado = prepararCriterioPersonalizado(pagina.tema.criterios, pagina.modelo, editor.indice, novo)
     if (preparado.erro) { setErroEditor(preparado.erro); return }
+    const tela = telaAtual.current
     salvandoRef.current = true; setSalvando(true); setErroEditor('')
     try {
       const tema = await substituirCriterios(temaId, preparado.criterios)
+      if (tela !== telaAtual.current) return
       setPagina((atual) => ({ ...atual, tema }))
       fecharEditor(); setAviso('Critério personalizado salvo.')
     } catch (error) {
+      if (tela !== telaAtual.current) return
       setErroEditor(error?.response?.data?.error?.message ?? 'Não foi possível salvar. Tente novamente.')
       // Revalida o bloqueio caso uma entrega tenha ocorrido durante a edição.
       if (error?.response?.status === 409) setTentativa((atual) => atual + 1)
-    } finally { salvandoRef.current = false; setSalvando(false) }
+    } finally {
+      if (tela === telaAtual.current) {
+        salvandoRef.current = false
+        setSalvando(false)
+      }
+    }
   }
   function abrirProposta(tipo, event) {
     origemProposta.current = event.currentTarget
@@ -242,9 +281,11 @@ function ProfessorTemaDetalhe({ temaId }) {
 
   function fecharProposta() {
     if (acaoPropostaRef.current) return
+    const tela = telaAtual.current
     setProposta(null)
     setAcaoProposta({ enviando: false, erro: '', erros: {} })
     requestAnimationFrame(() => {
+      if (tela !== telaAtual.current) return
       const origem = origemProposta.current
       if (origem?.isConnected && !origem.disabled) origem.focus()
       else criteriosRef.current?.focus()
@@ -253,21 +294,25 @@ function ProfessorTemaDetalhe({ temaId }) {
 
   async function executarProposta(operacao, mensagem) {
     if (acaoPropostaRef.current) return
+    const tela = telaAtual.current
     acaoPropostaRef.current = true
     setAcaoProposta({ enviando: true, erro: '', erros: {} })
     try {
       const tema = await operacao()
+      if (tela !== telaAtual.current) return
       acaoPropostaRef.current = false
       setPagina((atual) => ({ ...atual, tema }))
       setProposta(null)
       setAcaoProposta({ enviando: false, erro: '', erros: {} })
       setAviso(mensagem(tema))
       requestAnimationFrame(() => {
+        if (tela !== telaAtual.current) return
         const origem = origemProposta.current
         if (origem?.isConnected && !origem.disabled) origem.focus()
         else criteriosRef.current?.focus()
       })
     } catch (error) {
+      if (tela !== telaAtual.current) return
       acaoPropostaRef.current = false
       setAcaoProposta({
         enviando: false,
@@ -323,18 +368,20 @@ function ProfessorTemaDetalhe({ temaId }) {
         // Mantém o bloqueio e a mensagem do conflito até recarregar.
       }
     } finally {
-      acaoPropostaRef.current = false
+      if (tela === telaAtual.current) acaoPropostaRef.current = false
     }
   }
 
   async function reabrirProposta() {
     if (acaoPropostaRef.current) return
+    const tela = telaAtual.current
     acaoPropostaRef.current = true
     setAcaoProposta({ enviando: true, erro: '', erros: {} })
     const devolverFoco = () => setFocoEditar((valor) => valor + 1)
 
     try {
       const tema = await reabrirTema(temaId)
+      if (tela !== telaAtual.current) return
       acaoPropostaRef.current = false
       setPagina((atual) => ({ ...atual, tema }))
       setProposta(null)
@@ -342,6 +389,7 @@ function ProfessorTemaDetalhe({ temaId }) {
       setAviso(MENSAGENS_SUCESSO_REABERTURA.proposta)
       devolverFoco()
     } catch (error) {
+      if (tela !== telaAtual.current) return
       acaoPropostaRef.current = false
       const erroMapeado = mapearErroReabertura(error, 'proposta')
 
@@ -354,10 +402,12 @@ function ProfessorTemaDetalhe({ temaId }) {
       // sem recarregar a página inteira, para o aviso continuar visível.
       try {
         const dados = await carregarPropostaProfessor(temaId)
+        if (tela !== telaAtual.current) return
         setPagina({ status: 'pronto', ...dados })
       } catch {
         // Mantém a tela atual; o aviso abaixo explica o conflito.
       }
+      if (tela !== telaAtual.current) return
       setProposta(null)
       setAcaoProposta({ enviando: false, erro: '', erros: {} })
       setAviso(erroMapeado.mensagem)
@@ -367,22 +417,32 @@ function ProfessorTemaDetalhe({ temaId }) {
 
   return (
     <AppShell conteudo="amplo"
-      trilha={pronto
+      trilha={estrutura
         ? [{ rotulo: 'Turmas', para: '/professor/turmas' }, { rotulo: pagina.turma.nome, para: `/professor/turmas/${turmaId}` }, 'Proposta']
         : ['Propostas']}>
-      <div className="panel-main topic-main" aria-busy={pagina.status === 'carregando'}>
+      <div className="panel-main topic-main" aria-busy={pagina.status === 'carregando' || trocando}>
         {pagina.status === 'carregando' && <><h1>Proposta e critérios</h1><p role="status" className="panel-subtitle">Carregando proposta…</p><div className="topic-loading" aria-hidden="true"><div className="skeleton-block" /><div className="skeleton-block" /><div className="skeleton-block" /></div></>}
         {pagina.status === 'erro' && <><h1>Proposta e critérios</h1><section className="panel-error" role="alert"><h2>Não foi possível abrir a proposta</h2><p>{pagina.mensagem}</p><Botao onClick={() => setTentativa((atual) => atual + 1)}>Tentar novamente</Botao><Botao as={Link} variante="secundario" to="/professor/turmas">Voltar às turmas</Botao></section></>}
-        {pronto && <>
-          <h1>{pagina.tema.enunciado}</h1>
-          <p className="panel-subtitle topic-subtitle">{pagina.turma.nome} <span aria-hidden="true"> · </span> entrega até {formatarData(pagina.tema.prazoEntrega, 'dataHora', { vazio: 'Prazo não informado' })} <span aria-hidden="true"> · </span> {entregas.texto}{!pagina.tema.ativo && ' · Proposta arquivada'}</p>
+        {estrutura && <>
+          <h1>{pronto ? pagina.tema.enunciado : temaDaAba.enunciado}</h1>
+          {pronto
+            ? <p className="panel-subtitle topic-subtitle">{pagina.turma.nome} <span aria-hidden="true"> · </span> entrega até {formatarData(pagina.tema.prazoEntrega, 'dataHora', { vazio: 'Prazo não informado' })} <span aria-hidden="true"> · </span> {entregas.texto}{!pagina.tema.ativo && ' · Proposta arquivada'}</p>
+            : <p className="panel-subtitle topic-subtitle">{pagina.turma.nome} <span aria-hidden="true"> · </span> carregando esta proposta…</p>}
           <p role="status" className="topic-save-status">{aviso}</p>
           <section className="topic-tabs" aria-labelledby="topic-tabs-title">
             <h2 id="topic-tabs-title">Temas</h2>
             <nav aria-label="Temas desta turma">{pagina.temas.map((tema) => <Link key={tema.id} to={`/professor/temas/${tema.id}`} title={tema.enunciado} aria-current={tema.id === temaId ? 'page' : undefined} aria-disabled={salvando || undefined} onClick={(event) => { if (salvando) event.preventDefault() }}>{tema.enunciado}</Link>)}</nav>
             {pagina.turma.ativa ? <Botao as={Link} to={`/professor/turmas/${turmaId}/temas/novo`}>+ Novo tema</Botao> : <Botao disabled>Turma arquivada</Botao>}
           </section>
-          <div className="topic-grid">
+          {trocando && (
+            <div className="topic-loading topic-grid-trocando" role="status" aria-label="Carregando esta proposta">
+              <div className="skeleton-block" /><div className="skeleton-block" /><div className="skeleton-block" />
+            </div>
+          )}
+          {/* A chave por proposta troca o detalhe inteiro de uma vez: nenhum nó
+              do DOM da proposta anterior sobrevive, e a entrada é o único
+              movimento da troca. O cabeçalho e a régua, fora dela, não piscam. */}
+          {pronto && <div className="topic-grid" key={temaId}>
             <section className="topic-card topic-prompt" aria-labelledby="topic-prompt-title">
               <div className="topic-section-heading">
                 <h2 id="topic-prompt-title">Enunciado</h2>
@@ -430,9 +490,9 @@ function ProfessorTemaDetalhe({ temaId }) {
               {!grupos.compativel && <p className="topic-rule">Esta proposta usa uma configuração anterior. Os dados foram preservados; a edição exige adequação futura.</p>}
               {editor && <CriterionDialog key={editor.indice ?? 'novo'} proposta={pagina.tema.enunciado} inicial={editor.indice === null ? null : grupos.personalizados[editor.indice]} salvando={salvando} erro={erroEditor} onSave={salvarCriterio} onCancel={fecharEditor} />}
             </aside>
-          </div>
+          </div>}
 
-          {proposta === 'editar' && (
+          {pronto && proposta === 'editar' && (
             <EditarPropostaDialog
               tema={pagina.tema}
               enviando={acaoProposta.enviando}
@@ -443,7 +503,7 @@ function ProfessorTemaDetalhe({ temaId }) {
             />
           )}
 
-          {proposta === 'reabrir' && (
+          {pronto && proposta === 'reabrir' && (
             <ReabrirPropostaDialog
               tema={pagina.tema}
               enviando={acaoProposta.enviando}
@@ -453,7 +513,7 @@ function ProfessorTemaDetalhe({ temaId }) {
             />
           )}
 
-          {proposta === 'arquivar' && (
+          {pronto && proposta === 'arquivar' && (
             <ArquivarPropostaDialog
               tema={pagina.tema}
               enviando={acaoProposta.enviando}
@@ -463,7 +523,7 @@ function ProfessorTemaDetalhe({ temaId }) {
             />
           )}
 
-          {proposta === 'excluir' && <ConfirmarExclusaoDefinitiva tipo="proposta" nome={pagina.tema.enunciado}
+          {pronto && proposta === 'excluir' && <ConfirmarExclusaoDefinitiva tipo="proposta" nome={pagina.tema.enunciado}
             ocupado={acaoProposta.enviando} erro={acaoProposta.erro} onConfirmar={excluirProposta} onCancelar={fecharProposta} />}
         </>}
       </div>

@@ -199,3 +199,10 @@ function textoHistorico(quantidade) {
     ? '1 entrega de aluno sem matrícula ativa'
     : `${quantidade} entregas de alunos sem matrícula ativa`
 }
+
+export function iniciarTrocaDeProposta(atual, temaId) {
+  const temEstrutura = atual.status === 'pronto' || atual.status === 'trocando'
+  return temEstrutura && atual.temas?.some((item) => item.id === temaId)
+    ? { ...atual, status: 'trocando' }
+    : { status: 'carregando' }
+}

@@ -1,6 +1,18 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { agruparCriteriosProposta, prepararCriterioPersonalizado, obterPublicacaoFeedback, resumirEntregasProposta, descreverEdicaoTema, formatarPrazoParaInput, prepararEdicaoTema } from '../src/utils/professor-topic.js'
+import { iniciarTrocaDeProposta } from '../src/utils/professor-topic.js'
+
+test('mantém a mesma régua da turma em trocas sucessivas, mesmo durante a carga', () => {
+  const temas = [{ id: 'a' }, { id: 'b' }, { id: 'c' }]
+  const atual = { status: 'pronto', temas, turma: { id: 'turma' } }
+  const primeira = iniciarTrocaDeProposta(atual, 'b')
+  const segunda = iniciarTrocaDeProposta(primeira, 'c')
+  assert.equal(segunda.status, 'trocando')
+  assert.equal(segunda.temas, temas)
+  assert.deepEqual(iniciarTrocaDeProposta(segunda, 'outra-turma'), { status: 'carregando' })
+  assert.deepEqual(iniciarTrocaDeProposta({ status: 'erro' }, 'c'), { status: 'carregando' })
+})
 
 const modelo = { criterios: ['Legitimação', 'Pertinência', 'Uso produtivo'].map((nome) => ({ nome, descricao: `Descrição de ${nome}` })) }
 const base = modelo.criterios.map((criterio, ordem) => ({ ...criterio, id: `base-${ordem}`, ordem }))

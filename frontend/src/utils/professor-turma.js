@@ -119,6 +119,33 @@ export function descreverResultadoDasPropostas(visiveis, total) {
   return `${visiveis} ${plural} de ${total}.`
 }
 
+/*
+ * Onde a busca encontrou a proposta (Issue #194). A listagem deixou de
+ * mostrar a descrição, mas a busca passou a olhar dentro dela e das
+ * orientações: sem esta pista, a proposta apareceria no resultado sem que o
+ * termo estivesse em nada visível no cartão.
+ */
+export const CAMPOS_DE_BUSCA_DA_PROPOSTA = [
+  ['enunciado', 'no enunciado'],
+  ['descricao', 'na descrição'],
+  ['instrucoes', 'nas orientações'],
+]
+
+function textoDoCampo(tema, campo) {
+  return normalizarBusca(String(tema?.[campo] ?? ''))
+}
+
+export function ondeABuscaEncontrou(tema, busca = '') {
+  const termo = normalizarBusca(busca)
+
+  if (!termo) return ''
+
+  const achado = CAMPOS_DE_BUSCA_DA_PROPOSTA.find(([campo]) => textoDoCampo(tema, campo).includes(termo))
+
+  // Só avisa quando o enunciado, que é o que o cartão mostra, não tem o termo.
+  return !achado || achado[0] === 'enunciado' ? '' : `Encontrada ${achado[1]} da proposta.`
+}
+
 export function organizarPropostasDaTurma(
   temas,
   { busca = '', filtro = 'todas', agora = Date.now() } = {},
@@ -130,7 +157,10 @@ export function organizarPropostasDaTurma(
     if (filtro === 'ativas' && !ativo) return false
     if (filtro === 'arquivadas' && ativo) return false
 
-    return normalizarBusca(String(tema?.enunciado ?? '')).includes(termo)
+    if (!termo) return true
+
+    // Issue #194: busca também no que o cartão deixou de mostrar.
+    return CAMPOS_DE_BUSCA_DA_PROPOSTA.some(([campo]) => textoDoCampo(tema, campo).includes(termo))
   })
 
   return lista
@@ -146,4 +176,27 @@ export function organizarPropostasDaTurma(
       return prazo || a.ordem - b.ordem
     })
     .map((item) => item.tema)
+}
+
+/*
+ * Busca de alunos na turma (Issue #194). A grade substituiu a lista, e em 15
+ * ou mais cartões achar um aluno pelo olho deixa de ser viável. Mesmo
+ * normalizador das outras buscas do professor: ignora acento e caixa.
+ */
+export function filtrarAlunosDaTurma(matriculas, busca = '') {
+  const termo = normalizarBusca(busca)
+  const lista = Array.isArray(matriculas) ? matriculas : []
+
+  if (!termo) return lista
+
+  return lista.filter((matricula) =>
+    normalizarBusca(`${matricula?.aluno?.nome ?? ''} ${matricula?.aluno?.email ?? ''}`).includes(termo),
+  )
+}
+
+// Igual à das propostas: a contagem só aparece quando a busca esconde alguém.
+export function descreverResultadoDosAlunos(visiveis, total) {
+  if (visiveis >= total) return ''
+
+  return `${visiveis} ${visiveis === 1 ? 'aluno' : 'alunos'} de ${total}.`
 }
