@@ -1,3 +1,4 @@
+import { IconeEditorial } from '../../components/base/icones.jsx'
 import { descreverTempoDesde, formatarData } from '../../utils/formatar-data.js'
 import { formatarNumero } from '../../utils/formatar-numero.js'
 import Botao from '../../components/base/Botao.jsx'
@@ -228,7 +229,7 @@ function EditorCard({
           id="titulo-editor"
           className="text-lg font-semibold leading-6 tracking-[-0.09px] text-texto"
         >
-          Sua redação
+          <IconeEditorial tipo="escrever" />Sua redação
         </h2>
         <p
           id="contagem-redacao"
@@ -567,7 +568,9 @@ export default function AlunoRedacaoPage() {
   function handleAlterarTexto(novoTexto) {
     setTexto(novoTexto)
     setAviso(null)
-    setRevisaoLinguistica(REVISAO_LINGUISTICA_INICIAL)
+    setRevisaoLinguistica((anterior) =>
+      anterior.status === 'desativado' ? anterior : REVISAO_LINGUISTICA_INICIAL,
+    )
     setSalvamento((estado) => ({
       ...estado,
       status: 'alterado',
@@ -678,7 +681,9 @@ export default function AlunoRedacaoPage() {
       )
 
       setRevisaoLinguistica({
-        status: revisao.disponivel ? 'pronto' : 'indisponivel',
+        status: revisao.status === 'DESATIVADO'
+          ? 'desativado'
+          : revisao.disponivel ? 'pronto' : 'indisponivel',
         disponivel: revisao.disponivel,
         sugestoes: revisao.sugestoes ?? [],
         mensagem: mensagemRevisaoLinguistica(revisao),

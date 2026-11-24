@@ -54,7 +54,7 @@ test('o tema escuro mantém o brilho de topo que a lista inválida comia', () =>
 test('os critérios continuam agrupados por um legend, com título visível à parte', () => {
   // Sem o legend o leitor de tela deixa de anunciar o grupo em cada campo.
   assert.match(novaProposta, /<legend className="sr-only">Critérios de avaliação<\/legend>/)
-  assert.match(novaProposta, /<h2 className="text-xl font-semibold text-texto">\s*Critérios de avaliação/)
+  assert.match(novaProposta, /<h2 className="text-xl font-semibold text-texto">\s*<IconeEditorial tipo="revisar" \/>Critérios de avaliação\s*<\/h2>/)
   // O legend não pode voltar a ser o título desenhado: é ele que sobe na borda.
   assert.doesNotMatch(novaProposta, /<legend className="(?!sr-only)/)
 })

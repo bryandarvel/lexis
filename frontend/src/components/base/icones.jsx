@@ -16,6 +16,22 @@ const PROPS = {
   focusable: false,
 }
 
+// Sinais editoriais: o texto ao lado continua sendo o nome acessível.
+const TRACOS = {
+  redacao: 'M14 3H5v18h14V8ZM14 3v5h5M8 12h8M8 16h6',
+  escrever: 'm4 16 12-12a2 2 0 0 1 4 4L8 20l-5 1Z',
+  comentario: 'M4 4h16v12H9l-5 4Z M8 8h8M8 12h5',
+  revisar: 'M15 4H5v16h8M8 8h5M8 12h3m3 4 2 2 5-6',
+  notas: 'M4 20h16M6 16v-4m6 4V8m6 8V4',
+  calendario: 'M4 5h16v15H4ZM8 3v4m8-4v4M4 10h16',
+  foto: 'M3 7h4l2-3h6l2 3h4v13H3ZM16 13a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z',
+  tempo: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM12 7v5l3 2',
+}
+
+export function IconeEditorial({ tipo }) {
+  return <svg {...PROPS} width="1em" height="1em" className="me-1.5 inline-block align-[-0.12em]"><path d={TRACOS[tipo]} /></svg>
+}
+
 export function IconeOlho() {
   return (
     <svg {...PROPS}>

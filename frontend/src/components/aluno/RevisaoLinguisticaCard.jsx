@@ -1,3 +1,4 @@
+import { IconeEditorial } from '../base/icones.jsx'
 import { descreverSugestao } from '../../utils/essay-editor.js'
 import Botao from '../base/Botao.jsx'
 
@@ -119,15 +120,15 @@ export default function RevisaoLinguisticaCard({
           id="titulo-revisao-linguistica"
           className="text-lg font-semibold leading-6 tracking-[-0.09px] text-texto"
         >
-          Revisão linguística
+          <IconeEditorial tipo="revisar" />Revisão linguística
         </h2>
         <span className="inline-flex h-6 w-[84px] shrink-0 items-center justify-center rounded-full bg-[var(--aluno-trilho)] text-xs font-medium leading-[17px] text-texto-suave">
           opcional
         </span>
       </div>
-      <p className="mt-0.5 text-xs font-medium leading-[17px] text-texto-suave">
+      {estado.status !== 'desativado' && <p className="mt-0.5 text-xs font-medium leading-[17px] text-texto-suave">
         Sugestões do LanguageTool. Você decide se aplica.
-      </p>
+      </p>}
 
       {estado.status === 'inicial' && (
         <>
@@ -153,7 +154,7 @@ export default function RevisaoLinguisticaCard({
         </p>
       )}
 
-      {falhou && (
+      {(falhou || estado.status === 'desativado') && (
         <>
           <p
             role={
@@ -165,12 +166,12 @@ export default function RevisaoLinguisticaCard({
           >
             {estado.mensagem}
           </p>
-          <BotaoRevisar
+          {falhou && <BotaoRevisar
             desabilitado={desabilitado}
             onRevisar={onRevisar}
           >
             Tentar novamente
-          </BotaoRevisar>
+          </BotaoRevisar>}
         </>
       )}
 

@@ -61,7 +61,7 @@ test('publicação confirmada rebaixa a falha antiga a histórico consultável, 
 test('o card da IA se anuncia por um título visível, não só por aria-label', () => {
   const html = renderToStaticMarkup(createElement(AnalysisPanel, {}))
 
-  assert.match(html, /<h2[^>]*class="review-section-title">Análise de apoio da IA<\/h2>/)
+  assert.match(html, /<h2[^>]*class="review-section-title"><svg[^>]*aria-hidden="true"[^>]*>[\s\S]*?<\/svg>Análise de apoio da IA<\/h2>/)
   assert.match(html, /A nota é atribuída pelo professor\./)
   assert.doesNotMatch(html, /aria-label="Análise consultiva por IA"/)
 })

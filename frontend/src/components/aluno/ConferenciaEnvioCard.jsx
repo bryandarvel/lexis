@@ -1,3 +1,4 @@
+import { IconeEditorial } from '../base/icones.jsx'
 import { ITENS_CONFERENCIA_ENVIO } from '../../utils/essay-editor.js'
 
 function ItemConferencia({
@@ -55,7 +56,7 @@ export default function ConferenciaEnvioCard({
         id="titulo-conferencia-envio"
         className="text-lg font-semibold leading-6 tracking-[-0.09px] text-texto"
       >
-        Antes de enviar
+        <IconeEditorial tipo="revisar" />Antes de enviar
       </h2>
       <p
         id="ajuda-conferencia-envio"

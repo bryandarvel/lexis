@@ -1,3 +1,4 @@
+import { IconeEditorial } from '../../components/base/icones.jsx'
 import Botao from '../../components/base/Botao.jsx'
 import {
   useEffect,
@@ -161,7 +162,7 @@ function FotoEnviada({
           id="titulo-foto-enviada"
           className="text-lg font-semibold leading-6 tracking-[-0.09px] text-texto"
         >
-          Foto enviada
+          <IconeEditorial tipo="foto" />Foto enviada
         </h2>
         {imagem && (
           <p className="min-w-0 truncate text-xs font-medium leading-[17px] text-texto-suave">
@@ -411,7 +412,7 @@ export default function AlunoRevisaoOcrPage() {
               id="titulo-texto-extraido"
               className="text-lg font-semibold leading-6 tracking-[-0.09px] text-texto"
             >
-              Texto extraído — editável
+              <IconeEditorial tipo="escrever" />Texto extraído — editável
             </h2>
             <p
               id="extensao-transcricao"

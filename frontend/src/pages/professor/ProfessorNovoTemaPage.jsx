@@ -1,3 +1,4 @@
+import { IconeEditorial } from '../../components/base/icones.jsx'
 import Botao from '../../components/base/Botao.jsx'
 import Campo from '../../components/base/Campo.jsx'
 import {
@@ -242,7 +243,7 @@ export default function ProfessorNovoTemaPage() {
       >
         <section className="surface-card rounded-cartao p-5 sm:p-7">
           <h2 className="text-xl font-semibold text-texto">
-            Proposta
+            <IconeEditorial tipo="redacao" />Proposta
           </h2>
           <div className="mt-6 grid gap-6">
             <Campo
@@ -315,7 +316,7 @@ export default function ProfessorNovoTemaPage() {
             */}
           <legend className="sr-only">Critérios de avaliação</legend>
           <h2 className="text-xl font-semibold text-texto">
-            Critérios de avaliação
+            <IconeEditorial tipo="revisar" />Critérios de avaliação
           </h2>
           <p className="max-w-2xl text-sm leading-6 text-texto-suave">
             Base fixa da Competência II. Os critérios personalizados aparecem depois da base na análise e na correção do professor.
