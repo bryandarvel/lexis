@@ -6,6 +6,9 @@ import {
   descreverSituacaoTurma,
   obterStatusTema,
   ordenarAlunosDaTurma,
+  descreverResultadoDosAlunos,
+  filtrarAlunosDaTurma,
+  ondeABuscaEncontrou,
   organizarPropostasDaTurma,
   resumirAlunosDaTurma,
 } from '../src/utils/professor-turma.js'
@@ -182,4 +185,67 @@ test('a contagem do resultado só aparece quando a busca esconde alguma proposta
   assert.equal(descreverResultadoDasPropostas(4, 4), '')
   assert.equal(descreverResultadoDasPropostas(2, 4), '2 propostas de 4.')
   assert.equal(descreverResultadoDasPropostas(1, 4), '1 proposta de 4.')
+})
+
+/*
+ * Issue #194. A grade de cartoes substituiu a lista de alunos, e com 15 ou
+ * mais cartoes achar alguem pelo olho deixa de ser viavel.
+ */
+const matricula = (nome, email) => ({ id: email, aluno: { nome, email } })
+
+const TURMA_CHEIA = [
+  matricula('Bento do Farol', 'aluno.t04.a15@lexis.example.com'),
+  matricula('Iara do Ipê', 'iara@escola.example.com'),
+  matricula('Caio do Farol', 'aluno.t04.a04@lexis.example.com'),
+]
+
+test('Issue #194: a busca de alunos olha nome e e-mail, ignorando acento e caixa', () => {
+  assert.deepEqual(filtrarAlunosDaTurma(TURMA_CHEIA, 'IPE').map((item) => item.aluno.nome), ['Iara do Ipê'])
+  assert.deepEqual(filtrarAlunosDaTurma(TURMA_CHEIA, 'farol').length, 2)
+  // O e-mail identifica quando os nomes se repetem.
+  assert.deepEqual(filtrarAlunosDaTurma(TURMA_CHEIA, 'a04').map((item) => item.aluno.nome), ['Caio do Farol'])
+  assert.deepEqual(filtrarAlunosDaTurma(TURMA_CHEIA, 'ninguem'), [])
+})
+
+test('Issue #194: busca vazia devolve a lista inteira, e lista ausente nao quebra', () => {
+  assert.equal(filtrarAlunosDaTurma(TURMA_CHEIA, ''), TURMA_CHEIA)
+  assert.equal(filtrarAlunosDaTurma(TURMA_CHEIA, '   '), TURMA_CHEIA)
+  assert.deepEqual(filtrarAlunosDaTurma(undefined, 'a'), [])
+  assert.deepEqual(filtrarAlunosDaTurma([{ id: 'x' }], 'a'), [])
+})
+
+test('Issue #194: a contagem de alunos so aparece quando a busca esconde alguem', () => {
+  assert.equal(descreverResultadoDosAlunos(3, 3), '')
+  assert.equal(descreverResultadoDosAlunos(2, 3), '2 alunos de 3.')
+  assert.equal(descreverResultadoDosAlunos(1, 3), '1 aluno de 3.')
+})
+
+/*
+ * Issue #194. O cartao parou de mostrar a descricao, mas a busca passou a
+ * olhar dentro dela: sem a pista, a proposta apareceria sem o termo a vista.
+ */
+const PROPOSTA = {
+  id: 'p1',
+  ativo: true,
+  enunciado: 'Mobilidade urbana',
+  descricao: 'Analise o impacto das ciclovias na periferia.',
+  instrucoes: 'Texto I — Relatório fictício sobre calçadas.',
+}
+
+test('Issue #194: a busca das propostas alcanca descricao e orientacoes', () => {
+  const temas = [PROPOSTA, { id: 'p2', ativo: true, enunciado: 'Outra coisa', descricao: 'Nada aqui.' }]
+
+  assert.deepEqual(organizarPropostasDaTurma(temas, { busca: 'ciclovias' }).map((t) => t.id), ['p1'])
+  assert.deepEqual(organizarPropostasDaTurma(temas, { busca: 'calçadas' }).map((t) => t.id), ['p1'])
+  assert.deepEqual(organizarPropostasDaTurma(temas, { busca: 'MOBILIDADE' }).map((t) => t.id), ['p1'])
+  assert.deepEqual(organizarPropostasDaTurma(temas, { busca: '' }).map((t) => t.id).sort(), ['p1', 'p2'])
+})
+
+test('Issue #194: a pista diz onde a busca encontrou, e cala quando foi no enunciado', () => {
+  assert.equal(ondeABuscaEncontrou(PROPOSTA, 'mobilidade'), '')
+  assert.equal(ondeABuscaEncontrou(PROPOSTA, ''), '')
+  assert.equal(ondeABuscaEncontrou(PROPOSTA, 'ciclovias'), 'Encontrada na descrição da proposta.')
+  assert.equal(ondeABuscaEncontrou(PROPOSTA, 'calçadas'), 'Encontrada nas orientações da proposta.')
+  assert.equal(ondeABuscaEncontrou(PROPOSTA, 'inexistente'), '')
+  assert.equal(ondeABuscaEncontrou(undefined, 'x'), '')
 })

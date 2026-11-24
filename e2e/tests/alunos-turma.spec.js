@@ -37,6 +37,24 @@ test('a lista mostra só os alunos com matrícula ativa da turma, e o resumo aco
   }
   await expect(linhaDoAluno(page, deOutraTurma)).toHaveCount(0)
 
+  /*
+   * Issue #194: a lista virou grade de cartoes, com iniciais e busca. Em uma
+   * turma de quinze, achar alguem pelo olho deixa de ser viavel.
+   */
+  await expect(secao.locator('.aluno-card')).toHaveCount(2)
+  await expect(linhaDoAluno(page, primeiro).locator('.aluno-card-iniciais')).toBeVisible()
+  const buscaAluno = page.getByRole('searchbox', { name: 'Buscar aluno por nome ou e-mail' })
+
+  await buscaAluno.fill(primeiro.email)
+  await expect(secao.locator('.aluno-card')).toHaveCount(1)
+  await expect(linhaDoAluno(page, primeiro)).toBeVisible()
+  await expect(page.getByRole('status').filter({ hasText: '1 aluno de 2.' })).toBeVisible()
+
+  await buscaAluno.fill('ninguem-com-este-nome')
+  await expect(page.getByRole('heading', { name: 'Nenhum aluno nesta busca' })).toBeVisible()
+  await page.getByRole('button', { name: 'Limpar busca', exact: true }).click()
+  await expect(secao.locator('.aluno-card')).toHaveCount(2)
+
   // Mesma informação na API: duas matrículas ativas, só dessa turma.
   const matriculas = (await cenario.chamada(cenario.professor, 'get', `/api/turmas/${turma.id}/alunos`)).matriculas
   expect(matriculas.map((m) => m.aluno.id).sort()).toEqual([primeiro.id, segundo.id].sort())

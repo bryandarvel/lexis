@@ -193,8 +193,9 @@ test('propostas da turma filtram por situação, buscam pelo enunciado e ordenam
   await entrar(page, cenario.professor)
   await page.goto('/professor/turmas/' + turma.id)
 
-  const cartoes = page.locator('.turma-temas .class-card h3')
-  const busca = page.getByRole('searchbox', { name: 'Buscar proposta pelo enunciado' })
+  const cartoes = page.locator('.turma-temas .tema-card h3')
+  // Issue #194: a busca passou a olhar descrição e orientações, e o rótulo diz isso.
+  const busca = page.getByRole('searchbox', { name: 'Buscar proposta por enunciado, descrição ou orientações' })
   const filtro = (nome) => page.getByRole('group', { name: 'Filtrar propostas por situação' })
     .getByRole('button', { name: nome, exact: true })
 
@@ -211,6 +212,16 @@ test('propostas da turma filtram por situação, buscam pelo enunciado e ordenam
   await busca.fill('MOBILIDADE')
   await expect(cartoes).toHaveText([guardada.enunciado])
   await expect(page.getByRole('status').filter({ hasText: '1 proposta de 2.' })).toBeVisible()
+
+  /*
+   * Issue #194: o cartao parou de mostrar a descricao inteira, e a busca passou
+   * a olhar dentro dela. Quando o termo nao esta no enunciado, o cartao diz
+   * onde foi encontrado: sem isso ele apareceria sem o termo a vista.
+   */
+  await busca.fill('fictícia')
+  await expect(cartoes).toHaveText([aberta.enunciado, guardada.enunciado])
+  await expect(page.locator('.tema-card-achado').first()).toHaveText('Encontrada na descrição da proposta.')
+  await expect(page.locator('.turma-temas .tema-card').first()).not.toContainText('sem conteúdo real')
 
   // Sem resultado, o estado vazio devolve a lista inteira.
   await busca.fill('repertório sociocultural')

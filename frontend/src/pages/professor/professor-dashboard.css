@@ -89,3 +89,38 @@
 @media (max-width: 767px) {
   .panel-turma dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/*
+ * Fila filtrada por turma (Issue #194). O recorte vem de "Situação por turma",
+ * logo abaixo: o cabeçalho da fila passa a dizer qual turma está em vista e a
+ * carregar a saída, que é o caminho de volta mais curto.
+ */
+.panel-fila-cabecalho { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 20px; }
+.panel-fila-cabecalho > div { min-width: 0; }
+.panel-fila-cabecalho > button { flex: none; min-height: 44px; }
+
+.panel-turma-filtro {
+  flex: none;
+  min-height: 44px;
+  padding: 8px 16px;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--raio-pilula);
+  color: var(--panel-action);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+  cursor: pointer;
+  transition: background-color var(--rapido), border-color var(--rapido), color var(--rapido);
+}
+
+.panel-turma-filtro:hover:not(:disabled) { background: var(--panel-soft); }
+.panel-turma-filtro[aria-pressed="true"] { border-color: var(--panel-action); background: var(--panel-soft); }
+.panel-turma-filtro:disabled { border-color: var(--panel-border); color: var(--panel-muted); cursor: not-allowed; opacity: .6; }
+/* A turma em vista fica marcada na borda de início, não só no botão: é o que
+   liga o cartão lá embaixo à fila que mudou lá em cima. */
+.panel-turma[data-filtrada] { border-color: var(--panel-action); box-shadow: inset 2px 0 var(--panel-action), 0 1px 2px rgb(0 32 73 / 6%); }
+[data-theme="dark"] .panel-turma[data-filtrada] { box-shadow: inset 2px 0 var(--panel-action), inset 0 1px rgb(255 255 255 / 12%); }
+
+@media (max-width: 767px) {
+  .panel-turma-filtro { width: 100%; }
+}

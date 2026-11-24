@@ -92,3 +92,24 @@
    consequência secundária separada da frase principal. */
 .topic-dialogo-resumo { margin: 0; font-size: 15px; line-height: 22px; color: var(--texto); overflow-wrap: anywhere; }
 .topic-dialogo-nota { margin: 0; font-size: 14px; line-height: 22px; color: var(--texto-suave); }
+
+/*
+ * Troca de proposta (Issue #194). O cabeçalho e a régua de temas não saem mais
+ * da tela: só o detalhe é substituído, e a entrada curta diz que o conteúdo
+ * abaixo é outro. Começa quase visível, para não virar um pisca a cada clique.
+ */
+.topic-grid-trocando { margin-top: 24px; }
+.topic-grid-trocando > div:first-child { height: 120px; }
+
+.topic-grid {
+  animation: topic-detalhe-entra 180ms cubic-bezier(.22, 1, .36, 1) both;
+}
+
+@keyframes topic-detalhe-entra {
+  from { opacity: .4; translate: 0 6px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topic-grid { animation: none; }
+}

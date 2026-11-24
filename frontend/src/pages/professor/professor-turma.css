@@ -26,18 +26,135 @@
 
 /* Os botões base têm 40 px; nos diálogos desta tela o alvo mínimo é 44 px. */
 
-.turma-alunos-lista { display: grid; gap: 8px; margin: 19px 0 0; padding: 0; list-style: none; }
-.turma-aluno { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; min-height: 76px; padding: 15px 20px; border: 1px solid var(--panel-border); border-radius: var(--raio-cartao); background: var(--panel-surface); }
-.turma-aluno-info { min-width: 0; flex: 1; }
-.turma-aluno-info strong { display: block; font-size: 14px; font-weight: 600; line-height: 20px; overflow-wrap: anywhere; }
-.turma-aluno-info > span { display: block; margin-top: 3px; color: var(--panel-muted); font-size: 12px; line-height: 17px; overflow-wrap: anywhere; }
-.turma-aluno button { min-height: 44px; }
-[data-theme="dark"] .turma-aluno { box-shadow: inset 0 1px rgb(255 255 255 / 12%); }
-[data-theme="dark"] .turma-aviso { background: #0e3022; color: #5bda91; }
+/*
+ * Grade de alunos e de propostas (Issue #194). As duas usam a mesma medida de
+ * coluna: a tela do professor passa a ter um só ritmo de cartão, e em 1440 px
+ * cabem quatro, em 768 duas, no celular uma.
+ */
+.turma-alunos-grade, .turma-temas-grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16.5rem, 1fr));
+  gap: 12px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aluno-card, .tema-card {
+  position: relative;
+  min-width: 0;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--raio-cartao);
+  background: var(--panel-surface);
+  box-shadow: 0 1px 2px rgb(0 32 73 / 6%);
+}
+
+.aluno-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 9.5rem;
+  padding: 16px 18px 8px;
+}
+
+.aluno-card-topo { display: flex; gap: 12px; min-width: 0; }
+
+.aluno-card-iniciais {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--raio-pilula);
+  background: var(--panel-soft);
+  color: var(--panel-action);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.aluno-card-info { min-width: 0; }
+.aluno-card-info strong { display: block; font-size: 14px; font-weight: 600; line-height: 20px; overflow-wrap: anywhere; }
+.aluno-card-info > span { display: block; margin-top: 3px; color: var(--panel-muted); font-size: 12px; line-height: 17px; }
+/*
+ * O e-mail e uma palavra so e longa: deixado solto, ele quebra no meio
+ * ("example.co / m") e cada cartao fica com uma altura. Fica em uma linha,
+ * com reticencia e o valor inteiro no title e para o leitor de tela.
+ */
+.aluno-card-email { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/*
+ * "Desvincular" continua no cartao e continua pedindo confirmacao, mas em voz
+ * baixa: separado dos dados por um fio, sempre visivel (nao so no hover, que
+ * o teclado e o toque nao tem) e com a cor de perigo reservada para quando o
+ * ponteiro ou o foco chegam.
+ */
+.aluno-card-desvincular {
+  min-height: 44px;
+  margin-top: auto;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-top: 1px solid var(--panel-border);
+  border-radius: 0 0 var(--raio-controle) var(--raio-controle);
+  color: var(--panel-muted);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--rapido), border-color var(--rapido), color var(--rapido);
+}
+
+.aluno-card-desvincular:hover, .aluno-card-desvincular:focus-visible {
+  border-color: var(--panel-error);
+  background: var(--panel-bg);
+  color: var(--panel-error);
+}
+
+.aluno-card-desvincular:disabled { opacity: .6; cursor: not-allowed; }
+.aluno-card-desvincular:disabled:hover { border-color: transparent; border-top-color: var(--panel-border); background: none; color: var(--panel-muted); }
+
+.tema-card-link {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+  padding: 16px 18px 14px;
+  color: var(--panel-text);
+  text-decoration: none;
+}
+
+.tema-card-link:hover { background: var(--panel-soft); border-radius: var(--raio-cartao); }
+.tema-card-link:focus-visible { outline-offset: -3px; border-radius: var(--raio-cartao); }
+.tema-card-status { justify-self: start; }
+/* Três linhas de enunciado: o suficiente para distinguir duas propostas
+   parecidas sem deixar o cartão crescer com o título. */
+.tema-card h3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  margin: 2px 0 0;
+  overflow: hidden;
+  font-family: var(--fonte-interface);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 22px;
+  letter-spacing: -.09px;
+  overflow-wrap: anywhere;
+}
+.tema-card p { margin: 0; color: var(--panel-muted); font-size: 12px; line-height: 17px; overflow-wrap: anywhere; }
+.tema-card .tema-card-prazo { margin-top: 2px; font-weight: 500; }
+.tema-card .tema-card-achado { color: var(--panel-action); }
+/* Preso ao pe do cartao: numa linha de quatro, os quatro Abrir se alinham. */
+.tema-card-abrir { margin-top: auto; padding-top: 6px; color: var(--panel-action); font-size: 13px; font-weight: 600; line-height: 18px; }
+
+[data-theme="dark"] .aluno-card, [data-theme="dark"] .tema-card { box-shadow: inset 0 1px rgb(255 255 255 / 12%); }
+[data-theme="dark"] .aluno-card-desvincular:hover, [data-theme="dark"] .aluno-card-desvincular:focus-visible { background: var(--superficie-rebaixada); }
+
+.turma-alunos-toolbar { margin-top: 16px; }
 
 .turma-alunos .panel-error { margin-top: 19px; }
 .turma-alunos .panel-error h3 { margin: 0; font-family: var(--fonte-interface); font-size: 18px; font-weight: 600; }
-.turma-temas .classes-grid { margin-top: 19px; }
+.turma-temas .turma-temas-grade { margin-top: 16px; }
 
 @media (max-width: 1100px) {
   .turma-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -50,6 +167,5 @@
   .turma-heading-acoes > * { flex: 1 1 100%; margin-top: 0; }
   .turma-stats { grid-template-columns: minmax(0, 1fr); }
   .turma-acoes > * { flex: 1 1 100%; }
-  .turma-aluno { padding: 16px; }
-  .turma-aluno button { width: 100%; }
+  .turma-alunos-grade, .turma-temas-grade { grid-template-columns: minmax(0, 1fr); }
 }
