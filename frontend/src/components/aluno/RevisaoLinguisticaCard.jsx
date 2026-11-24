@@ -97,6 +97,7 @@ function ItemSugestao({
 
 export default function RevisaoLinguisticaCard({
   estado,
+  textoVazio,
   desabilitado,
   onRevisar,
   onAplicar,
@@ -133,6 +134,7 @@ export default function RevisaoLinguisticaCard({
           <p className="mt-4 text-xs leading-[17px] text-texto-suave">
             Ao revisar, o texto atual é enviado ao serviço LanguageTool configurado. As sugestões nunca bloqueiam o salvamento nem o envio.
           </p>
+          {textoVazio && <p className="mt-2 text-sm text-texto">Escreva um trecho para habilitar a revisão.</p>}
           <BotaoRevisar
             desabilitado={desabilitado}
             onRevisar={onRevisar}
