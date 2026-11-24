@@ -27,9 +27,8 @@
 /* Os botões base têm 40 px; nos diálogos desta tela o alvo mínimo é 44 px. */
 
 /*
- * Grade de alunos e de propostas (Issue #194). As duas usam a mesma medida de
- * coluna: a tela do professor passa a ter um só ritmo de cartão, e em 1440 px
- * cabem quatro, em 768 duas, no celular uma.
+ * Propostas conservam seu ritmo. A grade de alunos tem uma largura máxima
+ * por coluna para não esticar um cartão sozinho no desktop.
  */
 .turma-alunos-grade, .turma-temas-grade {
   display: grid;
@@ -38,6 +37,10 @@
   margin: 16px 0 0;
   padding: 0;
   list-style: none;
+}
+
+.turma-alunos-grade {
+  grid-template-columns: repeat(auto-fill, minmax(0, 12rem));
 }
 
 .aluno-card, .tema-card {
@@ -51,7 +54,9 @@
 
 .aluno-card {
   display: flex;
+  flex-direction: column;
   gap: 12px;
+  aspect-ratio: 1;
   min-height: 7.5rem;
   padding: 16px 12px 16px 18px;
 }
@@ -84,7 +89,7 @@
  * Menu de acoes do cartao (Issue #194). Mesma superficie flutuante e mesma
  * sombra do menu do usuario da casca: os dois menus do sistema sao um so.
  */
-.aluno-card-menu { position: relative; flex: none; }
+.aluno-card-menu { position: absolute; inset-block-start: 12px; inset-inline-end: 8px; flex: none; }
 
 .aluno-card-menu-botao {
   display: grid;
@@ -194,4 +199,6 @@
   .turma-stats { grid-template-columns: minmax(0, 1fr); }
   .turma-acoes > * { flex: 1 1 100%; }
   .turma-alunos-grade, .turma-temas-grade { grid-template-columns: minmax(0, 1fr); }
+  .aluno-card { flex-direction: row; min-height: 0; aspect-ratio: auto; }
+  .aluno-card-menu { position: relative; inset: auto; }
 }

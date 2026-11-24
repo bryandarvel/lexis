@@ -1,0 +1,47 @@
+.campo-redacao {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.campo-redacao-tipografia {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 17px;
+  line-height: 2rem;
+  letter-spacing: normal;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.campo-redacao-controle { position: relative; }
+.campo-redacao-controle:focus-visible {
+  outline: 2px solid var(--acao-texto);
+  outline-offset: 3px;
+}
+
+.campo-redacao-espelho {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  color: transparent;
+}
+
+.campo-redacao-espelho mark {
+  color: transparent;
+  background: transparent;
+  text-decoration: underline wavy var(--erro);
+  text-underline-offset: 0.16em;
+  text-decoration-skip-ink: none;
+}
+
+@media (forced-colors: active) {
+  .campo-redacao-espelho { forced-color-adjust: none; }
+  .campo-redacao-espelho mark { text-decoration-color: Highlight; }
+}

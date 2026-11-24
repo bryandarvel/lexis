@@ -1,6 +1,9 @@
 import { z } from 'zod'
 import { MODELO_COMPETENCIA_DOIS } from './temas.competencia-dois.js'
 
+// O recorte é fixo no servidor; a rota não aceita filtros do cliente.
+export const prazosProfessorQuerySchema = z.strictObject({})
+
 const textoCurto = (campo, minimo, maximo) =>
   z
     .string()

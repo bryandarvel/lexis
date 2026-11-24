@@ -5,6 +5,7 @@ import Botao from '../../components/base/Botao.jsx'
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from 'react'
@@ -16,6 +17,7 @@ import {
 } from 'react-router'
 
 import ConferenciaEnvioCard from '../../components/aluno/ConferenciaEnvioCard.jsx'
+import CampoRedacao from '../../components/aluno/CampoRedacao.jsx'
 import ConfirmarEnvioDialogo from '../../components/aluno/ConfirmarEnvioDialogo.jsx'
 import EnvioFotoPainel from '../../components/aluno/EnvioFotoPainel.jsx'
 import RevisaoLinguisticaCard from '../../components/aluno/RevisaoLinguisticaCard.jsx'
@@ -210,6 +212,7 @@ function IndicadorSalvamento({
 
 function EditorCard({
   texto,
+  sugestoes,
   textareaRef,
   somenteLeitura,
   onAlterarTexto,
@@ -247,10 +250,11 @@ function EditorCard({
       >
         Texto da redação
       </label>
-      <textarea
-        ref={textareaRef}
+      <CampoRedacao
+        textareaRef={textareaRef}
         id="texto-redacao"
-        value={texto}
+        texto={texto}
+        sugestoes={somenteLeitura ? undefined : sugestoes}
         onChange={(evento) =>
           onAlterarTexto(evento.target.value)
         }
@@ -258,7 +262,6 @@ function EditorCard({
         readOnly={somenteLeitura}
         aria-describedby="contagem-redacao status-salvamento"
         placeholder="Comece a desenvolver sua redação…"
-        className="fonte-redacao mt-[17px] min-h-[348px] w-full flex-1 resize-none bg-transparent text-[17px] leading-8 text-texto outline-none placeholder:text-texto-fraco read-only:cursor-default"
       />
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--surface-border)] pt-[9px]">
@@ -372,12 +375,20 @@ export default function AlunoRedacaoPage() {
     useState(false)
 
   const textoAtualRef = useRef('')
+  const versaoTextoRef = useRef(0)
+  const revisaoPedidoRef = useRef(null)
   const ultimoTextoSalvoRef = useRef('')
   const textareaRef = useRef(null)
   const statusRef = useRef(null)
   const botaoEnviarRef = useRef(null)
 
   textoAtualRef.current = texto
+
+  useLayoutEffect(() => {
+    setRevisaoLinguistica(REVISAO_LINGUISTICA_INICIAL)
+    setAcao((atual) => atual === 'linguagem' ? null : atual)
+    return () => { revisaoPedidoRef.current = null }
+  }, [temaId, usuario?.id])
 
   useEffect(() => {
     if (location.state) {
@@ -566,6 +577,8 @@ export default function AlunoRedacaoPage() {
   }, [redacaoImutavel, texto])
 
   function handleAlterarTexto(novoTexto) {
+    versaoTextoRef.current += 1
+    textoAtualRef.current = novoTexto
     setTexto(novoTexto)
     setAviso(null)
     setRevisaoLinguistica((anterior) =>
@@ -657,7 +670,9 @@ export default function AlunoRedacaoPage() {
   }
 
   async function handleRevisarLinguagem() {
-    if (!texto.trim()) {
+    if (revisaoPedidoRef.current) return
+    const textoRevisado = textoAtualRef.current
+    if (!textoRevisado.trim()) {
       setAviso({
         tipo: 'erro',
         mensagem:
@@ -667,6 +682,12 @@ export default function AlunoRedacaoPage() {
       return
     }
 
+    const pedido = { versao: versaoTextoRef.current }
+    revisaoPedidoRef.current = pedido
+    const respostaVigente = () =>
+      revisaoPedidoRef.current === pedido &&
+      versaoTextoRef.current === pedido.versao &&
+      textoAtualRef.current === textoRevisado
     setAcao('linguagem')
     setAviso(null)
     setRevisaoLinguistica((estado) => ({
@@ -677,18 +698,21 @@ export default function AlunoRedacaoPage() {
     try {
       const revisao = await revisarLinguagemRedacao(
         temaId,
-        texto,
+        textoRevisado,
       )
 
+      if (!respostaVigente()) return
       setRevisaoLinguistica({
         status: revisao.status === 'DESATIVADO'
           ? 'desativado'
           : revisao.disponivel ? 'pronto' : 'indisponivel',
         disponivel: revisao.disponivel,
         sugestoes: revisao.sugestoes ?? [],
+        textoRevisado,
         mensagem: mensagemRevisaoLinguistica(revisao),
       })
     } catch (error) {
+      if (!respostaVigente()) return
       setRevisaoLinguistica({
         status: 'erro',
         disponivel: false,
@@ -699,7 +723,10 @@ export default function AlunoRedacaoPage() {
         ).mensagem,
       })
     } finally {
-      setAcao(null)
+      if (revisaoPedidoRef.current === pedido) {
+        revisaoPedidoRef.current = null
+        setAcao((atual) => atual === 'linguagem' ? null : atual)
+      }
     }
   }
 
@@ -707,11 +734,11 @@ export default function AlunoRedacaoPage() {
     sugestao,
     substituicao,
   ) {
-    const novoTexto = aplicarSugestaoLinguistica(
-      texto,
-      sugestao,
-      substituicao,
-    )
+    const textoAtual = textoAtualRef.current
+    const novoTexto = revisaoLinguistica.status === 'pronto' &&
+      revisaoLinguistica.textoRevisado === textoAtual
+      ? aplicarSugestaoLinguistica(textoAtual, sugestao, substituicao)
+      : null
 
     if (novoTexto === null) {
       setAviso({
@@ -722,12 +749,7 @@ export default function AlunoRedacaoPage() {
       return
     }
 
-    setTexto(novoTexto)
-    setSalvamento((estado) => ({
-      ...estado,
-      status: 'alterado',
-    }))
-    setRevisaoLinguistica(REVISAO_LINGUISTICA_INICIAL)
+    handleAlterarTexto(novoTexto)
     setAviso({
       tipo: 'sucesso',
       mensagem:
@@ -900,9 +922,14 @@ export default function AlunoRedacaoPage() {
     redacaoImutavel: Boolean(redacaoImutavel),
   })
 
+  const revisaoVisivel = revisaoLinguistica.status === 'pronto' &&
+    revisaoLinguistica.textoRevisado !== texto
+    ? REVISAO_LINGUISTICA_INICIAL
+    : revisaoLinguistica
   const editor = (
     <EditorCard
       texto={texto}
+      sugestoes={revisaoVisivel.status === 'pronto' ? revisaoVisivel.sugestoes : undefined}
       textareaRef={textareaRef}
       somenteLeitura={Boolean(redacaoImutavel)}
       onAlterarTexto={handleAlterarTexto}
@@ -1071,7 +1098,7 @@ export default function AlunoRedacaoPage() {
             <>
               <RevisaoLinguisticaCard
                 textoVazio={!texto.trim()}
-                estado={revisaoLinguistica}
+                estado={revisaoVisivel}
                 desabilitado={
                   ocupado ||
                   !texto.trim()

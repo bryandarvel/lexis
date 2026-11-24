@@ -11,8 +11,27 @@ import {
   encontrarRedacaoPorTema,
   LIMITE_IMAGEM_REDACAO_BYTES,
   mensagemRevisaoLinguistica,
+  segmentarSugestoesLinguisticas,
   validarImagemRedacao,
 } from '../src/utils/essay-editor.js'
+
+test('marca somente os intervalos conferidos, sem procurar palavras repetidas', () => {
+  const texto = '🙂 aluno, aluno\n'
+  const inicio = texto.lastIndexOf('aluno')
+  const fim = inicio + 'aluno'.length
+  const partes = segmentarSugestoesLinguisticas(texto, [
+    { inicio: 0, fim: 3, trecho: 'inventado' },
+    { inicio: inicio + 1, fim, trecho: 'luno' },
+    { inicio, fim, trecho: 'aluno' },
+    { inicio: fim, fim: fim + 5, trecho: '\n' },
+  ])
+  assert.deepEqual(partes, [
+    { inicio: 0, texto: '🙂 aluno, ', marcada: false },
+    { inicio, texto: 'aluno', marcada: true },
+    { inicio: fim, texto: '\n', marcada: false },
+  ])
+  assert.equal(partes.map((parte) => parte.texto).join(''), texto)
+})
 
 test('não apresenta serviço desativado ou indisponível como revisão concluída', () => {
   assert.match(mensagemRevisaoLinguistica({ status: 'DESATIVADO', disponivel: false, sugestoes: [] }), /desativada/)

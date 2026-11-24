@@ -1,7 +1,13 @@
 import { listarTurmas } from './turmas.js'
+import api from './api.js'
 import { listarRedacoesDaTurmaComResumo } from './redacoes.js'
 import { obterFeedbackProfessor } from './feedbacks.js'
 import { resumirPainelProfessor } from '../utils/professor-dashboard.js'
+
+export async function listarPrazosProfessor({ signal } = {}) {
+  const resposta = await api.get('/api/professor/prazos', { signal })
+  return resposta.data.data.prazos
+}
 
 async function consultarEmLotes(itens, consultar) {
   const resultados = []

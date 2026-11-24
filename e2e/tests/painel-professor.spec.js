@@ -28,10 +28,17 @@ test('o painel filtra a fila pela turma, sem nova chamada, e volta a todas', asy
 
   const fila = page.getByRole('region', { name: /^Para corrigir/ })
   const pendentes = fila.getByRole('listitem')
-  const cartaoDaTurma = page.getByRole('listitem').filter({ hasText: 'Turma que espera correção' })
+  const cartaoDaTurma = page.getByRole('region', { name: 'Situação por turma' })
+    .getByRole('listitem').filter({ hasText: 'Turma que espera correção' })
   const filtrar = cartaoDaTurma.getByRole('button', { name: /^Filtrar a fila/ })
 
   await expect(page.getByRole('heading', { name: /^Para corrigir \(\d+\)$/ })).toBeVisible()
+  const prioridade = page.getByRole('region', { name: 'Correção mais antiga' })
+  const acaoPrioritaria = prioridade.getByRole('link', { name: 'Corrigir', exact: true })
+  const destinoPrioritario = await pendentes.first().getByRole('link').getAttribute('href')
+  await expect(acaoPrioritaria).toHaveAttribute('href', destinoPrioritario)
+  await expect(page.getByRole('region', { name: 'Prazos dos próximos 7 dias' })
+    .getByText('Turma que espera correção · 1 de 1 entregaram')).toBeVisible()
   const total = await pendentes.count()
   expect(total).toBeGreaterThan(1)
   await expect(filtrar).toHaveAttribute('aria-pressed', 'false')
@@ -47,6 +54,7 @@ test('o painel filtra a fila pela turma, sem nova chamada, e volta a todas', asy
   await expect(pendentes).toHaveCount(1)
   await expect(pendentes.first()).toContainText('Turma que espera correção')
   await expect(filtrar).toHaveAttribute('aria-pressed', 'true')
+  await expect(acaoPrioritaria).toHaveAttribute('href', destinoPrioritario)
   expect(chamadas).toEqual([])
 
   // O foco vai para a fila: ela fica acima de onde se clicou.
@@ -70,7 +78,11 @@ test('turma sem fila não oferece o filtro', async ({ page, cenario }) => {
   await entrar(page, cenario.professor)
   await page.goto('/professor')
 
-  const cartao = page.getByRole('listitem').filter({ hasText: 'Turma sem nada na fila' })
+  const cartao = page.getByRole('region', { name: 'Situação por turma' })
+    .getByRole('listitem').filter({ hasText: 'Turma sem nada na fila' })
 
   await expect(cartao.getByRole('button', { name: /^Filtrar a fila/ })).toBeDisabled()
+  const prazos = page.getByRole('region', { name: 'Prazos dos próximos 7 dias' })
+  await expect(prazos.getByRole('link', { name: 'Proposta sem entregas' })).toBeVisible()
+  await expect(prazos.getByText('Turma sem nada na fila · 0 de 0 entregaram')).toBeVisible()
 })

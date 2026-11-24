@@ -77,6 +77,31 @@ const temaAlunoSelect = {
   },
 }
 
+export async function listarPrazosDoProfessor({ professorId, inicio, fim }) {
+  // A mesma consulta produz as duas contagens. LEFT JOIN inclui propostas sem
+  // entregas e turmas vazias; DISTINCT não duplica matrículas do mesmo aluno.
+  const prazos = await prisma.$queryRaw`
+    SELECT tema.id, tema.enunciado, tema.prazoEntrega, turma.id AS turmaId, turma.nome AS turmaNome,
+      COUNT(DISTINCT matricula.alunoId) AS alunosAtivos,
+      COUNT(DISTINCT redacao.alunoId) AS entregaram
+    FROM temas_redacao tema
+    JOIN turmas turma ON turma.id = tema.turmaId
+    LEFT JOIN matriculas matricula ON matricula.turmaId = turma.id AND matricula.status = 'ATIVA'
+    LEFT JOIN redacoes redacao ON redacao.temaId = tema.id AND redacao.alunoId = matricula.alunoId
+      AND redacao.status IN ('ENVIADA', 'AVALIADA')
+    WHERE turma.professorId = ${professorId} AND turma.ativa = TRUE AND tema.ativo = TRUE
+      AND tema.prazoEntrega BETWEEN ${inicio} AND ${fim}
+    GROUP BY tema.id, tema.enunciado, tema.prazoEntrega, turma.id, turma.nome
+    ORDER BY tema.prazoEntrega, tema.id
+  `
+
+  return prazos.map(({ alunosAtivos, entregaram, ...prazo }) => ({
+    ...prazo,
+    alunosAtivos: Number(alunosAtivos),
+    entregaram: Number(entregaram),
+  }))
+}
+
 function prepararCriterios(criterios) {
   const resultado = criteriosSchema.safeParse(criterios)
   if (!resultado.success) {

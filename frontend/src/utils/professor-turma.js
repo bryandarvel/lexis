@@ -51,6 +51,16 @@ export function ordenarAlunosDaTurma(matriculas) {
   })
 }
 
+export function contarEntregasPorTema(redacoes) {
+  const porTema = new Map()
+  for (const redacao of redacoes) {
+    const temaId = redacao.temaId ?? redacao.tema?.id
+    if (!temaId || !['ENVIADA', 'AVALIADA'].includes(redacao.status)) continue
+    porTema.set(temaId, (porTema.get(temaId) ?? 0) + 1)
+  }
+  return porTema
+}
+
 export function resumirAlunosDaTurma(matriculas) {
   const lista = Array.isArray(matriculas) ? matriculas : []
   const desativados = lista.filter(
