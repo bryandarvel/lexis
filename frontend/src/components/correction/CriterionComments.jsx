@@ -1,3 +1,4 @@
+import { IconeEditorial } from '../base/icones.jsx'
 import Etiqueta from '../base/Etiqueta.jsx'
 import { comentarioEditavel, tomCriterio } from '../../utils/professor-correction.js'
 import SelecaoTrechos from './SelecaoTrechos.jsx'
@@ -7,7 +8,7 @@ export default function CriterionComments({ criterios, analise, form, disabled, 
     requestAnimationFrame(() => document.getElementById(`review-comment-${id}`)?.focus())
   }
   return <section aria-labelledby="review-comments-title">
-    <h2 id="review-comments-title" className="review-section-title" tabIndex={-1}>Comentários por critério</h2>
+    <h2 id="review-comments-title" className="review-section-title" tabIndex={-1}><IconeEditorial tipo="comentario" />Comentários por critério</h2>
     <div className="review-comment-list">{criterios.map((c, indice) => {
       const { texto, sugestao } = comentarioEditavel(form, analise, c)
       return <article key={c.id} id={`review-criterion-${c.ordem}`} tabIndex={-1}

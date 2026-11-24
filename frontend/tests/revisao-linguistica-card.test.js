@@ -20,6 +20,13 @@ test('explica texto vazio sem atribuir o bloqueio à configuração do LanguageT
       assert.equal(/<button[^>]*\sdisabled=""/.test(html), vazio)
       assert.doesNotMatch(html, /desativada neste ambiente/)
     }
+    for (const status of ['desativado', 'indisponivel', 'erro']) {
+      const html = renderToStaticMarkup(createElement(Card, {
+        estado: { status, mensagem: 'Mensagem do serviço' },
+      }))
+      assert.match(html, /Mensagem do serviço/)
+      assert.equal(html.includes('Tentar novamente'), status !== 'desativado')
+    }
   } finally {
     await servidor.close()
   }

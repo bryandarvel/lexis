@@ -1,3 +1,4 @@
+import { IconeEditorial } from '../../components/base/icones.jsx'
 import { formatarData } from '../../utils/formatar-data.js'
 import Botao from '../../components/base/Botao.jsx'
 import { IconeBaixar } from '../../components/base/icones.jsx'
@@ -352,7 +353,7 @@ function ComentarioGeral({ comentario }) {
           id="feedback-titulo-comentario"
           className={`${classeSobretitulo} text-[var(--aluno-acao-suave-texto)]`}
         >
-          Comentário geral
+          <IconeEditorial tipo="comentario" />Comentário geral
         </h2>
         <p className="mt-3 max-w-[72ch] whitespace-pre-wrap break-words text-base leading-[26px] text-texto">
           {comentario?.trim() ||
@@ -490,7 +491,7 @@ function TextoRedacao({ redacao, textoMarcado, vinculo, selecionar }) {
           id="feedback-titulo-redacao"
           className="text-lg font-semibold leading-6 tracking-[-0.09px] text-texto"
         >
-          Sua redação
+          <IconeEditorial tipo="redacao" />Sua redação
         </h2>
         <p className="text-xs font-medium leading-[17px] text-texto-suave">
           {redacao.origemTexto === 'OCR'

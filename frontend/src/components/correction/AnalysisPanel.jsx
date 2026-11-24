@@ -1,3 +1,4 @@
+import { IconeEditorial } from '../base/icones.jsx'
 import { formatarData } from '../../utils/formatar-data.js'
 import { useEffect, useId, useState } from 'react'
 import Botao from '../base/Botao.jsx'
@@ -45,7 +46,7 @@ export default function AnalysisPanel({ analysis, resultAnalysis = analysis, fal
   )
 
   return <section className="review-card review-analysis" aria-labelledby={idTitulo} aria-busy={isRequesting || pendente}>
-    <h2 id={idTitulo} className="review-section-title">Análise de apoio da IA</h2>
+    <h2 id={idTitulo} className="review-section-title"><IconeEditorial tipo="revisar" />Análise de apoio da IA</h2>
     <p className="review-caption">
       {result
         ? 'Revise as sugestões. A nota é atribuída pelo professor.'

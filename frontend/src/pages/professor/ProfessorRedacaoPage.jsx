@@ -1,3 +1,4 @@
+import { IconeEditorial } from '../../components/base/icones.jsx'
 import { formatarData } from '../../utils/formatar-data.js'
 import { useEffect, useRef, useState } from 'react'
 import Botao from '../../components/base/Botao.jsx'
@@ -253,7 +254,7 @@ function Correcao({ redacaoId, usuarioId }) {
           {rascunhoDivergente && <section className="review-notice" role="status"><strong>Rascunho local encontrado</strong><p>Há alterações não enviadas salvas neste dispositivo.</p><Botao type="button" variante="secundario" disabled={Boolean(feedbackAction)} onClick={recuperarRascunho}>Recuperar rascunho</Botao> <Botao type="button" variante="secundario" disabled={Boolean(feedbackAction)} onClick={() => rascunho.descartar(formServidor)}>Descartar rascunho local</Botao></section>}
           {!rascunhoDivergente && rascunho.salvoEm && <p className="review-caption" role="status">Alterações locais protegidas em {formatarData(rascunho.salvoEm, 'dataHora', { vazio: 'Não informada' })}.</p>}
           <article className="review-card review-essay">
-            <div className="review-essay-heading"><h2 id="review-essay-title" tabIndex={-1}>Redação do aluno</h2><span className="review-caption">{texto.trim() ? texto.trim().split(/\s+/u).length : 0} palavras</span></div>
+            <div className="review-essay-heading"><h2 id="review-essay-title" tabIndex={-1}><IconeEditorial tipo="redacao" />Redação do aluno</h2><span className="review-caption">{texto.trim() ? texto.trim().split(/\s+/u).length : 0} palavras</span></div>
             <EssayEvidenceText texto={texto} criterios={criterios} marcacoes={marcacoes} analise={analise} disabled={bloqueado} vinculo={vinculo}
               onMark={(id, trecho) => mudarTrechos(id, [...marcacoes.porCriterio[id].marcados, trecho])}
               onUnmark={mudarTrechos}

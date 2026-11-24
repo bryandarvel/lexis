@@ -1,3 +1,4 @@
+import { IconeEditorial } from '../../components/base/icones.jsx'
 import Etiqueta from '../../components/base/Etiqueta.jsx'
 import { useEffect, useId, useState } from 'react'
 import Botao from '../../components/base/Botao.jsx'
@@ -50,7 +51,7 @@ function ItemRedacao({ redacao, turmaAtualId }) {
     <li className="aluno-redacao">
       <div className="aluno-redacao-info">
         <div className="aluno-redacao-topo">
-          <Etiqueta tom={situacao.tom}>{situacao.rotulo}</Etiqueta>
+          <Etiqueta tom={situacao.tom}><IconeEditorial tipo={redacao.status === 'RASCUNHO' ? 'escrever' : redacao.status === 'ENVIADA' ? 'tempo' : 'redacao'} />{situacao.rotulo}</Etiqueta>
           {data && <span className="aluno-redacao-data">{data}</span>}
         </div>
 
@@ -199,7 +200,7 @@ export default function AlunoRedacoesPage() {
           Minhas redações
         </h1>
         <p className="mt-[11px] text-base leading-[25px] text-texto-suave">
-          Acompanhe tudo o que você escreveu, com a situação de cada texto e os feedbacks já publicados.
+          Retome um rascunho ou consulte uma correção publicada.
         </p>
       </header>
 

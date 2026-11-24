@@ -1,3 +1,4 @@
+import { IconeEditorial } from '../base/icones.jsx'
 import { useEffect, useRef } from 'react'
 import Botao from '../base/Botao.jsx'
 import { COMPETENCIAS_ENEM, calcularNotaTotalCompetencias } from '../../constants/competencias-enem.js'
@@ -8,7 +9,7 @@ export default function FeedbackEditor({ action, form, onFieldChange, bloqueado 
   return (
     <>
       <section className="review-card review-grades" aria-labelledby="review-grades-title">
-        <h2 id="review-grades-title" tabIndex={-1}>Notas</h2>
+        <h2 id="review-grades-title" tabIndex={-1}><IconeEditorial tipo="notas" />Notas</h2>
         <p className="review-caption">Avaliação humana · cada competência de 0 a 200.</p>
         <div className="review-scores">
           {COMPETENCIAS_ENEM.map(({ campo, numero, titulo }) => <label key={campo} className={campo === 'competencia2' ? 'is-c2' : ''}>
@@ -21,7 +22,7 @@ export default function FeedbackEditor({ action, form, onFieldChange, bloqueado 
         {form.legacyScore && <p className="review-caption">Nota total da versão anterior: {form.legacyScore}. Preencha C1–C5 para publicar uma nova versão.</p>}
       </section>
       <section className="review-card review-general" aria-labelledby="review-general-title">
-        <h2 id="review-general-title"><label htmlFor="review-general-comment">Comentário geral</label></h2>
+        <h2 id="review-general-title"><label htmlFor="review-general-comment"><IconeEditorial tipo="comentario" />Comentário geral</label></h2>
         <textarea id="review-general-comment" rows={3} maxLength={10000} value={form.generalComment} disabled={Boolean(action) || bloqueado}
           onChange={(event) => onFieldChange('generalComment', event.target.value)} placeholder="Escreva um comentário geral sobre a redação…" />
         <span className="review-counter">{form.generalComment.length}/10000</span>

@@ -1,3 +1,4 @@
+import { IconeEditorial } from '../../components/base/icones.jsx'
 import { formatarData } from '../../utils/formatar-data.js'
 import Botao from '../../components/base/Botao.jsx'
 import {
@@ -177,6 +178,7 @@ function EsqueletoCartao({
 function CartaoProposta({
   status,
   proposta,
+  turmaDoCabecalho,
   rascunho,
   agora,
   descricao,
@@ -236,7 +238,7 @@ function CartaoProposta({
         >
           {descricao.prazoVencido ? 'Entrega com atraso' : 'Proposta aberta'}
         </span>
-        {turma && (
+        {turma && turma !== turmaDoCabecalho && (
           <span className="inline-block min-h-6 max-w-full rounded-full bg-[var(--aluno-acao-suave)] px-[22px] py-1 text-xs font-medium leading-4 text-[var(--aluno-acao-suave-texto)] [overflow-wrap:anywhere]">
             {turma}
           </span>
@@ -251,7 +253,7 @@ function CartaoProposta({
       </h2>
 
       <p className="mt-3 text-sm leading-[22px] text-texto-suave">
-        {descricao.prazoVencido ? 'Prazo vencido em ' : 'Entrega até '}
+        <IconeEditorial tipo="calendario" />{descricao.prazoVencido ? 'Prazo vencido em ' : 'Entrega até '}
         {formatarData(proposta.prazoEntrega, 'dataHora', { vazio: 'Prazo indisponível' })}
       </p>
       <p className="mt-2 text-sm leading-[22px] text-texto-suave">
@@ -278,10 +280,10 @@ function ListaPropostas({ status, propostas }) {
   return (
     <section aria-labelledby="titulo-propostas-turma" className="mt-8">
       <h2 id="titulo-propostas-turma" className="text-xl font-semibold leading-[26px] text-texto">
-        Propostas da turma
+        <IconeEditorial tipo="redacao" />Propostas da turma
       </h2>
       <p className="mt-2 text-sm leading-[22px] text-texto-suave">
-        Escolha a proposta que deseja abrir. Propostas com prazo vencido também permitem entrega, registrada com atraso.
+        Você ainda pode entregar após o prazo. O envio será registrado com atraso.
       </p>
       {status === 'carregando' && (
         <div role="status" className={`${classeCartao} mt-4 h-32 animate-pulse`}>
@@ -372,7 +374,7 @@ function CartaoDesempenho({ bloco }) {
           id="titulo-desempenho"
           className="text-lg font-semibold leading-6 tracking-[-0.09px]"
         >
-          Seu desempenho
+          <IconeEditorial tipo="notas" />Seu desempenho
         </h2>
         <p
           role="alert"
@@ -406,7 +408,7 @@ function CartaoDesempenho({ bloco }) {
         id="titulo-desempenho"
         className="text-lg font-semibold leading-6 tracking-[-0.09px]"
       >
-        Seu desempenho
+        <IconeEditorial tipo="notas" />Seu desempenho
       </h2>
 
       <dl className="mt-3 grid grid-cols-2 gap-x-2 gap-y-4 sm:grid-cols-4">
@@ -534,7 +536,7 @@ function CorrecoesRecentes({
         id="titulo-minhas-redacoes"
         className="text-xl font-semibold leading-[26px] tracking-[-0.16px] text-texto"
       >
-        Corrigidas recentemente
+        <IconeEditorial tipo="comentario" />Corrigidas recentemente
       </h2>
 
       {bloco.status === 'carregando' && (
@@ -894,6 +896,7 @@ export default function AlunoDashboardPage() {
           {(proposta || statusProposta !== 'pronto') && (
             <div className="mt-[25px]">
               <CartaoProposta
+                turmaDoCabecalho={painel.matricula.status === 'pronto' ? descreverTurma(painel.matricula.dados?.turma) : null}
                 status={statusProposta}
                 proposta={proposta}
                 rascunho={rascunhoProposta}
