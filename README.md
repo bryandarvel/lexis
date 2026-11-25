@@ -1,208 +1,93 @@
 # LÉXIS
 
-Plataforma web acadêmica para produção, análise e correção de redações, desenvolvida como Trabalho de Conclusão de Curso.
+O LÉXIS é uma plataforma web para escrever, corrigir e acompanhar redações. O aluno recebe uma proposta da turma, prepara o texto e o envia. O professor lê a redação, marca trechos, comenta os critérios e publica a nota. Na devolutiva, o aluno pode seguir cada comentário até a passagem que o motivou, inclusive na versão para impressão.
 
-[![Integração contínua](https://github.com/bryandarvel/lexis/actions/workflows/ci.yml/badge.svg)](https://github.com/bryandarvel/lexis/actions/workflows/ci.yml)
+Trabalho de Conclusão de Curso de Bryan Darvel Cavalheiro e Lucas Schulz. A entrega à banca é o código-fonte deste repositório; a demonstração é executada localmente.
 
-## Arquitetura
+[![Integração contínua](https://github.com/bryandarvel/lexis/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/bryandarvel/lexis/actions/workflows/ci.yml)
 
-- **Frontend:** React, Vite, Tailwind CSS e Motion.
-- **Backend:** Node.js e Express.
-- **Banco de dados:** MySQL 8.4, Prisma ORM e Docker Compose.
-- **Autenticação:** JWT, refresh token em cookie HttpOnly e bcrypt.
-- **OCR:** OCR.space.
-- **Inteligência artificial:** Google Gemini.
-- **Revisão linguística opcional:** LanguageTool, desativado por padrão.
-- **E-mail transacional:** Resend em modo de demonstração.
-- **Documentação da API:** Swagger/OpenAPI.
-- **Qualidade:** Oxlint, Node Test Runner e Supertest.
+## Percurso de uma redação
 
-## Experiência e acessibilidade
+1. **Proposta.** O professor cria a turma e publica título, comando, prazo e critérios. A avaliação do repertório sociocultural na Competência II parte de três critérios fixos — legitimação, pertinência e uso produtivo — e admite até dois personalizados. A primeira entrega bloqueia mudanças no conteúdo e nos critérios; o prazo ainda pode ser ajustado.
+2. **Escrita e entrega.** O aluno entra na turma por código. Pode digitar a redação, com rascunho salvo no servidor, ou enviar uma foto e revisar a transcrição antes de confirmá-la. A revisão linguística é opcional. O envio definitivo torna o texto imutável; uma proposta aberta ainda aceita entrega após o prazo, identificada como atrasada.
+3. **Correção.** O painel do professor destaca a redação que espera há mais tempo, permite filtrar a fila por turma e mostra os prazos dos próximos sete dias, inclusive propostas sem entregas. O professor pode consultar sugestões do Gemini ou corrigir sem IA. **Somente o professor atribui as notas das cinco competências e publica o feedback.**
+4. **Devolutiva.** O aluno recebe um aviso interno e consulta nota, comentários e trechos numerados em *Minhas redações*. Uma nova publicação com alterações preserva o histórico; o sistema bloqueia a republicação idêntica.
 
-- O tema claro é usado no primeiro acesso; o usuário pode alternar manualmente para o tema escuro e a preferência fica salva no navegador.
-- O tema escuro segue superfícies navy em níveis de elevação, sem depender de sombras ou brilhos decorativos.
-- A tela de correção usa três colunas em telas largas, duas colunas com abas em tablets e um bottom sheet acessível em celulares.
-- Campos de autenticação mantêm colagem e preenchimento por gerenciadores de senha.
-- Nota e comentários ainda não enviados possuem autosave local. O texto da redação do aluno não é duplicado no armazenamento do navegador.
-- Quando a renovação silenciosa falha, a reautenticação acontece sobre a tela atual, preservando o rascunho e a rota.
+## Como o sistema está organizado
 
-## Fluxos implementados
+| Onde ler o código | Responsabilidade |
+| --- | --- |
+| [Frontend](frontend/src) | React e Vite. Páginas de aluno e professor, editor, tela de correção, navegação por teclado e temas claro e escuro. |
+| [Módulos da API](backend/src/modules) | Node.js e Express. Rotas, validação, autorização, regras de negócio e repositórios. O servidor verifica o papel e o vínculo do usuário com cada recurso. |
+| [Modelo de dados](backend/prisma/schema.prisma) e [migrations](backend/prisma/migrations) | Prisma e MySQL 8.4. Persistência de matrículas, propostas, redações, análises, versões do feedback e notificações. |
+| [Integrações](backend/src/integrations) | Clientes dos serviços de OCR, análise, revisão linguística e e-mail. As credenciais ficam no backend. |
+| [Testes de ponta a ponta](e2e) | Playwright e Chromium exercitam a interface com a API e um banco local de teste. |
 
-### Aluno
+O access token fica em memória no cliente; o refresh token é rotacionado em cookie HttpOnly. O editor não grava o texto integral da redação no armazenamento local do navegador. O rascunho de correção do professor é separado por usuário e redação e removido no logout.
 
-1. entra em uma turma por código e consulta os temas publicados;
-2. cria ou edita uma redação com salvamento explícito e automático no servidor;
-3. pode extrair texto de JPEG/PNG pelo OCR, revisar o resultado e só então confirmá-lo;
-4. pode solicitar manualmente sugestões do LanguageTool, quando o serviço estiver habilitado;
-5. confirma o envio irreversível da redação;
-6. recebe uma notificação quando o professor publica o feedback;
-7. marca o aviso como lido e acessa a correção, a nota e os comentários.
+## Executar localmente
 
-### Professor
+Requisitos: Git, Node.js 24 com npm e Docker com Compose para o MySQL. Os comandos abaixo usam PowerShell. Abra os dois terminais na raiz do repositório.
 
-1. cria turmas e temas;
-2. cria propostas com os três critérios fixos da Competência II — Legitimação, Pertinência e Uso produtivo — e até dois personalizados, sem pesos;
-3. edita os critérios personalizados até a primeira entrega do tema; depois disso, o conjunto fica congelado. Propostas legadas permanecem consultáveis sem conversão automática;
-4. consulta redações enviadas e solicita uma análise consultiva do Gemini;
-5. revisa somente evidências posicionais verificadas no texto;
-6. salva rascunhos de correção e publica o feedback final, que cria a notificação do aluno.
-
-A análise por IA não atribui nota e não substitui a decisão do professor. As cinco notas por competência do ENEM e a nota total pertencem ao feedback docente.
-
-## Pré-requisitos
-
-- Node.js compatível com o projeto.
-- npm.
-- Git.
-- Docker Desktop.
-
-As chaves do OCR.space, Gemini e Resend são pessoais. Cada desenvolvedor deve utilizar suas próprias credenciais no arquivo `backend/.env`.
-
-## Configuração inicial
-
-### 1. Backend
-
-No PowerShell, a partir da raiz do projeto:
+**Terminal 1 — backend.** Em uma instalação nova:
 
 ```powershell
 cd backend
-Copy-Item .env.example .env
+if (!(Test-Path .env)) { Copy-Item .env.example .env }
 npm.cmd ci
 docker compose up -d
+```
+
+Antes de continuar, edite **apenas o seu** `backend/.env`. Defina dois segredos JWT diferentes; para gerar cada um, execute separadamente `node -e "console.log(require('node:crypto').randomBytes(64).toString('hex'))"`. Confira se `DATABASE_URL` aponta para o MySQL **local de desenvolvimento**. Não use um banco remoto ou de produção para os comandos abaixo.
+
+```powershell
 npx.cmd prisma generate
 npx.cmd prisma migrate deploy
 npm.cmd run dev
 ```
 
-Antes de iniciar a API, substitua no `backend/.env` os segredos JWT e as chaves dos serviços externos. O arquivo real `.env` não deve ser versionado.
+Com a API em execução: [estado do serviço](http://localhost:3000/health) · [documentação interativa da API](http://localhost:3000/api-docs).
 
-A API estará disponível em `http://127.0.0.1:3000` e a documentação em `http://127.0.0.1:3000/api-docs`.
-
-Para popular o ambiente local com dados fictícios de demonstração:
-
-```powershell
-npm.cmd run db:seed
-npm.cmd run db:seed:verify
-```
-
-O seed é idempotente, recusa execução em produção e usa contas `@lexis.example.com`. A senha conhecida das contas fictícias é documentada na saída do comando; nunca a reutilize em outro ambiente.
-
-Em banco já utilizado, não repita o seed para corrigir somente o código da turma: ele redefine dados das contas e trabalhos fictícios. A nova turma de demonstração usa o código válido `LEXDEM26`. Para uma turma antiga com `LEX-DEMO`, `npm.cmd run db:demo:code` faz somente a conferência. Após aprovar a alteração específica, `npm.cmd run db:demo:code -- --apply` atualiza apenas esse código, verificando o ID da turma, a identidade do professor fictício e possíveis conflitos. Códigos válidos já regenerados são preservados. O comando recusa bancos remotos e produção.
-
-O roteiro de conferência das propostas, envio atrasado e fluxo completo nas duas máquinas está em [docs/aceite-b01-b04.md](docs/aceite-b01-b04.md).
-
-### 2. Frontend
-
-Em outro terminal, a partir da raiz do projeto:
+**Terminal 2 — frontend:**
 
 ```powershell
 cd frontend
-Copy-Item .env.example .env
+if (!(Test-Path .env)) { Copy-Item .env.example .env }
 npm.cmd ci
 npm.cmd run dev
 ```
 
-O frontend estará disponível em `http://localhost:5173`.
+Abra [localhost:5173](http://localhost:5173). Use a origem configurada em `FRONTEND_URL` no backend e, no frontend, confira `VITE_API_URL`. Nos próximos usos, com as dependências instaladas e o MySQL em execução, basta iniciar `npm.cmd run dev` em cada pasta.
 
-## Verificações
+**Dados para demonstração:** em um banco local reservado para esse fim, execute `npm.cmd run db:seed` e `npm.cmd run db:seed:verify` a partir de `backend/`. O seed informa as contas fictícias na saída. **Não o repita no banco preparado para a defesa:** ele redefine dados dessas contas e de seus trabalhos.
 
-Backend:
+## Integrações e limites
 
-```powershell
-cd backend
-npm.cmd run lint
-npm.cmd test
-```
+| Recurso | Quando é usado |
+| --- | --- |
+| OCR.space | Ao enviar uma foto da redação. Requer chave própria; o aluno revisa e salva a transcrição antes da entrega. A escrita por digitação não depende do OCR. |
+| Google Gemini | Quando o professor solicita uma análise. As sugestões não atribuem nota nem são publicadas automaticamente. Consulte [configuração, cotas e tratamento de falhas](docs/operacao-gemini.md). |
+| LanguageTool | Quando o aluno solicita a revisão. O editor sublinha os trechos e oferece sugestões, sem impedir o salvamento ou o envio. Vem desativado; para usar uma instância local, ajuste `LANGUAGETOOL_ENABLED` e `LANGUAGETOOL_API_URL` no backend. |
+| Resend | Nos fluxos de conta que exigem e-mail. Habilite o serviço e siga o [guia de operação da fila](docs/operacao-email.md). Os avisos de correção dentro da plataforma não dependem de e-mail. |
 
-Frontend:
+Não versione arquivos `.env`, credenciais nem redações reais. Para uma demonstração com provedores externos, use texto e imagens fictícios. Os testes automatizados verificam os fluxos da aplicação; não medem a qualidade pedagógica do modelo. O [protocolo acadêmico de avaliação da IA](docs/protocolo-academico-ia.md) trata essa questão separadamente.
 
-```powershell
-cd frontend
-npm.cmd run lint
-npm.cmd test
-npm.cmd run build
-```
+## Verificar a instalação e o código
 
-Os testes de integração do backend utilizam o banco indicado por `TEST_DATABASE_URL`. Ele deve estar criado e com as migrações aplicadas antes da execução completa dos testes.
-
-O harness técnico da IA roda sem chamada externa por padrão:
+Na raiz, com as dependências dos pacotes instaladas:
 
 ```powershell
-cd backend
-npm.cmd run ai:evaluate -- --limite=2
+npm.cmd --prefix frontend run lint
+npm.cmd --prefix frontend test
+npm.cmd --prefix frontend run build
+npm.cmd --prefix backend run lint
 ```
 
-Os relatórios locais são gravados em `backend/output/ai-evaluation` e não são versionados. Consulte [docs/avaliacao-ia.md](docs/avaliacao-ia.md) antes de interpretar ou executar o modo real.
+Para os testes de integração do backend e a suíte de navegador, siga o [roteiro E2E para PowerShell](e2e/README.md). Ele mostra como instalar o Chromium, carregar somente a variável de conexão de teste e executar `db:prepare` **antes** das suítes. O destino deve ser o banco `lexis_test` em loopback, nunca o banco da demonstração. O [workflow do GitHub Actions](.github/workflows/ci.yml) executa os checks de backend, frontend e E2E.
 
-## Serviços externos e privacidade
+## Leituras técnicas
 
-- OCR.space e Gemini recebem somente o conteúdo necessário ao recurso solicitado; chaves e limites pertencem a cada desenvolvedor.
-- O Gemini não repete chamadas automaticamente; há controle de concorrência e espera no processo local. Chaves do mesmo projeto Google compartilham cota, inclusive entre máquinas. Consulte [operação e limites do Gemini](docs/operacao-gemini.md).
-- O LanguageTool só é chamado por ação explícita do aluno. O padrão aponta para uma instância local e fica desativado.
-- A API pública gratuita do LanguageTool não é adequada para automação contínua; possui limites, não oferece garantia de disponibilidade e exige atenção à privacidade.
-- Em desenvolvimento, o Resend redireciona mensagens para `EMAIL_DEMO_RECIPIENT`.
-
-O [guia de observabilidade local e triagem](docs/observabilidade-local.md) explica logs, `X-Request-Id`, `/health` e consulta agregada de filas, distinguindo recursos presentes na `dev` daqueles que ainda dependem de PR. Não há telemetria externa ou monitor automático instalado por essa etapa.
-
-## Limitações conhecidas
-
-- A fixture sintética da IA valida o harness, não a qualidade do modelo.
-- A validação acadêmica ainda requer corpus autorizado, referências humanas, protocolo de avaliação e análise estatística.
-- O Essay-BR contém notas por competência, mas não anota os intervalos textuais usados pela LÉXIS; portanto, não basta sozinho para medir a qualidade das evidências destacadas.
-- LanguageTool, OCR, Gemini e e-mail dependem de serviços/configurações externos e podem ficar indisponíveis. As interfaces preservam o texto e exibem falhas sem publicar resultados automaticamente.
-- O produto atual é uma aplicação web responsiva; não existe aplicativo móvel nativo.
-
-## Colaboração
-
-O desenvolvimento ocorre em branches separadas, com integração por Pull Request. Toda correção, melhoria ou nova funcionalidade deve começar por uma Issue. Como o repositório é privado, cada integrante precisa aceitar o convite de colaboração antes de cloná-lo.
-
-Clone inicial:
-
-```powershell
-cd 'C:\Users\NOME_DO_USUARIO\Documents'
-git clone https://github.com/bryandarvel/lexis.git
-cd lexis
-```
-
-Antes de iniciar uma tarefa, com o trabalho local salvo, atualize a `dev` e crie uma branch própria:
-
-```powershell
-git status
-git switch dev
-git pull --ff-only origin dev
-git switch -c feat/NUMERO-nome-curto-da-tarefa
-```
-
-O Pull Request deve mencionar a Issue com `Closes #NUMERO`, passar pela integração contínua e ser revisado pelo outro integrante antes do merge.
-
-O destino das tarefas é `dev`, com merge commit. A `main` só receberá uma promoção posterior por PR, depois dos testes e aprovação explícita; nunca recebe commits diretos. Para atualizar uma máquina já configurada após a integração, consulte [docs/atualizacao-dev.md](docs/atualizacao-dev.md).
-
-O [roteiro de integração e aceite de novembro](docs/integracao-aceite-2026-11.md) separa PR preparado, código integrado e teste nas duas máquinas. Use o [modelo vazio de registro](docs/registro-aceite-integrado.md) depois de executar os fluxos. A [proposta futura Vercel + Railway](docs/plano-deploy-vercel-railway.md) teve sua estrutura técnica aprovada, sem provisionar agora; recursos concretos, domínio, orçamento e retenção ainda exigem aprovação separada.
-
-Consulte [CONTRIBUTING.md](CONTRIBUTING.md) para conhecer a rotina completa de Issues, branches, commits, push, revisão e Pull Request. Agentes de IA também devem seguir as regras de [AGENTS.md](AGENTS.md).
-
-## Segurança
-
-O histórico da auditoria de dependências e as medidas pendentes estão em [docs/seguranca-dependencias.md](docs/seguranca-dependencias.md). Os resultados dependem da data, do lockfile e dos patches realmente integrados; PR aprovado ou instalado em outra branch não elimina alertas desta versão. Antes de publicar, repita a auditoria nos pacotes da árvore integrada e revise os alertas restantes, sem downgrade ou override para apenas obter resultado verde. O projeto não deve ser tratado como pronto para produção pública sem essa revisão e o aceite integrado.
-
-Nunca envie ao GitHub:
-
-- arquivos `.env`;
-- chaves de API;
-- segredos JWT;
-- senhas pessoais;
-- pastas `node_modules`, `dist`, `coverage` ou `tmp`.
-
-Somente os arquivos `.env.example`, contendo valores demonstrativos, devem ser versionados.
-
-O access token permanece somente em memória e o refresh token é rotacionado em cookie HttpOnly. No logout, rascunhos privados do usuário são removidos, mas preferências não sensíveis, como o tema escolhido, são preservadas.
-
-## Recuperação de senha e operação da demonstração
-
-O botão “Esqueci minha senha” solicita instruções sem revelar se a conta existe. Com e-mail habilitado, a solicitação entra na fila; o processador envia um link temporário de uso único. Após a redefinição, as sessões anteriores da conta são invalidadas e o usuário deve entrar novamente. O banco persiste somente o hash do token.
-
-Configure as variáveis localmente e consulte [docs/operacao-email.md](docs/operacao-email.md) antes de processar a fila com `npm.cmd run email:process`, dentro de `backend/`. Com `EMAIL_ENABLED=false`, a recuperação informa indisponibilidade. Nenhum agendamento de produção é instalado automaticamente.
-
-Antes e depois de um lote supervisionado, `npm.cmd run email:status` consulta somente contagens por estado das filas locais. Não envia mensagens, expõe destinatários/tokens nem recupera automaticamente itens interrompidos. O procedimento e as limitações estão no guia de operação.
-
-As evidências e pendências desta entrega estão em [docs/entrega-funcional.md](docs/entrega-funcional.md). A proposta acadêmica para avaliar a IA, dependente de corpus autorizado e avaliadores, está em [docs/protocolo-academico-ia.md](docs/protocolo-academico-ia.md).
+- [Trechos e comentários](docs/contrato-trechos-feedback.md) e [contagem de entregas](docs/contrato-contagem-entregas.md): regras que explicam os vínculos no feedback e os números exibidos por turma.
+- [Perfil e senha](docs/contrato-perfil-senha.md) e [exclusões](docs/contrato-exclusoes.md): alterações de conta, proteção do histórico e condições de exclusão.
+- [Avaliação técnica da IA](docs/avaliacao-ia.md), [observabilidade local](docs/observabilidade-local.md) e [segurança das dependências](docs/seguranca-dependencias.md).
+- [Guia de contribuição](CONTRIBUTING.md): fluxo de desenvolvimento na `dev` e promoção da versão estável para a `main`.
