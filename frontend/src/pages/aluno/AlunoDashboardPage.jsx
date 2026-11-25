@@ -1,13 +1,22 @@
+import { IconeEditorial } from '../../components/base/icones.jsx'
+import { formatarData } from '../../utils/formatar-data.js'
+import Botao from '../../components/base/Botao.jsx'
 import {
+  useCallback,
   useEffect,
+  useId,
+  useRef,
   useState,
 } from 'react'
+import {
+  Link,
+  useLocation,
+  useNavigate,
+} from 'react-router'
 
-import ContentCard from '../../components/ui/ContentCard.jsx'
-import ContentRail from '../../components/ui/ContentRail.jsx'
-import HeroBanner from '../../components/ui/HeroBanner.jsx'
-import { useAuth } from '../../hooks/useAuth.js'
-import DashboardLayout from '../../layouts/DashboardLayout.jsx'
+import AppShell from '../../layouts/AppShell.jsx'
+import { obterDesempenhoAluno } from '../../services/desempenho.js'
+import { observarMatriculaAtualizada } from '../../services/matricula-events.js'
 import {
   listarMinhasRedacoes,
 } from '../../services/redacoes.js'
@@ -16,414 +25,898 @@ import {
 } from '../../services/temas.js'
 import {
   entrarEmTurma,
+  obterMinhaMatricula,
 } from '../../services/turmas.js'
+import { interpretarErroApi } from '../../utils/api-error.js'
+import {
+  calcularPercentual,
+  descreverRedacao,
+  descreverTurma,
+  encontrarRascunhoDoTema,
+  formatarIndicador,
+  listarPropostasDoAluno,
+  organizarPropostasDoInicio,
+} from '../../utils/aluno-painel.js'
+import { resumirDesempenho } from '../../utils/aluno-perfil.js'
 import { normalizarCodigoAcesso } from '../../utils/class-code.js'
 
-async function carregarDadosDashboard() {
-  const [themes, essays] = await Promise.all([
+const CODIGO_SEM_MATRICULA = 'ACTIVE_ENROLLMENT_NOT_FOUND'
+const INTERVALO_RELOGIO_MS = 60_000
+
+const BLOCO_CARREGANDO = {
+  status: 'carregando',
+  dados: null,
+}
+
+const CORES_FAIXA = {
+  sucesso: 'bg-[var(--aluno-sucesso)]',
+  neutro: 'bg-[var(--aluno-borda-campo)]',
+}
+
+const CORES_NOTA = {
+  sucesso:
+    'bg-[var(--aluno-sucesso-fundo)] text-[var(--aluno-sucesso)]',
+  atencao:
+    'bg-[var(--aluno-atencao-fundo)] text-[var(--aluno-atencao)]',
+  neutro:
+    'bg-[var(--aluno-neutro-fundo)] text-texto-suave',
+}
+
+const CLASSES_ACAO = {
+  suave:
+    'bg-[var(--aluno-acao-suave)] text-[var(--aluno-acao-suave-texto)] hover:brightness-95',
+  contorno:
+    'border border-[var(--aluno-borda-campo)] bg-superficie text-texto hover:bg-[var(--aluno-neutro-fundo)]',
+}
+
+const classeCartao =
+  'rounded-cartao border border-[var(--surface-border)] bg-superficie'
+
+function indicaSemMatricula(erro) {
+  return (
+    erro?.response?.status === 404 &&
+    erro?.response?.data?.error?.code ===
+      CODIGO_SEM_MATRICULA
+  )
+}
+
+function resolverBloco(
+  resultado,
+  {
+    vazio = null,
+    semMatricula = null,
+  } = {},
+) {
+  if (resultado.status === 'fulfilled') {
+    return {
+      status: 'pronto',
+      dados: resultado.value ?? vazio,
+    }
+  }
+
+  if (
+    semMatricula &&
+    indicaSemMatricula(resultado.reason)
+  ) {
+    return semMatricula
+  }
+
+  return {
+    status: 'erro',
+    dados: vazio,
+  }
+}
+
+async function carregarPainel() {
+  const [
+    matricula,
+    temas,
+    redacoes,
+    desempenho,
+  ] = await Promise.allSettled([
+    obterMinhaMatricula(),
     listarTemasDoAluno(),
     listarMinhasRedacoes(),
+    obterDesempenhoAluno(),
   ])
 
   return {
-    status: 'pronto',
-    themes: Array.isArray(themes) ? themes : [],
-    essays: Array.isArray(essays) ? essays : [],
+    matricula: resolverBloco(matricula, {
+      semMatricula: {
+        status: 'sem-turma',
+        dados: null,
+      },
+    }),
+    temas: resolverBloco(temas, {
+      vazio: [],
+      semMatricula: {
+        status: 'pronto',
+        dados: [],
+      },
+    }),
+    redacoes: resolverBloco(redacoes, {
+      vazio: [],
+    }),
+    desempenho: resolverBloco(desempenho),
   }
 }
 
-function formatarData(value) {
-  if (!value) {
-    return 'Data indisponível'
+function combinarStatus(...blocos) {
+  if (blocos.some((bloco) => bloco.status === 'erro')) {
+    return 'erro'
   }
-
-  const date = new Date(value)
-
-  if (Number.isNaN(date.getTime())) {
-    return 'Data indisponível'
-  }
-
-  return new Intl.DateTimeFormat('pt-BR', {
-    dateStyle: 'medium',
-  }).format(date)
-}
-
-function formatarStatusRedacao(status) {
-  const statuses = {
-    RASCUNHO: 'Rascunho',
-    ENVIADA: 'Aguardando correção',
-    AVALIADA: 'Corrigida',
-  }
-
-  return statuses[status] ?? 'Não iniciada'
-}
-
-function obterStatusTema(theme, essay) {
-  if (essay) {
-    return formatarStatusRedacao(essay.status)
-  }
-
-  const deadline = new Date(theme.prazoEntrega)
 
   if (
-    !Number.isNaN(deadline.getTime()) &&
-    deadline.getTime() < Date.now()
-  ) {
-    return 'Prazo encerrado'
-  }
-
-  return 'Disponível'
-}
-
-function obterDetalhesTema(theme, essay) {
-  const details = [
-    `Prazo: ${formatarData(theme.prazoEntrega)}`,
-    `${theme.criterios?.length ?? 0} critérios`,
-  ]
-
-  if (essay?.enviadaEm) {
-    details.push(
-      `Enviada em ${formatarData(essay.enviadaEm)}`,
+    blocos.some(
+      (bloco) => bloco.status === 'carregando',
     )
+  ) {
+    return 'carregando'
   }
 
-  return details
+  return 'pronto'
 }
 
-function PainelSkeleton() {
+function EsqueletoCartao({
+  rotulo,
+  className = '',
+}) {
   return (
-    <div className="min-h-[18rem] w-[18rem] animate-pulse rounded-2xl border border-lexis-200/10 bg-lexis-900/70 sm:w-[22rem]">
-      <div className="h-full min-h-[18rem] rounded-2xl bg-gradient-to-br from-lexis-800/60 to-lexis-950" />
+    <div
+      role="status"
+      className={`${classeCartao} min-h-[236px] animate-pulse p-6 ${className}`}
+    >
+      <span className="sr-only">{rotulo}</span>
+      <div className="h-6 w-40 rounded-full bg-superficie-rebaixada" />
+      <div className="mt-6 h-7 w-3/4 rounded-marca bg-superficie-rebaixada" />
+      <div className="mt-4 h-4 w-1/2 rounded-marca bg-superficie-rebaixada" />
+      <div className="mt-8 h-11 w-[220px] max-w-full rounded-controle bg-superficie-rebaixada" />
     </div>
   )
 }
 
-export default function AlunoDashboardPage() {
-  const { usuario } = useAuth()
+function CartaoProposta({
+  status,
+  proposta,
+  turmaDoCabecalho,
+  rascunho,
+  agora,
+  descricao,
+}) {
+  if (status === 'carregando') {
+    return (
+      <EsqueletoCartao rotulo="Carregando a próxima proposta…" />
+    )
+  }
 
-  const [dashboard, setDashboard] = useState({
-    status: 'carregando',
-    themes: [],
-    essays: [],
-  })
+  if (status === 'erro') {
+    return (
+      <section
+        aria-labelledby="titulo-proposta"
+        className={`${classeCartao} flex min-h-[236px] flex-col justify-center p-6`}
+      >
+        <h2
+          id="titulo-proposta"
+          className="text-lg font-semibold leading-6"
+        >
+          Proposta indisponível
+        </h2>
+        <p
+          role="alert"
+          className="mt-2 text-sm leading-[22px] text-texto-suave"
+        >
+          Não foi possível carregar as propostas da sua turma. Recarregue a página para tentar novamente.
+        </p>
+      </section>
+    )
+  }
+
+  /*
+   * Issue #178: sem proposta pendente o cartão não aparece. "Propostas da
+   * turma", logo abaixo, já diz quando não há nenhuma disponível, e o quadro
+   * vazio só empurrava o resto da página para baixo.
+   */
+  if (!proposta) return null
+
+  const turma = descreverTurma(proposta.turma)
+  const tempoRascunho = rascunho
+    ? formatarData(rascunho.atualizadoEm, 'relativa', { agora })
+    : null
+
+  return (
+    <section
+      aria-labelledby="titulo-proposta"
+      className="min-h-[236px] rounded-cartao border-2 border-[var(--color-brand-accent)] bg-superficie px-[22px] pb-[11px] pt-[22px]"
+    >
+      <div className="flex flex-wrap gap-3">
+        <span
+          className={`inline-flex h-6 min-w-[150px] items-center justify-center rounded-full px-4 text-xs font-medium leading-[17px] ${
+            descricao.prazoVencido
+              ? 'bg-[var(--aluno-atencao-fundo)] text-[var(--aluno-atencao)]'
+              : 'bg-[var(--aluno-sucesso-fundo)] text-[var(--aluno-sucesso)]'
+          }`}
+        >
+          {descricao.prazoVencido ? 'Entrega com atraso' : 'Proposta aberta'}
+        </span>
+        {turma && turma !== turmaDoCabecalho && (
+          <span className="inline-block min-h-6 max-w-full rounded-full bg-[var(--aluno-acao-suave)] px-[22px] py-1 text-xs font-medium leading-4 text-[var(--aluno-acao-suave-texto)] [overflow-wrap:anywhere]">
+            {turma}
+          </span>
+        )}
+      </div>
+
+      <h2
+        id="titulo-proposta"
+        className="mt-3.5 text-2xl font-semibold leading-[30px] tracking-[-0.29px] text-texto [overflow-wrap:anywhere]"
+      >
+        {proposta.enunciado}
+      </h2>
+
+      <p className="mt-3 text-sm leading-[22px] text-texto-suave">
+        <IconeEditorial tipo="calendario" />{descricao.prazoVencido ? 'Prazo vencido em ' : 'Entrega até '}
+        {formatarData(proposta.prazoEntrega, 'dataHora', { vazio: 'Prazo indisponível' })}
+      </p>
+      <p className="mt-2 text-sm leading-[22px] text-texto-suave">
+        {descricao.orientacao}
+      </p>
+
+      <Botao as={Link}
+        to={`/aluno/temas/${encodeURIComponent(proposta.id)}/redacao`}
+        className="mt-6 w-full sm:w-[220px]"
+      >
+        {rascunho ? 'Continuar rascunho' : 'Escrever redação'}
+      </Botao>
+
+      {tempoRascunho && (
+        <p className="mt-3 text-xs font-medium leading-[17px] text-texto-suave">
+          Rascunho salvo no servidor {tempoRascunho}.
+        </p>
+      )}
+    </section>
+  )
+}
+
+function ListaPropostas({ status, propostas }) {
+  return (
+    <section aria-labelledby="titulo-propostas-turma" className="mt-8">
+      <h2 id="titulo-propostas-turma" className="text-xl font-semibold leading-[26px] text-texto">
+        <IconeEditorial tipo="redacao" />Propostas da turma
+      </h2>
+      <p className="mt-2 text-sm leading-[22px] text-texto-suave">
+        Você ainda pode entregar após o prazo. O envio será registrado com atraso.
+      </p>
+      {status === 'carregando' && (
+        <div role="status" className={`${classeCartao} mt-4 h-32 animate-pulse`}>
+          <span className="sr-only">Carregando as propostas da turma…</span>
+        </div>
+      )}
+      {status === 'erro' && (
+        <p role="alert" className={`${classeCartao} mt-4 p-6 text-sm text-texto-suave`}>
+          Não foi possível carregar a lista e a situação das propostas. Recarregue a página para tentar novamente.
+        </p>
+      )}
+      {status === 'pronto' && propostas.length === 0 && (
+        <p className={`${classeCartao} mt-4 p-6 text-sm text-texto-suave`}>
+          Sua turma ainda não tem propostas disponíveis.
+        </p>
+      )}
+      {status === 'pronto' && propostas.length > 0 && (
+        <ul className="mt-4 space-y-3">
+          {propostas.map(({ proposta, prazoVencido, situacao, acao }) => (
+            <li key={proposta.id} className={`${classeCartao} grid min-w-0 gap-2 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_minmax(9rem,auto)_minmax(7rem,auto)_auto] sm:items-center sm:gap-4`}>
+                <h3 className="break-words text-base font-semibold leading-6 text-texto">{proposta.enunciado}</h3>
+                <p className="text-sm leading-[22px] text-texto-suave">
+                  {prazoVencido ? 'Prazo vencido em ' : 'Entrega até '}{formatarData(proposta.prazoEntrega, 'dataHora', { vazio: 'Prazo indisponível' })}
+                </p>
+                <p className="text-sm font-semibold text-texto-suave">{situacao}</p>
+              <Link to={acao.destino} className={`inline-flex min-h-11 shrink-0 items-center justify-center rounded-controle px-5 text-[13px] font-semibold transition ${CLASSES_ACAO[acao.variante]}`}>
+                {acao.rotulo}
+                <span className="sr-only">{' '}— {proposta.enunciado}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
+function Indicador({
+  rotulo,
+  valor,
+  unidade,
+}) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-xs font-medium leading-[17px] text-texto-suave">
+        {rotulo}
+      </dt>
+      <dd className="mt-px">
+        {valor === null ? (
+          <>
+            <span
+              aria-hidden="true"
+              className="fonte-nota block text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-texto"
+            >
+              —
+            </span>
+            <span className="sr-only">
+              Ainda sem nota
+            </span>
+          </>
+        ) : (
+          <span className="fonte-nota block text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-texto">
+            {valor}
+          </span>
+        )}
+        <span className="block text-xs font-medium leading-[17px] text-texto-suave">
+          {unidade}
+        </span>
+      </dd>
+    </div>
+  )
+}
+
+function CartaoDesempenho({ bloco }) {
+  if (bloco.status === 'carregando') {
+    return (
+      <EsqueletoCartao rotulo="Carregando seu desempenho…" />
+    )
+  }
+
+  if (bloco.status === 'erro') {
+    return (
+      <section
+        aria-labelledby="titulo-desempenho"
+        className={`${classeCartao} aluno-elevacao-1 min-h-[236px] px-5 pb-4 pt-[18px]`}
+      >
+        <h2
+          id="titulo-desempenho"
+          className="text-lg font-semibold leading-6 tracking-[-0.09px]"
+        >
+          <IconeEditorial tipo="notas" />Seu desempenho
+        </h2>
+        <p
+          role="alert"
+          className="mt-3 text-sm leading-[22px] text-texto-suave"
+        >
+          Não foi possível carregar seu desempenho. Recarregue a página para tentar novamente.
+        </p>
+      </section>
+    )
+  }
+
+  const desempenho = bloco.dados
+  const mediaCompetencia2 = formatarIndicador(
+    desempenho.mediaCompetencia2,
+  )
+  const possuiMediaCompetencia2 =
+    mediaCompetencia2 !== null
+
+  /*
+   * Issue #178: o bloco subiu para antes das propostas e passou a mostrar os
+   * quatro indicadores que só existiam no Perfil, de onde o bloco foi
+   * removido. A linha compacta de "ainda sem nota" saiu junto: com os quatro
+   * indicadores, o cartão já diz quantas redações foram enviadas.
+   */
+  return (
+    <section
+      aria-labelledby="titulo-desempenho"
+      className={`${classeCartao} aluno-elevacao-1 min-h-[236px] px-5 pb-4 pt-[18px]`}
+    >
+      <h2
+        id="titulo-desempenho"
+        className="text-lg font-semibold leading-6 tracking-[-0.09px]"
+      >
+        <IconeEditorial tipo="notas" />Seu desempenho
+      </h2>
+
+      <dl className="mt-3 grid grid-cols-2 gap-x-2 gap-y-4 sm:grid-cols-4">
+        {resumirDesempenho(desempenho).itens.map((item) => (
+          <Indicador
+            key={item.rotulo}
+            rotulo={item.rotulo}
+            valor={item.valor}
+            unidade={item.unidade ?? ''}
+          />
+        ))}
+      </dl>
+
+      <div className="mt-[13px] border-t border-[var(--surface-border)] pt-[13px]">
+        <p className="flex items-baseline justify-between gap-3">
+          <span className="text-xs font-medium leading-[17px] text-acao-texto">
+            Competência II — repertório
+          </span>
+          <span className="text-[13px] font-semibold leading-[18px] text-acao-texto">
+            {possuiMediaCompetencia2 ? (
+              `${mediaCompetencia2} / 200`
+            ) : (
+              <>
+                <span aria-hidden="true">—</span>
+                <span className="sr-only">
+                  Ainda sem média
+                </span>
+              </>
+            )}
+          </span>
+        </p>
+
+        {possuiMediaCompetencia2 && (
+          <div
+            aria-hidden="true"
+            className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--aluno-trilho)]"
+          >
+            <div
+              className="h-full rounded-full bg-[var(--color-brand-accent)]"
+              style={{
+                width: `${calcularPercentual(
+                  desempenho.mediaCompetencia2,
+                  200,
+                )}%`,
+              }}
+            />
+          </div>
+        )}
+
+        <p className="mt-2.5 text-xs font-medium leading-[17px] text-texto-suave">
+          {possuiMediaCompetencia2
+            ? 'Média das suas redações corrigidas'
+            : 'Suas médias aparecem aqui depois da primeira correção publicada.'}
+        </p>
+      </div>
+    </section>
+  )
+}
+
+function LinhaRedacao({
+  redacao,
+  turmaAtivaId,
+}) {
+  const descricao = descreverRedacao(redacao)
+  const titulo =
+    redacao.tema?.enunciado ?? 'Tema indisponível'
+  // O editor só abre temas da turma ativa; a correção publicada continua acessível.
+  const exibirAcao =
+    redacao.status === 'AVALIADA' ||
+    turmaAtivaId === undefined ||
+    redacao.tema?.turma?.id === turmaAtivaId
+
+  return (
+    <li
+      className={`${classeCartao} aluno-elevacao-1 relative flex flex-col gap-4 overflow-hidden py-5 pl-7 pr-5 md:grid md:min-h-[92px] md:grid-cols-[minmax(0,548px)_150px_minmax(0,1fr)_160px] md:items-center md:gap-x-6 md:pr-7`}
+    >
+      <span
+        aria-hidden="true"
+        className={`absolute inset-y-0 left-0 w-1.5 ${CORES_FAIXA[descricao.faixa]}`}
+      />
+
+      <div className="min-w-0">
+        <h3 className="break-words text-lg font-semibold leading-6 tracking-[-0.09px] text-texto">
+          {titulo}
+        </h3>
+        <p className="mt-1 text-xs font-medium leading-[17px] text-texto-suave">
+          {descricao.legenda}
+        </p>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 md:contents">
+        <span
+          className={`inline-flex h-6 w-[150px] items-center justify-center rounded-full text-xs font-medium leading-[17px] md:col-start-2 ${CORES_NOTA[descricao.nota.tom]}`}
+        >
+          {descricao.nota.texto}
+        </span>
+
+        {exibirAcao && (
+          <Link
+            to={descricao.acao.destino}
+            className={`inline-flex h-10 w-[160px] items-center justify-center rounded-controle text-[13px] font-semibold leading-[18px] transition md:col-start-4 ${CLASSES_ACAO[descricao.acao.variante]}`}
+          >
+            {descricao.acao.rotulo}
+            <span className="sr-only">
+              {' '}— {titulo}
+            </span>
+          </Link>
+        )}
+      </div>
+    </li>
+  )
+}
+
+function CorrecoesRecentes({
+  bloco,
+  turmaAtivaId,
+}) {
+  if (bloco.status === 'pronto' && !bloco.dados.length) return null
+  return (
+    <section
+      aria-labelledby="titulo-minhas-redacoes"
+      className="mt-8"
+    >
+      <h2
+        id="titulo-minhas-redacoes"
+        className="text-xl font-semibold leading-[26px] tracking-[-0.16px] text-texto"
+      >
+        <IconeEditorial tipo="comentario" />Corrigidas recentemente
+      </h2>
+
+      {bloco.status === 'carregando' && (
+        <div
+          role="status"
+          className="mt-4 space-y-3"
+        >
+          <span className="sr-only">
+            Carregando suas redações…
+          </span>
+          {[0, 1, 2].map((item) => (
+            <div
+              key={item}
+              className={`${classeCartao} h-[92px] animate-pulse`}
+            />
+          ))}
+        </div>
+      )}
+
+      {bloco.status === 'erro' && (
+        <p
+          role="alert"
+          className={`${classeCartao} mt-4 p-6 text-sm leading-[22px] text-texto-suave`}
+        >
+          Não foi possível carregar suas redações. Recarregue a página para tentar novamente.
+        </p>
+      )}
+
+      {bloco.status === 'pronto' &&
+        bloco.dados.length > 0 && (
+          <ul className="mt-4 space-y-3">
+            {bloco.dados.map((redacao) => (
+              <LinhaRedacao
+                key={redacao.id}
+                redacao={redacao}
+                turmaAtivaId={turmaAtivaId}
+              />
+            ))}
+          </ul>
+        )}
+    </section>
+  )
+}
+
+function FormularioEntrarTurma({ onEntrou }) {
+  const idCampo = useId()
+  const idAjuda = useId()
   const [codigoAcesso, setCodigoAcesso] =
     useState('')
-  const [matriculaStatus, setMatriculaStatus] =
-    useState({
-      enviando: false,
-      tipo: null,
-      mensagem: '',
-    })
+  const [estado, setEstado] = useState({
+    enviando: false,
+    erro: '',
+  })
 
-  const firstName =
-    usuario?.nome?.split(' ')[0] ?? 'Aluno'
-
-  useEffect(() => {
-    let componentActive = true
-
-    async function carregarDashboard() {
-      try {
-        const dados = await carregarDadosDashboard()
-
-        if (!componentActive) {
-          return
-        }
-
-        setDashboard(dados)
-      } catch {
-        if (!componentActive) {
-          return
-        }
-
-        setDashboard({
-          status: 'erro',
-          themes: [],
-          essays: [],
-        })
-      }
-    }
-
-    carregarDashboard()
-
-    return () => {
-      componentActive = false
-    }
-  }, [])
-
-  async function handleEntrarTurma(event) {
-    event.preventDefault()
+  async function handleSubmit(evento) {
+    evento.preventDefault()
 
     if (
-      matriculaStatus.enviando ||
+      estado.enviando ||
       codigoAcesso.length !== 8
     ) {
       return
     }
 
-    setMatriculaStatus({
+    setEstado({
       enviando: true,
-      tipo: null,
-      mensagem: '',
+      erro: '',
     })
 
     try {
       await entrarEmTurma(codigoAcesso)
-      const dados = await carregarDadosDashboard()
-
-      setDashboard(dados)
       setCodigoAcesso('')
-      setMatriculaStatus({
+      setEstado({
         enviando: false,
-        tipo: 'sucesso',
-        mensagem:
-          'Matrícula realizada. Os temas da turma já estão disponíveis.',
+        erro: '',
       })
-    } catch (error) {
-      setMatriculaStatus({
+      await onEntrou()
+    } catch (erro) {
+      const {
+        mensagem,
+        campos,
+      } = interpretarErroApi(
+        erro,
+        'Não foi possível entrar na turma.',
+      )
+
+      setEstado({
         enviando: false,
-        tipo: 'erro',
-        mensagem:
-          error?.response?.data?.error?.message ??
-          'Não foi possível entrar na turma.',
+        erro: campos.codigoAcesso ?? mensagem,
       })
     }
   }
 
-  const essaysByTheme = new Map(
-    dashboard.essays.map((essay) => [
-      essay.temaId,
-      essay,
-    ]),
-  )
-
-  const correctedEssays =
-    dashboard.essays.filter(
-      (essay) => essay.status === 'AVALIADA',
-    )
-
-  const themesEmptyMessage =
-    dashboard.status === 'erro'
-      ? 'Não foi possível carregar os temas. Verifique a conexão com a API e sua matrícula.'
-      : 'Sua turma ainda não possui temas disponíveis.'
-
-  const essaysEmptyMessage =
-    dashboard.status === 'erro'
-      ? 'Não foi possível carregar suas redações.'
-      : 'Quando você iniciar uma redação, ela aparecerá aqui.'
-
   return (
-    <DashboardLayout>
-      <HeroBanner
-        eyebrow={`Olá, ${firstName}`}
-        title="Sua jornada de escrita começa por aqui."
-        description="Consulte os temas da sua turma, acompanhe cada entrega e acesse as correções publicadas pelo professor."
-        metadata={[
-          `${dashboard.themes.length} temas disponíveis`,
-          `${dashboard.essays.length} redações iniciadas`,
-          `${correctedEssays.length} correções disponíveis`,
-        ]}
-        primaryAction={{
-          label: 'Ver temas',
-          href: '#temas',
-        }}
-        secondaryAction={{
-          label: 'Minhas redações',
-          href: '#redacoes',
-        }}
-      />
+    <section
+      aria-labelledby={`${idCampo}-titulo`}
+      className="mt-[25px] max-w-[700px] rounded-cartao border-2 border-[var(--color-brand-accent)] bg-superficie p-6"
+    >
+      <h2
+        id={`${idCampo}-titulo`}
+        className="text-xl font-semibold leading-[26px] tracking-[-0.16px] text-texto"
+      >
+        Entre na sua turma
+      </h2>
+      <p
+        id={idAjuda}
+        className="mt-1 text-sm leading-[22px] text-texto-suave"
+      >
+        Você ainda não participa de uma turma. Digite o código de oito caracteres enviado pelo professor para ver as propostas de redação.
+      </p>
 
-      <section className="border-b border-lexis-200/15 px-6 py-8">
-        <form
-          onSubmit={handleEntrarTurma}
-          className="surface-card mx-auto flex max-w-7xl flex-col gap-4 rounded-[14px] p-5 md:flex-row md:items-end"
-          aria-busy={matriculaStatus.enviando}
-        >
-          <label className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold text-lexis-50">
-              Entrar em uma turma
-            </span>
-            <span className="mt-1 block text-xs leading-5 text-lexis-200">
-              Cole o código de oito caracteres enviado pelo professor.
-            </span>
-            <input
-              name="codigoAcesso"
-              value={codigoAcesso}
-              onChange={(event) => {
-                setCodigoAcesso(
-                  normalizarCodigoAcesso(
-                    event.target.value,
-                  ),
-                )
-                setMatriculaStatus((estadoAtual) => ({
-                  ...estadoAtual,
-                  tipo: null,
-                  mensagem: '',
-                }))
-              }}
-              autoCapitalize="characters"
-              autoComplete="off"
-              spellCheck={false}
-              placeholder="LEX3A2K9"
-              aria-describedby="ajuda-codigo-turma"
-              aria-invalid={
-                codigoAcesso.length > 0 &&
-                codigoAcesso.length !== 8
-              }
-              className="mt-3 w-full rounded-[10px] border border-lexis-300/30 bg-lexis-950 px-4 py-3 font-mono text-lg font-bold uppercase tracking-[0.16em] text-lexis-50 outline-none focus:border-lexis-300"
-              required
-            />
+      <form
+        onSubmit={handleSubmit}
+        aria-busy={estado.enviando}
+        className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end"
+      >
+        <div className="min-w-0 flex-1 sm:max-w-xs">
+          <label
+            htmlFor={idCampo}
+            className="block text-xs font-medium leading-[17px] text-texto-suave"
+          >
+            Código da turma
           </label>
-
-          <button
-            type="submit"
-            disabled={
-              matriculaStatus.enviando ||
+          <input
+            id={idCampo}
+            name="codigoAcesso"
+            value={codigoAcesso}
+            onChange={(evento) => {
+              setCodigoAcesso(
+                normalizarCodigoAcesso(
+                  evento.target.value,
+                ),
+              )
+              setEstado((atual) => ({
+                ...atual,
+                erro: '',
+              }))
+            }}
+            autoCapitalize="characters"
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="LEX3A2K9"
+            aria-describedby={idAjuda}
+            aria-invalid={
+              codigoAcesso.length > 0 &&
               codigoAcesso.length !== 8
             }
-            className="min-h-12 rounded-[10px] bg-lexis-400 px-5 font-bold text-white disabled:cursor-not-allowed disabled:opacity-55"
-          >
-            {matriculaStatus.enviando
-              ? 'Entrando...'
-              : 'Entrar na turma'}
-          </button>
+            required
+            className="mt-2 h-11 w-full rounded-controle border border-[var(--aluno-borda-campo)] bg-[var(--page-background)] px-4 font-mono text-base font-bold uppercase tracking-[0.16em] text-texto"
+          />
+        </div>
 
-          <p
-            id="ajuda-codigo-turma"
-            role={
-              matriculaStatus.tipo === 'erro'
-                ? 'alert'
-                : 'status'
-            }
-            className={`text-sm md:max-w-xs ${
-              matriculaStatus.tipo === 'erro'
-                ? 'text-red-600'
-                : matriculaStatus.tipo === 'sucesso'
-                  ? 'text-emerald-600'
-                  : 'sr-only'
-            }`}
-          >
-            {matriculaStatus.mensagem ||
-              'O código é normalizado automaticamente.'}
-          </p>
-        </form>
-      </section>
+        <Botao
+          type="submit"
+          disabled={
+            estado.enviando ||
+            codigoAcesso.length !== 8
+          }>
+          {estado.enviando
+            ? 'Entrando…'
+            : 'Entrar na turma'}
+        </Botao>
+      </form>
 
-      <ContentRail
-        id="temas"
-        eyebrow="Propostas"
-        title="Temas da sua turma"
-        description="Acompanhe os prazos e o andamento de cada proposta de redação."
-        emptyMessage={themesEmptyMessage}
-      >
-        {dashboard.status === 'carregando'
-          ? [0, 1, 2].map((item) => (
-              <PainelSkeleton key={item} />
-            ))
-          : dashboard.themes.map(
-              (theme, index) => {
-                const essay =
-                  essaysByTheme.get(theme.id)
-
-                return (
-                  <ContentCard
-                    key={theme.id}
-                    eyebrow={
-                      theme.turma?.nome ??
-                      'Tema de redação'
-                    }
-                    title={theme.enunciado}
-                    description={
-                      theme.descricao ??
-                      'Consulte as orientações e produza sua redação.'
-                    }
-                    status={obterStatusTema(
-                      theme,
-                      essay,
-                    )}
-                    details={obterDetalhesTema(
-                      theme,
-                      essay,
-                    )}
-                    accentIndex={index}
-                    to={
-                      essay?.status === 'AVALIADA'
-                        ? `/aluno/redacoes/${essay.id}/feedback`
-                        : `/aluno/temas/${theme.id}/redacao`
-                    }
-                    actionLabel={
-                      essay?.status === 'AVALIADA'
-                        ? 'Abrir correção'
-                        : essay?.status === 'ENVIADA'
-                          ? 'Consultar entrega'
-                          : essay
-                            ? 'Continuar redação'
-                            : 'Começar redação'
-                    }
-                  />
-                )
-              },
-            )}
-      </ContentRail>
-
-      <div className="border-t border-lexis-200/10">
-        <ContentRail
-          id="redacoes"
-          eyebrow="Acompanhamento"
-          title="Minhas redações"
-          description="Consulte seus rascunhos, entregas e correções publicadas."
-          emptyMessage={essaysEmptyMessage}
+      {estado.erro && (
+        <p
+          role="alert"
+          className="mt-3 text-sm leading-[22px] text-[var(--aluno-erro)]"
         >
-          {dashboard.status === 'carregando'
-            ? [0, 1].map((item) => (
-                <PainelSkeleton key={item} />
-              ))
-            : dashboard.essays.map(
-                (essay, index) => (
-                  <ContentCard
-                    key={essay.id}
-                    eyebrow="Redação"
-                    title={
-                      essay.tema?.enunciado ??
-                      'Tema indisponível'
-                    }
-                    description={
-                      essay.status === 'AVALIADA'
-                        ? 'Sua correção já está disponível.'
-                        : essay.status === 'ENVIADA'
-                          ? 'Entrega realizada. Aguarde a correção do professor.'
-                          : 'Continue escrevendo antes de realizar a entrega.'
-                    }
-                    status={formatarStatusRedacao(
-                      essay.status,
-                    )}
-                    details={[
-                      essay.tema?.turma?.nome ??
-                        'Turma indisponível',
-                      essay.origemTexto === 'OCR'
-                        ? 'Texto digitalizado'
-                        : 'Texto digitado',
-                      essay.enviadaEm
-                        ? `Enviada em ${formatarData(essay.enviadaEm)}`
-                        : `Atualizada em ${formatarData(essay.atualizadoEm)}`,
-                    ]}
-                    accentIndex={index + 1}
-                    to={
-                      essay.status === 'AVALIADA'
-                        ? `/aluno/redacoes/${essay.id}/feedback`
-                        : `/aluno/temas/${essay.temaId}/redacao`
-                    }
-                    actionLabel={
-                      essay.status === 'AVALIADA'
-                        ? 'Abrir correção'
-                        : essay.status === 'ENVIADA'
-                          ? 'Consultar entrega'
-                          : 'Continuar redação'
-                    }
-                  />
-                ),
-              )}
-        </ContentRail>
-      </div>
-    </DashboardLayout>
+          {estado.erro}
+        </p>
+      )}
+    </section>
+  )
+}
+
+function SubtituloTurma({ bloco }) {
+  if (bloco.status === 'carregando') {
+    return (
+      <span
+        role="status"
+        className="block h-[25px] w-72 max-w-full animate-pulse rounded-marca bg-superficie-rebaixada"
+      >
+        <span className="sr-only">
+          Carregando sua turma…
+        </span>
+      </span>
+    )
+  }
+
+  if (bloco.status === 'sem-turma') {
+    return 'Você ainda não está em uma turma.'
+  }
+
+  if (bloco.status === 'erro') {
+    return 'Não foi possível carregar os dados da sua turma.'
+  }
+
+  return descreverTurma(bloco.dados?.turma)
+}
+
+export default function AlunoDashboardPage() {
+  const [painel, setPainel] = useState({
+    matricula: BLOCO_CARREGANDO,
+    temas: BLOCO_CARREGANDO,
+    redacoes: BLOCO_CARREGANDO,
+    desempenho: BLOCO_CARREGANDO,
+  })
+  const [agora, setAgora] = useState(
+    () => new Date(),
+  )
+  const [aviso, setAviso] = useState('')
+  const [focarAviso, setFocarAviso] = useState(false)
+  const avisoRef = useRef(null)
+  const location = useLocation()
+  const navigate = useNavigate()
+  const avisoNavegacao = location.state?.aviso
+
+  useEffect(() => {
+    let ativo = true
+
+    carregarPainel().then((dados) => {
+      if (ativo) setPainel(dados)
+    })
+
+    const relogio = globalThis.setInterval(
+      () => setAgora(new Date()),
+      INTERVALO_RELOGIO_MS,
+    )
+
+    // A saída da turma acontece no diálogo do layout; o painel recarrega sem refresh.
+    const pararObservacao = observarMatriculaAtualizada(
+      () => {
+        carregarPainel().then((dados) => {
+          if (ativo) {
+            setPainel(dados)
+            setAgora(new Date())
+          }
+        })
+      },
+    )
+
+    return () => {
+      ativo = false
+      globalThis.clearInterval(relogio)
+      pararObservacao()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!avisoNavegacao) return
+
+    setAviso(avisoNavegacao)
+    setFocarAviso(true)
+    navigate(location.pathname, {
+      replace: true,
+      state: null,
+    })
+  }, [avisoNavegacao, location.pathname, navigate])
+
+  // Depois de sair da turma, o foco vai para a confirmação, que é anunciada.
+  useEffect(() => {
+    if (!focarAviso || !aviso) return
+
+    avisoRef.current?.focus()
+    setFocarAviso(false)
+  }, [focarAviso, aviso])
+
+  const recarregarAposMatricula = useCallback(
+    async () => {
+      const dados = await carregarPainel()
+
+      setPainel(dados)
+      setAgora(new Date())
+      setAviso(
+        'Matrícula realizada. Você já faz parte da turma.',
+      )
+    },
+    [],
+  )
+
+  const semTurma =
+    painel.matricula.status === 'sem-turma'
+  const statusProposta = combinarStatus(
+    painel.temas,
+    painel.redacoes,
+  )
+  const propostas =
+    statusProposta === 'pronto'
+      ? listarPropostasDoAluno(
+          painel.temas.dados,
+          painel.redacoes.dados,
+          agora,
+        )
+      : []
+  const { proxima: descricaoProposta, lista: propostasDaLista, corrigidas } =
+    organizarPropostasDoInicio(propostas, painel.redacoes.dados ?? [])
+  const blocoCorrigidas = { ...painel.redacoes, dados: corrigidas }
+  const proposta = descricaoProposta?.proposta ?? null
+  const rascunhoProposta = proposta
+    ? encontrarRascunhoDoTema(
+        painel.redacoes.dados,
+        proposta.id,
+      )
+    : null
+  // undefined: matrícula ainda desconhecida, as ações não são restringidas.
+  const turmaAtivaId =
+    painel.matricula.status === 'pronto'
+      ? painel.matricula.dados?.turma?.id ?? null
+      : semTurma
+        ? null
+        : undefined
+
+  return (
+    <AppShell
+      rotaEnviarRedacao={
+        proposta
+          ? `/aluno/temas/${encodeURIComponent(proposta.id)}/redacao`
+          : null
+      }
+    >
+      <header>
+        <h1 className="text-[36px] font-semibold leading-[41px] tracking-[-0.65px] text-texto">
+          Início
+        </h1>
+        <p className="mt-[11px] min-h-[25px] text-base leading-[25px] text-texto-suave [overflow-wrap:anywhere]">
+          <SubtituloTurma bloco={painel.matricula} />
+        </p>
+      </header>
+
+      {aviso && (
+        <p
+          ref={avisoRef}
+          tabIndex={-1}
+          role="status"
+          className="mt-4 rounded-controle bg-[var(--aluno-sucesso-fundo)] px-4 py-3 text-sm font-medium leading-[22px] text-[var(--aluno-sucesso)]"
+        >
+          {aviso}
+        </p>
+      )}
+
+      {semTurma ? (
+        <>
+          <FormularioEntrarTurma
+            onEntrou={recarregarAposMatricula}
+          />
+
+          {corrigidas.length > 0 && (
+            <CorrecoesRecentes
+              bloco={blocoCorrigidas}
+              turmaAtivaId={turmaAtivaId}
+            />
+          )}
+        </>
+      ) : (
+        <>
+          {(proposta || statusProposta !== 'pronto') && (
+            <div className="mt-[25px]">
+              <CartaoProposta
+                turmaDoCabecalho={painel.matricula.status === 'pronto' ? descreverTurma(painel.matricula.dados?.turma) : null}
+                status={statusProposta}
+                proposta={proposta}
+                rascunho={rascunhoProposta}
+                agora={agora}
+                descricao={descricaoProposta}
+              />
+            </div>
+          )}
+
+          {/* Issue #178: o desempenho vem antes das propostas da turma. */}
+          <div className="mt-6 max-w-2xl"><CartaoDesempenho bloco={painel.desempenho} /></div>
+
+          <ListaPropostas status={statusProposta} propostas={propostasDaLista} />
+
+          <CorrecoesRecentes
+            bloco={blocoCorrigidas}
+            turmaAtivaId={turmaAtivaId}
+          />
+        </>
+      )}
+    </AppShell>
   )
 }

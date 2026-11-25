@@ -1,0 +1,155 @@
+/*
+ * Perfil do aluno. Usa os tokens --aluno-* do shell do
+ * aluno, que já têm variante para o tema escuro. Classes com prefixo próprio
+ * (aluno-pf-) para não colidir com as de outras telas do aluno.
+ */
+.aluno-pf-grade {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  max-width: 960px;
+  margin-top: 25px;
+}
+
+.aluno-pf-cartao {
+  min-width: 0;
+  padding: 20px 24px 22px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--raio-cartao);
+  background: var(--superficie-conteudo);
+  box-shadow: var(--aluno-elevacao-1);
+}
+
+.aluno-pf-largo {
+  grid-column: 1 / -1;
+}
+
+.aluno-pf-cartao h2 {
+  margin: 0;
+  color: var(--texto);
+  font-family: var(--fonte-interface);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.aluno-pf-campos {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0 0;
+}
+
+.aluno-pf-campos dt {
+  color: var(--texto-suave);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 17px;
+}
+
+.aluno-pf-campos dd {
+  margin: 2px 0 0;
+  color: var(--texto);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 22px;
+  overflow-wrap: anywhere;
+}
+
+.aluno-pf-indicadores {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0 0;
+}
+
+.aluno-pf-indicadores > div {
+  padding: 12px 14px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--raio-cartao);
+}
+
+.aluno-pf-indicadores dt {
+  color: var(--texto-suave);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 17px;
+}
+
+.aluno-pf-indicadores dd {
+  margin: 4px 0 0;
+  color: var(--texto);
+  font-family: var(--fonte-interface);
+  font-variant-numeric: tabular-nums;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 30px;
+}
+
+.aluno-pf-unidade {
+  color: var(--texto-suave);
+  font-family: var(--fonte-interface);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.aluno-pf-texto {
+  margin: 12px 0 0;
+  color: var(--texto-suave);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.aluno-pf-sessao {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+}
+
+
+
+
+
+
+
+.aluno-pf-erro {
+  border-left: 3px solid var(--aluno-erro);
+}
+
+.aluno-pf-linha {
+  height: 18px;
+  margin-top: 14px;
+  border-radius: var(--raio-controle);
+  background: var(--aluno-trilho);
+  animation: aluno-pf-pulso 1.4s ease-in-out infinite;
+}
+
+.aluno-pf-linha:first-of-type {
+  margin-top: 18px;
+}
+
+@keyframes aluno-pf-pulso {
+  50% { opacity: 0.55; }
+}
+
+@media (max-width: 767px) {
+  .aluno-pf-grade {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .aluno-pf-indicadores {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .aluno-pf-cartao {
+    padding: 18px 16px 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aluno-pf-linha {
+    animation: none;
+  }
+}

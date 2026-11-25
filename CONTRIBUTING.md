@@ -2,7 +2,7 @@
 
 ## Regra principal
 
-A branch `main` representa a versão integrada do projeto. Nenhum integrante deve desenvolver diretamente nela. Toda correção, melhoria ou nova funcionalidade começa por uma Issue, é implementada em uma branch própria e incorporada por Pull Request.
+A branch `dev` reúne o trabalho integrado para testes de Bryan e Lucas. A `main` mantém a versão estável e só recebe uma promoção posterior por Pull Request, após testes e aprovação explícita. Nunca faça commits diretamente na `main`. Toda correção, melhoria ou nova funcionalidade começa por uma Issue, é implementada em uma branch própria e incorporada na `dev` por Pull Request e merge commit.
 
 ## Aceitar o convite
 
@@ -39,8 +39,9 @@ A Issue deve explicar o problema ou objetivo, o escopo e os critérios de aceite
 Antes de iniciar uma tarefa:
 
 ```powershell
-git switch main
-git pull --ff-only origin main
+git status
+git switch dev
+git pull --ff-only origin dev
 git switch -c feat/NUMERO-nome-curto-da-tarefa
 ```
 
@@ -73,17 +74,17 @@ git push -u origin feat/NUMERO-nome-curto-da-tarefa
 
 Evite `git add .` e `git add -A`: selecione somente os arquivos da tarefa e confira o diff preparado antes do commit.
 
-No GitHub, abra um Pull Request da sua branch para `main`. Preencha o modelo, inclua `Closes #NUMERO` na descrição e solicite a revisão do outro integrante. O merge só deve ocorrer depois que o CI estiver verde e a revisão for aprovada.
+No GitHub, abra um Pull Request da sua branch para `dev`. Preencha o modelo, inclua `Closes #NUMERO` na descrição e solicite a revisão do outro integrante. O merge commit só deve ocorrer depois que o CI estiver verde e a revisão for aprovada. Uma exceção à revisão do outro integrante exige autorização explícita do responsável e registro no PR. Como `dev` não é a branch padrão, `Closes` não fecha automaticamente a Issue nessa etapa.
 
-## Atualizar uma branch com a `main`
+## Atualizar uma branch com a `dev`
 
-Quando a `main` receber alterações novas:
+Quando a `dev` receber alterações novas (com o trabalho local salvo e o diretório limpo):
 
 ```powershell
-git switch main
-git pull --ff-only origin main
+git switch dev
+git pull --ff-only origin dev
 git switch feat/NUMERO-nome-curto-da-tarefa
-git merge main
+git merge dev
 ```
 
 Se houver conflitos, resolva os arquivos indicados pelo Git, execute as verificações do projeto e finalize o merge:
@@ -129,8 +130,8 @@ Em caso de dúvida, execute `git status` e revise cada arquivo antes do `git add
 ## Depois do merge
 
 ```powershell
-git switch main
-git pull --ff-only origin main
+git switch dev
+git pull --ff-only origin dev
 git branch -d feat/NUMERO-nome-curto-da-tarefa
 ```
 

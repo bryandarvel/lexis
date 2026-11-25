@@ -1,0 +1,850 @@
+/*
+ * Casca única das telas autenticadas (AppShell, Lote 4, UX-001). Todo o CSS
+ * de barra, menu lateral, trilha, sino, avatar e área de conteúdo fica aqui,
+ * igual para aluno e professor. Medidas e cores vêm da casca do aluno, que
+ * saiu do protótipo no Figma (nó 16:2): barra de 56 px, menu de 240 px e
+ * gaveta abaixo de 1024 px.
+ *
+ * A BARRA é navy nos dois temas (--superficie-shell). Os tons --casca-* só
+ * existem sobre o navy e por isso ficam locais, não em tokens.css; a ligação
+ * com as variáveis antigas está em docs/mapa-tokens.md.
+ *
+ * O MENU LATERAL deixou de ser navy (Issue #188): ele tem superfície própria,
+ * clara no tema claro e escura no escuro, separada da página por uma borda.
+ * Os tons --trilho-* saem de tokens que já viram o tema, então quase nada
+ * precisa de versão escura; só a cor do ícone, que no claro é o próprio navy
+ * da barra e no escuro precisa de um azul que leia sobre superfície escura.
+ */
+.casca {
+  --casca-barra: 4rem;
+  --casca-trilho: 15rem;
+  --casca-texto-suave: #93c4f7;
+  --casca-icone: #3d72b0;
+  --casca-borda: #1e4a80;
+  --casca-avatar: #34495f;
+  --casca-contagem: #c42626;
+
+  --trilho-fundo: var(--superficie-conteudo);
+  --trilho-borda: var(--borda);
+  --trilho-texto: var(--texto-suave);
+  --trilho-texto-ativo: var(--texto);
+  --trilho-item-ativo: var(--acao-suave);
+  --trilho-moldura: var(--superficie-rebaixada);
+  --trilho-moldura-borda: var(--borda);
+  --trilho-icone: var(--superficie-shell);
+  --trilho-moldura-ativa: var(--superficie-shell);
+  --trilho-icone-ativo: var(--texto-sobre-shell);
+  min-height: 100svh;
+}
+
+/*
+ * No escuro o menu não vira branco nem volta ao navy: fica na superfície de
+ * conteúdo do tema. O ícone usa o azul claro de ação, que é o par escuro do
+ * navy, e o item atual inverte para a cor de ação cheia, como no claro.
+ */
+[data-theme="dark"] .casca {
+  --trilho-icone: var(--acao-texto);
+  --trilho-moldura-ativa: var(--acao);
+  --trilho-icone-ativo: var(--texto-sobre-acao);
+}
+
+/* Link de pular conteúdo: fora da tela até receber foco. */
+.casca-pular {
+  position: fixed;
+  left: 1rem;
+  top: 0.75rem;
+  z-index: 60;
+  padding: 0.5rem 1rem;
+  border-radius: var(--raio-controle);
+  background: var(--superficie-conteudo);
+  color: var(--texto);
+  font-size: 0.875rem;
+  font-weight: 600;
+  transform: translateY(-300%);
+}
+
+.casca-pular:focus {
+  transform: none;
+}
+
+/* Barra */
+.casca-barra {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  height: var(--casca-barra);
+  /* O avatar tem 30 px dentro de um alvo de 44 px: os 7 px de folga saem da margem. */
+  padding: 0 calc(1rem - 7px) 0 1rem;
+  background: var(--superficie-shell);
+  color: var(--texto-sobre-shell);
+}
+
+/* O foco global é escuro demais sobre o navy. O menu lateral deixou de ser
+   navy (Issue #188) e volta ao anel padrão, que é o legível na superfície
+   dele. O menu do usuário tem superfície própria. */
+.casca-barra :focus-visible {
+  outline-color: var(--foco-sobre-shell);
+}
+
+.casca-menu-painel :focus-visible {
+  outline-color: var(--foco);
+}
+
+.casca-botao-gaveta {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-left: -0.25rem;
+  border: 0;
+  border-radius: var(--raio-controle);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.casca-botao-gaveta:hover {
+  background: var(--surface-shell-2);
+}
+
+.casca-botao-gaveta svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.casca-barra-resto {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+/* Acabamento da barra (Issue #188): a marca ganha presença e o caminho atual
+   se separa dos ancestrais pela cor, em vez de tudo no mesmo tom. A cor da
+   barra não muda. */
+.casca-marca {
+  flex: none;
+  border-radius: var(--raio-marca);
+  color: inherit;
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  text-decoration: none;
+}
+
+/* Trilha */
+.casca-divisor {
+  display: none;
+  flex: none;
+  width: 1px;
+  height: 1.5rem;
+  margin-inline: 0.25rem;
+  background: var(--casca-borda);
+}
+
+.casca-trilha {
+  display: none;
+  min-width: 0;
+}
+
+.casca-trilha ol {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--casca-texto-suave);
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+}
+
+.casca-trilha li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.casca-trilha a,
+.casca-trilha-texto {
+  display: block;
+  max-width: 40vw;
+  overflow: hidden;
+  padding-block: 1px;
+  color: inherit;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.casca-trilha a:hover {
+  text-decoration: underline;
+}
+
+/* A página atual é o fim do caminho: fica no texto cheio da barra. */
+.casca-trilha-texto {
+  color: var(--texto-sobre-shell);
+  font-weight: 600;
+}
+.casca-trilha a { min-width: 24px; }
+
+/*
+ * No modo imersivo não há menu lateral: a trilha é o caminho de volta e por
+ * isso aparece em qualquer largura. Até 600 px só cabe o primeiro item, o
+ * mesmo corte que a correção já usava na trilha dela.
+ */
+.casca--imersiva .casca-divisor,
+.casca--imersiva .casca-trilha {
+  display: block;
+}
+
+@media (max-width: 600px) {
+  .casca--imersiva .casca-trilha li:not(:first-child) {
+    display: none;
+  }
+}
+
+/* Ferramentas da barra */
+.casca-ferramentas {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+.casca-sino {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--raio-controle);
+  color: inherit;
+}
+
+.casca-sino-icone {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--raio-controle);
+  background: var(--surface-shell-3);
+  transition: background-color var(--rapido);
+}
+
+.casca-sino:hover .casca-sino-icone {
+  background: var(--surface-shell-4);
+}
+
+.casca-sino svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.casca-sino-contagem {
+  position: absolute;
+  top: 0.375rem;
+  left: 1.625rem;
+  display: grid;
+  place-items: center;
+  min-width: 0.875rem;
+  height: 0.875rem;
+  padding: 0 3px;
+  border-radius: var(--raio-pilula);
+  background: var(--casca-contagem);
+  color: #ffffff;
+  font-size: 0.5625rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+/* Sino como botão (abre o painel de avisos) */
+.casca-sino-conjunto {
+  position: relative;
+  flex: none;
+}
+
+button.casca-sino {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+/*
+ * Painel de avisos (Lote 5, §9B). No computador é um popover ancorado ao sino,
+ * não modal; abaixo de 768 px vira folha de tela cheia, aberta com showModal.
+ * O foco usa o anel do conteúdo: o painel tem superfície própria, não o navy
+ * da barra.
+ */
+.casca-avisos {
+  inset: auto;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-cartao);
+  background: var(--superficie-flutuante);
+  color: var(--texto);
+  box-shadow: var(--sombra-flutuante);
+}
+
+.casca-avisos[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.casca-avisos[data-modal="false"] {
+  position: absolute;
+  top: calc(100% + 3px);
+  right: 0;
+  z-index: 50;
+  width: 23.75rem;
+  max-width: calc(100vw - 1.5rem);
+  max-height: 70vh;
+}
+
+.casca-avisos[data-modal="true"] {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  border: 0;
+  border-radius: 0;
+}
+
+.casca-avisos :focus-visible {
+  outline-color: var(--foco);
+}
+
+.casca-avisos__cabecalho {
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1rem 0.75rem;
+  border-bottom: 1px solid var(--borda);
+}
+
+.casca-avisos__titulo {
+  margin: 0;
+  font-family: var(--fonte-interface);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5rem;
+}
+
+.casca-avisos__titulo:focus-visible {
+  outline-offset: 2px;
+}
+
+.casca-avisos__contagem {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+}
+
+.casca-avisos__fechar,
+.casca-avisos__acao {
+  min-height: 2.75rem;
+  padding: 0 0.875rem;
+  border: 1px solid var(--borda-forte);
+  border-radius: var(--raio-controle);
+  background: transparent;
+  color: var(--texto);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.casca-avisos__corpo {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.casca-avisos__lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.casca-aviso {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  padding: 0.25rem 1rem 0.75rem;
+  border-bottom: 1px solid var(--borda);
+}
+
+.casca-aviso__corpo {
+  display: flex;
+  gap: 0.625rem;
+  width: 100%;
+  padding: 0.5rem 0.25rem;
+  border-radius: var(--raio-controle);
+  color: inherit;
+  text-decoration: none;
+}
+
+a.casca-aviso__corpo:hover {
+  background: var(--superficie-rebaixada);
+}
+
+.casca-aviso__ponto {
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-top: 0.4375rem;
+  border-radius: var(--raio-pilula);
+  background: var(--acao);
+}
+
+.casca-aviso[data-lido="true"] .casca-aviso__ponto {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--borda-forte);
+}
+
+.casca-aviso__texto {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.casca-aviso__titulo {
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.375rem;
+}
+
+.casca-aviso[data-lido="true"] .casca-aviso__titulo {
+  font-weight: 500;
+}
+
+.casca-aviso__mensagem,
+.casca-aviso__contexto {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--texto-suave);
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.casca-aviso__contexto {
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}
+
+.casca-aviso__data {
+  color: var(--texto-suave);
+  font-size: 0.75rem;
+  line-height: 1.125rem;
+}
+
+.casca-aviso__marcar {
+  min-height: 2.75rem;
+  margin-left: 0.875rem;
+  padding: 0 0.5rem;
+  border: 0;
+  background: transparent;
+  color: var(--acao-texto);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.casca-aviso__marcar:disabled {
+  cursor: progress;
+  text-decoration: none;
+}
+
+.casca-aviso__falha,
+.casca-avisos__erro p {
+  margin: 0;
+  color: var(--erro);
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+}
+
+.casca-avisos__erro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--borda);
+  background: var(--superficie-rebaixada);
+}
+
+.casca-avisos__estado {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 1.5rem 1rem;
+  color: var(--texto-suave);
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+}
+
+.casca-avisos__estado p {
+  margin: 0;
+}
+
+.casca-avisos__vazio-titulo {
+  color: var(--texto);
+  font-weight: 600;
+}
+
+.casca-avisos__esqueleto {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.casca-avisos__esqueleto-linha {
+  display: block;
+  height: 3.5rem;
+  border-radius: var(--raio-controle);
+  background: var(--superficie-rebaixada);
+}
+
+.casca-avisos__rodape {
+  flex: none;
+  padding: 0.25rem 1rem;
+  border-top: 1px solid var(--borda);
+}
+
+.casca-avisos__todas {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  color: var(--acao-texto);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/*
+ * O botão de tema acompanha os demais controles da barra em vez da pílula
+ * clara do index.css. Mantém o alvo de 44 px nas duas direções.
+ */
+.casca .casca-barra .theme-toggle {
+  color: var(--texto-sobre-shell);
+}
+
+.casca .casca-barra .theme-toggle__trilho {
+  border-color: var(--casca-icone);
+  background: var(--surface-shell-3);
+  color: var(--casca-texto-suave);
+}
+
+.casca .casca-barra .theme-toggle__polegar {
+  background: var(--texto-sobre-shell);
+  color: var(--surface-shell-1);
+}
+
+.casca .casca-barra .theme-toggle:hover .theme-toggle__trilho {
+  border-color: var(--casca-texto-suave);
+}
+
+/* Menu do usuário */
+.casca-menu {
+  position: relative;
+  flex: none;
+}
+
+.casca-avatar-botao {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 0;
+  border-radius: var(--raio-pilula);
+  background: transparent;
+  cursor: pointer;
+}
+
+.casca-avatar {
+  display: grid;
+  place-items: center;
+  width: 1.875rem;
+  height: 1.875rem;
+  border-radius: var(--raio-pilula);
+  background: var(--casca-avatar);
+  color: var(--texto-sobre-shell);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.0625rem;
+  transition: filter var(--rapido);
+}
+
+.casca-avatar-botao:hover .casca-avatar {
+  filter: brightness(1.1);
+}
+
+.casca-menu-painel {
+  position: absolute;
+  top: calc(100% + 3px);
+  right: 7px;
+  z-index: 50;
+  width: 16rem;
+  max-width: calc(100vw - 2rem);
+  padding: 1rem;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-cartao);
+  background: var(--superficie-flutuante);
+  color: var(--texto);
+  box-shadow: var(--sombra-flutuante);
+}
+
+.casca-menu-nome,
+.casca-menu-email {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.casca-menu-nome {
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+}
+
+.casca-menu-email {
+  margin-top: 0.125rem;
+  color: var(--texto-suave);
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.casca-menu-acoes {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+/* Menu lateral: gaveta abaixo de 1024 px, fixo a partir daí. */
+.casca-veu {
+  position: fixed;
+  inset: var(--casca-barra) 0 0;
+  z-index: 30;
+  border: 0;
+  background: var(--veu);
+}
+
+.casca-trilho {
+  position: fixed;
+  top: var(--casca-barra);
+  bottom: 0;
+  left: 0;
+  z-index: 40;
+  width: var(--casca-trilho);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 1.5rem 0.875rem 1rem;
+  border-right: 1px solid var(--trilho-borda);
+  background: var(--trilho-fundo);
+  visibility: hidden;
+  translate: -100% 0;
+  /* Ao fechar, só fica oculto depois de sair da tela. */
+  transition:
+    translate var(--painel) var(--curva),
+    visibility 0s linear var(--painel);
+}
+
+/* Ao abrir, fica visível já no primeiro quadro: o foco precisa entrar no menu na hora. */
+.casca-trilho[data-aberta="true"] {
+  visibility: visible;
+  translate: 0 0;
+  transition: translate var(--painel) var(--curva);
+}
+
+/* "Sair" fica no fim do menu, separado dos itens de navegação (Issue #190). */
+.casca-trilho .casca-trilho-fim {
+  margin-top: auto;
+  padding-top: 0.75rem;
+}
+
+.casca-trilho ul {
+  display: grid;
+  gap: 0.375rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.casca-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  height: 3rem;
+  padding: 0 0.75rem;
+  border: 0;
+  border-radius: var(--raio-cartao);
+  background: transparent;
+  color: var(--trilho-texto);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.375rem;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--rapido), color var(--rapido);
+}
+
+/* Moldura do ícone: é ela que marca o item atual, invertendo de cor. */
+.casca-item-icone {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--trilho-moldura-borda);
+  border-radius: var(--raio-controle);
+  background: var(--trilho-moldura);
+  color: var(--trilho-icone);
+  transition:
+    background-color var(--rapido),
+    border-color var(--rapido),
+    color var(--rapido);
+}
+
+.casca-item svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.casca-item:hover {
+  background: var(--superficie-rebaixada);
+  color: var(--trilho-texto-ativo);
+}
+
+.casca-item[aria-current="page"] {
+  background: var(--trilho-item-ativo);
+  color: var(--trilho-texto-ativo);
+  font-weight: 600;
+}
+
+.casca-item[aria-current="page"] .casca-item-icone {
+  border-color: transparent;
+  background: var(--trilho-moldura-ativa);
+  color: var(--trilho-icone-ativo);
+}
+
+/* Marca na borda do item atual, na mesma cor da moldura cheia: muda com o
+   tema junto com ela, sem precisar de valor próprio. */
+.casca-item[aria-current="page"]::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 3px;
+  height: 1.5rem;
+  border-radius: var(--raio-pilula);
+  background: var(--trilho-moldura-ativa);
+  translate: 0 -50%;
+  content: "";
+}
+
+.casca-item:disabled,
+.casca-item[aria-disabled="true"] {
+  background: transparent;
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* Área de conteúdo */
+.casca-conteudo {
+  min-width: 0;
+  padding-top: var(--casca-barra);
+  outline: none;
+}
+
+.casca-margem {
+  padding: 2rem 1rem 4rem;
+}
+
+.casca-margem--coluna {
+  max-width: calc(70.5rem + 2rem);
+}
+
+@media (min-width: 640px) {
+  .casca-barra {
+    padding-left: 1.25rem;
+  }
+
+  .casca-ferramentas {
+    gap: 1.625rem;
+  }
+
+  .casca-margem {
+    padding-inline: 1.5rem;
+  }
+
+  .casca-margem--coluna {
+    max-width: calc(70.5rem + 3rem);
+  }
+}
+
+@media (min-width: 768px) {
+  .casca-divisor,
+  .casca-trilha {
+    display: block;
+  }
+}
+
+@media (min-width: 1024px) {
+  .casca-barra {
+    padding-right: calc(3rem - 7px);
+  }
+
+  .casca-botao-gaveta,
+  .casca-veu {
+    display: none;
+  }
+
+  .casca-trilho {
+    visibility: visible;
+    translate: 0 0;
+    transition: none;
+  }
+
+  .casca:not(.casca--imersiva) .casca-conteudo {
+    padding-left: var(--casca-trilho);
+  }
+
+  .casca-margem {
+    padding-right: 2rem;
+    padding-left: 2.5rem;
+  }
+
+  .casca-margem--coluna {
+    max-width: calc(70.5rem + 4.5rem);
+  }
+}

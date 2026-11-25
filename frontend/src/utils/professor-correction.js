@@ -1,0 +1,165 @@
+import { COMPETENCIAS_ENEM, calcularNotaTotalCompetencias } from '../constants/competencias-enem.js'
+import { segmentarTextoComEvidencias } from './ai-evidence.js'
+import { obterTomCriterio } from './criterio-cores.js'
+import { chaveTrecho, compararTrechos, criarTrechoDaSelecao, guardarIntervalos, limitesDeGrafemas, materializarTrechos, montarCriterioParaEnvio, numerarTrechos, podeAcrescentarTrecho, validarTrechosRecebidos } from './trechos-feedback.js'
+
+const normalizar = (texto) => String(texto ?? '').trim().normalize('NFC').toLocaleLowerCase('pt-BR')
+const BASE = ['legitimação', 'pertinência', 'uso produtivo']
+
+// O histórico chega do servidor da tentativa mais recente para a mais antiga.
+// O estado/progresso pertence à última tentativa; sugestões pertencem só a uma conclusão.
+export function selecionarAnaliseParaCorrecao(analises = []) {
+  const ultima = analises[0] ?? null
+  const concluida = analises.find((item) => item.status === 'CONCLUIDA' && item.resultadoEstruturado) ?? null
+  return { ultima, concluida }
+}
+
+export function criterioFixo(criterio) { return BASE.includes(normalizar(criterio.nome)) }
+
+// A cor vem da ordem, pela regra compartilhada com o feedback do aluno (#44).
+// Antes saía do nome do critério e da posição na lista, o que dava cores
+// diferentes nas duas telas em propostas legadas.
+export function tomCriterio(criterio) { return obterTomCriterio(criterio) }
+
+export function criarFormularioFeedback(redacao, feedback) {
+  const atual = feedback?.versaoAtual
+  const comentarios = new Map((atual?.criterios ?? []).map((item) => [item.criterioId, item.comentario]))
+  const trechos = new Map((atual?.criterios ?? []).map((item) => [item.criterioId, item.trechos]))
+  return {
+    ...Object.fromEntries(COMPETENCIAS_ENEM.map(({ campo }) => [campo, atual?.[campo] == null ? '' : String(atual[campo])])),
+    legacyScore: !COMPETENCIAS_ENEM.some(({ campo }) => atual?.[campo] != null) && atual?.nota != null ? String(atual.nota) : '',
+    generalComment: atual?.comentarioGeral ?? '',
+    criterionComments: Object.fromEntries((redacao.tema.criterios ?? []).map((c) => [c.id, comentarios.get(c.id) ?? ''])),
+    criterionReviewed: {},
+    criterionTrechos: Object.fromEntries((redacao.tema.criterios ?? []).map((c) => [c.id, guardarIntervalos(validarTrechosRecebidos(redacao.texto, trechos.get(c.id)))])),
+    criterionTrechosAlterados: {},
+  }
+}
+
+export function montarDadosFeedback(form, texto, { todosTrechos = false } = {}) {
+  return {
+    ...Object.fromEntries(COMPETENCIAS_ENEM.map(({ campo }) => {
+      const texto = String(form[campo] ?? '').trim()
+      return [campo, texto === '' ? null : Number(texto)]
+    })),
+    comentarioGeral: form.generalComment.trim() || null,
+    criterios: Object.entries(form.criterionComments).filter(([, c]) => c.trim()).map(([criterioId, comentario]) => montarCriterioParaEnvio({
+      criterioId, comentario,
+      trechos: materializarTrechos(texto, form.criterionTrechos?.[criterioId]),
+      alterado: todosTrechos || form.criterionTrechosAlterados?.[criterioId] === true,
+    })),
+  }
+}
+
+export function atualizarTrechos(form, id, trechos) {
+  return { ...form, criterionTrechos: { ...form.criterionTrechos, [id]: guardarIntervalos(trechos) },
+    criterionTrechosAlterados: { ...form.criterionTrechosAlterados, [id]: true } }
+}
+
+export function recuperarTrechos(form, salvo, texto) {
+  let resultado = form
+  for (const id of Object.keys(form.criterionComments)) {
+    const trechos = salvo.criterionTrechos?.[id]
+    if (salvo.criterionTrechosAlterados?.[id] !== true || !Array.isArray(trechos)) continue
+    const validos = []
+    for (const trecho of materializarTrechos(texto, trechos)) {
+      if (!podeAcrescentarTrecho(validos, trecho)) validos.push(trecho)
+    }
+    if (validos.length || trechos.length === 0) resultado = atualizarTrechos(resultado, id, validos)
+  }
+  return resultado
+}
+
+export function assinaturaPublicavel(form, texto) {
+  const dados = montarDadosFeedback(form, texto, { todosTrechos: true })
+  dados.criterios.sort((a, b) => a.criterioId.localeCompare(b.criterioId))
+  for (const item of dados.criterios) item.trechos.sort((a, b) => a.inicio - b.inicio || a.fim - b.fim)
+  return JSON.stringify(dados)
+}
+
+export function chaveSugestao(criterioId, trecho) {
+  return `${criterioId}:${trecho.analiseIaId}:${chaveTrecho(trecho)}`
+}
+
+export function prepararMarcacoes(texto, criterios, form, analise, descartadas) {
+  const porCriterio = {}
+  const aprovados = new Map()
+  const pendentes = []
+  const limites = analise ? new Set(limitesDeGrafemas(texto)) : null
+  for (const criterio of criterios) {
+    const marcados = materializarTrechos(texto, form.criterionTrechos[criterio.id]).sort(compararTrechos)
+    for (const trecho of marcados) {
+      const chave = chaveTrecho(trecho)
+      if (!aprovados.has(chave)) aprovados.set(chave, { ...trecho, criterios: [] })
+      aprovados.get(chave).criterios.push(criterio)
+    }
+    const sugestoes = new Map()
+    for (const e of sugestaoDoCriterio(analise, criterio)?.evidencias ?? []) {
+      if (!analise?.id || e.statusLocalizacao !== 'LOCALIZADA') continue
+      const { trecho } = criarTrechoDaSelecao(texto, e.inicio, e.fim)
+      if (!trecho || trecho.trecho !== e.trecho || !limites.has(e.inicio) || !limites.has(e.fim)) continue
+      const novo = { ...trecho, analiseIaId: analise.id }
+      const chave = chaveSugestao(criterio.id, novo)
+      if (descartadas.has(chave) || marcados.some((item) => chaveTrecho(item) === chaveTrecho(novo))) continue
+      sugestoes.set(chave, novo)
+    }
+    for (const [chave, trecho] of sugestoes) pendentes.push({ ...trecho, chave, criterios: [criterio] })
+    porCriterio[criterio.id] = { marcados, sugestoes: [...sugestoes.values()] }
+  }
+  return { porCriterio, aprovados: numerarTrechos([...aprovados.values()]), pendentes }
+}
+
+export function validarFeedback(dados, publicar = false) {
+  if (!COMPETENCIAS_ENEM.every(({ campo }) => dados[campo] == null || (Number.isInteger(dados[campo]) && dados[campo] >= 0 && dados[campo] <= 200))) {
+    return 'Cada competência precisa ter uma nota inteira entre 0 e 200.'
+  }
+  if (publicar && (calcularNotaTotalCompetencias(dados) == null || !dados.comentarioGeral)) return 'Preencha as cinco competências e o comentário geral antes de publicar.'
+  if ((dados.comentarioGeral?.length ?? 0) > 10000 || dados.criterios.some((c) => c.comentario.length > 5000)) return 'Respeite os limites de 10.000 caracteres no comentário geral e 5.000 por critério.'
+  return ''
+}
+
+export function sugestaoDoCriterio(analise, criterio) {
+  if (analise?.status !== 'CONCLUIDA') return null
+  // Não associa uma sugestão apenas pela posição: análises antigas podem ter outro conjunto de critérios.
+  return analise.resultadoEstruturado?.analisePorCriterio?.find((c) => c.ordem === criterio.ordem && normalizar(c.criterio) === normalizar(criterio.nome)) ?? null
+}
+
+export function comentarioEditavel(form, analise, criterio) {
+  const comentario = form.criterionComments[criterio.id] ?? ''
+  const sugestao = sugestaoDoCriterio(analise, criterio)
+  const disponivel = Boolean(sugestao && !comentario && !form.criterionReviewed?.[criterio.id])
+  return { texto: comentario, sugestao: disponivel ? sugestao.diagnostico : null }
+}
+
+export function atualizarComentario(form, id, texto) {
+  return { ...form, criterionComments: { ...form.criterionComments, [id]: texto },
+    criterionReviewed: { ...form.criterionReviewed, [id]: true } }
+}
+
+export function evidenciasVerificadas(texto, analise) {
+  const criterios = analise?.status === 'CONCLUIDA' ? analise.resultadoEstruturado?.analisePorCriterio ?? [] : []
+  const segmentos = segmentarTextoComEvidencias(texto, criterios)
+  const trechos = new Map()
+  for (const criterio of criterios) {
+    for (const e of criterio.evidencias ?? []) {
+      if (e?.statusLocalizacao !== 'LOCALIZADA' || !Number.isInteger(e.inicio) || !Number.isInteger(e.fim) || e.inicio < 0 || e.fim <= e.inicio || e.fim > texto.length || texto.slice(e.inicio, e.fim) !== e.trecho) continue
+      const chave = `${e.inicio}-${e.fim}`
+      if (!trechos.has(chave)) trechos.set(chave, { ...e, ordens: [] })
+      if (!trechos.get(chave).ordens.includes(criterio.ordem)) trechos.get(chave).ordens.push(criterio.ordem)
+    }
+  }
+  return { segmentos, trechos: [...trechos.values()].sort((a, b) => a.inicio - b.inicio) }
+}
+
+export function organizarFila(redacoes, atualId) {
+  const lista = redacoes.filter((r) => ['ENVIADA', 'AVALIADA'].includes(r.status))
+    .sort((a, b) => String(a.enviadaEm).localeCompare(String(b.enviadaEm)) || a.id.localeCompare(b.id))
+  const indice = lista.findIndex((r) => r.id === atualId)
+  const seguintes = indice < 0 ? [] : [...lista.slice(indice + 1), ...lista.slice(0, indice)]
+  return {
+    posicao: indice < 0 ? null : indice + 1,
+    total: lista.length,
+    anterior: indice > 0 ? lista[indice - 1] : null,
+    proxima: seguintes.find((r) => r.status === 'ENVIADA') ?? null,
+  }
+}

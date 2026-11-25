@@ -9,23 +9,28 @@ import {
 import {
   validarBody,
   validarParams,
+  validarQuery,
 } from '../../middlewares/validate-request.js'
 
 import {
   arquivarTemaController,
   atualizarTemaController,
   criarTemaController,
+  excluirTemaController,
+  listarPrazosProfessorController,
   listarTemasAlunoController,
   listarTemasController,
   obterModeloCompetenciaDoisController,
   obterTemaAlunoController,
   obterTemaController,
   substituirCriteriosController,
+  reabrirTemaController,
 } from './temas.controller.js'
 
 import {
   atualizarTemaSchema,
   criarTemaSchema,
+  prazosProfessorQuerySchema,
   substituirCriteriosSchema,
   temaParamsSchema,
   turmaTemaParamsSchema,
@@ -38,9 +43,53 @@ const somenteAluno = autorizarPapeis('ALUNO')
 
 /**
  * @openapi
+ * /api/professor/prazos:
+ *   get:
+ *     summary: Lista propostas com prazo nos próximos sete dias
+ *     description: Janela inclusiva de 168 horas a partir da consulta, em ordem de vencimento. Só inclui propostas e turmas ativas do professor autenticado. As contagens consideram alunos distintos com matrícula ativa e entregas enviadas ou avaliadas da própria proposta. Inclui propostas sem entregas. Não aceita parâmetros.
+ *     tags: [Temas de redação]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: Prazos e contagens por proposta
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     prazos:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id: { type: string, format: uuid }
+ *                           enunciado: { type: string }
+ *                           prazoEntrega: { type: string, format: date-time }
+ *                           turmaId: { type: string, format: uuid }
+ *                           turmaNome: { type: string }
+ *                           alunosAtivos: { type: integer, minimum: 0 }
+ *                           entregaram: { type: integer, minimum: 0 }
+ *       '401': { description: Autenticação necessária }
+ *       '403': { description: Recurso exclusivo para professores }
+ *       '422': { description: Parâmetro não aceito }
+ */
+temasRouter.get(
+  '/professor/prazos',
+  autenticarAccessToken,
+  somenteProfessor,
+  validarQuery(prazosProfessorQuerySchema),
+  listarPrazosProfessorController,
+)
+
+/**
+ * @openapi
  * /api/modelos-avaliacao/competencia-2:
  *   get:
- *     summary: Consulta o modelo editável da Competência II
+ *     summary: Consulta os três critérios fixos da Competência II
  *     description: Retorna os três critérios sugeridos para repertório sociocultural. O professor pode editar ou substituir todos antes de criar o tema.
  *     tags:
  *       - Temas de redação
@@ -171,8 +220,9 @@ temasRouter.get(
  *                 example: 2026-12-01T23:59:00-03:00
  *               criterios:
  *                 type: array
- *                 minItems: 1
- *                 maxItems: 10
+ *                 description: Três critérios fixos na ordem do modelo C2, preservando nome e descrição, seguidos de até dois personalizados sem nomes duplicados. Consulte /api/modelos-avaliacao/competencia-2.
+ *                 minItems: 3
+ *                 maxItems: 5
  *                 items:
  *                   type: object
  *                   required:
@@ -357,8 +407,9 @@ temasRouter.patch(
  *             properties:
  *               criterios:
  *                 type: array
- *                 minItems: 1
- *                 maxItems: 10
+ *                 description: Mesma base fixa da criação e até dois personalizados. Propostas legadas incompatíveis exigem revisão explícita e retornam 409; critérios congelados não podem ser substituídos.
+ *                 minItems: 3
+ *                 maxItems: 5
  *                 items:
  *                   type: object
  *                   required:
@@ -430,3 +481,61 @@ temasRouter.post(
   validarParams(temaParamsSchema),
   arquivarTemaController,
 )
+
+/**
+ * @openapi
+ * /api/temas/{temaId}/reabrir:
+ *   post:
+ *     summary: Reabre uma proposta arquivada
+ *     description: Exclusivo do professor responsável, com turma ativa. Preserva conteúdo, critérios, bloqueio após primeiro envio e prazo original. Prazo vencido não impede reabertura nem entrega, que será registrada como atrasada. Não recebe corpo.
+ *     tags:
+ *       - Temas de redação
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: temaId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       '200':
+ *         description: Proposta reaberta em data.tema, com ativo true e arquivadoEm null, no mesmo formato da consulta do tema
+ *       '401':
+ *         description: Autenticação necessária
+ *       '403':
+ *         description: Recurso exclusivo para professores
+ *       '404':
+ *         description: ESSAY_TOPIC_NOT_FOUND — proposta inexistente ou de outro professor
+ *       '409':
+ *         description: CLASS_ARCHIVED — reabra a turma primeiro; ESSAY_TOPIC_ALREADY_ACTIVE — proposta já ativa, inclusive após reabertura concorrente
+ *       '422':
+ *         description: Identificador inválido
+ */
+temasRouter.post(
+  '/temas/:temaId/reabrir',
+  autenticarAccessToken,
+  somenteProfessor,
+  validarParams(temaParamsSchema),
+  reabrirTemaController,
+)
+
+/**
+ * @openapi
+ * /api/temas/{temaId}:
+ *   delete:
+ *     summary: Exclui definitivamente uma proposta própria sem rascunhos ou redações
+ *     tags: [Temas de redação]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - { in: path, name: temaId, required: true, schema: { type: string, format: uuid } }
+ *     responses:
+ *       '204': { description: Proposta excluída }
+ *       '401': { description: Autenticação necessária }
+ *       '403': { description: Exclusivo para professor }
+ *       '404': { description: Proposta indisponível para o professor }
+ *       '409': { description: ESSAY_TOPIC_NOT_ARCHIVED ou ESSAY_TOPIC_HAS_HISTORY }
+ *       '422': { description: Identificador inválido }
+ */
+temasRouter.delete('/temas/:temaId', autenticarAccessToken, somenteProfessor, validarParams(temaParamsSchema), excluirTemaController)

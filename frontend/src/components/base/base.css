@@ -1,0 +1,100 @@
+/*
+ * Estilos dos componentes base (Lote 3a) que não cabem em utilitários:
+ * o <dialog> nativo e seu fundo. Usa só tokens por função.
+ */
+
+.dialogo-base {
+  margin: auto;
+  width: min(30rem, calc(100% - 2rem));
+  max-height: calc(100svh - 3rem);
+  overflow-y: auto;
+  padding: 1.5rem;
+  border: var(--contorno-flutuante);
+  border-radius: var(--raio-dialogo);
+  background: var(--superficie-flutuante);
+  color: var(--texto);
+  box-shadow: var(--sombra-dialogo);
+}
+
+.dialogo-base--largo {
+  width: min(42rem, calc(100% - 2rem));
+}
+
+.dialogo-base[open] {
+  animation: dialogo-base-entrada var(--painel) var(--curva);
+}
+
+.dialogo-base::backdrop {
+  background: var(--veu);
+}
+
+.dialogo-base__titulo {
+  margin: 0;
+  font-family: var(--fonte-interface);
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.625rem;
+  letter-spacing: -0.01em;
+}
+
+.dialogo-base__descricao {
+  margin: 0.5rem 0 0;
+  color: var(--texto-suave);
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+}
+
+.dialogo-base__corpo {
+  margin-top: 1rem;
+}
+
+.dialogo-base__efeitos {
+  margin: 0.75rem 0 0;
+  padding-left: 1.25rem;
+  color: var(--texto-suave);
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+  list-style: disc;
+}
+
+/*
+ * Cartão de resumo do diálogo (Issue #175): o dado que a pessoa precisa
+ * conferir antes de confirmar, em destaque e fora do corpo de texto.
+ */
+.dialogo-base__resumo {
+  margin-top: 1rem;
+  padding: 0.875rem 1rem;
+  border-radius: var(--raio-cartao);
+  background: var(--superficie-rebaixada);
+}
+
+.dialogo-base__rodape {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.dialogo-base__rodape--separado {
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--borda);
+}
+
+@keyframes dialogo-base-entrada {
+  from {
+    opacity: 0;
+  }
+}
+
+/*
+ * Tipografia do botão. A regra global "button { font: inherit }" do index.css
+ * fica fora de camada e vence os utilitários do Tailwind, então o tamanho do
+ * texto precisa vir de uma classe (não de text-[13px]); sem isso o botão herda o
+ * tamanho do elemento em volta (por exemplo, os 36 px de um indicador).
+ */
+.botao-base {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.125rem;
+}

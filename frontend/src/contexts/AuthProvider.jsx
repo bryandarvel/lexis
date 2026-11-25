@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 
@@ -14,18 +15,26 @@ import {
   apiPublica,
   renovarSessaoApi,
 } from '../services/api.js'
+import { descartarRevisaoOcr } from '../services/revisao-ocr-pendente.js'
 import {
   EVENTO_SESSAO_EXPIRADA,
   notificarSessaoRestaurada,
 } from '../services/session-events.js'
 import { AuthContext } from './auth-context.js'
 import { limparRascunhosUsuario } from '../utils/draft-storage.js'
+import { deveDescartarRevisaoOcr } from '../utils/sessao-ocr.js'
 
 export default function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null)
   const [status, setStatus] = useState('carregando')
   const [reautenticacaoAberta, setReautenticacaoAberta] =
     useState(false)
+  // Lido dentro de entrar sem recriar o callback a cada troca de usuário.
+  const usuarioIdRef = useRef(null)
+
+  useEffect(() => {
+    usuarioIdRef.current = usuario?.id ?? null
+  }, [usuario?.id])
 
   useEffect(() => {
     let componenteAtivo = true
@@ -86,6 +95,17 @@ export default function AuthProvider({ children }) {
 
     const sessao = resposta.data.data
 
+    // A reautenticação aceita outro e-mail: quando a conta muda de fato, a
+    // revisão de OCR da anterior não pode seguir em memória (#49).
+    if (
+      deveDescartarRevisaoOcr(
+        usuarioIdRef.current,
+        sessao.usuario?.id,
+      )
+    ) {
+      descartarRevisaoOcr()
+    }
+
     definirAccessToken(sessao.accessToken)
     notificarSessaoRestaurada()
     setUsuario(sessao.usuario)
@@ -112,18 +132,36 @@ export default function AuthProvider({ children }) {
     [],
   )
 
+  const encerrarSessaoLocal = useCallback(() => {
+    limparRascunhosUsuario(usuarioIdRef.current)
+    descartarRevisaoOcr()
+    limparAccessToken()
+    notificarSessaoRestaurada()
+    setUsuario(null)
+    setStatus('pronto')
+    setReautenticacaoAberta(false)
+  }, [])
+
   const sair = useCallback(async () => {
     try {
       await apiPublica.post('/api/auth/logout')
     } finally {
-      limparRascunhosUsuario(usuario?.id)
-      limparAccessToken()
-      notificarSessaoRestaurada()
-      setUsuario(null)
-      setStatus('pronto')
-      setReautenticacaoAberta(false)
+      encerrarSessaoLocal()
     }
-  }, [usuario?.id])
+  }, [encerrarSessaoLocal])
+
+  const atualizarSessao = useCallback(
+    ({ usuario: usuarioAtualizado, accessToken } = {}) => {
+      if (accessToken) {
+        definirAccessToken(accessToken)
+      }
+
+      if (usuarioAtualizado) {
+        setUsuario(usuarioAtualizado)
+      }
+    },
+    [],
+  )
 
   const valorContexto = useMemo(
     () => ({
@@ -133,6 +171,8 @@ export default function AuthProvider({ children }) {
       entrar,
       cadastrar,
       sair,
+      encerrarSessaoLocal,
+      atualizarSessao,
     }),
     [
       usuario,
@@ -140,6 +180,8 @@ export default function AuthProvider({ children }) {
       entrar,
       cadastrar,
       sair,
+      encerrarSessaoLocal,
+      atualizarSessao,
     ],
   )
 

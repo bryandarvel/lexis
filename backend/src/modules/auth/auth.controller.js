@@ -9,7 +9,11 @@ import {
   encerrarSessao,
   obterUsuarioAtual,
   renovarSessao,
+  atualizarPerfilUsuario,
+  excluirContaUsuario,
 } from './auth.service.js'
+import { solicitarAlteracaoSenha } from './password-recovery.service.js'
+import { confirmarAlteracaoEmail, solicitarAlteracaoEmail } from './email-change.service.js'
 
 export async function cadastrarUsuarioController(req, res) {
   const usuario = await cadastrarUsuario(req.body)
@@ -100,4 +104,31 @@ export async function obterUsuarioAtualController(
       usuario,
     },
   })
+}
+
+export async function atualizarPerfilController(req, res) {
+  const usuario = await atualizarPerfilUsuario({ ...req.auth, ...req.body })
+  return res.status(200).json({ data: { usuario } })
+}
+
+export async function alterarSenhaController(req, res) {
+  const data = await solicitarAlteracaoSenha({ ...req.auth, ...req.body })
+  return res.status(202).json({ data })
+}
+
+export async function solicitarAlteracaoEmailController(req, res) {
+  const data = await solicitarAlteracaoEmail({ ...req.auth, ...req.body })
+  return res.status(202).json({ data })
+}
+
+export async function confirmarAlteracaoEmailController(req, res) {
+  const data = await confirmarAlteracaoEmail(req.body)
+  res.clearCookie(REFRESH_TOKEN_COOKIE_NAME, criarOpcoesLimparRefreshCookie())
+  return res.status(200).json({ data })
+}
+
+export async function excluirContaController(req, res) {
+  await excluirContaUsuario({ ...req.auth, senhaAtual: req.body.senhaAtual })
+  res.clearCookie(REFRESH_TOKEN_COOKIE_NAME, criarOpcoesLimparRefreshCookie())
+  return res.status(204).send()
 }

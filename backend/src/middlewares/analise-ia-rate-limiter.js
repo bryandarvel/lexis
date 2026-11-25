@@ -18,11 +18,16 @@ export function criarLimitadorAnaliseIa({
     keyGenerator: criarChavePorProfessor,
 
     handler(_req, res, _next, options) {
+      const prazo = Number(res.getHeader('Retry-After'))
+      const retryAfterSeconds = Number.isSafeInteger(prazo) && prazo > 0
+        ? prazo : Math.max(1, Math.ceil(options.windowMs / 1000))
+      res.set('Retry-After', String(retryAfterSeconds))
       return res.status(options.statusCode).json({
         error: {
           code: 'AI_ANALYSIS_RATE_LIMIT_EXCEEDED',
           message:
             'Muitas solicitações de análise. Aguarde alguns minutos e tente novamente.',
+          details: { retryAfterSeconds },
         },
       })
     },

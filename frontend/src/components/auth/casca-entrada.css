@@ -1,0 +1,128 @@
+.login-page {
+  --login-bg: #f6f8fb;
+  --login-surface: #fff;
+  --login-muted: #516075;
+  --login-text: #18212f;
+  --login-border: #dce4ee;
+  --login-soft: #edf1f7;
+  --login-action: #1c6eba;
+  display: grid;
+  grid-template-columns: 7fr 11fr;
+  min-height: 100svh;
+  background: var(--login-bg);
+  color: var(--login-text);
+}
+[data-theme="dark"] .login-page {
+  --login-bg: var(--page-background);
+  --login-surface: #1a2028;
+  --login-muted: #a9bed1;
+  --login-text: #f7fbff;
+  --login-border: #3a4654;
+  --login-soft: #252c36;
+  --login-action: #7dccff;
+}
+.login-brand {
+  display: grid;
+  place-items: center;
+  background: var(--surface-shell-1);
+}
+.login-logo { width: 240px; height: 300px; object-fit: contain; }
+.login-access {
+  min-width: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 76px 32px;
+  background: var(--login-surface);
+}
+.login-theme { position: absolute; right: 24px; top: 20px; }
+.login-card {
+  min-width: 0;
+  width: 432px;
+  max-width: 100%;
+  padding: 33px;
+  border: 1px solid var(--login-border);
+  border-radius: var(--raio-dialogo);
+  background: var(--login-surface);
+  box-shadow: 0 8px 24px rgb(0 32 73 / 10%);
+}
+[data-theme="dark"] .login-card { box-shadow: inset 0 1px rgb(255 255 255 / 12%); }
+.login-access > .login-card {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.login-card h1, .login-card h2 {
+  margin: 0;
+  font-family: var(--fonte-interface);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 26px;
+  letter-spacing: -.16px;
+}
+.login-description { margin: 6px 0 0; font-size: 14px; line-height: 22px; color: var(--login-muted); }
+.login-tabs {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: 52px;
+  margin-top: 20px;
+  padding: 5px;
+  border-radius: var(--raio-cartao);
+  background: var(--login-soft);
+}
+/* Fundo da aba atual. Fica sempre na aba marcada e, quando a troca veio de um
+   clique na outra, chega deslizando de lá. O deslocamento é a largura da
+   própria pílula, que é metade da área interna do seletor. */
+.login-tabs__pilula {
+  position: absolute;
+  z-index: 0;
+  top: 5px;
+  left: 5px;
+  width: calc((100% - 10px) / 2);
+  height: calc(100% - 10px);
+  border-radius: var(--raio-controle);
+  background: var(--login-surface);
+  transform: translateX(calc(var(--aba-visivel, 0) * 100%));
+}
+.login-tabs__pilula[data-deslizar] {
+  animation: login-aba-desliza var(--painel) var(--curva);
+}
+@keyframes login-aba-desliza {
+  from { transform: translateX(calc(var(--aba-partida, 0) * 100%)); }
+}
+.login-tabs__aba {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  border-radius: var(--raio-controle);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--login-muted);
+  transition: color var(--painel) var(--curva);
+}
+.login-tabs [aria-current] { color: var(--login-action); }
+.login-form { display: grid; gap: 20px; margin-top: 24px; }
+.login-password { position: relative; }
+.login-forgot { position: absolute; top: 0; right: 0; z-index: 1; min-height: 24px; font-size: 12px; line-height: 18px; color: var(--login-action); cursor: pointer; }
+.login-forgot:hover { text-decoration: underline; }
+.login-password > div > div > button { color: var(--login-action); }
+@media (max-width: 767px) {
+  .login-forgot { position: static; display: flex; width: 100%; justify-content: flex-end; margin-bottom: 8px; }
+  .login-page { grid-template-columns: 1fr; grid-template-rows: 140px 1fr; }
+  .login-logo { width: 80px; height: 100px; }
+  .login-access { align-items: flex-start; padding: 64px 20px 32px; }
+  .login-card { padding: 26px 23px; }
+  .login-theme { top: 12px; right: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .login-page *, .login-page *::before, .login-page *::after { transition: none; animation: none; }
+  /* O seletor da pílula é mais específico que `.login-page *`: sem esta linha
+     a alternância continuaria deslizando. A pílula já nasce na aba certa, só
+     o deslocamento é dispensado. */
+  .login-tabs__pilula[data-deslizar] { animation: none; }
+}

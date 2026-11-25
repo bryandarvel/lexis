@@ -23,17 +23,40 @@ const AlunoRedacaoPage = lazy(() =>
 const AlunoNotificacoesPage = lazy(() =>
   import('../pages/aluno/AlunoNotificacoesPage.jsx'),
 )
+const AlunoRedacoesPage = lazy(() =>
+  import('../pages/aluno/AlunoRedacoesPage.jsx'),
+)
+const AlunoPerfilPage = lazy(() =>
+  import('../pages/aluno/AlunoPerfilPage.jsx'),
+)
+const AlunoRevisaoOcrPage = lazy(() =>
+  import('../pages/aluno/AlunoRevisaoOcrPage.jsx'),
+)
 const CadastroPage = lazy(() =>
   import('../pages/auth/CadastroPage.jsx'),
 )
 const LoginPage = lazy(() =>
   import('../pages/auth/LoginPage.jsx'),
 )
+const RedefinirSenhaPage = lazy(() => import('../pages/auth/RedefinirSenhaPage.jsx'))
+const ConfirmarEmailPage = lazy(() => import('../pages/auth/ConfirmarEmailPage.jsx'))
+const NaoEncontradoPage = lazy(() =>
+  import('../pages/NaoEncontradoPage.jsx'),
+)
 const ProfessorDashboardPage = lazy(() =>
   import('../pages/professor/ProfessorDashboardPage.jsx'),
 )
+const ProfessorTurmasPage = lazy(() =>
+  import('../pages/professor/ProfessorTurmasPage.jsx'),
+)
 const ProfessorRedacaoPage = lazy(() =>
   import('../pages/professor/ProfessorRedacaoPage.jsx'),
+)
+const ProfessorNotificacoesPage = lazy(() =>
+  import('../pages/professor/ProfessorNotificacoesPage.jsx'),
+)
+const ProfessorPerfilPage = lazy(() =>
+  import('../pages/professor/ProfessorPerfilPage.jsx'),
 )
 const ProfessorNovoTemaPage = lazy(() =>
   import('../pages/professor/ProfessorNovoTemaPage.jsx'),
@@ -49,6 +72,8 @@ export default function AppRoutes() {
   return (
     <Suspense fallback={<RouteLoading />}>
       <Routes>
+        <Route path="/redefinir-senha" element={<RedefinirSenhaPage />} />
+        <Route path="/confirmar-email" element={<ConfirmarEmailPage />} />
         <Route
           element={
             <RouteGuard apenasVisitantes />
@@ -73,17 +98,12 @@ export default function AppRoutes() {
         >
           <Route
             path="/professor"
-            element={
-              <Navigate
-                to="/professor/turmas"
-                replace
-              />
-            }
+            element={<ProfessorDashboardPage />}
           />
           <Route
             path="/professor/turmas"
             element={
-              <ProfessorDashboardPage />
+              <ProfessorTurmasPage />
             }
           />
           <Route
@@ -105,6 +125,16 @@ export default function AppRoutes() {
           <Route
             path="/professor/redacoes/:redacaoId"
             element={<ProfessorRedacaoPage />}
+          />
+
+          <Route
+            path="/professor/notificacoes"
+            element={<ProfessorNotificacoesPage />}
+          />
+
+          <Route
+            path="/professor/perfil"
+            element={<ProfessorPerfilPage />}
           />
         </Route>
 
@@ -128,8 +158,31 @@ export default function AppRoutes() {
             element={<AlunoNotificacoesPage />}
           />
           <Route
+            path="/aluno/redacoes"
+            element={<AlunoRedacoesPage />}
+          />
+          {/* Issue #180: a lista de feedbacks vive em Minhas redações. O
+              endereço antigo continua valendo para favoritos e links salvos. */}
+          <Route
+            path="/aluno/feedbacks"
+            element={
+              <Navigate
+                to="/aluno/redacoes"
+                replace
+              />
+            }
+          />
+          <Route
+            path="/aluno/perfil"
+            element={<AlunoPerfilPage />}
+          />
+          <Route
             path="/aluno/temas/:temaId/redacao"
             element={<AlunoRedacaoPage />}
+          />
+          <Route
+            path="/aluno/temas/:temaId/redacao/ocr"
+            element={<AlunoRevisaoOcrPage />}
           />
         </Route>
 
@@ -145,12 +198,7 @@ export default function AppRoutes() {
 
         <Route
           path="*"
-          element={
-            <Navigate
-              to="/login"
-              replace
-            />
-          }
+          element={<NaoEncontradoPage />}
         />
       </Routes>
     </Suspense>

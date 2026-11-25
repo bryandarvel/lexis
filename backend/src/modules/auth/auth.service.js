@@ -6,9 +6,12 @@ import {
   buscarUsuarioPorEmail,
   buscarUsuarioPublicoPorId,
   criarUsuario,
+  excluirPropriaConta,
   revogarFamiliaRefreshTokens,
   rotacionarRefreshToken,
   salvarRefreshToken,
+  atualizarNomeUsuario,
+  buscarUsuarioParaConfirmarSenha,
 } from './auth.repository.js'
 
 import {
@@ -120,6 +123,7 @@ export async function autenticarUsuario({ email, senha }) {
   const accessToken = criarAccessToken({
     usuarioId: usuario.id,
     papel: usuario.papel,
+    sessaoVersao: usuario.sessaoVersao,
   })
 
   const refreshToken = criarRefreshToken({
@@ -130,12 +134,15 @@ export async function autenticarUsuario({ email, senha }) {
   const refreshTokenExpiraEm =
     obterExpiracaoToken(refreshToken)
 
-  await salvarRefreshToken({
+  const registro = await salvarRefreshToken({
     tokenHash: criarHashToken(refreshToken),
     familiaId,
     usuarioId: usuario.id,
     expiraEm: refreshTokenExpiraEm,
+    sessaoVersao: usuario.sessaoVersao,
+    senhaHashEsperada: usuario.senhaHash,
   })
+  if (!registro) throw criarErroCredenciaisInvalidas()
 
   return {
     usuario: criarUsuarioPublico(usuario),
@@ -177,6 +184,7 @@ export async function renovarSessao(refreshTokenAtual) {
   const novoAccessToken = criarAccessToken({
     usuarioId: tokenRegistrado.usuario.id,
     papel: tokenRegistrado.usuario.papel,
+    sessaoVersao: tokenRegistrado.usuario.sessaoVersao,
   })
 
   const novoRefreshToken = criarRefreshToken({
@@ -193,6 +201,7 @@ export async function renovarSessao(refreshTokenAtual) {
     familiaId: tokenRegistrado.familiaId,
     usuarioId: tokenRegistrado.usuario.id,
     expiraEm: novoRefreshTokenExpiraEm,
+    sessaoVersao: tokenRegistrado.usuario.sessaoVersao,
   })
 
   if (!rotacaoRealizada) {
@@ -258,4 +267,47 @@ export async function obterUsuarioAtual(usuarioId) {
   }
 
   return usuario
+}
+
+function criarErroSessaoDesatualizada() {
+  return new AppError('A sessão mudou. Entre novamente antes de alterar seus dados.', {
+    statusCode: 401,
+    code: 'AUTHENTICATION_REQUIRED',
+  })
+}
+
+export async function confirmarSenhaAtual({ usuarioId, sessaoVersao, senhaAtual }) {
+  const usuario = await buscarUsuarioParaConfirmarSenha(usuarioId)
+  if (!usuario?.ativo || usuario.sessaoVersao !== sessaoVersao) throw criarErroSessaoDesatualizada()
+  if (!await verificarSenha(senhaAtual, usuario.senhaHash)) {
+    throw new AppError('A senha atual está incorreta.', {
+      statusCode: 422,
+      code: 'CURRENT_PASSWORD_INVALID',
+      details: [{ field: 'senhaAtual', message: 'A senha atual está incorreta.' }],
+    })
+  }
+
+  return usuario
+}
+
+export async function atualizarPerfilUsuario({ usuarioId, sessaoVersao, nome, senhaAtual }) {
+  const atual = await confirmarSenhaAtual({ usuarioId, sessaoVersao, senhaAtual })
+  const usuario = await atualizarNomeUsuario({ usuarioId, sessaoVersao, nome, senhaHashEsperada: atual.senhaHash })
+  if (!usuario) throw criarErroSessaoDesatualizada()
+  return usuario
+}
+
+export async function excluirContaUsuario({ usuarioId, sessaoVersao, senhaAtual }) {
+  const usuario = await confirmarSenhaAtual({ usuarioId, sessaoVersao, senhaAtual })
+  const resultado = await excluirPropriaConta({
+    usuarioId, sessaoVersao, senhaHashEsperada: usuario.senhaHash,
+    emailSubstituto: `${randomUUID()}@conta-excluida.invalid`,
+    senhaHashSubstituta: await criarHashSenha(randomUUID()),
+  })
+  if (resultado === 'TURMAS_ATIVAS') {
+    throw new AppError('Arquive todas as suas turmas antes de excluir a conta.', {
+      statusCode: 409, code: 'ACCOUNT_HAS_ACTIVE_CLASSES',
+    })
+  }
+  if (resultado !== 'EXCLUIDA') throw criarErroSessaoDesatualizada()
 }

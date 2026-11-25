@@ -1,0 +1,326 @@
+import assert from 'node:assert/strict'
+
+test('o início usa a primeira proposta enviável e não duplica itens entre listas', () => {
+  const propostas = [
+    { proposta: { id: 'corrigida' }, podeEnviar: false },
+    { proposta: { id: 'atrasada' }, podeEnviar: true },
+    { proposta: { id: 'atrasada' }, podeEnviar: true },
+  ]
+  const corrigida = { temaId: 'corrigida', status: 'AVALIADA' }
+  const resultado = organizarPropostasDoInicio(propostas, [
+    corrigida,
+    { temaId: 'corrigida', status: 'AVALIADA' },
+    { temaId: 'atrasada', status: 'RASCUNHO' },
+  ])
+  assert.equal(resultado.proxima.proposta.id, 'atrasada')
+  assert.deepEqual(resultado.lista.map(({ proposta }) => proposta.id), ['atrasada'])
+  assert.deepEqual(resultado.corrigidas, [corrigida])
+})
+import { test } from 'node:test'
+
+import {
+  calcularPercentual,
+  descreverRedacao,
+  descreverTurma,
+  encontrarRascunhoDoTema,
+  formatarIndicador,
+  obterIniciais,
+  descreverPrazoDoEditor,
+  listarPropostasDoAluno,
+  organizarPropostasDoInicio,
+  MENSAGEM_ENTREGA_ATRASADA,
+  selecionarPropostaAberta,
+} from '../src/utils/aluno-painel.js'
+
+const agora = new Date(2026, 7, 4, 10, 0)
+
+function criarTema(id, prazoEntrega, enunciado = id) {
+  return {
+    id,
+    enunciado,
+    prazoEntrega: prazoEntrega.toISOString(),
+  }
+}
+
+test('obtém as iniciais do primeiro e do último nome', () => {
+  assert.equal(obterIniciais('maria eduarda souza'), 'MS')
+  assert.equal(obterIniciais('Ana'), 'A')
+  assert.equal(obterIniciais('  '), '?')
+  assert.equal(obterIniciais(undefined), '?')
+})
+
+test('descreve a turma com o nome do professor', () => {
+  assert.equal(
+    descreverTurma({
+      nome: '3ºA — Ensino Médio',
+      professor: {
+        nome: 'Ana Lima',
+      },
+    }),
+    '3ºA — Ensino Médio · Ana Lima',
+  )
+  assert.equal(
+    descreverTurma({
+      nome: '3ºA',
+    }),
+    '3ºA',
+  )
+  assert.equal(descreverTurma(null), '')
+})
+
+// #51: o nome do professor é exibido como cadastrado. Acrescentar "Prof." duplicava
+// o título de quem já o tem no nome ("Prof. Professora Helena Demo").
+test('não prefixa Prof. ao nome do professor, com ou sem título no cadastro', () => {
+  for (const nome of ['Ana Lima', 'Professora Helena Demo', 'Prof. Carlos', 'Dra. Marta']) {
+    const texto = descreverTurma({ nome: '3ºA', professor: { nome } })
+
+    assert.equal(texto, `3ºA · ${nome}`)
+    assert.doesNotMatch(texto, /Prof\. Professor/)
+  }
+})
+
+test('nome do professor com espaços nas bordas ou vazio não gera separador solto', () => {
+  assert.equal(descreverTurma({ nome: '3ºA', professor: { nome: '  Ana Lima  ' } }), '3ºA · Ana Lima')
+  assert.equal(descreverTurma({ nome: '3ºA', professor: { nome: '   ' } }), '3ºA')
+  assert.equal(descreverTurma({ nome: '3ºA', professor: {} }), '3ºA')
+})
+
+test('escolhe a proposta aberta de prazo mais próximo ainda não entregue', () => {
+  const temas = [
+    criarTema('distante', new Date(2026, 7, 20)),
+    criarTema('entregue', new Date(2026, 7, 5)),
+    criarTema('encerrada', new Date(2026, 7, 3)),
+    criarTema('proxima', new Date(2026, 7, 10)),
+  ]
+  const redacoes = [
+    {
+      temaId: 'entregue',
+      status: 'ENVIADA',
+    },
+    {
+      temaId: 'proxima',
+      status: 'RASCUNHO',
+    },
+  ]
+
+  assert.equal(
+    selecionarPropostaAberta(temas, redacoes, agora)?.id,
+    'proxima',
+  )
+})
+
+test('não inventa proposta quando todas foram entregues ou encerradas', () => {
+  const temas = [
+    criarTema('corrigida', new Date(2026, 7, 10)),
+    criarTema('encerrada', new Date(2026, 7, 1)),
+  ]
+
+  assert.equal(
+    selecionarPropostaAberta(
+      temas,
+      [
+        {
+          temaId: 'corrigida',
+          status: 'AVALIADA',
+        },
+      ],
+      agora,
+    ),
+    null,
+  )
+  assert.equal(
+    selecionarPropostaAberta(undefined, [], agora),
+    null,
+  )
+})
+
+test('encontra somente o rascunho do tema informado', () => {
+  const redacoes = [
+    {
+      id: 'r1',
+      temaId: 't1',
+      status: 'ENVIADA',
+    },
+    {
+      id: 'r2',
+      temaId: 't2',
+      status: 'RASCUNHO',
+    },
+  ]
+
+  assert.equal(
+    encontrarRascunhoDoTema(redacoes, 't2')?.id,
+    'r2',
+  )
+  assert.equal(encontrarRascunhoDoTema(redacoes, 't1'), null)
+})
+
+test('lista todas as propostas acessíveis, inclusive vencidas sem rascunho, sem mutar os dados', () => {
+  const temas = [
+    criarTema('vencida', new Date(2026, 7, 1)),
+    criarTema('futura-distante', new Date(2026, 7, 20)),
+    criarTema('futura-proxima', new Date(2026, 7, 10)),
+    { ...criarTema('arquivada', new Date(2026, 7, 5)), ativo: false },
+  ]
+  const copia = structuredClone(temas)
+  const propostas = listarPropostasDoAluno(temas, [], agora)
+
+  assert.deepEqual(propostas.map((item) => item.proposta.id), ['futura-proxima', 'futura-distante', 'vencida'])
+  assert.ok(propostas.every((item) => item.podeEnviar))
+  const vencida = propostas.at(-1)
+  assert.equal(vencida.situacao, 'Não iniciada')
+  assert.equal(vencida.prazoVencido, true)
+  assert.match(vencida.orientacao, /ainda pode enviar.*atraso/)
+  assert.equal(vencida.acao.destino, '/aluno/temas/vencida/redacao')
+  assert.deepEqual(temas, copia)
+})
+
+test('mantém acesso à proposta vencida com rascunho e não oferece reenvio de redações entregues', () => {
+  const temas = ['rascunho', 'enviada', 'avaliada'].map((id) => criarTema(id, new Date(2026, 7, 1)))
+  const redacoes = [
+    { id: 'r1', temaId: 'rascunho', status: 'RASCUNHO' },
+    { id: 'r2', temaId: 'enviada', status: 'ENVIADA' },
+    { id: 'r3', temaId: 'avaliada', status: 'AVALIADA' },
+  ]
+  const propostas = listarPropostasDoAluno(temas, redacoes, agora)
+  const porId = Object.fromEntries(propostas.map((item) => [item.proposta.id, item]))
+
+  assert.equal(porId.rascunho.podeEnviar, true)
+  assert.equal(porId.rascunho.situacao, 'Rascunho')
+  assert.equal(porId.rascunho.acao.rotulo, 'Continuar')
+  assert.equal(porId.enviada.podeEnviar, false)
+  assert.equal(porId.enviada.situacao, 'Em correção')
+  assert.equal(porId.enviada.acao.rotulo, 'Acompanhar')
+  assert.match(porId.enviada.orientacao, /não pode mais ser alterado/)
+  assert.equal(porId.avaliada.podeEnviar, false)
+  assert.equal(porId.avaliada.acao.destino, '/aluno/redacoes/r3/feedback')
+  assert.ok(propostas.every((item) => item.prazoVencido))
+})
+
+test('não encerra a proposta exatamente no prazo e mantém estados vazios previsíveis', () => {
+  assert.equal(listarPropostasDoAluno([criarTema('exata', agora)], [], agora)[0].prazoVencido, false)
+  assert.deepEqual(listarPropostasDoAluno(undefined, undefined, agora), [])
+  const desconhecida = listarPropostasDoAluno([{ id: 't/1', enunciado: 'Tema', prazoEntrega: 'inválido' }], [], agora)[0]
+  assert.equal(desconhecida.prazoVencido, false)
+  assert.equal(desconhecida.acao.destino, '/aluno/temas/t%2F1/redacao')
+})
+
+test('descreve uma redação corrigida com nota publicada', () => {
+  const descricao = descreverRedacao({
+    id: 'r1',
+    temaId: 't1',
+    status: 'AVALIADA',
+    notaPublicada: 880,
+    publicadoEm: new Date(2026, 7, 5, 12).toISOString(),
+  })
+
+  assert.deepEqual(descricao, {
+    faixa: 'sucesso',
+    legenda: 'Publicada em 05/08/2026',
+    nota: {
+      texto: 'Nota 880/1000',
+      tom: 'sucesso',
+    },
+    acao: {
+      rotulo: 'Ver feedback',
+      destino: '/aluno/redacoes/r1/feedback',
+      variante: 'suave',
+    },
+  })
+})
+
+test('descreve redações em correção e em rascunho', () => {
+  const emCorrecao = descreverRedacao({
+    id: 'r2',
+    temaId: 't2',
+    status: 'ENVIADA',
+    enviadaEm: new Date(2026, 7, 4, 9).toISOString(),
+    notaPublicada: null,
+  })
+  const rascunho = descreverRedacao({
+    id: 'r3',
+    temaId: 't3',
+    status: 'RASCUNHO',
+    notaPublicada: null,
+  })
+
+  assert.equal(emCorrecao.legenda, 'Em correção desde 04/08/2026')
+  assert.deepEqual(emCorrecao.nota, {
+    texto: 'Sem nota',
+    tom: 'atencao',
+  })
+  assert.equal(emCorrecao.acao.rotulo, 'Acompanhar')
+  assert.equal(
+    emCorrecao.acao.destino,
+    '/aluno/temas/t2/redacao',
+  )
+
+  assert.equal(
+    rascunho.legenda,
+    'Rascunho salvo · não entregue',
+  )
+  assert.equal(rascunho.nota.tom, 'neutro')
+  assert.equal(rascunho.acao.rotulo, 'Continuar')
+})
+
+test('formata indicadores sem inventar valores', () => {
+  assert.equal(formatarIndicador(833.3), '833')
+  assert.equal(formatarIndicador(null), null)
+  assert.equal(calcularPercentual(150, 200), 75)
+  assert.equal(calcularPercentual(250, 200), 100)
+  assert.equal(calcularPercentual(null, 200), 0)
+})
+
+// #52: o editor precisa avisar do prazo vencido com o mesmo texto do painel.
+test('proposta com prazo vencido avisa que a entrega será registrada com atraso', () => {
+  const resultado = descreverPrazoDoEditor({
+    prazoEntrega: new Date(2026, 7, 3, 23, 59).toISOString(),
+    agora,
+  })
+
+  assert.equal(resultado.vencido, true)
+  assert.match(resultado.rotulo, /^Prazo vencido em 03\/08\/2026, 23:59$/)
+  assert.equal(resultado.aviso, MENSAGEM_ENTREGA_ATRASADA)
+  assert.match(resultado.aviso, /Você ainda pode enviar\. A entrega será registrada com atraso\./)
+})
+
+test('o texto do aviso é o mesmo que o painel mostra para a proposta vencida', () => {
+  const [item] = listarPropostasDoAluno([criarTema('vencida', new Date(2026, 7, 3))], [], agora)
+
+  assert.equal(item.orientacao, MENSAGEM_ENTREGA_ATRASADA)
+})
+
+test('proposta no prazo não ganha aviso e mantém o rótulo de entrega', () => {
+  const resultado = descreverPrazoDoEditor({
+    prazoEntrega: new Date(2026, 7, 20).toISOString(),
+    agora,
+  })
+
+  assert.deepEqual(resultado, { vencido: false, rotulo: null, aviso: null })
+})
+
+test('o prazo exatamente agora ainda não está vencido', () => {
+  assert.equal(
+    descreverPrazoDoEditor({ prazoEntrega: agora.toISOString(), agora }).vencido,
+    false,
+  )
+})
+
+test('redação já enviada não recebe o aviso de que ainda pode enviar', () => {
+  const resultado = descreverPrazoDoEditor({
+    prazoEntrega: new Date(2026, 7, 3).toISOString(),
+    redacaoImutavel: true,
+    agora,
+  })
+
+  assert.deepEqual(resultado, { vencido: false, rotulo: null, aviso: null })
+})
+
+test('prazo ausente ou inválido não gera aviso nem quebra', () => {
+  for (const prazoEntrega of [undefined, null, '', 'não é data']) {
+    assert.deepEqual(
+      descreverPrazoDoEditor({ prazoEntrega, agora }),
+      { vencido: false, rotulo: null, aviso: null },
+    )
+  }
+})

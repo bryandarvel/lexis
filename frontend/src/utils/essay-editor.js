@@ -1,4 +1,14 @@
+import { formatarNumero } from './formatar-numero.js'
+
 export const LIMITE_CARACTERES_REDACAO = 20_000
+
+export function mensagemRevisaoLinguistica(revisao) {
+  if (revisao.status === 'DESATIVADO') return 'A revisão linguística está desativada neste ambiente. Seu texto pode ser salvo e enviado normalmente.'
+  if (!revisao.disponivel) return revisao.mensagem ?? 'A revisão linguística está indisponível. Seu texto foi preservado e pode ser salvo ou enviado.'
+  return revisao.sugestoes?.length > 0
+    ? `${revisao.sugestoes.length} sugestão(ões) encontrada(s).`
+    : 'Nenhuma sugestão foi encontrada.'
+}
 export const LIMITE_IMAGEM_REDACAO_BYTES = 1_048_576
 
 const TIPOS_IMAGEM_ACEITOS = new Set([
@@ -52,27 +62,17 @@ export function calcularProgressoUpload(
   return Math.min(100, percentual)
 }
 
-export function precisaConfirmarSubstituicaoOcr(
-  texto,
-) {
-  return Boolean(texto?.trim())
+function intervaloDaSugestaoValido(texto, sugestao) {
+  return Number.isInteger(sugestao?.inicio) &&
+    Number.isInteger(sugestao?.fim) &&
+    sugestao.inicio >= 0 &&
+    sugestao.fim > sugestao.inicio &&
+    sugestao.fim <= texto.length &&
+    texto.slice(sugestao.inicio, sugestao.fim) === sugestao.trecho
 }
 
-export function aplicarSugestaoLinguistica(
-  texto,
-  sugestao,
-  substituicao,
-) {
-  if (
-    typeof substituicao !== 'string' ||
-    !Number.isInteger(sugestao?.inicio) ||
-    !Number.isInteger(sugestao?.fim) ||
-    sugestao.inicio < 0 ||
-    sugestao.fim <= sugestao.inicio ||
-    sugestao.fim > texto.length ||
-    texto.slice(sugestao.inicio, sugestao.fim) !==
-      sugestao.trecho
-  ) {
+export function aplicarSugestaoLinguistica(texto, sugestao, substituicao) {
+  if (typeof substituicao !== 'string' || !intervaloDaSugestaoValido(texto, sugestao)) {
     return null
   }
 
@@ -81,4 +81,100 @@ export function aplicarSugestaoLinguistica(
     substituicao,
     texto.slice(sugestao.fim),
   ].join('')
+}
+
+// Intervalos sobrepostos compartilham a marca, mas o cartão conserva as
+// sugestões individuais. Não buscamos por palavra: repetições podem ser válidas.
+export function segmentarSugestoesLinguisticas(texto, sugestoes) {
+  const ordenadas = sugestoes
+    .filter((sugestao) => intervaloDaSugestaoValido(texto, sugestao))
+    .sort((a, b) => a.inicio - b.inicio || a.fim - b.fim)
+  const intervalos = []
+  for (const { inicio, fim } of ordenadas) {
+    const anterior = intervalos.at(-1)
+    if (anterior && inicio < anterior.fim) anterior.fim = Math.max(anterior.fim, fim)
+    else intervalos.push({ inicio, fim })
+  }
+
+  const partes = []
+  let cursor = 0
+  for (const { inicio, fim } of intervalos) {
+    if (inicio > cursor) partes.push({ inicio: cursor, texto: texto.slice(cursor, inicio), marcada: false })
+    partes.push({ inicio, texto: texto.slice(inicio, fim), marcada: true })
+    cursor = fim
+  }
+  if (cursor < texto.length) partes.push({ inicio: cursor, texto: texto.slice(cursor), marcada: false })
+  return partes
+}
+
+// Conferência pessoal do aluno: não é validada pela API e não bloqueia o envio.
+// O tema não possui limite de linhas, então nenhum mínimo é exibido.
+export const ITENS_CONFERENCIA_ENVIO = [
+  {
+    id: 'genero',
+    rotulo: 'Texto dissertativo-argumentativo',
+  },
+  {
+    id: 'repertorio',
+    rotulo: 'Repertório com fonte identificada',
+  },
+  {
+    id: 'extensao',
+    rotulo: 'Extensão adequada à proposta',
+  },
+  {
+    id: 'intervencao',
+    rotulo: 'Proposta de intervenção redigida',
+  },
+]
+
+const PADRAO_ORTOGRAFIA =
+  /ortogr|digita|escrita|typo|spell|morfologik|hunspell/i
+
+export function contarPalavras(texto) {
+  return String(texto ?? '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length
+}
+
+// Parágrafos do aluno: as quebras de linha explícitas (Enter) são os
+// separadores, e só contam os trechos que não são vazios. A quebra automática
+// do campo de texto não conta, então o número não equivale às linhas da folha
+// oficial, que dependem da caligrafia — por isso o contador mostra
+// "parágrafos". O nome da função é mantido por compatibilidade.
+export function contarLinhas(texto) {
+  return String(texto ?? '')
+    .split(/\r?\n/)
+    .filter((linha) => linha.trim()).length
+}
+
+export function descreverExtensao(texto) {
+  const palavras = contarPalavras(texto)
+  const paragrafos = contarLinhas(texto)
+
+  return [
+    `${formatarNumero(palavras)} ${palavras === 1 ? 'palavra' : 'palavras'}`,
+    `${formatarNumero(paragrafos)} ${paragrafos === 1 ? 'parágrafo' : 'parágrafos'}`,
+  ].join(' · ')
+}
+
+export function descreverSugestao(sugestao) {
+  const substituicao = sugestao?.substituicoes?.[0]
+  const categoria =
+    sugestao?.regra?.categoria || 'Revisão linguística'
+  const ortografia = PADRAO_ORTOGRAFIA.test(
+    `${sugestao?.regra?.id ?? ''} ${categoria}`,
+  )
+
+  return {
+    texto:
+      substituicao && sugestao?.trecho
+        ? `“${sugestao.trecho}” → ${substituicao}`
+        : sugestao?.mensagemCurta ||
+          sugestao?.mensagem ||
+          'Sugestão linguística.',
+    categoria,
+    tom: ortografia ? 'erro' : 'atencao',
+  }
 }

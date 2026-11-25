@@ -1,4 +1,6 @@
 import { prisma } from '../../config/prisma.js'
+import { AppError } from '../../utils/app-error.js'
+import { criteriosSchema } from './temas.schemas.js'
 
 const criterioSelect = {
   id: true,
@@ -75,8 +77,40 @@ const temaAlunoSelect = {
   },
 }
 
+export async function listarPrazosDoProfessor({ professorId, inicio, fim }) {
+  // A mesma consulta produz as duas contagens. LEFT JOIN inclui propostas sem
+  // entregas e turmas vazias; DISTINCT não duplica matrículas do mesmo aluno.
+  const prazos = await prisma.$queryRaw`
+    SELECT tema.id, tema.enunciado, tema.prazoEntrega, turma.id AS turmaId, turma.nome AS turmaNome,
+      COUNT(DISTINCT matricula.alunoId) AS alunosAtivos,
+      COUNT(DISTINCT redacao.alunoId) AS entregaram
+    FROM temas_redacao tema
+    JOIN turmas turma ON turma.id = tema.turmaId
+    LEFT JOIN matriculas matricula ON matricula.turmaId = turma.id AND matricula.status = 'ATIVA'
+    LEFT JOIN redacoes redacao ON redacao.temaId = tema.id AND redacao.alunoId = matricula.alunoId
+      AND redacao.status IN ('ENVIADA', 'AVALIADA')
+    WHERE turma.professorId = ${professorId} AND turma.ativa = TRUE AND tema.ativo = TRUE
+      AND tema.prazoEntrega BETWEEN ${inicio} AND ${fim}
+    GROUP BY tema.id, tema.enunciado, tema.prazoEntrega, turma.id, turma.nome
+    ORDER BY tema.prazoEntrega, tema.id
+  `
+
+  return prazos.map(({ alunosAtivos, entregaram, ...prazo }) => ({
+    ...prazo,
+    alunosAtivos: Number(alunosAtivos),
+    entregaram: Number(entregaram),
+  }))
+}
+
 function prepararCriterios(criterios) {
-  return criterios.map((criterio, indice) => ({
+  const resultado = criteriosSchema.safeParse(criterios)
+  if (!resultado.success) {
+    throw new AppError('Os critérios devem preservar a base fixa e conter até dois personalizados.', {
+      statusCode: 422,
+      code: 'VALIDATION_ERROR',
+    })
+  }
+  return resultado.data.map((criterio, indice) => ({
     nome: criterio.nome,
     descricao: criterio.descricao,
     ordem: indice + 1,
@@ -97,6 +131,27 @@ export function buscarTurmaAtivaDoProfessor({
       id: true,
     },
   })
+}
+
+export async function excluirTemaSemHistorico({ temaId, professorId }) {
+  try {
+    return await prisma.$transaction(async tx => {
+      // A trava do tema serializa a exclusão com rascunhos e envios de redação.
+      const [tema] = await tx.$queryRaw`SELECT tema.id, tema.ativo FROM temas_redacao tema
+        INNER JOIN turmas turma ON turma.id = tema.turmaId
+        WHERE tema.id = ${temaId} AND turma.professorId = ${professorId} FOR UPDATE OF tema`
+      if (!tema) return 'NAO_ENCONTRADO'
+      if (tema.ativo) return 'ATIVO'
+      if (await tx.redacao.findFirst({ where: { temaId }, select: { id: true } })) return 'COM_HISTORICO'
+      // Critérios configurados integram a proposta, não são entregas/histórico.
+      await tx.criterioAvaliacao.deleteMany({ where: { temaId } })
+      await tx.temaRedacao.delete({ where: { id: temaId } })
+      return 'EXCLUIDO'
+    })
+  } catch (error) {
+    if (error.code === 'P2003') return 'COM_HISTORICO'
+    throw error
+  }
 }
 
 export function criarTemaComCriterios({
@@ -165,11 +220,19 @@ export async function atualizarTemaDoProfessor({
   professorId,
   dados,
 }) {
+  const alteraConteudo = Object.keys(dados).some(
+    (campo) => campo !== 'prazoEntrega',
+  )
+
   const resultado =
     await prisma.temaRedacao.updateMany({
       where: {
         id: temaId,
         ativo: true,
+        // O envio bloqueia esta mesma linha antes de marcar o primeiro envio.
+        // O UPDATE verifica a condição sob o lock da linha, não a partir da
+        // leitura anterior do service. Não há novos locks em ordem inversa.
+        ...(alteraConteudo && { criteriosBloqueadosEm: null }),
         turma: {
           professorId,
         },
@@ -178,6 +241,10 @@ export async function atualizarTemaDoProfessor({
     })
 
   if (resultado.count !== 1) {
+    const atual = await buscarTemaDoProfessor({ temaId, professorId })
+    if (atual?.ativo && alteraConteudo && atual.criteriosBloqueadosEm) {
+      return 'CONTEUDO_BLOQUEADO'
+    }
     return null
   }
 
@@ -192,6 +259,7 @@ export function substituirCriteriosDoTema({
   professorId,
   criterios,
 }) {
+  const criteriosPreparados = prepararCriterios(criterios)
   return prisma.$transaction(async (transaction) => {
     await transaction.$queryRaw`
       SELECT id
@@ -212,6 +280,10 @@ export function substituirCriteriosDoTema({
           id: true,
           ativo: true,
           criteriosBloqueadosEm: true,
+          criterios: {
+            select: { nome: true, descricao: true },
+            orderBy: { ordem: 'asc' },
+          },
         },
       })
 
@@ -236,6 +308,13 @@ export function substituirCriteriosDoTema({
       }
     }
 
+    if (!criteriosSchema.safeParse(tema.criterios).success) {
+      throw new AppError('Esta proposta usa critérios anteriores à regra atual. Seus dados foram preservados; crie uma nova proposta com a base fixa.', {
+        statusCode: 409,
+        code: 'LEGACY_CRITERIA_REVIEW_REQUIRED',
+      })
+    }
+
     await transaction.criterioAvaliacao.deleteMany({
       where: {
         temaId,
@@ -243,7 +322,7 @@ export function substituirCriteriosDoTema({
     })
 
     await transaction.criterioAvaliacao.createMany({
-      data: prepararCriterios(criterios).map(
+      data: criteriosPreparados.map(
         (criterio) => ({
           ...criterio,
           temaId,
@@ -292,6 +371,33 @@ export async function arquivarTemaDoProfessor({
   return buscarTemaDoProfessor({
     temaId,
     professorId,
+  })
+}
+
+export function reabrirTemaDoProfessor({ temaId, turmaId, professorId }) {
+  return prisma.$transaction(async (transaction) => {
+    // Mesma ordem do arquivamento da turma: turma antes de outros registros.
+    // Impede reabertura baseada numa leitura anterior ao arquivamento concorrente.
+    const turmas = await transaction.$queryRaw`
+      SELECT id, ativa
+      FROM turmas
+      WHERE id = ${turmaId} AND professorId = ${professorId}
+      FOR UPDATE
+    `
+    if (turmas.length !== 1) return { status: 'TEMA_NAO_ENCONTRADO' }
+    if (!turmas[0].ativa) return { status: 'TURMA_ARQUIVADA' }
+
+    const resultado = await transaction.temaRedacao.updateMany({
+      where: { id: temaId, turmaId, ativo: false },
+      data: { ativo: true, arquivadoEm: null },
+    })
+    if (resultado.count !== 1) return { status: 'TEMA_JA_ATIVO' }
+
+    const tema = await transaction.temaRedacao.findUnique({
+      where: { id: temaId },
+      select: temaDetalhadoSelect,
+    })
+    return { status: 'TEMA_REABERTO', tema }
   })
 }
 

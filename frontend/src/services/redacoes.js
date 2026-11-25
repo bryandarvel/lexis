@@ -1,5 +1,5 @@
 import api from './api.js'
-import { calcularProgressoUpload } from '../utils/essay-editor.js'
+import { configurarUploadOcr } from '../utils/ocr-upload.js'
 
 function prepararId(id) {
   return encodeURIComponent(id)
@@ -72,6 +72,33 @@ export async function listarRedacoesDaTurma(
   return resposta.data.data.redacoes
 }
 
+// Mesma rota, com os metadados que listarRedacoesDaTurma descarta. Os demais
+// consumidores continuam recebendo só o array, por isso a função é separada.
+// resumoEntregas é nulo quando a resposta não traz o campo.
+export async function listarRedacoesDaTurmaComResumo(
+  turmaId,
+  filtros = {},
+) {
+  const resposta = await api.get(
+    `/api/turmas/${prepararId(
+      turmaId,
+    )}/redacoes`,
+    {
+      params: {
+        temaId: filtros.temaId,
+        status: filtros.status,
+      },
+    },
+  )
+
+  const dados = resposta.data.data
+
+  return {
+    redacoes: dados.redacoes,
+    resumoEntregas: dados.resumoEntregas ?? null,
+  }
+}
+
 export async function obterRedacaoProfessor(
   redacaoId,
 ) {
@@ -95,20 +122,7 @@ export async function transcreverImagemRedacao(
       temaId,
     )}/redacao/ocr`,
     formulario,
-    {
-      onUploadProgress(evento) {
-        const progresso = calcularProgressoUpload(
-          evento.loaded,
-          evento.total,
-        )
-
-        if (progresso === null || !onProgress) {
-          return
-        }
-
-        onProgress(progresso)
-      },
-    },
+    configurarUploadOcr(onProgress),
   )
 
   return resposta.data.data

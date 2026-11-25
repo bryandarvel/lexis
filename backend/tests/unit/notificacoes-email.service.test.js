@@ -119,7 +119,7 @@ describe('Processador de e-mails das notificações', () => {
           return consultas === 1 ? notificacao : null
         },
         enviar: async () => {
-          const erro = new Error('Falha simulada')
+          const erro = new Error('Conteúdo sensível que não deve ser persistido: token=segredo')
           erro.code = 'EMAIL_SEND_FAILED'
           throw erro
         },
@@ -131,7 +131,7 @@ describe('Processador de e-mails das notificações', () => {
 
     assert.deepEqual(falhaRecebida, {
       notificacaoId: 'notificacao-1',
-      erro: 'EMAIL_SEND_FAILED: Falha simulada',
+      erro: 'EMAIL_SEND_FAILED',
       proximaTentativaEm: new Date(
         '2026-08-07T18:01:00.000Z',
       ),

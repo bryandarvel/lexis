@@ -1,4 +1,5 @@
 import api from './api.js'
+import { TIMEOUT_ANALISE_IA_MS } from '../utils/external-request.js'
 
 function prepararId(id) {
   return encodeURIComponent(id)
@@ -23,6 +24,8 @@ export async function solicitarAnaliseIa(
     `/api/redacoes/${prepararId(
       redacaoId,
     )}/analises-ia`,
+    undefined,
+    { timeout: TIMEOUT_ANALISE_IA_MS },
   )
 
   return resposta.data.data.analise

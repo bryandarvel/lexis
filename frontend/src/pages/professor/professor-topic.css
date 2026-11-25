@@ -1,0 +1,115 @@
+.topic-main { max-width: 1600px; }
+.topic-main h1 { max-width: 950px; overflow-wrap: anywhere; }
+.topic-subtitle { margin: 16px 0 24px; }
+.topic-tabs { display: flex; align-items: center; gap: 24px; min-height: 68px; padding: 13px 20px; border: 1px solid var(--panel-border); border-radius: var(--raio-cartao); background: var(--panel-surface); margin-bottom: 16px; }
+.topic-tabs h2, .topic-card h2 { margin: 0; font-family: var(--fonte-interface); font-size: 18px; line-height: 25px; font-weight: 600; }
+.topic-tabs nav { display: flex; flex: 1; flex-wrap: wrap; gap: 12px; min-width: 0; }
+.topic-tabs nav a { display: flex; align-items: center; max-width: 190px; min-height: 44px; padding: 8px 18px; border: 1px solid var(--panel-border); border-radius: var(--raio-pilula); background: var(--panel-bg); color: var(--panel-muted); font-size: 12px; line-height: 18px; text-decoration: none; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+.topic-tabs nav a[aria-current="page"] { border: 2px solid #1c6eba; padding: 7px 17px; background: var(--panel-soft); color: var(--panel-action); font-weight: 600; }
+.topic-grid { display: grid; grid-template-columns: minmax(0, 700fr) minmax(0, 404fr); grid-template-rows: min-content 1fr; grid-template-areas: 'prompt criteria' 'received criteria'; gap: 20px 24px; align-items: start; }
+.topic-card { min-width: 0; padding: 24px; border: 1px solid var(--panel-border); border-radius: var(--raio-cartao); background: var(--panel-surface); }
+.topic-prompt { grid-area: prompt; min-height: 256px; }
+.topic-prose { margin: 10px 0 24px; font-size: 14px; line-height: 22px; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--panel-muted); }
+.topic-prompt h3 { margin: 0 0 8px; font-size: 13px; line-height: 18px; font-weight: 600; }
+.topic-instructions { margin: 0; padding: 12px; border-radius: var(--raio-controle); background: var(--panel-bg); white-space: pre-wrap; font-size: 13px; line-height: 21px; color: var(--panel-muted); overflow-wrap: anywhere; }
+.topic-empty-text { font-size: 12px; line-height: 19px; color: var(--panel-muted); }
+.topic-received { grid-area: received; min-height: 244px; }
+.topic-section-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.topic-section-heading p { margin: 2px 0 0; font-size: 12px; line-height: 17px; color: var(--panel-muted); }
+.topic-section-heading h2 { scroll-margin-top: 80px; }
+.topic-section-heading button { min-width: 110px; min-height: 36px; padding-block: 8px; }
+.topic-essays { display: grid; gap: 6px; margin: 16px 0 0; padding: 0; list-style: none; }
+.topic-essays a { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 10px 12px; border-radius: var(--raio-cartao); background: var(--panel-bg); color: var(--panel-text); text-decoration: none; }
+.topic-essays a:hover { background: var(--panel-soft); }
+.topic-essays .panel-student-avatar { width: 28px; height: 28px; }
+.topic-student-name { flex: 1; min-width: 0; font-size: 14px; line-height: 22px; overflow-wrap: anywhere; }
+/* Entrega de quem não está mais na turma: identificada sem destacar. */
+.topic-ex-aluno { color: var(--panel-muted); font-size: 12px; }
+.topic-status { flex: 0 0 auto; width: 210px; padding: 4px 10px; border-radius: var(--raio-pilula); text-align: center; font-size: 12px; line-height: 17px; }
+.topic-status.pending { background: #fff4c4; color: #854700; }
+.topic-status.corrected { background: #dcfce7; color: #166534; }
+.topic-empty { margin-top: 16px; padding: 20px; border: 1px dashed var(--panel-border); border-radius: var(--raio-cartao); text-align: center; }
+.topic-empty h3 { font-size: 14px; font-weight: 600; }
+.topic-empty p { font-size: 13px; line-height: 20px; color: var(--panel-muted); }
+.topic-criteria { grid-area: criteria; padding: 20px; }
+.topic-criteria .topic-eyebrow { margin: 20px 0 10px; font-size: 12px; line-height: 18px; font-weight: 600; color: var(--panel-muted); }
+.topic-criteria-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.topic-criterion { --criterion-tone: var(--criterio-neutro); position: relative; min-height: 70px; padding: 12px 14px 12px 16px; border: 1px solid var(--panel-border); border-radius: var(--raio-controle); background: var(--panel-bg); overflow: hidden; }
+.topic-criterion::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--criterion-tone); }
+.topic-criterion.tone-0 { --criterion-tone: var(--criterio-0); }
+.topic-criterion.tone-1 { --criterion-tone: var(--criterio-1); }
+.topic-criterion.tone-2 { --criterion-tone: var(--criterio-2); }
+.topic-criterion.tone-3 { --criterion-tone: var(--criterio-3); }
+.topic-criterion.tone-4 { --criterion-tone: var(--criterio-4); }
+.topic-criterion.tone-neutro { --criterion-tone: var(--criterio-neutro); }
+.topic-criterion > div { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.topic-criterion h4 { margin: 0; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--criterion-tone); overflow-wrap: anywhere; }
+.topic-criterion span { font-size: 12px; line-height: 18px; color: var(--panel-muted); }
+.topic-criterion p { margin: 5px 0 0; font-size: 12px; line-height: 19px; color: var(--panel-muted); overflow-wrap: anywhere; }
+.topic-criterion.custom { min-height: 56px; background: var(--panel-surface); }
+.topic-criterion button { margin: -8px 0; min-height: 36px; color: var(--panel-action); font-size: 13px; cursor: pointer; }
+.topic-add { width: 100%; margin-top: 12px; }
+.topic-limit, .topic-rule { margin: 10px 0 0; font-size: 12px; line-height: 19px; color: var(--panel-muted); }
+.topic-rule { padding: 10px; border-left: 3px solid var(--panel-attention); background: var(--panel-bg); border-radius: var(--raio-marca); }
+.topic-rule > p { margin: 0; }
+.topic-rule-link { min-height: 44px; margin-top: 10px; text-align: center; }
+.topic-main button:disabled, .topic-tabs a[aria-disabled="true"] { opacity: .55; cursor: not-allowed; }
+.topic-save-status { margin: 8px 0 0; font-size: 13px; line-height: 20px; color: var(--panel-success); }
+.topic-save-status:empty { display: none; }
+.topic-loading { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+.topic-loading > div { height: 260px; border-radius: var(--raio-cartao); }
+.topic-loading > div:first-child { grid-column: 1 / -1; height: 68px; }
+[data-theme="dark"] .topic-card, [data-theme="dark"] .topic-tabs { box-shadow: inset 0 1px rgb(255 255 255 / 12%); }
+[data-theme="dark"] .topic-status.pending { background: #392908; color: #f0bb64; }
+[data-theme="dark"] .topic-status.corrected { background: #0d3022; color: #5bda91; }
+@media (max-width: 1200px) {
+  .topic-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'prompt' 'criteria' 'received'; }
+  .topic-tabs { flex-wrap: wrap; gap: 12px; }
+  .topic-tabs nav { flex-basis: calc(100% - 80px); }
+  .topic-criteria-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .topic-criteria-list:has(.custom) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 767px) {
+  .topic-card { padding: 20px; }
+  .topic-tabs { padding: 16px; }
+  .topic-tabs nav { flex-basis: 100%; }
+  .topic-tabs nav a { max-width: 100%; width: 100%; white-space: normal; }
+  .topic-criteria-list, .topic-criteria-list:has(.custom) { grid-template-columns: minmax(0, 1fr); }
+  .topic-essays a { flex-wrap: wrap; }
+  .topic-student-name { flex-basis: calc(100% - 40px); }
+  .topic-status { margin-left: 38px; width: auto; max-width: calc(100% - 38px); }
+  .topic-section-heading { flex-wrap: wrap; }
+}
+
+.topic-acoes { display: flex; flex-wrap: wrap; gap: 10px; }
+.topic-acoes > button { min-height: 44px; }
+@media (max-width: 767px) {
+  .topic-acoes { width: 100%; }
+  .topic-acoes > button { flex: 1 1 100%; }
+}
+
+/* Confirmação de arquivar proposta (Issue #175): enunciado em destaque e a
+   consequência secundária separada da frase principal. */
+.topic-dialogo-resumo { margin: 0; font-size: 15px; line-height: 22px; color: var(--texto); overflow-wrap: anywhere; }
+.topic-dialogo-nota { margin: 0; font-size: 14px; line-height: 22px; color: var(--texto-suave); }
+
+/*
+ * Troca de proposta (Issue #194). O cabeçalho e a régua de temas não saem mais
+ * da tela: só o detalhe é substituído, e a entrada curta diz que o conteúdo
+ * abaixo é outro. Começa quase visível, para não virar um pisca a cada clique.
+ */
+.topic-grid-trocando { margin-top: 24px; }
+.topic-grid-trocando > div:first-child { height: 120px; }
+
+.topic-grid {
+  animation: topic-detalhe-entra 180ms cubic-bezier(.22, 1, .36, 1) both;
+}
+
+@keyframes topic-detalhe-entra {
+  from { opacity: .4; translate: 0 6px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topic-grid { animation: none; }
+}

@@ -1,9 +1,12 @@
 import { prisma } from '../src/config/prisma.js'
+import { processarFilaRecuperacao } from '../src/modules/auth/password-recovery.service.js'
 import {
   processarFilaEmailsNotificacao,
 } from '../src/modules/notificacoes/notificacoes-email.service.js'
 
 try {
+  const recuperacao = await processarFilaRecuperacao()
+  console.log(`Recuperação: ${recuperacao.processados}; enviados: ${recuperacao.enviados}; erros: ${recuperacao.erros}.`)
   const resumo = await processarFilaEmailsNotificacao()
 
   if (!resumo.habilitado) {
@@ -16,12 +19,12 @@ try {
     )
   }
 
-  if (resumo.erros > 0) {
+  if (resumo.erros > 0 || recuperacao.erros > 0) {
     process.exitCode = 1
   }
-} catch (erro) {
+} catch {
   console.error(
-    `Não foi possível processar a fila de e-mails: ${erro.message}`,
+    'Não foi possível processar a fila de e-mails. Verifique a configuração e o banco local.',
   )
   process.exitCode = 1
 } finally {

@@ -6,7 +6,7 @@ Plataforma web acadêmica para produção, análise e correção de redações, 
 
 ## Arquitetura
 
-- **Frontend:** React, Vite, Tailwind CSS, Motion e GSAP.
+- **Frontend:** React, Vite, Tailwind CSS e Motion.
 - **Backend:** Node.js e Express.
 - **Banco de dados:** MySQL 8.4, Prisma ORM e Docker Compose.
 - **Autenticação:** JWT, refresh token em cookie HttpOnly e bcrypt.
@@ -41,8 +41,8 @@ Plataforma web acadêmica para produção, análise e correção de redações, 
 ### Professor
 
 1. cria turmas e temas;
-2. pode iniciar um tema com o modelo editável da Competência II — Legitimação, Pertinência e Uso produtivo — ou usar critérios próprios;
-3. edita e ordena critérios até a primeira redação do tema; depois disso, o conjunto fica congelado;
+2. cria propostas com os três critérios fixos da Competência II — Legitimação, Pertinência e Uso produtivo — e até dois personalizados, sem pesos;
+3. edita os critérios personalizados até a primeira entrega do tema; depois disso, o conjunto fica congelado. Propostas legadas permanecem consultáveis sem conversão automática;
 4. consulta redações enviadas e solicita uma análise consultiva do Gemini;
 5. revisa somente evidências posicionais verificadas no texto;
 6. salva rascunhos de correção e publica o feedback final, que cria a notificação do aluno.
@@ -67,7 +67,7 @@ No PowerShell, a partir da raiz do projeto:
 ```powershell
 cd backend
 Copy-Item .env.example .env
-npm.cmd install
+npm.cmd ci
 docker compose up -d
 npx.cmd prisma generate
 npx.cmd prisma migrate deploy
@@ -87,6 +87,10 @@ npm.cmd run db:seed:verify
 
 O seed é idempotente, recusa execução em produção e usa contas `@lexis.example.com`. A senha conhecida das contas fictícias é documentada na saída do comando; nunca a reutilize em outro ambiente.
 
+Em banco já utilizado, não repita o seed para corrigir somente o código da turma: ele redefine dados das contas e trabalhos fictícios. A nova turma de demonstração usa o código válido `LEXDEM26`. Para uma turma antiga com `LEX-DEMO`, `npm.cmd run db:demo:code` faz somente a conferência. Após aprovar a alteração específica, `npm.cmd run db:demo:code -- --apply` atualiza apenas esse código, verificando o ID da turma, a identidade do professor fictício e possíveis conflitos. Códigos válidos já regenerados são preservados. O comando recusa bancos remotos e produção.
+
+O roteiro de conferência das propostas, envio atrasado e fluxo completo nas duas máquinas está em [docs/aceite-b01-b04.md](docs/aceite-b01-b04.md).
+
 ### 2. Frontend
 
 Em outro terminal, a partir da raiz do projeto:
@@ -94,7 +98,7 @@ Em outro terminal, a partir da raiz do projeto:
 ```powershell
 cd frontend
 Copy-Item .env.example .env
-npm.cmd install
+npm.cmd ci
 npm.cmd run dev
 ```
 
@@ -133,9 +137,12 @@ Os relatórios locais são gravados em `backend/output/ai-evaluation` e não sã
 ## Serviços externos e privacidade
 
 - OCR.space e Gemini recebem somente o conteúdo necessário ao recurso solicitado; chaves e limites pertencem a cada desenvolvedor.
+- O Gemini não repete chamadas automaticamente; há controle de concorrência e espera no processo local. Chaves do mesmo projeto Google compartilham cota, inclusive entre máquinas. Consulte [operação e limites do Gemini](docs/operacao-gemini.md).
 - O LanguageTool só é chamado por ação explícita do aluno. O padrão aponta para uma instância local e fica desativado.
 - A API pública gratuita do LanguageTool não é adequada para automação contínua; possui limites, não oferece garantia de disponibilidade e exige atenção à privacidade.
 - Em desenvolvimento, o Resend redireciona mensagens para `EMAIL_DEMO_RECIPIENT`.
+
+O [guia de observabilidade local e triagem](docs/observabilidade-local.md) explica logs, `X-Request-Id`, `/health` e consulta agregada de filas, distinguindo recursos presentes na `dev` daqueles que ainda dependem de PR. Não há telemetria externa ou monitor automático instalado por essa etapa.
 
 ## Limitações conhecidas
 
@@ -157,21 +164,26 @@ git clone https://github.com/bryandarvel/lexis.git
 cd lexis
 ```
 
-Antes de iniciar uma tarefa, atualize a `main` e crie uma branch própria:
+Antes de iniciar uma tarefa, com o trabalho local salvo, atualize a `dev` e crie uma branch própria:
 
 ```powershell
-git switch main
-git pull --ff-only origin main
+git status
+git switch dev
+git pull --ff-only origin dev
 git switch -c feat/NUMERO-nome-curto-da-tarefa
 ```
 
 O Pull Request deve mencionar a Issue com `Closes #NUMERO`, passar pela integração contínua e ser revisado pelo outro integrante antes do merge.
 
+O destino das tarefas é `dev`, com merge commit. A `main` só receberá uma promoção posterior por PR, depois dos testes e aprovação explícita; nunca recebe commits diretos. Para atualizar uma máquina já configurada após a integração, consulte [docs/atualizacao-dev.md](docs/atualizacao-dev.md).
+
+O [roteiro de integração e aceite de novembro](docs/integracao-aceite-2026-11.md) separa PR preparado, código integrado e teste nas duas máquinas. Use o [modelo vazio de registro](docs/registro-aceite-integrado.md) depois de executar os fluxos. A [proposta futura Vercel + Railway](docs/plano-deploy-vercel-railway.md) teve sua estrutura técnica aprovada, sem provisionar agora; recursos concretos, domínio, orçamento e retenção ainda exigem aprovação separada.
+
 Consulte [CONTRIBUTING.md](CONTRIBUTING.md) para conhecer a rotina completa de Issues, branches, commits, push, revisão e Pull Request. Agentes de IA também devem seguir as regras de [AGENTS.md](AGENTS.md).
 
 ## Segurança
 
-O estado conhecido da auditoria de dependências e as medidas pendentes estão em [docs/seguranca-dependencias.md](docs/seguranca-dependencias.md). O frontend está sem alertas no `npm audit`; o backend ainda depende de correções upstream do ecossistema Prisma e não deve ser tratado como pronto para produção pública sem nova revisão.
+O histórico da auditoria de dependências e as medidas pendentes estão em [docs/seguranca-dependencias.md](docs/seguranca-dependencias.md). Os resultados dependem da data, do lockfile e dos patches realmente integrados; PR aprovado ou instalado em outra branch não elimina alertas desta versão. Antes de publicar, repita a auditoria nos pacotes da árvore integrada e revise os alertas restantes, sem downgrade ou override para apenas obter resultado verde. O projeto não deve ser tratado como pronto para produção pública sem essa revisão e o aceite integrado.
 
 Nunca envie ao GitHub:
 
@@ -184,3 +196,13 @@ Nunca envie ao GitHub:
 Somente os arquivos `.env.example`, contendo valores demonstrativos, devem ser versionados.
 
 O access token permanece somente em memória e o refresh token é rotacionado em cookie HttpOnly. No logout, rascunhos privados do usuário são removidos, mas preferências não sensíveis, como o tema escolhido, são preservadas.
+
+## Recuperação de senha e operação da demonstração
+
+O botão “Esqueci minha senha” solicita instruções sem revelar se a conta existe. Com e-mail habilitado, a solicitação entra na fila; o processador envia um link temporário de uso único. Após a redefinição, as sessões anteriores da conta são invalidadas e o usuário deve entrar novamente. O banco persiste somente o hash do token.
+
+Configure as variáveis localmente e consulte [docs/operacao-email.md](docs/operacao-email.md) antes de processar a fila com `npm.cmd run email:process`, dentro de `backend/`. Com `EMAIL_ENABLED=false`, a recuperação informa indisponibilidade. Nenhum agendamento de produção é instalado automaticamente.
+
+Antes e depois de um lote supervisionado, `npm.cmd run email:status` consulta somente contagens por estado das filas locais. Não envia mensagens, expõe destinatários/tokens nem recupera automaticamente itens interrompidos. O procedimento e as limitações estão no guia de operação.
+
+As evidências e pendências desta entrega estão em [docs/entrega-funcional.md](docs/entrega-funcional.md). A proposta acadêmica para avaliar a IA, dependente de corpus autorizado e avaliadores, está em [docs/protocolo-academico-ia.md](docs/protocolo-academico-ia.md).

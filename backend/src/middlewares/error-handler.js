@@ -1,8 +1,38 @@
 import { env } from '../config/env.js'
 import { AppError } from '../utils/app-error.js'
+import { registrarEvento } from '../utils/operational-log.js'
 
-export function errorHandler(error, _req, res, _next) {
+function normalizarErroDoParser(error) {
+  if (error instanceof AppError) return error
+  if (error instanceof SyntaxError && error.type === 'entity.parse.failed' && error.status === 400) {
+    return new AppError('O corpo da requisição contém JSON inválido.', {
+      statusCode: 400, code: 'INVALID_JSON',
+    })
+  }
+  if (error?.type === 'entity.too.large' && error.status === 413 &&
+    error.expose === true && Number.isSafeInteger(error.limit) && error.limit > 0) {
+    return new AppError('O corpo da requisição excede o limite permitido.', {
+      statusCode: 413, code: 'PAYLOAD_TOO_LARGE',
+    })
+  }
+  return error
+}
+
+export function errorHandler(error, req, res, _next) {
+  error = normalizarErroDoParser(error)
+  if (env.NODE_ENV !== 'test') registrarEvento('request_error', {
+    requestId: req.requestId,
+    status: error instanceof AppError ? error.statusCode : 500,
+    codigo: error instanceof AppError ? error.code : 'INTERNAL_ERROR',
+    statusExterno: error instanceof AppError ? error.details?.statusExterno : undefined,
+    retryAfterSeconds: error instanceof AppError ? error.details?.retryAfterSeconds : undefined,
+    codigoTransporte: error instanceof AppError ? error.details?.codigoTransporte : undefined,
+  })
   if (error instanceof AppError) {
+    const espera = error.details?.retryAfterSeconds
+    if (error.code.startsWith('GEMINI_') && Number.isSafeInteger(espera) && espera > 0) {
+      res.set('Retry-After', String(espera))
+    }
     return res.status(error.statusCode).json({
       error: {
         code: error.code,
@@ -14,15 +44,10 @@ export function errorHandler(error, _req, res, _next) {
     })
   }
 
-  console.error(error)
-
   return res.status(500).json({
     error: {
       code: 'INTERNAL_ERROR',
       message: 'Erro interno do servidor.',
-      ...(env.NODE_ENV === 'development' && {
-        details: error.message,
-      }),
     },
   })
 }

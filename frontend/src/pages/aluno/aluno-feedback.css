@@ -1,0 +1,255 @@
+/*
+ * Tokens da tela de feedback do aluno (Figma, nó 49:2). Os tons dos
+ * critérios seguem as cores de marcação do protótipo; o quinto tom e as
+ * variantes escuras acompanham a paleta da correção do professor.
+ */
+.aluno-feedback {
+  --feedback-destaque: #1c6eba;
+  --feedback-barra: #93a1b5;
+}
+
+:root[data-theme="dark"] .aluno-feedback {
+  --feedback-destaque: #7dccff;
+  --feedback-barra: #6b7a90;
+}
+
+.feedback-tom-0 { --feedback-tom: var(--criterio-0); }
+.feedback-tom-1 { --feedback-tom: var(--criterio-1); }
+.feedback-tom-2 { --feedback-tom: var(--criterio-2); }
+.feedback-tom-3 { --feedback-tom: var(--criterio-3); }
+.feedback-tom-4 { --feedback-tom: var(--criterio-4); }
+.feedback-tom-neutro { --feedback-tom: var(--criterio-neutro); }
+
+/*
+ * O tamanho mínimo automático de um item de grade é min-content, e uma palavra
+ * ou URL longa num comentário torna esse mínimo maior que a tela. A quebra já
+ * existe nos parágrafos; o que falta é deixar o item encolher. Não afeta a
+ * impressão, onde a grade vira display: block.
+ */
+.feedback-impressao-grade > * {
+  min-width: 0;
+}
+
+.feedback-so-impressao { display: none; }
+
+/*
+ * "Salvar como PDF" usa a impressão do navegador. As regras só valem quando a
+ * página de feedback está montada: o shell do aluno, os botões e os
+ * controles somem. Os trechos mantêm a cor e o número do feedback.
+ */
+@media print {
+  @page lexis-feedback {
+    size: A4;
+    margin: 16mm 14mm;
+  }
+
+  /*
+   * O color-scheme escuro do tema pinta a margem da folha, então a impressão
+   * volta ao esquema claro mesmo com a tela em tema escuro.
+   */
+  html:has(.aluno-feedback) {
+    color-scheme: light !important;
+  }
+
+  html:has(.aluno-feedback),
+  body:has(.aluno-feedback),
+  .aluno-shell:has(.aluno-feedback) {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .aluno-shell:has(.aluno-feedback) > header,
+  .aluno-shell:has(.aluno-feedback) > nav,
+  .aluno-shell:has(.aluno-feedback) > button,
+  .aluno-shell:has(.aluno-feedback) > a[href="#conteudo-principal"] {
+    display: none !important;
+  }
+
+  .aluno-shell:has(.aluno-feedback) main,
+  .aluno-shell:has(.aluno-feedback) main > div {
+    padding: 0 !important;
+  }
+
+  .aluno-shell:has(.aluno-feedback) main > div > div {
+    max-width: none !important;
+  }
+
+  .aluno-feedback,
+  .aluno-feedback * {
+    color: #000000 !important;
+    background: transparent !important;
+    border-color: #8c8c8c !important;
+    box-shadow: none !important;
+  }
+  .aluno-feedback { page: lexis-feedback; }
+
+  .aluno-feedback .feedback-impressao-grade {
+    display: block !important;
+  }
+
+  .aluno-feedback .feedback-impressao-grade > * + * {
+    margin-top: 6mm;
+  }
+
+  /*
+   * Só os blocos curtos ficam inteiros na folha. Os longos quebram, com
+   * órfãs e viúvas controladas e com os títulos presos ao que vem depois,
+   * para não deixar páginas quase vazias nem título sozinho no pé.
+   */
+  .aluno-feedback .feedback-impressao-inteiro {
+    break-inside: avoid;
+  }
+
+  .aluno-feedback p,
+  .aluno-feedback .feedback-texto-redacao {
+    orphans: 3;
+    widows: 3;
+  }
+
+  .aluno-feedback h2,
+  .aluno-feedback h3,
+  .aluno-feedback h4,
+  .aluno-feedback .feedback-cabecalho-cartao {
+    break-after: avoid;
+    break-inside: avoid;
+  }
+
+  .aluno-feedback .feedback-trilho,
+  .aluno-feedback .feedback-trilho > span,
+  .aluno-feedback .feedback-faixa {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .aluno-feedback .feedback-trilho {
+    background: #e6e6e6 !important;
+  }
+
+  .aluno-feedback .feedback-trilho > span,
+  .aluno-feedback .feedback-faixa {
+    background: #404040 !important;
+  }
+
+  .aluno-feedback .feedback-texto-redacao {
+    font-size: 12pt;
+    line-height: 1.7;
+  }
+}
+
+/*
+ * Trechos comentados no texto publicado (#42). A cor sai de
+ * utils/criterio-cores.js, igual à da correção do professor, e nunca é o
+ * único indicador: cada marca tem número visível e nome acessível.
+ */
+.feedback-trechos-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feedback-trechos-legenda li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 24px;
+  color: var(--texto-suave);
+  font-size: 12px;
+  line-height: 17px;
+}
+
+.feedback-trechos-cor {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+  border-radius: var(--raio-marca);
+  background: var(--feedback-tom);
+}
+
+.feedback-trechos-nota {
+  margin: 8px 0 0;
+  color: var(--texto-suave);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.feedback-trecho {
+  display: inline;
+  padding: 1px 2px;
+  border-bottom: 2px solid var(--feedback-tom);
+  border-radius: var(--raio-marca);
+  background: color-mix(in srgb, var(--feedback-tom) 16%, transparent);
+  background-image: var(--feedback-faixas, none);
+  background-repeat: no-repeat;
+  background-size: 100% 1px;
+  background-position: var(--feedback-faixas-posicao, left bottom);
+  color: inherit;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.feedback-selo-trecho {
+  display: inline-block;
+  margin-inline: 1px 3px;
+  padding: 2px 3px;
+  user-select: none;
+  border: 1px solid var(--feedback-tom);
+  border-radius: var(--raio-marca);
+  background: var(--superficie-conteudo);
+  color: inherit;
+  font-family: var(--fonte-interface);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: middle;
+}
+.feedback-selo-trecho.feedback-so-impressao { display: none; }
+button.feedback-selo-trecho { cursor: pointer; min-width: 24px; min-height: 24px; }
+.feedback-selo-trecho::before { content: attr(data-numero); }
+.feedback-atalhos-trechos { display: flex; flex-wrap: wrap; column-gap: 12px; }
+.feedback-selo-trecho[aria-pressed="true"] { box-shadow: inset 0 0 0 1px var(--feedback-tom); text-decoration: underline; }
+.feedback-trecho.trecho-em-foco { border-bottom: 3px double var(--feedback-tom); }
+.aluno-feedback .comentario-em-foco { outline: 2px solid var(--feedback-tom); outline-offset: -2px; }
+
+@media print {
+  .aluno-feedback .feedback-so-impressao { display: revert; }
+  .aluno-feedback button.feedback-selo-trecho,
+  .aluno-feedback .feedback-atalhos-trechos,
+  .aluno-feedback .feedback-trechos-nota { display: none !important; }
+
+  .aluno-feedback .feedback-folha-identidade {
+    margin-bottom: 5mm;
+    padding-bottom: 3mm;
+    border-bottom: 1px solid;
+    break-after: avoid;
+    break-inside: avoid;
+  }
+  .feedback-folha-identidade p { margin: 0; font-size: 10pt; }
+  .feedback-folha-identidade .brand-wordmark { margin-bottom: 1mm; font-size: 16pt; }
+  .aluno-feedback .comentario-em-foco { outline: none; }
+  .aluno-feedback .feedback-trecho,
+  .aluno-feedback .feedback-trecho.trecho-em-foco {
+    padding: 0 1px;
+    border-bottom: 1.5px solid var(--feedback-tom) !important;
+    background-image: var(--feedback-faixas, none) !important;
+    background-repeat: no-repeat !important;
+    background-size: 100% 1px !important;
+    background-position: var(--feedback-faixas-posicao, left bottom) !important;
+  }
+  .aluno-feedback .feedback-selo-trecho.feedback-so-impressao {
+    display: inline-block;
+    border-color: var(--feedback-tom) !important;
+    break-inside: avoid;
+  }
+  .aluno-feedback .feedback-trechos-cor,
+  .aluno-feedback .feedback-faixa {
+    background: var(--feedback-tom) !important;
+  }
+  .aluno-feedback .feedback-trecho,
+  .aluno-feedback .feedback-selo-trecho,
+  .aluno-feedback .feedback-trechos-cor {
+    print-color-adjust: exact;
+  }
+}

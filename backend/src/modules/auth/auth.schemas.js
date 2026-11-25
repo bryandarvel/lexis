@@ -64,3 +64,29 @@ export const loginSchema = z
     senha: senhaLoginSchema,
   })
   .strict()
+
+export const solicitarRecuperacaoSchema = z.object({ email: emailSchema }).strict()
+export const redefinirSenhaSchema = z.object({
+  token: z.string().regex(/^[a-f0-9]{64}$/, 'Link inválido. Solicite uma nova recuperação.'),
+  senha: senhaCadastroSchema,
+}).strict()
+
+export const atualizarPerfilSchema = z.object({
+  nome: cadastroSchema.shape.nome,
+  senhaAtual: senhaLoginSchema,
+}).strict()
+
+export const alterarSenhaSchema = z.object({
+  senhaAtual: senhaLoginSchema,
+}).strict()
+
+export const excluirContaSchema = z.object({ senhaAtual: senhaLoginSchema }).strict()
+
+export const solicitarAlteracaoEmailSchema = z.object({
+  senhaAtual: senhaLoginSchema,
+  novoEmail: emailSchema,
+}).strict()
+
+export const confirmarAlteracaoEmailSchema = z.object({
+  token: z.string().regex(/^[a-f0-9]{64}$/, 'Link de confirmação inválido.'),
+}).strict()

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { obterModeloCompetenciaDois } from '../../src/modules/temas/temas.competencia-dois.js'
 import { randomUUID } from 'node:crypto'
 import {
   after,
@@ -194,13 +195,7 @@ before(async () => {
     instrucoes:
       'Revise o texto extraído antes do envio.',
     prazoEntrega: criarPrazoFuturo(),
-    criterios: [
-      {
-        nome: 'Argumentação',
-        descricao:
-          'Avalia o desenvolvimento argumentativo.',
-      },
-    ],
+    criterios: obterModeloCompetenciaDois().criterios,
   })
 
   globalThis.fetch = async () => {
@@ -225,6 +220,7 @@ before(async () => {
 })
 
 beforeEach(async () => {
+  await prisma.notificacao.deleteMany({ where: { redacao: { temaId: tema.id } } })
   await prisma.redacao.deleteMany({
     where: {
       temaId: tema.id,
@@ -236,6 +232,7 @@ after(async () => {
   globalThis.fetch = fetchOriginal
 
   if (bancoDeTesteConfirmado) {
+    await prisma.notificacao.deleteMany({ where: { redacao: { temaId: tema?.id } } })
     await prisma.redacao.deleteMany({
       where: {
         temaId: tema?.id,

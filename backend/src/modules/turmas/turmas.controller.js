@@ -3,14 +3,21 @@ import {
   criarTurmaParaProfessor,
   desvincularAlunoComoProfessor,
   entrarEmTurmaComoAluno,
+  excluirTurmaParaProfessor,
   listarAlunosAtivosParaProfessor,
   listarTurmasParaProfessor,
   obterMatriculaAtivaParaAluno,
   obterTurmaParaProfessor,
   regenerarCodigoParaProfessor,
   renomearTurmaParaProfessor,
+  reabrirTurmaParaProfessor,
   sairDaTurmaComoAluno,
 } from './turmas.service.js'
+
+export async function excluirTurmaController(req, res) {
+  await excluirTurmaParaProfessor({ turmaId: req.params.turmaId, professorId: req.auth.usuarioId })
+  return res.status(204).send()
+}
 
 export async function criarTurmaController(req, res) {
   const turma = await criarTurmaParaProfessor({
@@ -96,6 +103,15 @@ export async function arquivarTurmaController(
   })
 }
 
+export async function reabrirTurmaController(req, res) {
+  const turma = await reabrirTurmaParaProfessor({
+    turmaId: req.params.turmaId,
+    professorId: req.auth.usuarioId,
+  })
+
+  return res.status(200).json({ data: { turma } })
+}
+
 export async function entrarEmTurmaController(
   req,
   res,
@@ -131,6 +147,7 @@ export async function obterMinhaMatriculaController(
 export async function sairDaTurmaController(req, res) {
   const matricula = await sairDaTurmaComoAluno(
     req.auth.usuarioId,
+    req.body.matriculaId,
   )
 
   return res.status(200).json({

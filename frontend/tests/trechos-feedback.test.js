@@ -1,0 +1,361 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+
+import {
+  LIMITE_TRECHOS_POR_CRITERIO,
+  criarTrechoDaSelecao,
+  criteriosComOTrecho,
+  marcacoesQueASelecaoToca,
+  recortarMarcacoes,
+  descreverTrechoJaMarcado,
+  montarCriterioParaEnvio,
+  montarTrechosParaEnvio,
+  podeAcrescentarTrecho,
+  validarTrechosRecebidos,
+  numerarTrechos,
+  limitesDeGrafemas,
+  moverGrafema,
+} from '../src/utils/trechos-feedback.js'
+
+const TEXTO = 'A educação midiática exige repertório. Veja o caso de 2019.'
+
+test('números seguem o início e o maior intervalo vem primeiro no empate', () => {
+  const dados = [[3, 8], [0, 3], [0, 9], [0, 3], [8, 9]].map(([inicio, fim]) => ({ inicio, fim }))
+  assert.deepEqual(numerarTrechos(dados).map(({ inicio, fim, numero }) => [inicio, fim, numero]), [
+    [0, 9, '01'], [0, 3, '02'], [3, 8, '03'], [8, 9, '04'],
+  ])
+})
+
+test('ajuste de bordas avança grafemas sem dividir acentos, emoji, quebras ou aspas', () => {
+  const texto = ' e\u0301👩🏽‍🏫\r\n“fim”'
+  const limites = limitesDeGrafemas(texto)
+  assert.deepEqual(limites.slice(0, 5), [0, 1, 3, 10, 12])
+  assert.equal(moverGrafema(limites, 3, 1), 10)
+  assert.equal(moverGrafema(limites, 10, -1), 3)
+  assert.equal(texto.slice(1, moverGrafema(limites, 10, 1)), 'e\u0301👩🏽‍🏫\r\n')
+})
+
+test('a seleção vira um trecho com os offsets e o texto literal', () => {
+  const { trecho, erro } = criarTrechoDaSelecao(TEXTO, 2, 20)
+
+  assert.equal(erro, '')
+  assert.deepEqual(trecho, { inicio: 2, fim: 20, trecho: 'educação midiática' })
+  assert.equal(TEXTO.slice(trecho.inicio, trecho.fim), trecho.trecho)
+})
+
+test('seleção vazia, invertida ou fora do texto é recusada', () => {
+  for (const [inicio, fim] of [[5, 5], [10, 4], [-1, 5], [0, TEXTO.length + 1], [TEXTO.length, TEXTO.length]]) {
+    const { trecho, erro } = criarTrechoDaSelecao(TEXTO, inicio, fim)
+
+    assert.equal(trecho, null)
+    assert.ok(erro)
+  }
+})
+
+test('offsets não inteiros ou texto ausente são recusados', () => {
+  assert.equal(criarTrechoDaSelecao(TEXTO, 1.5, 4).trecho, null)
+  assert.equal(criarTrechoDaSelecao(TEXTO, '1', 4).trecho, null)
+  assert.equal(criarTrechoDaSelecao('', 0, 1).trecho, null)
+  assert.equal(criarTrechoDaSelecao(null, 0, 1).trecho, null)
+})
+
+// O backend exige texto.slice(inicio, fim) === trecho, sem aparar nem normalizar.
+test('acentos, emoji e quebra de linha são preservados sem normalizar', () => {
+  const texto = 'Ação é 🌍 global.\nSegunda linha com ç.'
+
+  for (const [inicio, fim] of [[0, 5], [7, 9], [16, 24], [0, texto.length]]) {
+    const { trecho } = criarTrechoDaSelecao(texto, inicio, fim)
+
+    assert.equal(texto.slice(trecho.inicio, trecho.fim), trecho.trecho)
+  }
+
+  // O emoji ocupa duas unidades UTF-16: cortar ao meio é recusado.
+  const meioDoEmoji = criarTrechoDaSelecao(texto, 7, 8)
+
+  assert.equal(meioDoEmoji.trecho, null)
+  assert.match(meioDoEmoji.erro, /caractere/i)
+})
+
+test('espaço nas bordas é mantido, porque o servidor compara literalmente', () => {
+  const { trecho } = criarTrechoDaSelecao(TEXTO, 1, 11)
+
+  assert.equal(trecho.trecho, ' educação ')
+  assert.equal(TEXTO.slice(trecho.inicio, trecho.fim), trecho.trecho)
+})
+
+test('duplicata do mesmo intervalo no mesmo critério é recusada', () => {
+  const existentes = [{ inicio: 2, fim: 20, trecho: 'educação midiática' }]
+  const igual = { inicio: 2, fim: 20, trecho: 'educação midiática' }
+
+  assert.match(podeAcrescentarTrecho(existentes, igual), /mesmo trecho|já/i)
+  // Intervalo sobreposto, mas diferente, é permitido.
+  assert.equal(podeAcrescentarTrecho(existentes, { inicio: 2, fim: 11, trecho: 'educação ' }), '')
+  assert.equal(podeAcrescentarTrecho([], igual), '')
+})
+
+test('passar de vinte trechos no mesmo critério é recusado', () => {
+  assert.equal(LIMITE_TRECHOS_POR_CRITERIO, 20)
+
+  const cheios = Array.from({ length: 20 }, (_, i) => ({ inicio: i, fim: i + 1, trecho: 'x' }))
+
+  assert.match(podeAcrescentarTrecho(cheios, { inicio: 50, fim: 52, trecho: 'ab' }), /20/)
+  assert.equal(podeAcrescentarTrecho(cheios.slice(0, 19), { inicio: 50, fim: 52, trecho: 'ab' }), '')
+})
+
+test('o envio carrega só os campos aceitos pela API', () => {
+  const comExtras = [
+    { id: 'reg-1', inicio: 2, fim: 20, trecho: 'educação midiática', sugeridoPorIa: true, analiseIaId: '2222', diagnostico: 'privado' },
+    { inicio: 39, fim: 43, trecho: 'Veja' },
+  ]
+  const enviado = montarTrechosParaEnvio(comExtras)
+
+  assert.deepEqual(enviado, [
+    { inicio: 2, fim: 20, trecho: 'educação midiática', analiseIaId: '2222' },
+    { inicio: 39, fim: 43, trecho: 'Veja' },
+  ])
+
+  for (const item of enviado) {
+    for (const proibido of ['id', 'sugeridoPorIa', 'diagnostico']) {
+      assert.equal(proibido in item, false)
+    }
+  }
+})
+
+test('analiseIaId só vai quando existe, e nunca como null', () => {
+  const enviado = montarTrechosParaEnvio([
+    { inicio: 0, fim: 1, trecho: 'A', analiseIaId: null },
+    { inicio: 1, fim: 2, trecho: ' ', analiseIaId: '' },
+  ])
+
+  assert.deepEqual(enviado, [
+    { inicio: 0, fim: 1, trecho: 'A' },
+    { inicio: 1, fim: 2, trecho: ' ' },
+  ])
+})
+
+// Omitir preserva o que já estava salvo; [] limpa de propósito.
+test('o critério não mexido vai sem a chave trechos', () => {
+  const item = montarCriterioParaEnvio({
+    criterioId: 'c1',
+    comentario: ' Comentário ',
+    trechos: [{ inicio: 0, fim: 1, trecho: 'A' }],
+    alterado: false,
+  })
+
+  assert.deepEqual(item, { criterioId: 'c1', comentario: 'Comentário' })
+  assert.equal('trechos' in item, false)
+})
+
+test('o critério mexido vai com a lista, e limpo vai com lista vazia', () => {
+  const comTrechos = montarCriterioParaEnvio({
+    criterioId: 'c1',
+    comentario: 'Comentário',
+    trechos: [{ inicio: 0, fim: 1, trecho: 'A' }],
+    alterado: true,
+  })
+
+  assert.deepEqual(comTrechos.trechos, [{ inicio: 0, fim: 1, trecho: 'A' }])
+
+  const limpo = montarCriterioParaEnvio({
+    criterioId: 'c1',
+    comentario: 'Comentário',
+    trechos: [],
+    alterado: true,
+  })
+
+  assert.deepEqual(limpo.trechos, [])
+})
+
+test('trechos do servidor que não batem com o texto são descartados', () => {
+  const recebidos = [
+    { id: 'a', inicio: 2, fim: 20, trecho: 'educação midiática' },
+    { id: 'b', inicio: 2, fim: 20, trecho: 'outro texto' },
+    { id: 'c', inicio: 0, fim: 9999, trecho: 'fora do texto' },
+    { id: 'd', inicio: -1, fim: 4, trecho: 'A ed' },
+    { id: 'e', inicio: 5, fim: 5, trecho: '' },
+    null,
+    { id: 'f', inicio: 39, fim: 43, trecho: 'Veja' },
+  ]
+  const validos = validarTrechosRecebidos(TEXTO, recebidos)
+
+  assert.deepEqual(validos.map((t) => t.id), ['a', 'f'])
+  assert.deepEqual(validarTrechosRecebidos(TEXTO, undefined), [])
+  assert.deepEqual(validarTrechosRecebidos('', [{ inicio: 0, fim: 1, trecho: 'A' }]), [])
+})
+
+test('a lista validada sai ordenada por início e preserva os campos recebidos', () => {
+  const validos = validarTrechosRecebidos(TEXTO, [
+    { id: 'f', inicio: 39, fim: 43, trecho: 'Veja', sugeridoPorIa: true },
+    { id: 'a', inicio: 2, fim: 20, trecho: 'educação midiática', sugeridoPorIa: false },
+  ])
+
+  assert.deepEqual(validos.map((t) => t.id), ['a', 'f'])
+  assert.equal(validos[0].sugeridoPorIa, false)
+})
+
+test('offset acima do limite do servidor é recusado', () => {
+  const longo = 'a'.repeat(20005)
+
+  assert.equal(criarTrechoDaSelecao(longo, 0, 20001).trecho, null)
+  assert.equal(criarTrechoDaSelecao(longo, 19999, 20000).erro, '')
+})
+
+/*
+ * Issue #179: o mesmo trecho em mais de um critério continua permitido — o
+ * texto desenha uma listra por critério e o aluno vê os vínculos. O que muda
+ * é o professor enxergar onde ele já está antes de marcar de novo.
+ */
+const criterio = (id, nome) => ({ id, nome })
+const marcado = (inicio, fim) => ({ inicio, fim, trecho: 'x' })
+
+test('o aviso nomeia os critérios onde o trecho já está', () => {
+  assert.equal(descreverTrechoJaMarcado([]), '')
+  assert.equal(descreverTrechoJaMarcado(null), '')
+  assert.match(
+    descreverTrechoJaMarcado([criterio('a', 'Legitimação')]),
+    /^Este trecho já está marcado em Legitimação\./,
+  )
+  assert.match(
+    descreverTrechoJaMarcado([criterio('a', 'Legitimação'), criterio('b', 'Pertinência')]),
+    /marcado em Legitimação e Pertinência\./,
+  )
+  assert.match(
+    descreverTrechoJaMarcado([criterio('a', 'A'), criterio('b', 'B'), criterio('c', 'C')]),
+    /marcado em A, B e C\./,
+  )
+})
+
+test('o aviso lembra que um trecho pode apoiar mais de um critério', () => {
+  assert.match(
+    descreverTrechoJaMarcado([criterio('a', 'Legitimação')]),
+    /pode apoiar mais de um critério/,
+  )
+})
+
+test('critério sem nome não vira "undefined" no aviso', () => {
+  assert.equal(descreverTrechoJaMarcado([{ id: 'a' }, { id: 'b', nome: '  ' }]), '')
+  assert.match(descreverTrechoJaMarcado([{ id: 'a' }, criterio('b', 'Uso produtivo')]), /em Uso produtivo\./)
+})
+
+test('só o intervalo idêntico conta como já marcado', () => {
+  const criterios = [criterio('a', 'Legitimação'), criterio('b', 'Pertinência')]
+  const porCriterio = {
+    a: { marcados: [marcado(10, 20)] },
+    b: { marcados: [marcado(10, 21)] },
+  }
+
+  assert.deepEqual(
+    criteriosComOTrecho(criterios, porCriterio, marcado(10, 20)).map((c) => c.id),
+    ['a'],
+  )
+  // Sobreposição parcial não é o mesmo trecho.
+  assert.deepEqual(criteriosComOTrecho(criterios, porCriterio, marcado(12, 18)), [])
+})
+
+test('sem trecho pronto, nada é apontado como já marcado', () => {
+  const criterios = [criterio('a', 'Legitimação')]
+  const porCriterio = { a: { marcados: [marcado(10, 20)] } }
+
+  assert.deepEqual(criteriosComOTrecho(criterios, porCriterio, null), [])
+  // Critério ainda sem lista não pode quebrar a barra de marcação.
+  assert.deepEqual(criteriosComOTrecho(criterios, {}, marcado(10, 20)), [])
+  assert.deepEqual(criteriosComOTrecho(undefined, porCriterio, marcado(10, 20)), [])
+})
+
+test('Issue #190: a seleção que apenas toca uma marcação já a alcança, em qualquer critério', () => {
+  const criterios = [criterio('a', 'Legitimação'), criterio('b', 'Pertinência'), criterio('c', 'Coesão')]
+  const porCriterio = {
+    a: { marcados: [marcado(10, 20), marcado(40, 50)] },
+    b: { marcados: [marcado(15, 30)] },
+    c: { marcados: [marcado(60, 70)] },
+  }
+  const achadas = marcacoesQueASelecaoToca(criterios, porCriterio, marcado(18, 45))
+
+  // Não precisa ser idêntica: pega as duas de "a" e a de "b", e deixa "c".
+  assert.deepEqual(achadas.map(({ criterio }) => criterio.id), ['a', 'b'])
+  assert.deepEqual(achadas[0].trechos.map((t) => [t.inicio, t.fim]), [[10, 20], [40, 50]])
+  assert.deepEqual(achadas[1].trechos.map((t) => [t.inicio, t.fim]), [[15, 30]])
+})
+
+test('Issue #190: encostar só na borda, ou ficar fora, não conta como tocar', () => {
+  const criterios = [criterio('a', 'Legitimação')]
+  const porCriterio = { a: { marcados: [marcado(10, 20)] } }
+
+  assert.deepEqual(marcacoesQueASelecaoToca(criterios, porCriterio, marcado(20, 30)), [])
+  assert.deepEqual(marcacoesQueASelecaoToca(criterios, porCriterio, marcado(0, 10)), [])
+  assert.deepEqual(marcacoesQueASelecaoToca(criterios, porCriterio, marcado(30, 40)), [])
+  // Uma seleção dentro da marcação, ou que a contém, toca.
+  assert.equal(marcacoesQueASelecaoToca(criterios, porCriterio, marcado(12, 14)).length, 1)
+  assert.equal(marcacoesQueASelecaoToca(criterios, porCriterio, marcado(0, 99)).length, 1)
+})
+
+test('Issue #190: sem seleção pronta ou sem listas, nada a remover e nada quebra', () => {
+  const criterios = [criterio('a', 'Legitimação')]
+
+  assert.deepEqual(marcacoesQueASelecaoToca(criterios, { a: { marcados: [marcado(10, 20)] } }, null), [])
+  assert.deepEqual(marcacoesQueASelecaoToca(criterios, {}, marcado(10, 20)), [])
+  assert.deepEqual(marcacoesQueASelecaoToca(undefined, {}, marcado(10, 20)), [])
+})
+
+
+const TEXTO_RECORTE = 'Repertório sociocultural citado na redação do aluno.'
+const par = (lista) => lista.map((t) => [t.inicio, t.fim, t.trecho])
+
+test('Issue #190: seleção no meio parte a marcação em duas, e a parte selecionada sai', () => {
+  const recorte = recortarMarcacoes(TEXTO_RECORTE, [{ inicio: 0, fim: 20, trecho: TEXTO_RECORTE.slice(0, 20) }], { inicio: 5, fim: 10 })
+
+  assert.deepEqual(par(recorte), [[0, 5, TEXTO_RECORTE.slice(0, 5)], [10, 20, TEXTO_RECORTE.slice(10, 20)]])
+})
+
+test('Issue #190: seleção numa ponta deixa só a outra parte marcada', () => {
+  const marca = { inicio: 10, fim: 30, trecho: TEXTO_RECORTE.slice(10, 30) }
+
+  assert.deepEqual(par(recortarMarcacoes(TEXTO_RECORTE, [marca], { inicio: 5, fim: 15 })), [[15, 30, TEXTO_RECORTE.slice(15, 30)]])
+  assert.deepEqual(par(recortarMarcacoes(TEXTO_RECORTE, [marca], { inicio: 25, fim: 40 })), [[10, 25, TEXTO_RECORTE.slice(10, 25)]])
+})
+
+test('Issue #190: seleção que cobre a marcação inteira, ou mais, remove tudo', () => {
+  const marca = { inicio: 10, fim: 30, trecho: TEXTO_RECORTE.slice(10, 30) }
+
+  assert.deepEqual(recortarMarcacoes(TEXTO_RECORTE, [marca], { inicio: 10, fim: 30 }), [])
+  assert.deepEqual(recortarMarcacoes(TEXTO_RECORTE, [marca], { inicio: 0, fim: 40 }), [])
+})
+
+test('Issue #190: o que a seleção não toca passa intacto, com o analiseIaId', () => {
+  const longe = { inicio: 40, fim: 50, trecho: TEXTO_RECORTE.slice(40, 50), analiseIaId: 'ia-1' }
+  const tocada = { inicio: 0, fim: 20, trecho: TEXTO_RECORTE.slice(0, 20), analiseIaId: 'ia-2' }
+  const recorte = recortarMarcacoes(TEXTO_RECORTE, [longe, tocada], { inicio: 5, fim: 10 })
+
+  assert.equal(recorte[0], longe)
+  // Os pedaços já não são a evidência inteira da IA: perdem a ligação.
+  assert.equal(recorte[1].analiseIaId, undefined)
+  assert.equal(recorte[2].analiseIaId, undefined)
+})
+
+test('Issue #190: dois pedaços iguais não repetem o intervalo no critério', () => {
+  const a = { inicio: 0, fim: 10, trecho: TEXTO_RECORTE.slice(0, 10) }
+  const b = { inicio: 0, fim: 5, trecho: TEXTO_RECORTE.slice(0, 5) }
+  // Cortar [5,6) de "a" deixa [0,5), que "b" já marca: fica um só.
+  const recorte = recortarMarcacoes(TEXTO_RECORTE, [b, a], { inicio: 5, fim: 6 })
+
+  assert.deepEqual(par(recorte), [[0, 5, TEXTO_RECORTE.slice(0, 5)], [6, 10, TEXTO_RECORTE.slice(6, 10)]])
+})
+
+test('Issue #190: nunca produz um pedaço que corte um emoji ao meio', () => {
+  const texto = 'ab😀cd'
+  const marca = { inicio: 0, fim: 6, trecho: texto }
+
+  // Seleção alinhada ao emoji: os dois lados sobram inteiros.
+  assert.deepEqual(par(recortarMarcacoes(texto, [marca], { inicio: 2, fim: 4 })), [[0, 2, 'ab'], [4, 6, 'cd']])
+  // Seleção que corta o emoji: o pedaço que cortaria é descartado, o outro fica.
+  const cortada = recortarMarcacoes(texto, [marca], { inicio: 3, fim: 5 })
+  assert.deepEqual(par(cortada), [[5, 6, 'd']])
+  for (const pedaco of cortada) assert.equal(pedaco.trecho, texto.slice(pedaco.inicio, pedaco.fim))
+})
+
+test('Issue #190: sem seleção válida, devolve as marcações como estão', () => {
+  const lista = [{ inicio: 0, fim: 10, trecho: TEXTO_RECORTE.slice(0, 10) }]
+
+  assert.equal(recortarMarcacoes(TEXTO_RECORTE, lista, null), lista)
+  assert.deepEqual(recortarMarcacoes(TEXTO_RECORTE, undefined, { inicio: 0, fim: 5 }), [])
+})

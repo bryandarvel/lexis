@@ -72,3 +72,49 @@ export const limitarRefresh = criarLimitador({
     'Muitas tentativas de renovação de sessão. Faça login novamente mais tarde.',
   skipSuccessfulRequests: true,
 })
+
+export const limitarRecuperacao = criarLimitador({
+  windowMs: QUINZE_MINUTOS_MS,
+  limite: 10,
+  mensagem: 'Muitas solicitações de recuperação. Aguarde alguns minutos.',
+})
+
+export const limitarRedefinicao = criarLimitador({
+  windowMs: QUINZE_MINUTOS_MS,
+  limite: 20,
+  mensagem: 'Muitas tentativas de redefinição. Aguarde alguns minutos.',
+})
+
+export const limitarAlteracaoSenha = criarLimitador({
+  windowMs: QUINZE_MINUTOS_MS,
+  limite: 10,
+  mensagem: 'Muitas tentativas de alteração de senha. Aguarde alguns minutos.',
+  keyGenerator: req => req.auth.usuarioId,
+})
+
+export const limitarExclusaoConta = criarLimitador({
+  windowMs: QUINZE_MINUTOS_MS,
+  limite: 10,
+  mensagem: 'Muitas tentativas de exclusão de conta. Aguarde alguns minutos.',
+  keyGenerator: req => req.auth.usuarioId,
+})
+
+export const limitarEdicaoPerfil = criarLimitador({
+  windowMs: QUINZE_MINUTOS_MS,
+  limite: 10,
+  mensagem: 'Muitas tentativas de edição do perfil. Aguarde alguns minutos.',
+  keyGenerator: req => req.auth.usuarioId,
+})
+
+export const limitarAlteracaoEmail = criarLimitador({
+  windowMs: QUINZE_MINUTOS_MS,
+  limite: 5,
+  mensagem: 'Muitas solicitações de alteração de e-mail. Aguarde alguns minutos.',
+  keyGenerator: req => req.auth.usuarioId,
+})
+
+export const limitarConfirmacaoEmail = criarLimitador({
+  windowMs: QUINZE_MINUTOS_MS,
+  limite: 20,
+  mensagem: 'Muitas tentativas de confirmação de e-mail. Aguarde alguns minutos.',
+})

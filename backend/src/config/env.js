@@ -137,6 +137,8 @@ const envSchema = z
 
     EMAIL_ENABLED: booleanoEnv,
 
+    PASSWORD_RESET_TTL_MINUTES: z.coerce.number().int().min(10).max(60).default(30),
+
     RESEND_API_KEY: chaveOpcional,
 
     RESEND_FROM: z

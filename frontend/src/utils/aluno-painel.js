@@ -1,0 +1,276 @@
+import { converterData, formatarData } from './formatar-data.js'
+import { formatarNumero } from './formatar-numero.js'
+
+const STATUS_ENTREGUES = new Set([
+  'ENVIADA',
+  'AVALIADA',
+])
+
+
+export function obterIniciais(nome) {
+  const palavras = String(nome ?? '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+
+  if (palavras.length === 0) {
+    return '?'
+  }
+
+  const primeira = palavras[0]
+  const ultima = palavras.length > 1
+    ? palavras.at(-1)
+    : ''
+
+  return `${primeira[0]}${ultima[0] ?? ''}`
+    .toLocaleUpperCase('pt-BR')
+}
+
+export function descreverTurma(turma) {
+  if (!turma?.nome) {
+    return ''
+  }
+
+  // O nome do professor é exibido como cadastrado: o título, quando existe,
+  // já faz parte dele ("Professora Helena Demo"), e um prefixo fixo duplicava.
+  const professor = turma.professor?.nome?.trim()
+
+  return professor ? `${turma.nome} · ${professor}` : turma.nome
+}
+
+export function selecionarPropostaAberta(
+  temas,
+  redacoes,
+  agora = new Date(),
+) {
+  if (!Array.isArray(temas)) {
+    return null
+  }
+
+  const temasEntregues = new Set(
+    (Array.isArray(redacoes) ? redacoes : [])
+      .filter((redacao) =>
+        STATUS_ENTREGUES.has(redacao.status),
+      )
+      .map((redacao) => redacao.temaId),
+  )
+
+  const abertas = temas
+    .map((tema) => ({
+      tema,
+      prazo: converterData(tema.prazoEntrega),
+    }))
+    .filter(
+      ({ tema, prazo }) =>
+        prazo &&
+        prazo.getTime() >= agora.getTime() &&
+        !temasEntregues.has(tema.id),
+    )
+    .sort(
+      (a, b) =>
+        a.prazo.getTime() - b.prazo.getTime() ||
+        String(a.tema.enunciado).localeCompare(
+          String(b.tema.enunciado),
+          'pt-BR',
+        ),
+    )
+
+  return abertas[0]?.tema ?? null
+}
+
+export function encontrarRascunhoDoTema(
+  redacoes,
+  temaId,
+) {
+  if (!Array.isArray(redacoes) || !temaId) {
+    return null
+  }
+
+  return (
+    redacoes.find(
+      (redacao) =>
+        redacao.temaId === temaId &&
+        redacao.status === 'RASCUNHO',
+    ) ?? null
+  )
+}
+
+// A API retorna apenas propostas ativas da turma acessível ao aluno.
+// O prazo vencido não bloqueia envio: o servidor registra o atraso.
+export function listarPropostasDoAluno(temas, redacoes, agora = new Date()) {
+  const redacoesPorTema = new Map(
+    (Array.isArray(redacoes) ? redacoes : [])
+      .map((redacao) => [redacao.temaId, redacao]),
+  )
+
+  return (Array.isArray(temas) ? temas : [])
+    .filter((tema) => tema.ativo !== false)
+    .map((proposta) => {
+      const redacao = redacoesPorTema.get(proposta.id) ?? null
+      const prazo = converterData(proposta.prazoEntrega)
+      const prazoVencido = Boolean(prazo && prazo.getTime() < agora.getTime())
+      const podeEnviar = !redacao || redacao.status === 'RASCUNHO'
+      const destinoEditor = `/aluno/temas/${encodeURIComponent(proposta.id)}/redacao`
+      const descricao = redacao ? descreverRedacao(redacao) : null
+
+      return {
+        proposta,
+        redacao,
+        prazoVencido,
+        podeEnviar,
+        situacao: podeEnviar
+          ? redacao ? 'Rascunho' : 'Não iniciada'
+          : redacao.status === 'AVALIADA' ? 'Correção publicada' : 'Em correção',
+        orientacao: podeEnviar
+          ? prazoVencido
+            ? MENSAGEM_ENTREGA_ATRASADA
+            : 'Você pode salvar um rascunho e enviar até o prazo. Após o prazo, a entrega será registrada com atraso.'
+          : 'Redação já enviada. O texto não pode mais ser alterado.',
+        acao: descricao?.acao ?? {
+          rotulo: 'Escrever redação',
+          destino: destinoEditor,
+          variante: 'contorno',
+        },
+      }
+    })
+    .sort((a, b) => {
+      const grupo = (item) => item.podeEnviar ? Number(item.prazoVencido) : 2
+      return grupo(a) - grupo(b) ||
+        (converterData(a.proposta.prazoEntrega)?.getTime() ?? Infinity) -
+        (converterData(b.proposta.prazoEntrega)?.getTime() ?? Infinity) ||
+        String(a.proposta.enunciado).localeCompare(String(b.proposta.enunciado), 'pt-BR')
+    })
+}
+
+// O destaque pode repetir; a lista de propostas e as correções recentes não.
+export function organizarPropostasDoInicio(propostas, redacoes) {
+  const recentes = new Map()
+  for (const redacao of redacoes) {
+    if (redacao.status !== 'AVALIADA' || !redacao.temaId || recentes.has(redacao.temaId)) continue
+    recentes.set(redacao.temaId, redacao)
+    if (recentes.size === 3) break
+  }
+  const ids = new Set()
+  const lista = propostas.filter(({ proposta }) => {
+    if (recentes.has(proposta.id) || ids.has(proposta.id)) return false
+    ids.add(proposta.id)
+    return true
+  })
+  return { proxima: propostas.find((item) => item.podeEnviar) ?? null, lista, corrigidas: [...recentes.values()] }
+}
+
+// Texto único do aviso de prazo vencido: o painel e o editor mostram o mesmo.
+// O backend aceita a entrega atrasada e registra o atraso.
+export const MENSAGEM_ENTREGA_ATRASADA =
+  'Você ainda pode enviar. A entrega será registrada com atraso.'
+
+// Aviso do editor (#52). Uma redação já enviada é imutável, então não faz
+// sentido dizer que ainda pode enviar. rotulo substitui "Entrega até …".
+export function descreverPrazoDoEditor({
+  prazoEntrega,
+  redacaoImutavel = false,
+  agora = new Date(),
+} = {}) {
+  const prazo = converterData(prazoEntrega)
+  const vencido = Boolean(
+    !redacaoImutavel && prazo && prazo.getTime() < agora.getTime(),
+  )
+
+  if (!vencido) {
+    return { vencido: false, rotulo: null, aviso: null }
+  }
+
+  return {
+    vencido: true,
+    rotulo: `Prazo vencido em ${formatarData(prazoEntrega, 'dataHora', { vazio: 'Prazo indisponível' })}`,
+    aviso: MENSAGEM_ENTREGA_ATRASADA,
+  }
+}
+
+export function descreverRedacao(redacao) {
+  const destinoEditor =
+    `/aluno/temas/${encodeURIComponent(redacao.temaId)}/redacao`
+
+  if (redacao.status === 'AVALIADA') {
+    const publicadaEm = formatarData(redacao.publicadoEm, 'data')
+    const possuiNota = Number.isInteger(
+      redacao.notaPublicada,
+    )
+
+    return {
+      faixa: 'sucesso',
+      legenda: publicadaEm
+        ? `Publicada em ${publicadaEm}`
+        : 'Correção publicada',
+      nota: possuiNota
+        ? {
+            texto: `Nota ${redacao.notaPublicada}/1000`,
+            tom: 'sucesso',
+          }
+        : {
+            texto: 'Sem nota',
+            tom: 'neutro',
+          },
+      acao: {
+        rotulo: 'Ver feedback',
+        destino: `/aluno/redacoes/${encodeURIComponent(redacao.id)}/feedback`,
+        variante: 'suave',
+      },
+    }
+  }
+
+  if (redacao.status === 'ENVIADA') {
+    const enviadaEm = formatarData(redacao.enviadaEm, 'data')
+
+    return {
+      faixa: 'neutro',
+      legenda: enviadaEm
+        ? `Em correção desde ${enviadaEm}`
+        : 'Em correção',
+      nota: {
+        texto: 'Sem nota',
+        tom: 'atencao',
+      },
+      acao: {
+        rotulo: 'Acompanhar',
+        destino: destinoEditor,
+        variante: 'contorno',
+      },
+    }
+  }
+
+  return {
+    faixa: 'neutro',
+    legenda: 'Rascunho salvo · não entregue',
+    nota: {
+      texto: 'Sem nota',
+      tom: 'neutro',
+    },
+    acao: {
+      rotulo: 'Continuar',
+      destino: destinoEditor,
+      variante: 'contorno',
+    },
+  }
+}
+
+export function formatarIndicador(valor) {
+  return Number.isFinite(valor)
+    ? formatarNumero(Math.round(valor))
+    : null
+}
+
+export function calcularPercentual(valor, maximo) {
+  if (
+    !Number.isFinite(valor) ||
+    !Number.isFinite(maximo) ||
+    maximo <= 0
+  ) {
+    return 0
+  }
+
+  return Math.min(
+    100,
+    Math.max(0, (valor / maximo) * 100),
+  )
+}

@@ -1,268 +1,84 @@
+import { IconeEditorial } from '../base/icones.jsx'
+import { formatarData } from '../../utils/formatar-data.js'
+import { useEffect, useId, useState } from 'react'
+import Botao from '../base/Botao.jsx'
+import { IconeAnalisar, IconeRecarregar } from './icones-correcao.jsx'
 import { classificarEvidencia } from '../../utils/ai-evidence.js'
+import { avisoAnaliseDuplicado, avisoAtualDaAnalise, mensagemErroAnalise, segundosRestantesAnalise } from '../../utils/external-request.js'
 
-function formatarStatusAnalise(status) {
-  const statuses = {
-    PENDENTE: 'Pendente',
-    PROCESSANDO: 'Processando',
-    CONCLUIDA: 'Concluída',
-    ERRO: 'Erro',
-  }
-
-  return statuses[status] ?? status
-}
-
-export default function AnalysisPanel({
-  analysis,
-  embedded = false,
-  isRequesting,
-  notice,
-  onRequest,
-}) {
-  const result =
-    analysis?.resultadoEstruturado ?? null
-
-  const analysisInProgress = [
-    'PENDENTE',
-    'PROCESSANDO',
-  ].includes(analysis?.status)
-
-  return (
-    <section
-      className={
-        embedded
-          ? 'correction-tool-section'
-          : 'border-t border-lexis-200/10 px-6 py-12 sm:px-10 lg:px-16'
-      }
-    >
-      <div className={embedded ? '' : 'mx-auto max-w-7xl'}>
-        <div className="flex flex-wrap items-end justify-between gap-5">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-lexis-300">
-              Inteligência artificial
-            </p>
-
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-white">
-              Análise consultiva
-            </h2>
-
-            <p className="mt-3 max-w-2xl leading-7 text-lexis-200">
-              A análise auxilia a avaliação, mas a
-              nota e o feedback final continuam sob
-              responsabilidade do professor.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            {analysis && (
-              <span className="rounded-full border border-lexis-300/20 bg-lexis-900 px-4 py-2 text-sm font-semibold text-lexis-100">
-                {formatarStatusAnalise(
-                  analysis.status,
-                )}
-              </span>
-            )}
-
-            <button
-              type="button"
-              onClick={onRequest}
-              disabled={
-                isRequesting ||
-                analysisInProgress
-              }
-              className="rounded-xl bg-lexis-400 px-5 py-3 text-sm font-bold text-lexis-950 transition hover:bg-lexis-300 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isRequesting
-                ? 'Analisando...'
-                : analysis
-                  ? 'Solicitar reanálise'
-                  : 'Solicitar análise'}
-            </button>
-          </div>
-        </div>
-
-        {!analysis && (
-          <div className="mt-8 rounded-2xl border border-dashed border-lexis-200/20 bg-lexis-900/35 p-8 text-lexis-200">
-            Nenhuma análise por IA foi solicitada
-            para esta redação.
-          </div>
-        )}
-
-        {analysisInProgress && (
-          <div className="mt-8 rounded-2xl border border-lexis-300/20 bg-lexis-900/60 p-6 text-lexis-100">
-            A análise está sendo processada. Aguarde
-            a conclusão antes de solicitar outra.
-          </div>
-        )}
-
-        {analysis?.status === 'ERRO' && (
-          <div className="mt-8 rounded-2xl border border-red-300/20 bg-red-950/20 p-6">
-            <p className="font-bold text-red-100">
-              A análise não pôde ser concluída.
-            </p>
-
-            <p className="mt-2 text-sm leading-7 text-red-100">
-              {analysis.mensagemErro ??
-                'Não foi informado um motivo específico.'}
-            </p>
-          </div>
-        )}
-
-        {notice && (
-          <div
-            role="status"
-            className={`mt-8 rounded-xl border px-5 py-4 text-sm font-semibold ${
-              notice.type === 'error'
-                ? 'border-red-300/20 bg-red-950/20 text-red-100'
-                : 'border-emerald-300/20 bg-emerald-950/20 text-emerald-100'
-            }`}
-          >
-            {notice.message}
-          </div>
-        )}
-
-        {result && (
-          <div className="mt-8 space-y-6">
-            <article className="rounded-2xl border border-lexis-200/10 bg-lexis-900/70 p-6">
-              <h3 className="text-xl font-bold text-white">
-                Resumo geral
-              </h3>
-
-              <p className="mt-4 whitespace-pre-wrap leading-8 text-lexis-100">
-                {result.resumoGeral}
-              </p>
-            </article>
-
-            <div className="grid gap-6 lg:grid-cols-2">
-              <article className="rounded-2xl border border-emerald-300/15 bg-emerald-950/15 p-6">
-                <h3 className="text-xl font-bold text-emerald-100">
-                  Pontos fortes
-                </h3>
-
-                <ul className="mt-4 space-y-3 text-lexis-100">
-                  {result.pontosFortes?.map(
-                    (item, index) => (
-                      <li
-                        key={`${item}-${index}`}
-                        className="flex gap-3 leading-7"
-                      >
-                        <span className="text-emerald-300">
-                          •
-                        </span>
-                        {item}
-                      </li>
-                    ),
-                  )}
-                </ul>
-              </article>
-
-              <article className="rounded-2xl border border-amber-300/15 bg-amber-950/15 p-6">
-                <h3 className="text-xl font-bold text-amber-100">
-                  Pontos de atenção
-                </h3>
-
-                <ul className="mt-4 space-y-3 text-lexis-100">
-                  {result.pontosDeAtencao?.map(
-                    (item, index) => (
-                      <li
-                        key={`${item}-${index}`}
-                        className="flex gap-3 leading-7"
-                      >
-                        <span className="text-amber-300">
-                          •
-                        </span>
-                        {item}
-                      </li>
-                    ),
-                  )}
-                </ul>
-              </article>
-            </div>
-
-            <div className="grid gap-4">
-              {result.analisePorCriterio?.map(
-                (criterion) => (
-                  <article
-                    key={`${criterion.ordem}-${criterion.criterio}`}
-                    className="rounded-2xl border border-lexis-200/10 bg-lexis-900/70 p-6"
-                  >
-                    <p className="text-sm font-bold text-lexis-300">
-                      Critério {criterion.ordem}
-                    </p>
-
-                    <h3 className="mt-2 text-xl font-bold text-white">
-                      {criterion.criterio}
-                    </h3>
-
-                    <p className="mt-4 whitespace-pre-wrap leading-7 text-lexis-100">
-                      {criterion.diagnostico}
-                    </p>
-
-                    {criterion.evidencias?.length >
-                      0 && (
-                      <>
-                        <p className="mt-5 text-sm font-bold uppercase tracking-[0.15em] text-lexis-300">
-                          Evidências no texto
-                        </p>
-
-                        <ul className="mt-3 space-y-2 text-sm leading-6 text-lexis-100">
-                          {criterion.evidencias.map(
-                            (evidence, index) => {
-                              const dados =
-                                classificarEvidencia(
-                                  evidence,
-                                )
-
-                              return (
-                                <li
-                                  key={`${dados.trecho}-${index}`}
-                                  className="rounded-lg bg-lexis-950/50 px-4 py-3"
-                                >
-                                  <q>{dados.trecho}</q>
-                                  <span
-                                    className={`mt-2 block text-xs font-semibold ${
-                                      dados.status ===
-                                      'LOCALIZADA'
-                                        ? 'text-emerald-300'
-                                        : 'text-amber-300'
-                                    }`}
-                                  >
-                                    {dados.rotulo}
-                                  </span>
-                                </li>
-                              )
-                            },
-                          )}
-                        </ul>
-                      </>
-                    )}
-
-                    <p className="mt-5 text-sm font-bold uppercase tracking-[0.15em] text-lexis-300">
-                      Orientação ao professor
-                    </p>
-
-                    <p className="mt-2 whitespace-pre-wrap leading-7 text-lexis-100">
-                      {
-                        criterion.orientacaoAoProfessor
-                      }
-                    </p>
-                  </article>
-                ),
-              )}
-            </div>
-
-            {result.observacoesFinais && (
-              <article className="rounded-2xl border border-lexis-200/10 bg-lexis-900/70 p-6">
-                <h3 className="text-xl font-bold text-white">
-                  Observações finais
-                </h3>
-
-                <p className="mt-4 whitespace-pre-wrap leading-8 text-lexis-100">
-                  {result.observacoesFinais}
-                </p>
-              </article>
-            )}
-          </div>
-        )}
-      </div>
-    </section>
+export default function AnalysisPanel({ analysis, resultAnalysis = analysis, falhaAnterior, avisoAnterior, retryAt = 0, isRequesting, notice, onRequest, onRefresh, disabled }) {
+  const falhaAtual = analysis?.status === 'ERRO' && (!falhaAnterior || analysis.id !== falhaAnterior.id)
+  const aviso = falhaAnterior && notice?.type === 'error' && notice.analiseId === falhaAnterior.id
+    ? null : avisoAtualDaAnalise(analysis, notice)
+  const [agora, setAgora] = useState(() => Date.now())
+  useEffect(() => {
+    setAgora(Date.now())
+    if (retryAt <= Date.now()) return undefined
+    const timer = setInterval(() => {
+      const instante = Date.now()
+      setAgora(instante)
+      if (instante >= retryAt) clearInterval(timer)
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [retryAt])
+  const espera = segundosRestantesAnalise(retryAt, agora)
+  const pendente = ['PENDENTE', 'PROCESSANDO'].includes(analysis?.status)
+  const result = resultAnalysis?.status === 'CONCLUIDA' ? resultAnalysis.resultadoEstruturado : null
+  const anterior = result && resultAnalysis.id !== analysis?.id
+  const dataResultado = formatarData(resultAnalysis?.concluidaEm ?? resultAnalysis?.solicitadaEm, 'dataHora')
+  const dataTentativa = formatarData(analysis?.solicitadaEm, 'dataHora')
+  const dataFalhaAnterior = formatarData(falhaAnterior?.concluidaEm ?? falhaAnterior?.solicitadaEm, 'dataHora')
+  const dataAvisoAnterior = formatarData(avisoAnterior?.ocorridaEm, 'dataHora')
+  const idTitulo = useId()
+  /*
+   * Issue #179: o card ganhou título visível — antes só existia o aria-label,
+   * então o painel não se anunciava na tela. O botão de pedir a análise é a
+   * ação principal enquanto não há resultado; com resultado, ele vira a ação
+   * secundária "Gerar nova análise", abaixo das sugestões.
+   */
+  const acao = (
+    <Botao type="button" className="review-analysis-acao" forma="pilula"
+      variante={result ? 'contorno' : 'primario'}
+      disabled={disabled || isRequesting || pendente || espera > 0} onClick={onRequest}>
+      {result ? <IconeRecarregar /> : <IconeAnalisar />}
+      {isRequesting ? 'Analisando…' : result ? 'Gerar nova análise' : 'Analisar redação com IA'}
+    </Botao>
   )
+
+  return <section className="review-card review-analysis" aria-labelledby={idTitulo} aria-busy={isRequesting || pendente}>
+    <h2 id={idTitulo} className="review-section-title"><IconeEditorial tipo="revisar" />Análise de apoio da IA</h2>
+    <p className="review-caption">
+      {result
+        ? 'Revise as sugestões. A nota é atribuída pelo professor.'
+        : 'A IA sugere pontos para sua revisão. A nota é atribuída pelo professor.'}
+    </p>
+    {!result && acao}
+    {espera > 0 && <p className="review-notice">Nova solicitação disponível em pelo menos {espera} s. A disponibilidade e os limites do serviço de IA ainda podem impedir a análise; não haverá nova tentativa automática.</p>}
+    {(isRequesting || pendente) && <div role="status" className="review-notice"><progress aria-label="Análise por IA em andamento" /><p>Análise em andamento. A conclusão depende do serviço de IA.</p>{!isRequesting && <Botao type="button" variante="secundario" onClick={onRefresh}>Atualizar análise</Botao>}</div>}
+    {!analysis && !isRequesting && <p className="review-caption">Nenhuma análise solicitada para esta redação.</p>}
+    {falhaAtual && !isRequesting && <p role="alert" className="review-notice error">{dataTentativa && <><strong>Última tentativa: {dataTentativa}</strong><br /></>}{mensagemErroAnalise(analysis)}</p>}
+    {aviso && !(falhaAtual && !isRequesting && avisoAnaliseDuplicado(analysis, aviso)) && <p role={aviso.type === 'error' ? 'alert' : 'status'} className={`review-notice ${aviso.type}`}>{aviso.message}</p>}
+    {!isRequesting && !pendente && aviso?.type === 'error' && <Botao type="button" variante="secundario" disabled={disabled} onClick={onRefresh}>Consultar resultado existente</Botao>}
+    {(falhaAnterior || avisoAnterior) && <details className="review-card review-analysis-details">
+      <summary>Falha de IA anterior à publicação</summary>
+      {falhaAnterior && <p>{dataFalhaAnterior && <><strong>{dataFalhaAnterior}</strong><br /></>}{mensagemErroAnalise(falhaAnterior)}</p>}
+      {avisoAnterior && !avisoAnaliseDuplicado(falhaAnterior, avisoAnterior) && <p>{dataAvisoAnterior && <><strong>{dataAvisoAnterior}</strong><br /></>}{avisoAnterior.message}</p>}
+    </details>}
+    {anterior && <p role="status" className="review-notice">Exibindo a última análise concluída{dataResultado ? `, de ${dataResultado}` : ''}. A tentativa mais recente não substituiu esse resultado. Revise as sugestões antes de usá-las.</p>}
+    {result && <details className="review-analysis-details">
+      <summary>
+        <span className="review-analysis-sumario">Mostrar sugestões da IA</span>
+        {dataResultado && <span className="review-analysis-data">Análise salva em {dataResultado}</span>}
+      </summary>
+      <h3>Resumo geral</h3><p>{result.resumoGeral}</p>
+      <h3>Pontos fortes</h3><ul>{result.pontosFortes?.map((t, i) => <li key={i}>{t}</li>)}</ul>
+      <h3>Pontos de atenção</h3><ul>{result.pontosDeAtencao?.map((t, i) => <li key={i}>{t}</li>)}</ul>
+      {result.analisePorCriterio?.map((c) => <section key={`${c.ordem}-${c.criterio}`}><h3>{c.criterio}</h3><p>{c.diagnostico}</p>
+        <ul>{c.evidencias?.map((e, i) => { const info = classificarEvidencia(e); return <li key={i}><q>{info.trecho}</q><small>{info.rotulo}</small></li> })}</ul>
+        <h4>Orientação ao professor</h4><p>{c.orientacaoAoProfessor}</p>
+      </section>)}
+      <h3>Observações finais</h3><p>{result.observacoesFinais}</p>
+    </details>}
+    {result && acao}
+  </section>
 }

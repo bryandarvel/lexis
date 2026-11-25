@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict'
+import { obterModeloCompetenciaDois } from '../../src/modules/temas/temas.competencia-dois.js'
+import { criarTemaComCriterios } from '../../src/modules/temas/temas.repository.js'
 import { randomUUID } from 'node:crypto'
 import {
   after,
@@ -29,6 +31,7 @@ let professorSecundario
 let aluno
 let turmaPrincipal
 let turmaSecundaria
+const alunosDosPrazos = []
 
 function criarPrazoFuturo(dias = 30) {
   const prazo = new Date()
@@ -47,18 +50,7 @@ function criarDadosTema(sobrescritas = {}) {
     instrucoes:
       'Utilize repertórios socioculturais pertinentes.',
     prazoEntrega: criarPrazoFuturo(),
-    criterios: [
-      {
-        nome: 'Pertinência do repertório',
-        descricao:
-          'Avalia a relação do repertório com o argumento.',
-      },
-      {
-        nome: 'Desenvolvimento argumentativo',
-        descricao:
-          'Avalia como o repertório contribui para a argumentação.',
-      },
-    ],
+    criterios: obterModeloCompetenciaDois().criterios,
     ...sobrescritas,
   }
 }
@@ -146,6 +138,10 @@ beforeEach(async () => {
     professorSecundario.usuario.id,
   ]
 
+  await prisma.notificacao.deleteMany({
+    where: { usuarioId: { in: [...professorIds, aluno.usuario.id] } },
+  })
+
   await prisma.redacao.deleteMany({
     where: {
       tema: {
@@ -171,22 +167,18 @@ beforeEach(async () => {
 
 after(async () => {
   if (bancoDeTesteConfirmado) {
-    const usuarios = await prisma.usuario.findMany({
-      where: {
-        email: {
-          startsWith: prefixoEmail,
-        },
-      },
-      select: {
-        id: true,
-      },
-    })
-
-    const usuarioIds = usuarios.map(
-      (usuario) => usuario.id,
-    )
+    const usuarioIds = [
+      professorPrincipal?.usuario.id,
+      professorSecundario?.usuario.id,
+      aluno?.usuario.id,
+      ...alunosDosPrazos,
+    ].filter(Boolean)
 
     if (usuarioIds.length > 0) {
+      await prisma.notificacao.deleteMany({
+        where: { usuarioId: { in: usuarioIds } },
+      })
+
       await prisma.redacao.deleteMany({
         where: {
           tema: {
@@ -249,6 +241,112 @@ after(async () => {
   await prisma.$disconnect()
 })
 
+describe('Contrato fixo dos critérios', () => {
+  it('impede contornar criação e edição pela API sem alterar a proposta', async () => {
+    const tema = await criarTemaPelaApi({ accessToken: professorPrincipal.accessToken, turmaId: turmaPrincipal.id })
+    const base = obterModeloCompetenciaDois().criterios
+    const alterados = structuredClone(base)
+    alterados[0].descricao = 'Uma descrição diferente da base obrigatória.'
+    const invalidos = [base.slice(1), alterados, [...base].reverse(), [...base, ...['Extra A', 'Extra B', 'Extra C'].map(nome => ({ nome, descricao: 'Descrição personalizada.' }))], [...base, { nome: 'legitimacao', descricao: 'Duplicação da base.' }]]
+    for (const criterios of invalidos) {
+      await request(app).post(`/api/turmas/${turmaPrincipal.id}/temas`)
+        .set('Authorization', `Bearer ${professorPrincipal.accessToken}`)
+        .send(criarDadosTema({ criterios })).expect(422)
+      await request(app).put(`/api/temas/${tema.id}/criterios`)
+        .set('Authorization', `Bearer ${professorPrincipal.accessToken}`)
+        .send({ criterios }).expect(422)
+    }
+    const depois = await prisma.criterioAvaliacao.findMany({ where: { temaId: tema.id }, orderBy: { ordem: 'asc' } })
+    assert.deepEqual(depois.map(c => c.id), tema.criterios.map(c => c.id))
+    assert.equal(await prisma.temaRedacao.count({ where: { turmaId: turmaPrincipal.id } }), 1)
+    await assert.rejects(async () => criarTemaComCriterios({ turmaId: turmaPrincipal.id, ...criarDadosTema({ criterios: [] }) }), { code: 'VALIDATION_ERROR' })
+  })
+
+  it('preserva proposta legada sem conversão implícita e mantém sua consulta', async () => {
+    const tema = await criarTemaPelaApi({ accessToken: professorPrincipal.accessToken, turmaId: turmaPrincipal.id })
+    await prisma.criterioAvaliacao.update({ where: { id: tema.criterios[0].id }, data: { descricao: 'Descrição histórica anterior à base fixa.' } })
+    const antes = await prisma.criterioAvaliacao.findMany({ where: { temaId: tema.id }, orderBy: { ordem: 'asc' } })
+    const resposta = await request(app).put(`/api/temas/${tema.id}/criterios`)
+      .set('Authorization', `Bearer ${professorPrincipal.accessToken}`)
+      .send({ criterios: obterModeloCompetenciaDois().criterios }).expect(409)
+    assert.equal(resposta.body.error.code, 'LEGACY_CRITERIA_REVIEW_REQUIRED')
+    const consulta = await request(app).get(`/api/temas/${tema.id}`)
+      .set('Authorization', `Bearer ${professorPrincipal.accessToken}`).expect(200)
+    assert.equal(consulta.body.data.tema.criterios[0].descricao, antes[0].descricao)
+    assert.deepEqual(await prisma.criterioAvaliacao.findMany({ where: { temaId: tema.id }, orderBy: { ordem: 'asc' } }), antes)
+  })
+})
+
+describe('Prazos do painel do professor', () => {
+  it('exige sessão de professor e não aceita filtros nem identidade do cliente', async () => {
+    await request(app).get('/api/professor/prazos').expect(401)
+    await request(app).get('/api/professor/prazos')
+      .set('Authorization', `Bearer ${aluno.accessToken}`).expect(403)
+    await request(app).get('/api/professor/prazos?professorId=outro')
+      .set('Authorization', `Bearer ${professorPrincipal.accessToken}`).expect(422)
+    const resposta = await request(app).get('/api/professor/prazos')
+      .set('Authorization', `Bearer ${professorPrincipal.accessToken}`).expect(200)
+    assert.deepEqual(resposta.body, { data: { prazos: [] } })
+  })
+
+  it('ordena os prazos ativos e conta entregas únicas por proposta, inclusive zero', async () => {
+    const professorId = professorPrincipal.usuario.id
+    const arquivada = await criarTurmaParaProfessor({ nome: 'Turma arquivada dos prazos', professorId })
+    const criarTema = (turmaId, enunciado, dias, ativo = true) => prisma.temaRedacao.create({
+      data: {
+        turmaId, enunciado, ativo, descricao: 'Proposta fictícia com dados de teste.',
+        prazoEntrega: new Date(Date.now() + dias * 86400000),
+      },
+    })
+    const posterior = await criarTema(turmaPrincipal.id, 'Sem entregas', 6)
+    const primeiro = await criarTema(turmaPrincipal.id, 'Com entregas', 2)
+    await criarTema(turmaPrincipal.id, 'Prazo vencido', -1)
+    await criarTema(turmaPrincipal.id, 'Fora da janela', 8)
+    await criarTema(turmaPrincipal.id, 'Proposta arquivada', 2, false)
+    await criarTema(turmaSecundaria.id, 'Proposta de outro professor', 2)
+    await criarTema(arquivada.id, 'Proposta de turma arquivada', 2)
+    await prisma.turma.update({ where: { id: arquivada.id }, data: { ativa: false } })
+
+    for (const rotulo of ['Em rascunho', 'Já avaliado', 'Matrícula encerrada']) {
+      const outro = await prisma.usuario.create({
+        data: { nome: rotulo, email: `${prefixoEmail}${randomUUID()}@exemplo.com`, senhaHash: 'teste-sem-login', papel: 'ALUNO' },
+      })
+      alunosDosPrazos.push(outro.id)
+    }
+    const atual = aluno.usuario.id
+    const [rascunho, avaliado, encerrado] = alunosDosPrazos
+    await prisma.matricula.createMany({
+      data: [
+        ...[atual, atual, rascunho, avaliado].map(alunoId => ({ alunoId, turmaId: turmaPrincipal.id })),
+        { alunoId: encerrado, turmaId: turmaPrincipal.id, status: 'ENCERRADA' },
+      ],
+    })
+    await prisma.redacao.createMany({
+      data: [
+        { alunoId: atual, status: 'ENVIADA' },
+        { alunoId: rascunho, status: 'RASCUNHO' },
+        { alunoId: avaliado, status: 'AVALIADA' },
+        { alunoId: encerrado, status: 'ENVIADA' },
+      ].map(item => ({ ...item, temaId: primeiro.id })),
+    })
+
+    const resposta = await request(app).get('/api/professor/prazos')
+      .set('Authorization', `Bearer ${professorPrincipal.accessToken}`).expect(200)
+    assert.deepEqual(resposta.body.data.prazos, [[primeiro, 2], [posterior, 0]].map(([tema, entregaram]) => ({
+      id: tema.id,
+      enunciado: tema.enunciado,
+      prazoEntrega: tema.prazoEntrega.toISOString(),
+      turmaId: turmaPrincipal.id,
+      turmaNome: turmaPrincipal.nome,
+      alunosAtivos: 3,
+      entregaram,
+    })))
+    await prisma.matricula.deleteMany({
+      where: { turmaId: turmaPrincipal.id, alunoId: { in: [atual, ...alunosDosPrazos] } },
+    })
+  })
+})
+
 describe('Rotas de temas do professor', () => {
   it('deve criar um tema com critérios ordenados', async () => {
     const tema = await criarTemaPelaApi({
@@ -270,7 +368,7 @@ describe('Rotas de temas do professor', () => {
     assert.equal(tema.ativo, true)
     assert.equal(tema.quantidadeRedacoes, 0)
     assert.equal(tema.criteriosBloqueados, false)
-    assert.equal(tema.criterios.length, 2)
+    assert.equal(tema.criterios.length, 3)
     assert.equal(tema.criterios[0].ordem, 1)
     assert.equal(tema.criterios[1].ordem, 2)
     assert.equal(
@@ -314,6 +412,7 @@ describe('Rotas de temas do professor', () => {
       .send(
         criarDadosTema({
           criterios: [
+            ...obterModeloCompetenciaDois().criterios,
             {
               nome: 'Repertório',
               descricao:
@@ -473,7 +572,7 @@ describe('Rotas de temas do professor', () => {
     )
   })
 
-  it('deve substituir e reordenar os critérios', async () => {
+  it('deve acrescentar personalizados preservando a base fixa', async () => {
     const tema = await criarTemaPelaApi({
       accessToken:
         professorPrincipal.accessToken,
@@ -488,6 +587,7 @@ describe('Rotas de temas do professor', () => {
       )
       .send({
         criterios: [
+          ...obterModeloCompetenciaDois().criterios,
           {
             nome: 'Critério A',
             descricao:
@@ -498,11 +598,6 @@ describe('Rotas de temas do professor', () => {
             descricao:
               'Descrição completa do critério B.',
           },
-          {
-            nome: 'Critério C',
-            descricao:
-              'Descrição completa do critério C.',
-          },
         ],
       })
       .expect(200)
@@ -510,12 +605,74 @@ describe('Rotas de temas do professor', () => {
     const criterios =
       resposta.body.data.tema.criterios
 
-    assert.equal(criterios.length, 3)
-    assert.equal(criterios[0].nome, 'Critério A')
+    assert.equal(criterios.length, 5)
+    assert.equal(criterios[0].nome, 'Legitimação')
     assert.equal(criterios[0].ordem, 1)
-    assert.equal(criterios[2].nome, 'Critério C')
-    assert.equal(criterios[2].ordem, 3)
+    assert.equal(criterios[4].nome, 'Critério B')
+    assert.equal(criterios[4].ordem, 5)
   })
+
+  for (const campo of ['enunciado', 'descricao', 'instrucoes', 'conteudoComPrazo', 'prazoEntrega']) {
+    it(`deve revalidar ${campo} se o primeiro envio ocorrer após a leitura do PATCH`, { timeout: 15000 }, async () => {
+      const tema = await criarTemaPelaApi({
+        accessToken: professorPrincipal.accessToken,
+        turmaId: turmaPrincipal.id,
+      })
+      await prisma.matricula.deleteMany({ where: { alunoId: aluno.usuario.id } })
+      await prisma.matricula.create({ data: { alunoId: aluno.usuario.id, turmaId: turmaPrincipal.id } })
+      await request(app).put(`/api/aluno/temas/${tema.id}/redacao`)
+        .set('Authorization', `Bearer ${aluno.accessToken}`)
+        .send({ texto: 'A Constituição Federal assegura o direito à educação. Esta é uma redação fictícia de teste.' }).expect(200)
+
+      const novoPrazo = criarPrazoFuturo(60)
+      const dados = campo === 'conteudoComPrazo'
+        ? { enunciado: 'Novo conteúdo que deve ser rejeitado', prazoEntrega: novoPrazo }
+        : { [campo]: campo === 'prazoEntrega' ? novoPrazo : 'Conteúdo alterado após o primeiro envio' }
+      const leu = Promise.withResolvers()
+      const continuar = Promise.withResolvers()
+      const metodoOriginal = prisma.temaRedacao.findFirst
+      let interceptou = false
+      // Pausa somente depois da leitura real do service; o envio e o UPDATE
+      // continuam usando o banco real. Nenhum estado SQL é simulado.
+      prisma.temaRedacao.findFirst = async function (...args) {
+        const resultado = await metodoOriginal.apply(this, args)
+        if (!interceptou && args[0]?.where?.id === tema.id) {
+          interceptou = true
+          assert.equal(resultado.criteriosBloqueadosEm, null)
+          leu.resolve()
+          await continuar.promise
+        }
+        return resultado
+      }
+      const patch = request(app).patch(`/api/temas/${tema.id}`)
+        .set('Authorization', `Bearer ${professorPrincipal.accessToken}`).send(dados).then((r) => r)
+      let resposta
+      try {
+        await leu.promise
+        await request(app).post(`/api/aluno/temas/${tema.id}/redacao/enviar`)
+          .set('Authorization', `Bearer ${aluno.accessToken}`).expect(200)
+        continuar.resolve()
+        resposta = await patch
+      } finally {
+        continuar.resolve()
+        await Promise.allSettled([patch])
+        prisma.temaRedacao.findFirst = metodoOriginal
+      }
+      const depois = await prisma.temaRedacao.findUnique({ where: { id: tema.id } })
+      assert.ok(depois.criteriosBloqueadosEm)
+      if (campo === 'prazoEntrega') {
+        assert.equal(resposta.status, 200)
+        assert.equal(depois.prazoEntrega.toISOString(), novoPrazo)
+      } else {
+        assert.equal(resposta.status, 409)
+        assert.equal(resposta.body.error.code, 'ESSAY_TOPIC_CONTENT_LOCKED')
+        for (const chave of ['enunciado', 'descricao', 'instrucoes']) {
+          assert.equal(depois[chave], tema[chave])
+        }
+        assert.equal(depois.prazoEntrega.toISOString(), tema.prazoEntrega)
+      }
+    })
+  }
 
   it('deve bloquear conteúdo e critérios, mas permitir o prazo', async () => {
     const tema = await criarTemaPelaApi({
@@ -558,6 +715,7 @@ describe('Rotas de temas do professor', () => {
       )
       .send({
         criterios: [
+          ...obterModeloCompetenciaDois().criterios,
           {
             nome: 'Novo critério',
             descricao:

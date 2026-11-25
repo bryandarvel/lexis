@@ -1,0 +1,147 @@
+import { useId } from 'react'
+import Botao from '../base/Botao.jsx'
+
+import { formatarTamanhoArquivo } from '../../utils/ocr-revisao.js'
+
+function IconeFoto() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="size-8 text-[var(--aluno-acao-suave-texto)]"
+    >
+      <path d="M4 7h3l2-3h6l2 3h3v12H4Z" />
+      <circle cx="12" cy="13" r="3.5" />
+    </svg>
+  )
+}
+
+function ProgressoOcr({ progresso }) {
+  const processando = progresso >= 100
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="mt-6"
+    >
+      {processando ? (
+        <>
+          <p className="text-sm font-medium leading-[22px] text-texto">
+            Transcrevendo a imagem. Isso pode levar alguns segundos.
+          </p>
+          <div
+            role="progressbar"
+            aria-label="Transcrição da imagem em andamento"
+            aria-valuetext="Em andamento"
+            className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--aluno-trilho)]"
+          >
+            <div className="h-full w-full animate-pulse rounded-full bg-[var(--color-brand-accent)]" />
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="flex justify-between gap-3 text-sm font-medium leading-[22px] text-texto">
+            <span>Enviando a foto</span>
+            <span>{progresso}%</span>
+          </p>
+          <div
+            role="progressbar"
+            aria-label="Envio da foto"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={progresso}
+            className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--aluno-trilho)]"
+          >
+            <div
+              className="h-full rounded-full bg-[var(--color-brand-accent)] transition-[width] duration-200"
+              style={{
+                width: `${progresso}%`,
+              }}
+            />
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+export default function EnvioFotoPainel({
+  imagem,
+  enviando,
+  progresso,
+  desabilitado,
+  onSelecionar,
+  onExtrair,
+}) {
+  const idArquivo = useId()
+  const idAjuda = useId()
+
+  return (
+    <div className="aluno-elevacao-1 flex min-h-[500px] flex-col rounded-cartao border border-[var(--surface-border)] bg-superficie px-6 pb-6 pt-4">
+      <h2 className="text-lg font-semibold leading-6 tracking-[-0.09px] text-texto">
+        Enviar foto da redação
+      </h2>
+      <p
+        id={idAjuda}
+        className="mt-1 text-sm leading-[22px] text-texto-suave"
+      >
+        Envie uma foto nítida da folha, em JPEG ou PNG de até 1 MB. A transcrição automática pode conter erros: você revisa o texto extraído ao lado da foto antes de salvar.
+      </p>
+
+      <label
+        htmlFor={idArquivo}
+        className="mt-6 flex flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-cartao border-2 border-dashed border-[var(--aluno-borda-campo)] bg-[var(--aluno-neutro-fundo)] px-6 py-10 text-center focus-within:border-[var(--color-brand-accent)] focus-within:ring-4 focus-within:ring-[var(--color-brand-accent)]/20"
+      >
+        <IconeFoto />
+        <span className="break-all text-sm font-semibold leading-[22px] text-texto">
+          {imagem
+            ? imagem.name
+            : 'Escolher uma foto da redação'}
+        </span>
+        <span className="text-xs font-medium leading-[17px] text-texto-suave">
+          {imagem
+            ? formatarTamanhoArquivo(imagem.size)
+            : 'JPEG ou PNG, até 1 MB'}
+        </span>
+        <input
+          id={idArquivo}
+          type="file"
+          accept="image/jpeg,image/png"
+          aria-describedby={idAjuda}
+          disabled={desabilitado || enviando}
+          onChange={(evento) =>
+            onSelecionar(
+              evento.target.files?.[0] ?? null,
+            )
+          }
+          className="sr-only"
+        />
+      </label>
+
+      {enviando && (
+        <ProgressoOcr progresso={progresso} />
+      )}
+
+      <div className="mt-6 flex justify-end">
+        <Botao
+          type="button"
+          onClick={onExtrair}
+          disabled={
+            desabilitado || enviando || !imagem
+          }>
+          {enviando
+            ? progresso >= 100
+              ? 'Transcrevendo…'
+              : 'Enviando foto…'
+            : 'Extrair texto da foto'}
+        </Botao>
+      </div>
+    </div>
+  )
+}

@@ -106,7 +106,7 @@ export async function listarRedacoesProfessorController(
   req,
   res,
 ) {
-  const redacoes =
+  const resultado =
     await listarRedacoesParaProfessor({
       turmaId: req.params.turmaId,
       professorId: req.auth.usuarioId,
@@ -115,9 +115,7 @@ export async function listarRedacoesProfessorController(
     })
 
   return res.status(200).json({
-    data: {
-      redacoes,
-    },
+    data: resultado,
   })
 }
 

@@ -5,13 +5,14 @@ import {
 
 export function criarListarNotificacoesController({
   listarNotificacoes = listarNotificacoesParaAluno,
+  campoUsuario = 'alunoId',
 } = {}) {
   return async function listarNotificacoesController(
     req,
     res,
   ) {
     const resultado = await listarNotificacoes({
-      alunoId: req.auth.usuarioId,
+      [campoUsuario]: req.auth.usuarioId,
     })
 
     return res.status(200).json({
@@ -23,6 +24,7 @@ export function criarListarNotificacoesController({
 export function criarMarcarNotificacaoLidaController({
   marcarNotificacaoLida =
     marcarNotificacaoLidaParaAluno,
+  campoUsuario = 'alunoId',
 } = {}) {
   return async function marcarNotificacaoLidaController(
     req,
@@ -30,7 +32,7 @@ export function criarMarcarNotificacaoLidaController({
   ) {
     const notificacao = await marcarNotificacaoLida({
       notificacaoId: req.params.notificacaoId,
-      alunoId: req.auth.usuarioId,
+      [campoUsuario]: req.auth.usuarioId,
     })
 
     return res.status(200).json({

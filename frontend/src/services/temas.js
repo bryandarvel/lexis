@@ -72,6 +72,18 @@ export async function arquivarTema(temaId) {
   return resposta.data.data.tema
 }
 
+export async function reabrirTema(temaId) {
+  const resposta = await api.post(
+    `/api/temas/${prepararId(temaId)}/reabrir`,
+  )
+
+  return resposta.data.data.tema
+}
+
+export async function excluirTema(temaId) {
+  await api.delete(`/api/temas/${prepararId(temaId)}`, { naoReenviarAposRenovacao: true })
+}
+
 export async function listarTemasDoAluno() {
   const resposta = await api.get(
     '/api/aluno/temas',

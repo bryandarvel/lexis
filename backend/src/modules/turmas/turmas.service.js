@@ -9,10 +9,13 @@ import {
   buscarTurmaDoProfessor,
   criarMatriculaAtivaComExclusividade,
   criarTurma,
+  consultarElegibilidadeExclusaoTurma,
   encerrarMatriculaAtivaDoAluno,
   encerrarMatriculaPeloProfessor,
+  excluirTurmaSemHistorico,
   listarMatriculasAtivasDaTurma,
   listarTurmasDoProfessor,
+  reabrirTurma,
 } from './turmas.repository.js'
 
 import {
@@ -26,6 +29,21 @@ function criarErroTurmaNaoEncontrada() {
     statusCode: 404,
     code: 'CLASS_NOT_FOUND',
   })
+}
+
+export async function excluirTurmaParaProfessor({ turmaId, professorId }) {
+  const resultado = await excluirTurmaSemHistorico({ turmaId, professorId })
+  if (resultado === 'NAO_ENCONTRADA') throw criarErroTurmaNaoEncontrada()
+  if (resultado === 'ATIVA') {
+    throw new AppError('Arquive a turma antes de excluí-la definitivamente.', {
+      statusCode: 409, code: 'CLASS_NOT_ARCHIVED',
+    })
+  }
+  if (resultado === 'COM_HISTORICO') {
+    throw new AppError('Esta turma possui matrículas ou propostas no histórico. Use o arquivamento.', {
+      statusCode: 409, code: 'CLASS_HAS_HISTORY',
+    })
+  }
 }
 
 function criarErroTurmaArquivada() {
@@ -101,12 +119,13 @@ function criarErroAlunoNaoMatriculadoNaTurma() {
 function prepararTurmaParaResposta(turma) {
   const {
     _count,
+    matriculas,
     ...dadosTurma
   } = turma
 
   return {
     ...dadosTurma,
-    quantidadeAlunosAtivos: _count.matriculas,
+    quantidadeAlunosAtivos: turma.ativa ? matriculas.length : 0,
     quantidadeTemasAtivos: _count.temas,
   }
 }
@@ -195,7 +214,8 @@ export async function obterTurmaParaProfessor({
     professorId,
   })
 
-  return prepararTurmaParaResposta(turma)
+  const podeExcluirDefinitivamente = await consultarElegibilidadeExclusaoTurma({ turmaId, professorId })
+  return { ...prepararTurmaParaResposta(turma), podeExcluirDefinitivamente }
 }
 
 export async function renomearTurmaParaProfessor({
@@ -277,11 +297,31 @@ export async function arquivarTurmaParaProfessor({
       professorId,
     })
 
+  if (turmaArquivada === 'MATRICULAS_ALTERADAS') {
+    throw new AppError('As matrículas mudaram durante a operação. Nenhuma alteração foi feita. Confira a turma e confirme o arquivamento novamente.', {
+      statusCode: 409, code: 'CLASS_ENROLLMENTS_CHANGED',
+    })
+  }
+
   if (!turmaArquivada) {
     throw criarErroTurmaArquivada()
   }
 
   return prepararTurmaParaResposta(turmaArquivada)
+}
+
+export async function reabrirTurmaParaProfessor({ turmaId, professorId }) {
+  await buscarTurmaObrigatoria({ turmaId, professorId })
+
+  const turma = await reabrirTurma({ turmaId, professorId })
+  if (!turma) {
+    throw new AppError('Esta turma já está ativa.', {
+      statusCode: 409,
+      code: 'CLASS_ALREADY_ACTIVE',
+    })
+  }
+
+  return prepararTurmaParaResposta(turma)
 }
 
 export async function entrarEmTurmaComoAluno({
@@ -336,9 +376,16 @@ export async function obterMatriculaAtivaParaAluno(
   return matricula
 }
 
-export async function sairDaTurmaComoAluno(alunoId) {
+export async function sairDaTurmaComoAluno(alunoId, matriculaId) {
   const matricula =
-    await encerrarMatriculaAtivaDoAluno(alunoId)
+    await encerrarMatriculaAtivaDoAluno(alunoId, matriculaId)
+
+  if (matricula === 'MATRICULA_ALTERADA') {
+    throw new AppError(
+      'Sua matrícula mudou. Confira a turma atual e confirme novamente.',
+      { statusCode: 409, code: 'ACTIVE_ENROLLMENT_CHANGED' },
+    )
+  }
 
   if (!matricula) {
     throw criarErroMatriculaNaoEncontrada()

@@ -7,7 +7,27 @@
       name="description"
       content="LÉXIS — Plataforma de análise de repertórios socioculturais."
     />
+    <meta name="theme-color" content="#002049" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>LÉXIS</title>
+    <!--
+      Aplica o tema salvo antes de o React montar, para quem escolheu o escuro
+      não ver um quadro claro (REV-010). Lê a mesma chave de src/utils/tema.js
+      e só aceita "light" ou "dark"; sem preferência, o CSS já abre no claro.
+    -->
+    <script>
+      (function () {
+        try {
+          var tema = window.localStorage.getItem("lexis:preferencia:tema");
+          if (tema === "dark" || tema === "light") {
+            document.documentElement.dataset.theme = tema;
+            document.documentElement.style.colorScheme = tema;
+          }
+        } catch (erro) {
+          /* armazenamento bloqueado: segue no claro */
+        }
+      })();
+    </script>
   </head>
 
   <body>

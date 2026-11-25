@@ -70,6 +70,17 @@ function criarErroFeedbackIndisponivel() {
   )
 }
 
+function validarResultadoTrechos(resultado) {
+  if (resultado.status === 'TRECHOS_INVALIDOS') throw new AppError(
+    'Um ou mais trechos não correspondem literalmente ao texto da redação.',
+    { statusCode: 422, code: 'FEEDBACK_EVIDENCE_INVALID' },
+  )
+  if (resultado.status === 'ANALISE_INVALIDA') throw new AppError(
+    'Uma ou mais análises de referência não estão disponíveis para esta redação.',
+    { statusCode: 422, code: 'FEEDBACK_ANALYSIS_INVALID' },
+  )
+}
+
 export async function salvarFeedbackRascunhoParaProfessor(
   dados,
   {
@@ -85,6 +96,8 @@ export async function salvarFeedbackRascunhoParaProfessor(
   if (resultado.status === 'CRITERIOS_INVALIDOS') {
     throw criarErroCriteriosInvalidos()
   }
+
+  validarResultadoTrechos(resultado)
 
   return resultado.feedbackVersao
 }
@@ -144,6 +157,15 @@ export async function publicarFeedbackParaProfessor(
   if (resultado.status === 'RASCUNHO_INCOMPLETO') {
     throw criarErroRascunhoIncompleto(
       resultado.camposPendentes,
+    )
+  }
+
+  validarResultadoTrechos(resultado)
+
+  if (resultado.status === 'RASCUNHO_SEM_ALTERACOES') {
+    throw new AppError(
+      'O rascunho é idêntico à versão publicada. Faça uma alteração antes de publicar novamente.',
+      { statusCode: 409, code: 'FEEDBACK_UNCHANGED' },
     )
   }
 

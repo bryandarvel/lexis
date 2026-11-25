@@ -1,0 +1,18 @@
+.trechos-painel { border-top: 1px solid var(--panel-border); margin-top: 12px; padding-top: 12px; }
+.trechos-painel h4 { display: flex; justify-content: space-between; gap: 8px; margin: 0; font-size: 13px; font-weight: 600; }
+.trechos-painel h4 small, .trechos-preview small { color: var(--panel-muted); font-variant-numeric: tabular-nums; }
+.trechos-lista { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 8px; }
+.trechos-lista > li { padding: 10px; border: 1px solid var(--panel-border); border-radius: var(--raio-controle); font-size: 13px; }
+.trechos-lista q, .trechos-preview q { white-space: pre-wrap; overflow-wrap: anywhere; }
+.trechos-lista q strong { color: var(--review-tone); margin-inline-end: 4px; font-variant-numeric: tabular-nums; }
+.trechos-lista .review-mark-actions { margin-top: 6px; }
+.trechos-sugestoes { margin-top: 10px; }
+.trechos-sugestoes summary { cursor: pointer; padding-block: 12px; font-size: 13px; font-weight: 600; }
+.trechos-sugestoes .trechos-lista > li { border-style: dashed; }
+.trechos-bordas, .review-mark-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+/* Só a altura: o min-width: 44px que havia aqui, fora de camada, anulava o piso
+   de largura do Botao e deixava "Salvar" e os demais mais estreitos que o
+   padrão (Issue #186). A largura vem do componente. */
+.trechos-bordas button, .review-mark-actions button { min-height: 44px; }
+.trechos-preview { margin: 6px 0; font-size: 13px; }
+.trechos-edicao { border-top: 1px solid var(--panel-border); margin-top: 8px; padding-top: 6px; }

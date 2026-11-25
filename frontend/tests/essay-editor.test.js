@@ -4,11 +4,41 @@ import test from 'node:test'
 import {
   aplicarSugestaoLinguistica,
   calcularProgressoUpload,
+  contarLinhas,
+  contarPalavras,
+  descreverExtensao,
+  descreverSugestao,
   encontrarRedacaoPorTema,
   LIMITE_IMAGEM_REDACAO_BYTES,
-  precisaConfirmarSubstituicaoOcr,
+  mensagemRevisaoLinguistica,
+  segmentarSugestoesLinguisticas,
   validarImagemRedacao,
 } from '../src/utils/essay-editor.js'
+
+test('marca somente os intervalos conferidos, sem procurar palavras repetidas', () => {
+  const texto = '🙂 aluno, aluno\n'
+  const inicio = texto.lastIndexOf('aluno')
+  const fim = inicio + 'aluno'.length
+  const partes = segmentarSugestoesLinguisticas(texto, [
+    { inicio: 0, fim: 3, trecho: 'inventado' },
+    { inicio: inicio + 1, fim, trecho: 'luno' },
+    { inicio, fim, trecho: 'aluno' },
+    { inicio: fim, fim: fim + 5, trecho: '\n' },
+  ])
+  assert.deepEqual(partes, [
+    { inicio: 0, texto: '🙂 aluno, ', marcada: false },
+    { inicio, texto: 'aluno', marcada: true },
+    { inicio: fim, texto: '\n', marcada: false },
+  ])
+  assert.equal(partes.map((parte) => parte.texto).join(''), texto)
+})
+
+test('não apresenta serviço desativado ou indisponível como revisão concluída', () => {
+  assert.match(mensagemRevisaoLinguistica({ status: 'DESATIVADO', disponivel: false, sugestoes: [] }), /desativada/)
+  assert.match(mensagemRevisaoLinguistica({ status: 'INDISPONIVEL', disponivel: false, sugestoes: [] }), /indisponível/)
+  assert.equal(mensagemRevisaoLinguistica({ status: 'CONCLUIDO', disponivel: true, sugestoes: [] }), 'Nenhuma sugestão foi encontrada.')
+  assert.match(mensagemRevisaoLinguistica({ status: 'CONCLUIDO', disponivel: true, sugestoes: [{}] }), /1 sugestão/)
+})
 
 test('encontra a redação do tema sem alterar a coleção', () => {
   const redacoes = [
@@ -63,12 +93,6 @@ test('calcula progresso de upload dentro do intervalo de 0 a 100', () => {
   assert.equal(calcularProgressoUpload(1, undefined), null)
 })
 
-test('pede confirmação antes de substituir conteúdo existente pelo OCR', () => {
-  assert.equal(precisaConfirmarSubstituicaoOcr('  texto  '), true)
-  assert.equal(precisaConfirmarSubstituicaoOcr('   '), false)
-  assert.equal(precisaConfirmarSubstituicaoOcr(undefined), false)
-})
-
 test('aplica sugestão somente quando os offsets ainda correspondem ao texto', () => {
   const sugestao = {
     inicio: 8,
@@ -91,5 +115,85 @@ test('aplica sugestão somente quando os offsets ainda correspondem ao texto', (
       'vir',
     ),
     null,
+  )
+})
+
+test('conta palavras e linhas não vazias do texto', () => {
+  const texto =
+    'Primeiro parágrafo da redação.\n\n  Segundo   parágrafo.\n'
+
+  assert.equal(contarPalavras(texto), 6)
+  assert.equal(contarLinhas(texto), 2)
+  assert.equal(contarPalavras('   '), 0)
+  assert.equal(contarLinhas(''), 0)
+  assert.equal(
+    descreverExtensao(texto),
+    '6 palavras · 2 parágrafos',
+  )
+  assert.equal(
+    descreverExtensao('Uma'),
+    '1 palavra · 1 parágrafo',
+  )
+})
+
+test('descreve a sugestão com o trecho, a categoria e o tom', () => {
+  assert.deepEqual(
+    descreverSugestao({
+      trecho: 'exerçe',
+      substituicoes: ['exerce', 'exerceu'],
+      mensagem: 'Possível erro de ortografia.',
+      regra: {
+        id: 'MORFOLOGIK_RULE_PT_BR',
+        categoria: 'Erros ortográficos',
+      },
+    }),
+    {
+      texto: '“exerçe” → exerce',
+      categoria: 'Erros ortográficos',
+      tom: 'erro',
+    },
+  )
+  assert.deepEqual(
+    descreverSugestao({
+      trecho: 'que',
+      substituicoes: [],
+      mensagemCurta: 'Vírgula antes de “que” explicativo',
+      mensagem: 'Mensagem longa.',
+      regra: {
+        id: 'VIRGULA_QUE',
+        categoria: 'Pontuação',
+      },
+    }),
+    {
+      texto: 'Vírgula antes de “que” explicativo',
+      categoria: 'Pontuação',
+      tom: 'atencao',
+    },
+  )
+  assert.equal(
+    descreverSugestao({
+      trecho: 'nao',
+      substituicoes: ['não'],
+      regra: {
+        id: 'PT_ACENTUACAO',
+        categoria: 'Erro de Escrita',
+      },
+    }).tom,
+    'erro',
+  )
+  assert.equal(
+    descreverSugestao({
+      trecho: 'acesso a',
+      substituicoes: ['acesso à'],
+      regra: {
+        id: 'CRASE',
+        categoria: 'Gramática Geral',
+      },
+    }).tom,
+    'atencao',
+  )
+  assert.equal(
+    descreverSugestao({}).categoria,
+    'Revisão linguística',
   )
 })

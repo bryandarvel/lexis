@@ -1,0 +1,194 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { criarFormularioFeedback, montarDadosFeedback, validarFeedback, sugestaoDoCriterio, criterioFixo, tomCriterio, evidenciasVerificadas, organizarFila, comentarioEditavel, atualizarComentario, selecionarAnaliseParaCorrecao } from '../src/utils/professor-correction.js'
+import { assinaturaPublicavel, atualizarTrechos, chaveSugestao, prepararMarcacoes, recuperarTrechos } from '../src/utils/professor-correction.js'
+
+const criterio = { id: 'c1', nome: 'Legitimação', ordem: 1 }
+const redacao = { tema: { criterios: [criterio] } }
+const completo = { competencia1: 160, competencia2: 180, competencia3: 140, competencia4: 160, competencia5: 180, comentarioGeral: 'Comentário humano.', criterios: [] }
+
+const redacaoMarcavel = { ...redacao, texto: ' É um texto fictício.\nOutro parágrafo.' }
+const intervalo = { inicio: 0, fim: 5, trecho: redacaoMarcavel.texto.slice(0, 5) }
+const feedbackMarcado = { versaoAtual: { criterios: [{ criterioId: 'c1', comentario: 'Evidência discutida.', trechos: [intervalo] }] } }
+
+test('hidrata trechos do servidor, guarda apenas offsets localmente e preserva por omissão', () => {
+  const form = criarFormularioFeedback(redacaoMarcavel, feedbackMarcado)
+  assert.deepEqual(form.criterionTrechos.c1, [{ inicio: 0, fim: 5 }])
+  assert.equal(Object.hasOwn(montarDadosFeedback(form, redacaoMarcavel.texto).criterios[0], 'trechos'), false)
+  const removido = atualizarTrechos(form, 'c1', [])
+  assert.deepEqual(montarDadosFeedback(removido, redacaoMarcavel.texto).criterios[0].trechos, [])
+  assert.notEqual(assinaturaPublicavel(removido, redacaoMarcavel.texto), assinaturaPublicavel(form, redacaoMarcavel.texto))
+})
+
+test('recupera só os critérios alterados da redação atual, sem carregar o texto para armazenamento local', () => {
+  const form = criarFormularioFeedback(redacaoMarcavel, feedbackMarcado)
+  const atual = atualizarTrechos(form, 'c1', [intervalo])
+  const salvo = JSON.parse(JSON.stringify(atual))
+  salvo.criterionTrechos.outro = [{ inicio: 0, fim: 5 }]
+  salvo.criterionTrechosAlterados.outro = true
+  assert.equal(JSON.stringify(salvo).includes(intervalo.trecho), false)
+  const recuperado = recuperarTrechos(form, salvo, redacaoMarcavel.texto)
+  assert.deepEqual(montarDadosFeedback(recuperado, redacaoMarcavel.texto).criterios[0].trechos, [intervalo])
+  assert.equal('outro' in recuperado.criterionTrechos, false)
+})
+
+test('sugestão localizada permanece pendente e fora do payload até o aceite', () => {
+  const form = criarFormularioFeedback(redacaoMarcavel, feedbackMarcado)
+  const limpo = atualizarTrechos(form, 'c1', [])
+  const evidencia = { ...intervalo, statusLocalizacao: 'LOCALIZADA' }
+  const analise = { id: 'analise-1', status: 'CONCLUIDA', resultadoEstruturado: {
+    analisePorCriterio: [{ ordem: 1, criterio: 'Legitimação', evidencias: [evidencia, evidencia, { ...evidencia, trecho: 'incompatível' }] }],
+  } }
+  const pendentes = prepararMarcacoes(redacaoMarcavel.texto, [criterio], limpo, analise, new Set())
+  assert.equal(pendentes.pendentes.length, 1)
+  assert.deepEqual(pendentes.aprovados, [])
+  assert.deepEqual(montarDadosFeedback(limpo, redacaoMarcavel.texto).criterios[0].trechos, [])
+  const sugestao = pendentes.porCriterio.c1.sugestoes[0]
+  const descartadas = new Set([chaveSugestao('c1', sugestao)])
+  assert.equal(prepararMarcacoes(redacaoMarcavel.texto, [criterio], limpo, analise, descartadas).pendentes.length, 0)
+  const aceito = atualizarTrechos(limpo, 'c1', [sugestao])
+  assert.deepEqual(montarDadosFeedback(aceito, redacaoMarcavel.texto).criterios[0].trechos, [{ ...intervalo, analiseIaId: analise.id }])
+})
+
+test('o formulário mantém notas vazias sem atribuir zero ou importar nota de IA', () => {
+  const form = criarFormularioFeedback(redacao, null)
+  assert.equal(form.competencia2, '')
+  assert.deepEqual(form.criterionComments, { c1: '' })
+  assert.equal(montarDadosFeedback(form).competencia2, null)
+  assert.equal(validarFeedback(montarDadosFeedback(form)), '')
+  assert.match(validarFeedback(montarDadosFeedback(form), true), /cinco competências/)
+})
+
+test('notas e comentários vêm da versão humana atual e preservam nota legada', () => {
+  const form = criarFormularioFeedback(redacao, { versaoAtual: { nota: 850, comentarioGeral: 'Feedback salvo', criterios: [{ criterioId: 'c1', comentario: 'Humano' }] } })
+  assert.equal(form.legacyScore, '850')
+  assert.equal(form.competencia1, '')
+  assert.equal(form.criterionComments.c1, 'Humano')
+})
+
+test('o payload contém somente campos do contrato e comentários não vazios', () => {
+  const form = { ...criarFormularioFeedback(redacao, null), competencia1: ' 0 ', generalComment: '  ', criterionComments: { c1: '  comentário  ', c2: '' }, peso: 40 }
+  const dados = montarDadosFeedback(form)
+  assert.equal(dados.competencia1, 0)
+  assert.equal(dados.comentarioGeral, null)
+  assert.deepEqual(dados.criterios, [{ criterioId: 'c1', comentario: 'comentário' }])
+  assert.equal('peso' in dados, false)
+  assert.equal('legacyScore' in dados, false)
+})
+
+test('publicação exige cinco notas válidas e comentário geral', () => {
+  assert.equal(validarFeedback(completo, true), '')
+  for (const nota of [-1, 201, 10.5, NaN, Infinity]) assert.match(validarFeedback({ ...completo, competencia2: nota }, true), /inteira/)
+  assert.match(validarFeedback({ ...completo, competencia5: null }, true), /cinco/)
+  assert.match(validarFeedback({ ...completo, comentarioGeral: null }, true), /comentário geral/)
+  assert.match(validarFeedback({ ...completo, criterios: [{ comentario: 'x'.repeat(5001) }] }), /limites/)
+})
+
+test('sugestão consultiva só corresponde quando nome, ordem e conclusão coincidem', () => {
+  const sugestao = { ordem: 1, criterio: 'Legitimação', diagnostico: 'Texto consultivo.' }
+  const analise = { status: 'CONCLUIDA', resultadoEstruturado: { analisePorCriterio: [sugestao] } }
+  assert.deepEqual(sugestaoDoCriterio(analise, criterio), sugestao)
+  assert.equal(sugestaoDoCriterio({ ...analise, status: 'ERRO' }, criterio), null)
+  assert.equal(sugestaoDoCriterio(analise, { ...criterio, nome: 'Outro' }), null)
+  assert.equal(sugestaoDoCriterio(analise, { ...criterio, ordem: 2 }), null)
+})
+
+// A cor passou a vir da ordem, e não do nome, para o critério ter o mesmo tom
+// na correção e no feedback do aluno (#44). criterioFixo segue identificando
+// a base pelo nome, que é o que separa os três fixos dos personalizados.
+test('a base é reconhecida pelo nome e a cor vem da ordem', () => {
+  assert.equal(criterioFixo({ nome: ' Pertinência ' }), true)
+  assert.equal(criterioFixo({ nome: 'Diversidade' }), false)
+  assert.equal(tomCriterio({ nome: 'Uso produtivo', ordem: 3 }), '2')
+  assert.equal(tomCriterio({ nome: 'Diversidade', ordem: 4 }), '3')
+  assert.equal(tomCriterio({ nome: 'Atualidade', ordem: 5 }), '4')
+  // Proposta legada: o fixo fora da posição esperada acompanha a ordem.
+  assert.equal(tomCriterio({ nome: 'Uso produtivo', ordem: 1 }), '0')
+})
+
+test('exibe sugestão editável sem incorporá-la automaticamente ao feedback humano', () => {
+  const form = criarFormularioFeedback(redacao, null)
+  const analise = { status: 'CONCLUIDA', resultadoEstruturado: { analisePorCriterio: [{ ordem: 1, criterio: 'Legitimação', diagnostico: 'Sugestão consultiva.' }] } }
+  assert.deepEqual(comentarioEditavel(form, analise, criterio), { texto: '', sugestao: 'Sugestão consultiva.' })
+  assert.deepEqual(montarDadosFeedback(form).criterios, [])
+  const editado = atualizarComentario(form, 'c1', 'Texto reescrito pelo professor.')
+  assert.deepEqual(comentarioEditavel(editado, analise, criterio), { texto: 'Texto reescrito pelo professor.', sugestao: null })
+  assert.deepEqual(montarDadosFeedback(editado).criterios, [{ criterioId: 'c1', comentario: 'Texto reescrito pelo professor.' }])
+  assert.equal('criterionReviewed' in montarDadosFeedback(editado), false)
+  assert.equal(form.criterionComments.c1, '')
+})
+
+test('apagar ou descartar uma sugestão mantém o campo vazio inclusive no rascunho recuperado', () => {
+  const analise = { status: 'CONCLUIDA', resultadoEstruturado: { analisePorCriterio: [{ ordem: 1, criterio: 'Legitimação', diagnostico: 'Sugestão consultiva.' }] } }
+  const vazio = atualizarComentario(criarFormularioFeedback(redacao, null), 'c1', '')
+  assert.deepEqual(comentarioEditavel(vazio, analise, criterio), { texto: '', sugestao: null })
+  const recuperado = JSON.parse(JSON.stringify(vazio))
+  assert.deepEqual(comentarioEditavel(recuperado, analise, criterio), { texto: '', sugestao: null })
+  assert.deepEqual(montarDadosFeedback(recuperado).criterios, [])
+})
+
+test('aceitar uma sugestão ou receber outra análise não sobrescreve a decisão humana', () => {
+  const analise = { status: 'CONCLUIDA', resultadoEstruturado: { analisePorCriterio: [{ ordem: 1, criterio: 'Legitimação', diagnostico: 'Outra sugestão.' }] } }
+  const aceito = atualizarComentario(criarFormularioFeedback(redacao, null), 'c1', 'Sugestão revisada.')
+  assert.deepEqual(comentarioEditavel(aceito, analise, criterio), { texto: 'Sugestão revisada.', sugestao: null })
+  const apagado = atualizarComentario(aceito, 'c1', '')
+  assert.deepEqual(comentarioEditavel(apagado, analise, criterio), { texto: '', sugestao: null })
+})
+
+test('marcações e lista usam somente trechos reais e não duplicam evidências sobrepostas', () => {
+  const evidencia = { trecho: 'fonte', inicio: 2, fim: 7, statusLocalizacao: 'LOCALIZADA' }
+  const analise = { status: 'CONCLUIDA', resultadoEstruturado: { analisePorCriterio: [
+    { ordem: 1, evidencias: [evidencia, { ...evidencia, trecho: 'inventado' }] },
+    { ordem: 2, evidencias: [evidencia, { trecho: 'x', inicio: -1, fim: 0, statusLocalizacao: 'LOCALIZADA' }] },
+  ] } }
+  const resultado = evidenciasVerificadas('A fonte citada.', analise)
+  assert.equal(resultado.trechos.length, 1)
+  assert.deepEqual(resultado.trechos[0].ordens, [1, 2])
+  assert.equal(resultado.segmentos.map((s) => s.texto).join(''), 'A fonte citada.')
+  assert.equal(evidenciasVerificadas('A fonte citada.', { ...analise, status: 'ERRO' }).trechos.length, 0)
+})
+
+test('a fila exclui rascunhos, indica a anterior e procura a próxima pendente sem mutar a lista', () => {
+  const lista = [{ id: 'c', enviadaEm: '2026-10-03', status: 'AVALIADA' }, { id: 'b', enviadaEm: '2026-10-02', status: 'ENVIADA' }, { id: 'a', enviadaEm: '2026-10-01', status: 'ENVIADA' }, { id: 'd', status: 'RASCUNHO' }]
+  const copia = structuredClone(lista)
+  const fila = organizarFila(lista, 'b')
+  assert.equal(fila.posicao, 2)
+  assert.equal(fila.total, 3)
+  assert.equal(fila.anterior.id, 'a')
+  assert.equal(fila.proxima.id, 'a')
+  assert.equal(organizarFila(lista, 'a').anterior, null)
+  assert.equal(organizarFila(lista, 'c').anterior.id, 'b')
+  assert.equal(organizarFila(lista, 'a').proxima.id, 'b')
+  assert.deepEqual(lista, copia)
+  assert.equal(organizarFila([lista[1]], 'b').proxima, null)
+  assert.equal(organizarFila(lista, 'inexistente').posicao, null)
+  assert.equal(organizarFila(lista, 'inexistente').anterior, null)
+})
+
+test('preserva análise concluída e marcações quando a tentativa mais recente falha ou está processando', () => {
+  const concluida = { id: 'sucesso', status: 'CONCLUIDA', resultadoEstruturado: { analisePorCriterio: [
+    { ordem: 1, criterio: 'Legitimação', diagnostico: 'Sugestão anterior.', evidencias: [{ trecho: 'fonte', inicio: 2, fim: 7, statusLocalizacao: 'LOCALIZADA' }] },
+  ] } }
+  for (const status of ['ERRO', 'PROCESSANDO', 'PENDENTE']) {
+    const ultima = { id: 'tentativa', status }
+    const historico = [ultima, concluida]
+    const copia = structuredClone(historico)
+    const selecionada = selecionarAnaliseParaCorrecao(historico)
+    assert.equal(selecionada.ultima, ultima)
+    assert.equal(selecionada.concluida, concluida)
+    assert.equal(evidenciasVerificadas('A fonte citada.', selecionada.concluida).trechos.length, 1)
+    assert.equal(evidenciasVerificadas('Texto alterado.', selecionada.concluida).trechos.length, 0)
+    assert.deepEqual(historico, copia)
+  }
+})
+
+test('usa a conclusão mais recente sem transformar falha em sucesso nem alterar o feedback humano', () => {
+  assert.deepEqual(selecionarAnaliseParaCorrecao(), { ultima: null, concluida: null })
+  const falha = { id: 'falha', status: 'ERRO' }
+  assert.deepEqual(selecionarAnaliseParaCorrecao([falha]), { ultima: falha, concluida: null })
+  const nova = { id: 'nova', status: 'CONCLUIDA', resultadoEstruturado: { analisePorCriterio: [] } }
+  const antiga = { ...nova, id: 'antiga' }
+  assert.equal(selecionarAnaliseParaCorrecao([nova, antiga]).concluida, nova)
+  const form = atualizarComentario(criarFormularioFeedback(redacao, null), 'c1', 'Decisão humana preservada.')
+  assert.deepEqual(comentarioEditavel(form, nova, criterio), { texto: 'Decisão humana preservada.', sugestao: null })
+})

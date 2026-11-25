@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { obterModeloCompetenciaDois } from '../../src/modules/temas/temas.competencia-dois.js'
 import { randomUUID } from 'node:crypto'
 import {
   after,
@@ -57,18 +58,7 @@ function criarDadosTema({
     instrucoes:
       'Utilize repertórios socioculturais pertinentes.',
     prazoEntrega: criarPrazoFuturo(diasAtePrazo),
-    criterios: [
-      {
-        nome: 'Pertinência do repertório',
-        descricao:
-          'Avalia a relação entre o repertório e a argumentação.',
-      },
-      {
-        nome: 'Desenvolvimento argumentativo',
-        descricao:
-          'Avalia o desenvolvimento dos argumentos apresentados.',
-      },
-    ],
+    criterios: obterModeloCompetenciaDois().criterios,
   }
 }
 
@@ -331,6 +321,25 @@ after(async () => {
 })
 
 describe('Rotas de temas do aluno', () => {
+  it('deve manter proposta vencida na lista e permitir sua consulta sem rascunho', async () => {
+    const prazoVencido = new Date(Date.now() - 86_400_000)
+    await prisma.temaRedacao.update({ where: { id: temaMaisProximo.id }, data: { prazoEntrega: prazoVencido } })
+
+    const lista = await request(app)
+      .get('/api/aluno/temas')
+      .set('Authorization', `Bearer ${alunoMatriculado.accessToken}`)
+      .expect(200)
+    assert.equal(lista.body.data.temas.length, 2)
+    assert.ok(lista.body.data.temas.some((tema) => tema.id === temaMaisProximo.id))
+
+    const detalhe = await request(app)
+      .get(`/api/aluno/temas/${temaMaisProximo.id}`)
+      .set('Authorization', `Bearer ${alunoMatriculado.accessToken}`)
+      .expect(200)
+    assert.equal(new Date(detalhe.body.data.tema.prazoEntrega).getTime(), prazoVencido.getTime())
+    assert.equal(await prisma.redacao.count({ where: { alunoId: alunoMatriculado.usuario.id, temaId: temaMaisProximo.id } }), 0)
+  })
+
   it('deve listar somente os temas ativos da turma atual', async () => {
     const resposta = await request(app)
       .get('/api/aluno/temas')
@@ -379,7 +388,7 @@ describe('Rotas de temas do aluno', () => {
       tema.turma.professor.id,
       professorPrincipal.usuario.id,
     )
-    assert.equal(tema.criterios.length, 2)
+    assert.equal(tema.criterios.length, 3)
     assert.equal(tema.criterios[0].ordem, 1)
     assert.equal(tema.criterios[1].ordem, 2)
   })

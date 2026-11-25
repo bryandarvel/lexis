@@ -1,4 +1,12 @@
 import { prisma } from '../../config/prisma.js'
+import { AppError } from '../../utils/app-error.js'
+
+async function bloquearProfessorAtivo(tx, professorId) {
+  const [professor] = await tx.$queryRaw`SELECT ativo FROM usuarios WHERE id = ${professorId} FOR UPDATE`
+  if (!professor?.ativo) throw new AppError('O usuário desta sessão não está disponível.', {
+    statusCode: 401, code: 'AUTHENTICATION_REQUIRED',
+  })
+}
 
 const turmaProfessorSelect = {
   id: true,
@@ -16,13 +24,13 @@ const turmaProfessorSelect = {
       email: true,
     },
   },
+  matriculas: {
+    where: { status: 'ATIVA' },
+    select: { alunoId: true },
+    distinct: ['alunoId'],
+  },
   _count: {
     select: {
-      matriculas: {
-        where: {
-          status: 'ATIVA',
-        },
-      },
       temas: {
         where: {
           ativo: true,
@@ -37,14 +45,32 @@ export function criarTurma({
   codigoAcesso,
   professorId,
 }) {
-  return prisma.turma.create({
-    data: {
-      nome,
-      codigoAcesso,
-      professorId,
-    },
-    select: turmaProfessorSelect,
+  return prisma.$transaction(async tx => {
+    await bloquearProfessorAtivo(tx, professorId)
+    return tx.turma.create({
+      data: { nome, codigoAcesso, professorId },
+      select: turmaProfessorSelect,
+    })
   })
+}
+
+export async function excluirTurmaSemHistorico({ turmaId, professorId }) {
+  try {
+    return await prisma.$transaction(async tx => {
+      // INSERTs de matrículas/propostas também precisam da linha-pai pela FK.
+      const [turma] = await tx.$queryRaw`SELECT id, ativa FROM turmas
+        WHERE id = ${turmaId} AND professorId = ${professorId} FOR UPDATE`
+      if (!turma) return 'NAO_ENCONTRADA'
+      if (turma.ativa) return 'ATIVA'
+      if (await tx.matricula.findFirst({ where: { turmaId }, select: { id: true } }) ||
+          await tx.temaRedacao.findFirst({ where: { turmaId }, select: { id: true } })) return 'COM_HISTORICO'
+      await tx.turma.delete({ where: { id: turmaId } })
+      return 'EXCLUIDA'
+    })
+  } catch (error) {
+    if (error.code === 'P2003') return 'COM_HISTORICO'
+    throw error
+  }
 }
 
 export function listarTurmasDoProfessor(professorId) {
@@ -75,6 +101,13 @@ export function buscarTurmaDoProfessor({
     },
     select: turmaProfessorSelect,
   })
+}
+
+export async function consultarElegibilidadeExclusaoTurma({ turmaId, professorId }) {
+  return Boolean(await prisma.turma.findFirst({
+    where: { id: turmaId, professorId, ativa: false, matriculas: { none: {} }, temas: { none: {} } },
+    select: { id: true },
+  }))
 }
 
 export async function atualizarNomeDaTurma({
@@ -130,48 +163,84 @@ export async function atualizarCodigoDaTurma({
   })
 }
 
-export function arquivarTurma({
+function dadosAvisoEncerramento({ alunoId, nomeTurma, arquivada = false }) {
+  return {
+    usuarioId: alunoId,
+    tipo: arquivada ? 'TURMA_ARQUIVADA' : 'MATRICULA_ENCERRADA',
+    titulo: arquivada ? 'Turma arquivada' : 'Vínculo com a turma encerrado',
+    mensagem: `${arquivada ? 'A turma' : 'Você foi desvinculado da turma'} "${nomeTurma}"${arquivada ? ' foi arquivada' : ''}. Suas redações e correções publicadas continuam disponíveis no histórico.`,
+    feedbackVersaoId: null, redacaoId: null, emailDestino: null, statusEmail: null,
+  }
+}
+
+export async function arquivarTurma({
   turmaId,
   professorId,
 }) {
-  return prisma.$transaction(async (transaction) => {
-    const agora = new Date()
+  const permitida = await prisma.turma.findFirst({
+    where: { id: turmaId, professorId, ativa: true }, select: { id: true },
+  })
+  if (!permitida) return null
 
+  // A FK da notificação também bloqueia usuário. Não segurar turma antes deles:
+  // uma entrada concorrente já pode segurar usuário enquanto aguarda a turma.
+  for (let tentativa = 0; tentativa < 3; tentativa += 1) {
+    const previa = await prisma.matricula.findMany({
+      where: { turmaId, status: 'ATIVA' }, select: { alunoId: true }, distinct: ['alunoId'],
+    })
+    const alunosBloqueados = new Set(previa.map(m => m.alunoId))
+    const resultado = await prisma.$transaction(async transaction => {
+      for (const alunoId of [...alunosBloqueados].sort()) {
+        await transaction.$queryRaw`SELECT id FROM usuarios WHERE id = ${alunoId} FOR UPDATE`
+      }
+      await transaction.$queryRaw`SELECT id FROM turmas WHERE id = ${turmaId} FOR UPDATE`
+      const turma = await transaction.turma.findFirst({
+        where: { id: turmaId, professorId, ativa: true }, select: { nome: true },
+      })
+      if (!turma) return null
+      const atuais = await transaction.matricula.findMany({
+        where: { turmaId, status: 'ATIVA' }, select: { alunoId: true }, distinct: ['alunoId'],
+      })
+      // Nenhuma escrita ocorreu: expandir o conjunto fora dos locks atuais.
+      if (atuais.some(m => !alunosBloqueados.has(m.alunoId))) return 'MATRICULAS_ALTERADAS'
+
+      const agora = new Date()
+      await transaction.turma.updateMany({
+        where: { id: turmaId, professorId, ativa: true }, data: { ativa: false, arquivadaEm: agora },
+      })
+      await transaction.matricula.updateMany({
+        where: { turmaId, status: 'ATIVA' }, data: { status: 'ENCERRADA', encerradaEm: agora },
+      })
+      if (atuais.length) await transaction.notificacao.createMany({
+        data: atuais.map(m => dadosAvisoEncerramento({ alunoId: m.alunoId, nomeTurma: turma.nome, arquivada: true })),
+      })
+      return transaction.turma.findUnique({ where: { id: turmaId }, select: turmaProfessorSelect })
+    })
+    if (resultado !== 'MATRICULAS_ALTERADAS') return resultado
+  }
+  // Crescimento contínuo: nenhuma tentativa fez alterações ou criou avisos.
+  return 'MATRICULAS_ALTERADAS'
+}
+export function reabrirTurma({ turmaId, professorId }) {
+  return prisma.$transaction(async (transaction) => {
+    await bloquearProfessorAtivo(transaction, professorId)
     const resultado = await transaction.turma.updateMany({
-      where: {
-        id: turmaId,
-        professorId,
-        ativa: true,
-      },
-      data: {
-        ativa: false,
-        arquivadaEm: agora,
-      },
+      where: { id: turmaId, professorId, ativa: false },
+      data: { ativa: true, arquivadaEm: null },
     })
 
     if (resultado.count !== 1) {
       return null
     }
 
-    await transaction.matricula.updateMany({
-      where: {
-        turmaId,
-        status: 'ATIVA',
-      },
-      data: {
-        status: 'ENCERRADA',
-        encerradaEm: agora,
-      },
-    })
-
+    // Matrículas encerradas e propostas arquivadas são histórico, não são restauradas.
     return transaction.turma.findUnique({
-      where: {
-        id: turmaId,
-      },
+      where: { id: turmaId },
       select: turmaProfessorSelect,
     })
   })
 }
+
 const matriculaAlunoSelect = {
   id: true,
   status: true,
@@ -241,10 +310,25 @@ export function criarMatriculaAtivaComExclusividade({
   turmaId,
 }) {
   return prisma.$transaction(async (transaction) => {
-    await transaction.$queryRaw`
-      SELECT id
+    const [aluno] = await transaction.$queryRaw`
+      SELECT ativo
       FROM usuarios
       WHERE id = ${alunoId}
+      FOR UPDATE
+    `
+    if (!aluno?.ativo) throw new AppError('O usuário desta sessão não está disponível.', {
+      statusCode: 401, code: 'AUTHENTICATION_REQUIRED',
+    })
+
+    // Ordem: usuário -> turma -> matrícula. Arquivamento bloqueia primeiro
+    // usuários em ordem crescente, depois turma/matrículas/avisos.
+    // Nenhum encerramento pode adquirir usuário depois de segurar a turma.
+    // A leitura abaixo só pode ocorrer depois de um arquivamento concorrente
+    // terminar, ou a entrada termina antes e será encerrada por ele.
+    await transaction.$queryRaw`
+      SELECT id
+      FROM turmas
+      WHERE id = ${turmaId}
       FOR UPDATE
     `
 
@@ -303,6 +387,7 @@ export function criarMatriculaAtivaComExclusividade({
 
 export function encerrarMatriculaAtivaDoAluno(
   alunoId,
+  matriculaId,
 ) {
   return prisma.$transaction(async (transaction) => {
     await transaction.$queryRaw`
@@ -330,16 +415,43 @@ export function encerrarMatriculaAtivaDoAluno(
       return null
     }
 
-    return transaction.matricula.update({
+    if (matricula.id !== matriculaId) {
+      return 'MATRICULA_ALTERADA'
+    }
+
+    // A condição também protege contra encerramento por arquivamento
+    // ou desvinculação depois da leitura, sem reativar nem alterar o histórico.
+    const resultado = await transaction.matricula.updateMany({
       where: {
-        id: matricula.id,
+        id: matriculaId,
+        alunoId,
+        status: 'ATIVA',
       },
       data: {
         status: 'ENCERRADA',
         encerradaEm: new Date(),
       },
+    })
+
+    if (resultado.count !== 1) return null
+
+    const matriculaEncerrada = await transaction.matricula.findUnique({
+      where: { id: matriculaId },
       select: matriculaAlunoSelect,
     })
+    const aluno = await transaction.usuario.findUnique({
+      where: { id: alunoId }, select: { nome: true },
+    })
+    await transaction.notificacao.create({
+      data: {
+        usuarioId: matriculaEncerrada.turma.professor.id,
+        tipo: 'ALUNO_SAIU_TURMA',
+        titulo: 'Aluno saiu da turma',
+        mensagem: `${aluno.nome} saiu voluntariamente da turma "${matriculaEncerrada.turma.nome}". As redações enviadas e correções continuam no histórico.`,
+        feedbackVersaoId: null, redacaoId: null, emailDestino: null, statusEmail: null,
+      },
+    })
+    return matriculaEncerrada
   })
 }
 
@@ -377,6 +489,8 @@ export function encerrarMatriculaPeloProfessor({
       FOR UPDATE
     `
 
+    await transaction.$queryRaw`SELECT id FROM turmas WHERE id = ${turmaId} FOR UPDATE`
+
     const turma =
       await transaction.turma.findFirst({
         where: {
@@ -386,6 +500,7 @@ export function encerrarMatriculaPeloProfessor({
         },
         select: {
           id: true,
+          nome: true,
         },
       })
 
@@ -426,6 +541,10 @@ export function encerrarMatriculaPeloProfessor({
         },
         select: matriculaProfessorSelect,
       })
+
+    await transaction.notificacao.create({
+      data: dadosAvisoEncerramento({ alunoId, nomeTurma: turma.nome }),
+    })
 
     return {
       status: 'MATRICULA_ENCERRADA',

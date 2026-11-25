@@ -1,0 +1,132 @@
+import assert from 'node:assert/strict'
+import { after, before, test } from 'node:test'
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { createServer } from 'vite'
+import react from '@vitejs/plugin-react'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { prepararMarcacoes } from '../src/utils/professor-correction.js'
+
+let servidor, cache, AnalysisPanel, EssayEvidenceText
+before(async () => {
+  cache = await mkdtemp(join(tmpdir(), 'lexis-analysis-components-'))
+  // O teste renderiza só no servidor. Sem o otimizador do cliente em segundo
+  // plano, a limpeza do cache isolado não disputa com uma escrita do Vite.
+  servidor = await createServer({ root: fileURLToPath(new URL('../', import.meta.url)), configFile: false,
+    cacheDir: cache, plugins: [react()], optimizeDeps: { noDiscovery: true }, server: { middlewareMode: true }, appType: 'custom' })
+  AnalysisPanel = (await servidor.ssrLoadModule('/src/components/correction/AnalysisPanel.jsx')).default
+  EssayEvidenceText = (await servidor.ssrLoadModule('/src/components/correction/EssayEvidenceText.jsx')).default
+})
+after(async () => {
+  await servidor?.close()
+  if (cache) await rm(cache, { recursive: true, force: true })
+})
+
+test('painel mostra a falha recente e a conclusão anterior datada, sem sucesso antigo', () => {
+  const antiga = { id: 'antiga', status: 'CONCLUIDA', concluidaEm: '2026-10-15T22:00:00Z', resultadoEstruturado: { resumoGeral: 'Resultado anterior fictício.' } }
+  const html = renderToStaticMarkup(createElement(AnalysisPanel, {
+    analysis: { id: 'nova-falhou', status: 'ERRO', mensagemErro: 'GEMINI_SERVICE_UNAVAILABLE: Serviço temporariamente indisponível.' },
+    resultAnalysis: antiga, notice: { type: 'success', analiseId: 'antiga', message: 'SUCESSO_ANTIGO_NAO_EXIBIR' },
+  }))
+  assert.match(html, /Serviço temporariamente indisponível/)
+  assert.match(html, /Exibindo a última análise concluída/)
+  assert.match(html, /15\/10\/2026/)
+  assert.match(html, /Resultado anterior fictício/)
+  assert.doesNotMatch(html, /SUCESSO_ANTIGO_NAO_EXIBIR|GEMINI_SERVICE_UNAVAILABLE:/)
+})
+
+const falhaPublicada = { id: 'falha-anterior', status: 'ERRO', concluidaEm: '2026-11-12T14:00:00Z', mensagemErro: 'Falha fictícia antes da publicação.' }
+
+test('publicação confirmada rebaixa a falha antiga a histórico consultável, sem reiniciar a espera', () => {
+  const html = renderToStaticMarkup(createElement(AnalysisPanel, {
+    analysis: falhaPublicada, falhaAnterior: falhaPublicada,
+    notice: { type: 'error', analiseId: falhaPublicada.id, message: falhaPublicada.mensagemErro },
+    avisoAnterior: { type: 'error', message: falhaPublicada.mensagemErro },
+    retryAt: Date.now() + 30000,
+  }))
+  assert.match(html, /<summary>Falha de IA anterior à publicação<\/summary>/)
+  assert.match(html, /12\/11\/2026/)
+  assert.equal(html.match(/Falha fictícia antes da publicação\./g).length, 1)
+  assert.doesNotMatch(html, /role="alert"|Consultar resultado existente|Nenhuma análise solicitada/)
+  // Durante a espera o botão segue desabilitado. Sem resultado aproveitável
+  // ele continua sendo o pedido de análise, não "Gerar nova análise" (#179).
+  assert.match(html, /<button[^>]*disabled[^>]*>/)
+  assert.match(html, /Analisar redação com IA/)
+  assert.doesNotMatch(html, /Gerar nova análise/)
+})
+
+test('o card da IA se anuncia por um título visível, não só por aria-label', () => {
+  const html = renderToStaticMarkup(createElement(AnalysisPanel, {}))
+
+  assert.match(html, /<h2[^>]*class="review-section-title"><svg[^>]*aria-hidden="true"[^>]*>[\s\S]*?<\/svg>Análise de apoio da IA<\/h2>/)
+  assert.match(html, /A nota é atribuída pelo professor\./)
+  assert.doesNotMatch(html, /aria-label="Análise consultiva por IA"/)
+})
+
+test('falha nova é ativa mesmo quando sua mensagem coincide com a do histórico', () => {
+  const html = renderToStaticMarkup(createElement(AnalysisPanel, {
+    analysis: falhaPublicada, falhaAnterior: falhaPublicada,
+    notice: { type: 'error', message: falhaPublicada.mensagemErro },
+  }))
+  assert.match(html, /role="alert"/)
+  assert.match(html, /Consultar resultado existente/)
+  assert.match(html, /<summary>Falha de IA anterior à publicação<\/summary>/)
+})
+
+test('falha persistida depois da publicação mantém alerta e não remove a falha anterior', () => {
+  const html = renderToStaticMarkup(createElement(AnalysisPanel, {
+    analysis: { ...falhaPublicada, id: 'nova', mensagemErro: 'Falha fictícia nova.' },
+    falhaAnterior: falhaPublicada,
+  }))
+  assert.match(html, /role="alert"[^>]*>Falha fictícia nova\./)
+  assert.match(html, /Falha fictícia antes da publicação\./)
+})
+
+test('aviso de transporte sem análise persistida fica consultável depois da publicação', () => {
+  const html = renderToStaticMarkup(createElement(AnalysisPanel, {
+    avisoAnterior: { type: 'error', ocorridaEm: Date.parse('2026-11-12T14:00:00Z'), message: 'Falha transitória anterior.' },
+  }))
+  assert.match(html, /<summary>Falha de IA anterior à publicação<\/summary>/)
+  assert.match(html, /Falha transitória anterior\./)
+  assert.doesNotMatch(html, /role="alert"/)
+})
+
+test('trecho comum aos três critérios conserva vínculos e exibe as três cores', () => {
+  const texto = 'Direito à educação.'
+  const criterios = ['Legitimação', 'Pertinência', 'Uso produtivo'].map((nome, i) => ({ id: `c-${i}`, nome, ordem: i + 1 }))
+  const form = { criterionTrechos: Object.fromEntries(criterios.map((c) => [c.id, [{ inicio: 0, fim: texto.length }]])) }
+  const marcacoes = prepararMarcacoes(texto, criterios, form, null, new Set())
+  const html = renderToStaticMarkup(createElement(EssayEvidenceText, { texto, marcacoes, criterios }))
+  for (const i of [0, 1, 2]) assert.match(html, new RegExp(`linear-gradient\\(var\\(--review-color-${i}\\)`))
+  assert.match(html, /Trecho 01: Legitimação, Pertinência, Uso produtivo/)
+  for (const c of criterios) assert.ok(html.includes(`${c.nome}: 1 trecho marcado`))
+  assert.match(html, /Os números identificam trechos, não critérios/)
+  assert.match(html, /Um mesmo trecho pode apoiar mais de um critério/)
+  const divergente = renderToStaticMarkup(createElement(EssayEvidenceText, {
+    texto: 'Outro texto.', marcacoes: prepararMarcacoes('Outro texto.', criterios, form, null, new Set()), criterios,
+  }))
+  assert.doesNotMatch(divergente, /class="review-seal/)
+  assert.doesNotMatch(divergente, /aria-label="Marcações no texto"/)
+})
+
+test('legenda distingue evidências de critérios e não esconde referências do desenvolvimento', () => {
+  const referencias = ['Bauman.', 'Constituição.', 'Hannah Arendt.', 'Marco Civil.', 'Black Mirror.']
+  const texto = referencias.join('\n\n')
+  const criterios = ['Legitimação', 'Pertinência', 'Uso produtivo'].map((nome, i) => ({ id: `c-${i}`, nome, ordem: i + 1 }))
+  const evidencias = referencias.map(trecho => ({ trecho, inicio: texto.indexOf(trecho), fim: texto.indexOf(trecho) + trecho.length, statusLocalizacao: 'LOCALIZADA' }))
+  const analise = { id: 'concluida', status: 'CONCLUIDA', resultadoEstruturado: { analisePorCriterio: criterios.map(c => ({
+    criterio: c.nome, ordem: c.ordem, evidencias: c.ordem === 3 ? [] : evidencias,
+  })) } }
+  const form = { criterionTrechos: { 'c-0': evidencias } }
+  const marcacoes = prepararMarcacoes(texto, criterios, form, analise, new Set())
+  const html = renderToStaticMarkup(createElement(EssayEvidenceText, { texto, marcacoes, criterios, analise }))
+  assert.ok(html.includes('Legitimação: 5 trechos marcados'))
+  assert.ok(html.includes('Pertinência: 0 trechos marcados'))
+  assert.ok(html.includes('Uso produtivo: 0 trechos marcados'))
+  assert.equal((html.match(/data-numero="0[1-5]"/g) ?? []).length, 5)
+  assert.equal((html.match(/data-numero="IA"/g) ?? []).length, 5)
+  for (const referencia of referencias) assert.ok(html.includes(referencia))
+})

@@ -2,7 +2,9 @@ import { AppError } from '../../utils/app-error.js'
 
 import {
   listarNotificacoesAluno,
+  listarNotificacoesProfessor,
   marcarNotificacaoComoLida,
+  marcarNotificacaoProfessorComoLida,
 } from './notificacoes.repository.js'
 
 function criarErroNotificacaoNaoEncontrada() {
@@ -44,5 +46,20 @@ export async function marcarNotificacaoLidaParaAluno(
     throw criarErroNotificacaoNaoEncontrada()
   }
 
+  return resultado.notificacao
+}
+
+export function listarNotificacoesParaProfessor(dados, {
+  listar = listarNotificacoesProfessor,
+} = {}) {
+  return listar(dados)
+}
+
+export async function marcarNotificacaoLidaParaProfessor({ notificacaoId, professorId }, {
+  marcarComoLida = marcarNotificacaoProfessorComoLida,
+  agora = () => new Date(),
+} = {}) {
+  const resultado = await marcarComoLida({ notificacaoId, professorId, lidaEm: agora() })
+  if (resultado.status === 'NOTIFICACAO_INDISPONIVEL') throw criarErroNotificacaoNaoEncontrada()
   return resultado.notificacao
 }

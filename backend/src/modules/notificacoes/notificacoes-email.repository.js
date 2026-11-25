@@ -1,5 +1,13 @@
 import { prisma } from '../../config/prisma.js'
 
+// Lista positiva: os novos eventos internos jamais entram na fila de e-mail,
+// mesmo se um registro tiver statusEmail PENDENTE por erro de um produtor.
+const filtroEventosEmail = {
+  tipo: { in: ['FEEDBACK_PUBLICADO', 'FEEDBACK_CORRIGIDO'] },
+  feedbackVersaoId: { not: null },
+  emailDestino: { not: null },
+}
+
 const notificacaoEmailSelect = {
   id: true,
   emailDestino: true,
@@ -24,6 +32,7 @@ function criarFiltroDisponibilidade({
   maxTentativas,
 }) {
   return {
+    ...filtroEventosEmail,
     tentativasEmail: {
       lt: maxTentativas,
     },
@@ -51,12 +60,12 @@ function criarFiltroDisponibilidade({
 export async function reservarProximaNotificacaoEmail({
   agora,
   maxTentativas,
-}) {
+}, cliente = prisma) {
   const filtro = criarFiltroDisponibilidade({
     agora,
     maxTentativas,
   })
-  const candidata = await prisma.notificacao.findFirst({
+  const candidata = await cliente.notificacao.findFirst({
     where: filtro,
     select: {
       id: true,
@@ -70,7 +79,7 @@ export async function reservarProximaNotificacaoEmail({
     return null
   }
 
-  const reserva = await prisma.notificacao.updateMany({
+  const reserva = await cliente.notificacao.updateMany({
     where: {
       id: candidata.id,
       ...filtro,
@@ -89,11 +98,20 @@ export async function reservarProximaNotificacaoEmail({
     return null
   }
 
-  return prisma.notificacao.findUnique({
+  return cliente.notificacao.findUnique({
     where: {
       id: candidata.id,
     },
     select: notificacaoEmailSelect,
+  })
+}
+
+// Consulta agregada: não carrega destinatários, texto ou links.
+export function contarEstadosNotificacoesEmail() {
+  return prisma.notificacao.groupBy({
+    where: filtroEventosEmail,
+    by: ['statusEmail'],
+    _count: { _all: true },
   })
 }
 

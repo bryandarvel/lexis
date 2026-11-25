@@ -1,19 +1,21 @@
+import Botao from '../../components/base/Botao.jsx'
 import { useState } from 'react'
 import {
-  Link,
   useLocation,
   useNavigate,
 } from 'react-router'
 
-import AuthField from '../../components/auth/AuthField.jsx'
-import AuthNotice from '../../components/auth/AuthNotice.jsx'
-import AuthShell from '../../components/auth/AuthShell.jsx'
+import Campo from '../../components/base/Campo.jsx'
+import Aviso from '../../components/base/Aviso.jsx'
+import CascaEntrada from '../../components/auth/CascaEntrada.jsx'
+import PasswordRecoveryDialog from '../../components/auth/PasswordRecoveryDialog.jsx'
+import { solicitarRecuperacaoSenha } from '../../services/password-recovery.js'
 import { useAuth } from '../../hooks/useAuth.js'
 import { interpretarErroApi } from '../../utils/api-error.js'
 
 function obterRotaInicial(papel) {
   return papel === 'PROFESSOR'
-    ? '/professor/turmas'
+    ? '/professor'
     : '/aluno'
 }
 
@@ -28,6 +30,7 @@ export default function LoginPage() {
   })
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState('')
+  const [recuperacaoAberta, setRecuperacaoAberta] = useState(false)
 
   const cadastroConcluido = Boolean(
     location.state?.cadastroConcluido,
@@ -72,53 +75,49 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthShell
-      eyebrow="Acesso à plataforma"
-      title="Bem-vindo de volta"
-      description="Entre para acompanhar turmas, redações e feedbacks."
-      footer={
-        <p>
-          Ainda não possui uma conta?{' '}
-          <Link
-            to="/cadastro"
-            className="font-bold text-lexis-200 underline decoration-lexis-400/60 underline-offset-4 transition hover:text-lexis-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lexis-300"
-          >
-            Criar conta
-          </Link>
-        </p>
-      }
+    <CascaEntrada
+      titulo="Bem-vindo(a) ao LÉXIS"
+      descricao="Acesse sua conta para continuar"
+      aba="entrar"
     >
       <form
         onSubmit={enviarFormulario}
-        className="space-y-5"
+        className="login-form"
         aria-busy={enviando}
       >
-        <AuthNotice
-          tipo="sucesso"
-          mensagem={
-            cadastroConcluido
-              ? 'Conta criada com sucesso. Agora você já pode entrar.'
-              : ''
-          }
-        />
-        <AuthNotice mensagem={erro} />
+        {cadastroConcluido && (
+          <Aviso tipo="sucesso">Conta criada com sucesso. Agora você já pode entrar.</Aviso>
+        )}
+        {location.state?.emailConfirmado && <Aviso tipo="sucesso">E-mail confirmado. Entre com o novo endereço.</Aviso>}
+        {location.state?.senhaRedefinida && <Aviso tipo="sucesso">Senha redefinida. Entre com a nova senha.</Aviso>}
+        {location.state?.contaExcluida && <Aviso tipo="sucesso">Conta excluída. O acesso foi encerrado.</Aviso>}
+        {erro && <Aviso tipo="erro">{erro}</Aviso>}
 
-        <AuthField
+        <Campo
           id="email"
           name="email"
-          label="E-mail"
+          label="E-mail institucional"
           type="email"
           value={dados.email}
           onChange={atualizarCampo}
           autoComplete="username"
           autoCapitalize="none"
           spellCheck={false}
-          placeholder="voce@exemplo.com"
+          placeholder="ana.lima@escola.edu.br"
           required
           maxLength={191}
         />
 
-        <AuthField
+        <div className="login-password">
+          <button
+            type="button"
+            className="login-forgot"
+            onClick={() => setRecuperacaoAberta(true)}
+            disabled={enviando}
+          >
+            Esqueci minha senha
+          </button>
+        <Campo
           id="senha"
           name="senha"
           label="Senha"
@@ -130,21 +129,23 @@ export default function LoginPage() {
           required
           maxLength={72}
         />
+        </div>
 
-        <button
+        <Botao
           type="submit"
-          disabled={enviando}
-          className="flex w-full items-center justify-center gap-3 rounded-[10px] bg-lexis-400 px-5 py-3.5 font-bold text-white transition hover:bg-lexis-500 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-lexis-300/35 disabled:cursor-not-allowed disabled:opacity-65"
+          className="min-h-12 w-full"
+          carregando={enviando}
+          rotuloCarregando="Entrando…"
         >
-          {enviando && (
-            <span
-              aria-hidden="true"
-              className="h-4 w-4 animate-spin rounded-full border-2 border-lexis-950/25 border-t-lexis-950 motion-reduce:animate-none"
-            />
-          )}
-          {enviando ? 'Entrando...' : 'Entrar'}
-        </button>
+          Entrar
+        </Botao>
       </form>
-    </AuthShell>
+      <PasswordRecoveryDialog
+        onRequestRecovery={solicitarRecuperacaoSenha}
+        aberto={recuperacaoAberta}
+        emailInicial={dados.email}
+        onClose={() => setRecuperacaoAberta(false)}
+      />
+    </CascaEntrada>
   )
 }

@@ -2,15 +2,28 @@ import {
   arquivarTemaParaProfessor,
   atualizarTemaParaProfessor,
   criarTemaParaProfessor,
+  excluirTemaParaProfessor,
+  listarPrazosParaProfessor,
   listarTemasParaAluno,
   listarTemasParaProfessor,
   obterTemaParaAluno,
   obterTemaParaProfessor,
+  reabrirTemaParaProfessor,
   substituirCriteriosParaProfessor,
 } from './temas.service.js'
 import {
   obterModeloCompetenciaDois,
 } from './temas.competencia-dois.js'
+
+export async function listarPrazosProfessorController(req, res) {
+  const prazos = await listarPrazosParaProfessor(req.auth.usuarioId)
+  return res.status(200).json({ data: { prazos } })
+}
+
+export async function excluirTemaController(req, res) {
+  await excluirTemaParaProfessor({ temaId: req.params.temaId, professorId: req.auth.usuarioId })
+  return res.status(204).send()
+}
 
 export function obterModeloCompetenciaDoisController(
   _req,
@@ -116,6 +129,15 @@ export async function arquivarTemaController(
       tema,
     },
   })
+}
+
+export async function reabrirTemaController(req, res) {
+  const tema = await reabrirTemaParaProfessor({
+    temaId: req.params.temaId,
+    professorId: req.auth.usuarioId,
+  })
+
+  return res.status(200).json({ data: { tema } })
 }
 
 export async function listarTemasAlunoController(
