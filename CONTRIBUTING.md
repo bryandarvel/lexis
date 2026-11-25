@@ -4,15 +4,15 @@
 
 A branch `dev` reúne o trabalho integrado para testes de Bryan e Lucas. A `main` mantém a versão estável e só recebe uma promoção posterior por Pull Request, após testes e aprovação explícita. Nunca faça commits diretamente na `main`. Toda correção, melhoria ou nova funcionalidade começa por uma Issue, é implementada em uma branch própria e incorporada na `dev` por Pull Request e merge commit.
 
-## Aceitar o convite
+## Acesso ao repositório
 
-Como o repositório é privado, o novo colaborador deve primeiro aceitar o convite enviado pelo proprietário. Para isso:
+Em um repositório público, você pode ler e clonar o código sem convite. Se o proprietário enviar um convite de colaboração para conceder acesso de escrita, aceite-o com a conta do GitHub que você usa no projeto:
 
 1. entre no GitHub com a conta que recebeu o convite;
 2. abra a notificação ou o e-mail enviado pelo GitHub;
 3. aceite o convite para o repositório `bryandarvel/lexis`.
 
-Enquanto o convite não for aceito, o clone pode retornar a mensagem `Repository not found`.
+Se o repositório estiver privado e o clone retornar `Repository not found`, confira se você aceitou o convite e está autenticado com a conta que recebeu acesso.
 
 ## Clonar o projeto
 
@@ -99,6 +99,8 @@ git push
 
 Confirme que o Pull Request contém apenas o escopo da Issue e execute as verificações afetadas.
 
+Para mudanças apenas de documentação, confira os links e os comandos que você alterou, rode `git diff --check` e informe no PR quais verificações executou.
+
 Backend:
 
 ```powershell
@@ -115,6 +117,8 @@ npm.cmd run lint
 npm.cmd test
 npm.cmd run build
 ```
+
+Para alterações em fluxos que atravessam a interface e a API, consulte o [guia de testes de ponta a ponta](e2e/README.md). Prepare o banco local `lexis_test` antes de executar essas suítes; não use o banco de desenvolvimento nem o da demonstração.
 
 ## Arquivos que nunca entram no commit
 
